@@ -5,8 +5,20 @@ on:
     branches:
       - main  # Or whatever your default branch is
 
+# ADD THESE PERMISSIONS
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# This setting allows the deploy job to run
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
-  build_and_deploy:
+  # Job 1: Build your site
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -15,15 +27,36 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # Use a modern Node.js version
-
+          node-version: '18'
+          # We removed the cache line earlier, which is fine
+          
       - name: Install Dependencies
         run: npm install
 
       - name: Build site
         run: npm run build # This runs "npx @11ty/eleventy"
 
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
+      # This step REPLACES the old 'deploy' step
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          folder: _site # The folder 11ty builds to
+          # This is the folder 11ty builds to
+          path: '_site'
+
+  # Job 2: Deploy your site
+  deploy:
+    # This job depends on the 'build' job finishing
+    needs: build
+    
+    # Grant permissions to this specific job
+    permissions:
+      pages: write
+      id-token: write
+      
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        # No 'folder' input is needed here.
+        # This action automatically finds the artifact from the 'build' job.
