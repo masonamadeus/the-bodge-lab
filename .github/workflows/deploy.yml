@@ -1,0 +1,30 @@
+name: Build and Deploy 11ty Site
+
+on:
+  push:
+    branches:
+      - main  # Or whatever your default branch is
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Use a modern Node.js version
+          cache: 'npm' # Caches packages for faster builds
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build site
+        run: npm run build # This runs "npx @11ty/eleventy"
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        with:
+          folder: _site # The folder 11ty builds to

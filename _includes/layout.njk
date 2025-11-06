@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-Working">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 2em auto; padding: 0 1em; }
+    .breadcrumb { font-size: 1.2em; font-weight: bold; }
+    .content-list { list-style: none; padding-left: 0; }
+    .content-list li { font-size: 1.1em; margin-bottom: 0.5em; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/" class="breadcrumb">🏠 Home</a>
+
+    {% if title and title != "Home" %}
+      <span>/ {{ title }}</span>
+    {% endif %}
+    <hr>
+  </header>
+
+  <main>
+    {{ content | safe }}
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "my-11ty-site",
+  "version": "1.0.0",
+  "description": "My simple site",
+  "main": ".eleventy.js",
+  "scripts": {
+    "build": "npx @11ty/eleventy"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^2.0.1"
+  }
+}
