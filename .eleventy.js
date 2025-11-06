@@ -1,16 +1,30 @@
 module.exports = function(eleventyConfig) {
-  // Tell 11ty to process our content files
-  // We'll put our content in a folder named "posts"
+
+  // This is the key for your "Download Page" button.
+  // It copies all source .md files to the output,
+  // preserving their folder structure.
+  eleventyConfig.addPassthroughCopy("content/**/*.md");
+  
+  // This recursively finds all .md files to create your "directory"
   eleventyConfig.addCollection("posts", function(collectionApi) {
-    return collectionApi.getFilteredByGlob("posts/*.md");
+    return collectionApi.getFilteredByGlob("./**/*.md")
+      .filter(item => {
+        // Exclude the main home and categories pages from the "posts" list
+        return item.inputPath !== "./index.md" && 
+               item.inputPath !== "./categories.md";
+      });
   });
 
-  // Set the input/output directories
   return {
     dir: {
-      input: ".",
-      output: "_site", // GitHub Pages deploys from here
-      includes: "_includes" // This is where our layout lives
+      // Tell 11ty to build from the "content" folder
+      input: "content",
+      
+      // Tell 11ty to look *up one level* for the includes folder
+      includes: "../_includes",
+      
+      // Output directory remains the same
+      output: "_site"
     }
   };
 };
