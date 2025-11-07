@@ -1,0 +1,15 @@
+---
+layout: layout.njk
+---
+{# Import the macro we just created #}
+{% import "macros/directoryListing.njk" as directoryListing %}
+
+<h2>{{ title }}</h2>
+
+{# Call the macro, passing it all collections and the current page #}
+{{ directoryListing.listFiles(collections.all, page) }}
+
+<hr>
+
+{# This will render any markdown content from the index.md file itself #}
+{{ content | safe }}

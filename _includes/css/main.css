@@ -1,0 +1,104 @@
+/* --- From layout.njk --- */
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    max-width: 1000px;
+    margin: 2em auto;
+    padding: 0 1em;
+    line-height: 1.5;
+}
+.nav-container {
+    margin-bottom: 2em;
+}
+.breadcrumb-nav {
+    font-size: 1.1em;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5em;
+}
+.breadcrumb {
+    color: #0066cc;
+    text-decoration: none;
+}
+.breadcrumb:hover {
+    text-decoration: underline;
+}
+.page-nav {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5em 0;
+}
+.nav-link {
+    color: #666;
+    text-decoration: none;
+    font-size: 0.9em;
+}
+.nav-link:hover {
+    color: #0066cc;
+}
+.nav-link.up {
+    font-weight: bold;
+}
+.current {
+    color: #666;
+}
+.separator {
+    color: #999;
+    margin: 0 0.2em;
+}
+.tag-list {
+    display: inline-flex;
+    gap: 0.5em;
+    margin-left: 1em;
+}
+.tag {
+    background: #e9ecef;
+    padding: 0.2em 0.6em;
+    border-radius: 12px;
+    font-size: 0.85em;
+    color: #495057;
+    text-decoration: none;
+}
+.tag:hover {
+    background: #dee2e6;
+}
+.image-container {
+    position: relative;
+    display: inline-block;
+}
+.image-container img {
+    display: block;
+}
+.download-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    text-decoration: none;
+    font-size: 2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.image-container:hover .download-overlay {
+    opacity: 1;
+}
+
+/* --- From directoryListing.njk --- */
+.dir-listing {
+    list-style: none;
+    padding: 0;
+}
+.dir-listing li {
+    font-family: monospace;
+    font-size: 1.1em;
+    margin-bottom: 0.5em;
+}
+.dir-listing span {
+    display: inline-block;
+    width: 2em;
+}

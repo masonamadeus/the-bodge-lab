@@ -3,9 +3,9 @@ name: Build and Deploy 11ty Site
 on:
   push:
     branches:
-      - main  # Or whatever your default branch is
+      - main
 
-# ADD THESE PERMISSIONS
+
 permissions:
   contents: read
   pages: write
@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Job 1: Build your site
+  # Job 1: Build site
   build:
     runs-on: ubuntu-latest
     steps:
@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          # We removed the cache line earlier, which is fine
+          cache: 'npm'
           
       - name: Install Dependencies
         run: npm install
@@ -43,7 +43,7 @@ jobs:
           # This is the folder 11ty builds to
           path: '_site'
 
-  # Job 2: Deploy your site
+  # Job 2: Deploy site
   deploy:
     # This job depends on the 'build' job finishing
     needs: build

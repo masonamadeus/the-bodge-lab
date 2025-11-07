@@ -1,72 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-Working">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ title }}</title>
-  <style>
-    body { font-family: sans-serif; max-width: 800px; margin: 2em auto; padding: 0 1em; }
-    .breadcrumb { font-size: 1.2em; font-weight: bold; }
-    .content-list { list-style: none; padding-left: 0; }
-    .content-list li { font-size: 1.1em; margin-bottom: 0.5em; }
-    
-    .image-container {
-      position: relative; /* This is the anchor for the download link */
-      display: inline-block; /* Makes the container wrap the image */
-    }
+    <head>
+        <link rel="stylesheet" href="/css/main.css">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{{ title }}</title>
+    </head>
+    <body>
+        <header>
+            <nav class="nav-container">
+                <div class="breadcrumb-nav">
+                    <a href="/" class="breadcrumb" title="Home Directory">\\ BodgeLab</a>
+                    {% set url_parts = page.url | split('/') %}
+                    {% set accumulated_path = '' %}
+                    {% for part in url_parts %}
+                        {% if part and part != 'index.html' %}
+                            {% set accumulated_path = accumulated_path + '\\' + part %}
+                            <span class="separator">\</span>
+                            {% if not loop.last %}
+                                <a href="{{ accumulated_path }}/" class="breadcrumb">{{ part }}</a>
+                            {% else %}
+                                <span class="current">{{ title if title and title != "Home" else part }}</span>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <div class="page-nav">
+                    {% if url_parts.length > 2 %}
+                        <a href="../" class="nav-link up">↑ Parent Directory</a>
+                    {% endif %}
+                </div>
+                
 
-    .image-container img {
-      display: block; /* Removes any weird spacing */
-    }
+            {% if title and title != "Home" %}
+                <h1>{{ title }}</h1>
+            {% endif %}
 
-    .download-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      
-      /* Style the overlay */
-      background: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
-      color: white;
-      text-decoration: none;
-      font-size: 2em;
-      
-      /* Center the icon */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      
-      /* Hide it by default */
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-
-    .image-container:hover .download-overlay {
-      opacity: 1; /* Show on hover */
-    }
-  </style>
-</head>
-<body>
-
-  <header>
-    <a href="/" class="breadcrumb">🏠 Home</a>
-
-    {% if title and title != "Home" %}
-      <span>/ {{ title }}</span>
-    {% endif %}
-    <hr>
-  </header>
-
-  <main>
-    {{ content | safe }}
-    <hr>
-<p>
-  <a href="/{{ page.inputPath }}" download>
-    Download
-  </a>
-</p>
-  </main>
-
-</body>
+            {% if date %}
+                <p><em>Last updated: {{ date | readableDate }}</em></p>
+            {% endif %}
+        </header>
+        <main class="main-content">
+            {{ content | safe }}
+            
+            <div class="page-meta">
+                <hr>
+                <p>
+                    <a class="page-download-btn" href="/{{ page.inputPath }}" download>
+                        DOWNLOAD
+                    </a>
+                </p>
+            </div>
+        </main>
+    </body>
 </html>
