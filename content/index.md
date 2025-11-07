@@ -1,5 +1,5 @@
 ---
-layout: directory.njk
 title: "The Bodge Lab"
-is_directory: true
 ---
+Welcome to The Bodge Lab!
+This is BODY TEXT

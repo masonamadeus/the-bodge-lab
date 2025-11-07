@@ -4,17 +4,17 @@ pagination:
   data: directories
   size: 1
   alias: dir
-  is_directory: true
   physicalPath: "{{ dir.webPath }}"
-# 2. Create a permalink at the missing directory's path
+  layout: layout.njk
+# Create a permalink at the missing directory's path
 permalink: "{{ dir.webPath }}/"
-# 3. Use our *existing* directory layout!
-layout: directory.njk
-# 4. Hide this from our 'directoryContents' lister
+# hide this from our 'directoryContents' lister
 eleventyExcludeFromCollections: true
+# hide download button
+hideDownloadButton: true
 ---
 {#
   This file is just a generator.
-  The 'directory.njk' layout and 'content.11tydata.js'
+  The layout and 'content.11tydata.js'
   will do all the real work of listing the contents.
 #}

@@ -1,6 +1,5 @@
 ---
 title: Actions Section
-layout: directory.njk
 is_directory: true
 ---
 

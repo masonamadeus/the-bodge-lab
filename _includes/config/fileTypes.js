@@ -2,12 +2,12 @@
 const TEMPLATE_EXTENSIONS = [
     '.md', 
     '.njk', 
-    '.html'
+    '.html',
 ];
 
 // Define our media categories
 const IMAGE_EXTENSIONS = [
-    '.png', '.jpg', '.jpeg', '.gif', '.webp'
+    '.png', '.jpg', '.jpeg', '.gif', '.webp',
 ];
 
 const VIDEO_EXTENSIONS = [

@@ -1,6 +1,6 @@
 ---
-layout: layout.njk
 title: "My First Page"
+hideDirectory: true
 ---
 
 This is my very first page!

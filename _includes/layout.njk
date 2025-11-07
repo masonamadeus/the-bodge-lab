@@ -10,7 +10,8 @@
         <header>
             <nav class="nav-container">
                 <div class="breadcrumb-nav">
-                    <a href="/" class="breadcrumb" title="Home Directory">\\ BodgeLab</a>
+                    <span class="separator">\\</span>
+                    <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
                     {% set url_parts = page.url | split('/') %}
                     {% set accumulated_path = '' %}
                     {% for part in url_parts %}
@@ -25,9 +26,19 @@
                         {% endif %}
                     {% endfor %}
                 </div>
-                <div class="page-nav">
-                    {% if url_parts.length > 2 %}
-                        <a href="../" class="nav-link up">↑ Parent Directory</a>
+                <div
+                    class="page-nav">
+                    {# Only show the link if we're not on the home page #}
+                    {% if page.url != "/" %}
+                        {# 1. Get the current URL #}
+                        {% set my_url = page.url %}
+                        {# 2. Strip trailing slash (unless it's the root) #}
+                        {% if my_url.endsWith('/') and my_url.length > 1 %}
+                            {% set my_url = my_url.substring(0, my_url.length - 1) %}
+                        {% endif %}
+                        {# 3. Find the parent directory path #}
+                        {% set parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/' %}
+                        <a href="{{ parent_href }}" class="nav-link up">↑ Parent Directory</a>
                     {% endif %}
                 </div>
                 {% if title and title != "Home" %}
@@ -45,16 +56,58 @@
                 {% endblock %}
                 <div class="page-meta">
                     <hr>
-                    <p>
-                        <a class="page-download-btn" href="/{{ page.inputPath | replace('content/', '') }}" download>
-                            DOWNLOAD
-                        </a>
-                    </p>
+                    {% if not hideDownloadButton %}
+                        <p>
+                            <a class="page-download-btn" href="/{{ page.inputPath | replace('content/', '') }}" download>
+                                DOWNLOAD
+                            </a>
+                        </p>
+                    {% endif %}
                 </div>
-                <hr>
-                
+                {% if not hideDirectory %}
+                    <hr>
+                    {# 1. Smart Title Logic #}
+                    {% set dir_list_title = "" %}
+                    {% if page.url.endsWith('.html') %}
+                        {# File Page (Post/Media): Get parent's title #}
+                        {% set parent_url = page.url.substring(0, page.url.lastIndexOf('/')) + '/' %}
+                        {% set parent_page = "" %}
+                        {% for page_item in collections.all %}
+                            {% if page_item.url == parent_url %}
+                                {% set parent_page = page_item %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if parent_page and parent_page.data.title %}
+                            {% set dir_list_title = parent_page.data.title %}
+                        {% else %}
+                            {# Fallback: just use the folder name from URL #}
+                            {% set url_parts = parent_url | split('/') %}
+                            {% set dir_list_title = url_parts[url_parts.length - 2] | safe %}
+                        {% endif %}
+                    {% else %}
+                        {# Directory Page: Use this page's title #}
+                        {% set dir_list_title = title %}
+                    {% endif %}
+                    <h2>{{ dir_list_title | safe }}</h2>
+                    {# 2. Directory Contents Listing #}
+                    {% if directoryContents %}
+                        <ul class="dir-listing">
+                            {% for dir in directoryContents.directories %}
+                                <li>
+                                    <span>📁</span>
+                                    <a href="{{ dir.url }}">{{ dir.name }}/</a>
+                                </li>
+                            {% endfor %}
+                            {% for file in directoryContents.files %}
+                                <li>
+                                    <span>📄</span>
+                                    <a href="{{ file.url }}">{{ file.name }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                {% endif %}
             </main>
-            
         </body>
     </body>
 </html>

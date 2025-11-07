@@ -3,8 +3,9 @@ pagination:
   data: assets
   size: 1
   alias: media
-permalink: "/media{{ media.url }}/"
+permalink: "{{ media.url }}.html"
 eleventyExcludeFromCollections: true
+hideDownloadButton: true
 ---
 {% extends "layout.njk" %}
 

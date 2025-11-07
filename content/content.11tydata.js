@@ -22,6 +22,9 @@ function getGitLastModified(inputPath) {
 }
 
 module.exports = {
+
+  layout: "layout.njk",
+
   eleventyComputed: {
     
     date: data => {
@@ -82,9 +85,8 @@ module.exports = {
           
           // 3. Handle Media Files
           } else if (MEDIA_EXTENSIONS.includes(ext)) {
-            const mediaWebPath = (data.page.url === "/") ? "" : data.page.url;
-            files.push({ name: item, url: `/media${mediaWebPath}/${item}/` });
-
+        // This now creates a link like /posts/my-image.png/
+        files.push({ name: item, url: `${webPathRoot}${item}.html` });
           // 4. Handle Raw Files
           } else {
             files.push({ name: item, url: `${webPathRoot}${item}` });
