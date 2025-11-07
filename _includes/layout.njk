@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <link rel="stylesheet" href="/css/main.css">
         <meta charset="UTF-8">
+        <title>BodgeLab: {{ title }}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{{ title }}</title>
+        <link rel="stylesheet" href="/css/main.css">
     </head>
     <body>
         <header>
@@ -26,8 +26,8 @@
                         {% endif %}
                     {% endfor %}
                 </div>
-                <div
-                    class="page-nav">
+                
+                <div class="page-nav">
                     {# Only show the link if we're not on the home page #}
                     {% if page.url != "/" %}
                         {# 1. Get the current URL #}
@@ -41,6 +41,7 @@
                         <a href="{{ parent_href }}" class="nav-link up">↑ Parent Directory</a>
                     {% endif %}
                 </div>
+                
                 {% if title and title != "Home" %}
                     <h1>{{ title }}</h1>
                 {% endif %}
@@ -49,65 +50,83 @@
                         <em>Last updated: {{ date | readableDate }}</em>
                     </p>
                 {% endif %}
-            </header>
-            <main class="main-content">
-                {% block content %}
-                    {{ content | safe }}
-                {% endblock %}
-                <div class="page-meta">
-                    <hr>
-                    {% if not hideDownloadButton %}
-                        <p>
-                            <a class="page-download-btn" href="/{{ page.inputPath | replace('content/', '') }}" download>
-                                DOWNLOAD
-                            </a>
-                        </p>
-                    {% endif %}
-                </div>
-                {% if not hideDirectory %}
-                    <hr>
-                    {# 1. Smart Title Logic #}
-                    {% set dir_list_title = "" %}
-                    {% if page.url.endsWith('.html') %}
-                        {# File Page (Post/Media): Get parent's title #}
-                        {% set parent_url = page.url.substring(0, page.url.lastIndexOf('/')) + '/' %}
-                        {% set parent_page = "" %}
-                        {% for page_item in collections.all %}
-                            {% if page_item.url == parent_url %}
-                                {% set parent_page = page_item %}
-                            {% endif %}
-                        {% endfor %}
-                        {% if parent_page and parent_page.data.title %}
-                            {% set dir_list_title = parent_page.data.title %}
-                        {% else %}
-                            {# Fallback: just use the folder name from URL #}
-                            {% set url_parts = parent_url | split('/') %}
-                            {% set dir_list_title = url_parts[url_parts.length - 2] | safe %}
-                        {% endif %}
+            </nav>
+        </header>
+
+        <main class="main-content">
+            {% block content %}
+                {{ content | safe }}
+            {% endblock %}
+            
+            <div class="page-meta">
+                {% if download %}
+                    {% set download_href = "" %}
+                    {% if media and media.url %}
+                        {# This is a media page. Use the media.url (e.g., /Bug & Moss/logo.jpg) #}
+                        {% set download_href = media.url %}
                     {% else %}
-                        {# Directory Page: Use this page's title #}
-                        {% set dir_list_title = title %}
+                        {# This is a post page. Use the page.inputPath (e.g., /posts/firstpost.md) #}
+                        {% set download_href = "/" + page.inputPath | replace('content/', '') %}
                     {% endif %}
-                    <h2>{{ dir_list_title | safe }}</h2>
-                    {# 2. Directory Contents Listing #}
-                    {% if directoryContents %}
-                        <ul class="dir-listing">
-                            {% for dir in directoryContents.directories %}
-                                <li>
-                                    <span>📁</span>
-                                    <a href="{{ dir.url }}">{{ dir.name }}/</a>
-                                </li>
-                            {% endfor %}
-                            {% for file in directoryContents.files %}
-                                <li>
-                                    <span>📄</span>
-                                    <a href="{{ file.url }}">{{ file.name }}</a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
+                    <hr>
+                    <p>
+                        <a class="page-download-btn" href="{{ download_href | safe }}" download>
+                            DOWNLOAD
+                        </a>
+                    </p>
                 {% endif %}
-            </main>
-        </body>
+            </div>
+        </main> {# <-- MAIN CONTENT ENDS HERE #}
+
+        {# --- DIRECTORY LISTING IS NOW ITS OWN SECTION --- #}
+        {% if not hideDirectory %}
+        <section class="directory-container">
+            <hr>
+            {# 1. Smart Title Logic #}
+            {% set dir_list_title = "" %}
+            {% if page.url.endsWith('.html') %}
+                {# File Page (Post/Media): Get parent's title #}
+                {% set parent_url = page.url.substring(0, page.url.lastIndexOf('/')) + '/' %}
+                {% set parent_page = "" %}
+                {% for page_item in collections.all %}
+                    {% if page_item.url == parent_url %}
+                        {% set parent_page = page_item %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if parent_page and parent_page.data.title %}
+                    {% set dir_list_title = parent_page.data.title %}
+                {% else %}
+                    {# Fallback: just use the folder name from URL #}
+                    {% set url_parts = parent_url | split('/') %}
+                    {% set dir_list_title = url_parts[url_parts.length - 2] | safe %}
+                {% endif %}
+            {% else %}
+                {# Directory Page: Use this page's title #}
+                {% set dir_list_title = title %}
+            {% endif %}
+            
+            <h2 class="directory-title">{{ dir_list_title | safe }}</h2>
+
+            {# 2. Directory Contents Listing #}
+            {% if directoryContents %}
+                <ul class="dir-listing">
+                    {% for dir in directoryContents.directories %}
+                        <li>
+                            <span>📁</span>
+                            <a href="{{ dir.url }}">{{ dir.name }}/</a>
+                        </li>
+                    {% endfor %}
+                    {% for file in directoryContents.files %}
+                        <li>
+                            <span>📄</span>
+                            <a href="{{ file.url }}">{{ file.name }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+        {% endif %}
+
     </body>
 </html>

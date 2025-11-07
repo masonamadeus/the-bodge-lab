@@ -4,8 +4,8 @@ const path = require('path');
 const projectRoot = path.join(__dirname, '..');
 
 const {
-    TEMPLATE_EXTENSIONS,
-    MEDIA_EXTENSIONS
+  TEMPLATE_EXTENSIONS,
+  MEDIA_EXTENSIONS
 } = require('../_includes/config/fileTypes.js');
 
 function getGitLastModified(inputPath) {
@@ -24,47 +24,51 @@ function getGitLastModified(inputPath) {
 module.exports = {
 
   layout: "layout.njk",
+  download: true,
 
   eleventyComputed: {
-    
+
     date: data => {
       return data.date || getGitLastModified(data.page.inputPath);
     },
 
     directoryContents: data => {
-
       let dirPath;
-      // __dirname is the absolute path to the 'content' folder
-      // (e.g., P:\...\the-bodge-lab\content)
+      let directoryUrl;
 
-      // Case 1: It's an auto-generated page
-      if (data.page.inputPath.endsWith('autoDirectory.njk')) {
-        // data.page.url will be something like "/empty-folder/"
-        // We join it with __dirname to get the full physical path
-        dirPath = path.join(__dirname, data.page.url);
-      
-      // Case 2: It's a manual .md file
+      // 1. Get the correct, UN-ESCAPED directory URL.
+      if (data.physicalPath) {
+        // Case 1: Auto-generated page. data.physicalPath is already raw.
+        directoryUrl = data.physicalPath;
+
+      } else if (data.page.url.endsWith('.html')) {
+        // Case 2: File page. Get the parent URL and un-escape it.
+        let escapedUrl = data.page.url.substring(0, data.page.url.lastIndexOf('/')) + '/';
+        directoryUrl = escapedUrl.replace(/&amp;/g, '&');
+
       } else {
-        
-        dirPath = path.join(projectRoot, path.dirname(data.page.inputPath));
+        // Case 3: Manual directory page. Get the URL and un-escape it.
+        directoryUrl = data.page.url.replace(/&amp;/g, '&');
       }
-      
-      // This creates a clean base web path like "/" or "/posts/"
-      const webPathRoot = (data.page.url === "/") ? "/" : (data.page.url.substring(0, data.page.url.lastIndexOf('/')) + "/");
+
+      // 2. Use the clean, un-escaped URL to find the physical folder.
+      dirPath = path.join(__dirname, directoryUrl);
+
+      // 3. Use the clean, un-escaped URL as the base for all new links.
+      const webPathRoot = directoryUrl;
 
       let directories = [];
       let files = [];
 
       try {
         if (!fs.existsSync(dirPath)) {
-            console.warn(`[11tydata] Directory not found, skipping: ${dirPath}`);
-            return { directories: [], files: [] };
+          console.warn(`[11tydata] Directory not found, skipping: ${dirPath}`);
+          return { directories: [], files: [] };
         }
-          
+
         const items = fs.readdirSync(dirPath);
         for (const item of items) {
-          
-          // Filter out our internal templates first
+
           if (item === 'media.njk' || item === 'autoDirectory.njk' || item === 'content.11tydata.js') continue;
 
           const itemPath = path.join(dirPath, item);
@@ -73,8 +77,9 @@ module.exports = {
 
           // 1. Handle Directories
           if (stat.isDirectory()) {
+            // webPathRoot is now un-escaped, so this link is correct.
             directories.push({ name: item, url: `${webPathRoot}${item}/` });
-            continue; 
+            continue;
           }
 
           // 2. Handle Templates
@@ -82,14 +87,11 @@ module.exports = {
             if (item === 'index.md' || item === 'index.njk') continue;
             const baseName = path.basename(item, ext);
             files.push({ name: item, url: `${webPathRoot}${baseName}/` });
-          
-          // 3. Handle Media Files
-          } else if (MEDIA_EXTENSIONS.includes(ext)) {
-        // This now creates a link like /posts/my-image.png/
-        files.push({ name: item, url: `${webPathRoot}${item}.html` });
-          // 4. Handle Raw Files
+
+            // 3. Handle ALL OTHER Files (as Media Pages)
           } else {
-            files.push({ name: item, url: `${webPathRoot}${item}` });
+            // webPathRoot is now un-escaped, so this link is correct.
+            files.push({ name: item, url: `${webPathRoot}${item}.html` });
           }
         }
       } catch (e) {

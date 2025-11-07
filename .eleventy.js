@@ -30,12 +30,55 @@ module.exports = function (eleventyConfig) {
     eleventyConfig.addFilter("dirname", p => path.dirname(p));
     eleventyConfig.addFilter("basename", p => path.basename(p));
 
+    // --- Shortcodes ---
+
+    // 1. Video Shortcode
+    // Usage: {% video "/path/to/my/video.mp4" %}
+    eleventyConfig.addShortcode("video", function (src) {
+        return `<video controls style="width: 100%;">
+  <source src="${src}">
+  Your browser does not support the video tag.
+</video>`;
+    });
+
+    // 2. Audio Shortcode
+    // Usage: {% audio "/path/to/my/audio.mp3" %}
+    eleventyConfig.addShortcode("audio", function (src) {
+        return `<audio controls style="width: 100%;">
+  <source src="${src}">
+  Your browser does not support the audio tag.
+</audio>`;
+    });
+
+    // 3. Image Shortcode (with Download Overlay)
+    // This replicates your custom CSS container
+    // Usage: {% image "/path/to/img.jpg", "Alt text for the image" %}
+    eleventyConfig.addShortcode("image", function (src, alt = "") {
+        return `<div class="image-container">
+  <img src="${src}" alt="${alt}">
+  <a href="${src}" class="download-overlay" download>
+    📥
+  </a>
+</div>`;
+    });
+
+    // 4. Embed Shortcode (for PDF, TXT, etc.)
+    // This uses your iframe container style
+    // Usage: {% embed "/path/to/document.pdf" %}
+    eleventyConfig.addShortcode("embed", function (src) {
+        return `<p>
+  <iframe class="embed-container" src="${src}">
+    <p>Your browser does not support embedded frames. <a href="${src}">Download the file</a> to view it.</p>
+  </iframe>
+</p>`;
+    });
+
     // --- Passthrough Copy ---
 
     eleventyConfig.addPassthroughCopy("content");
-    
+
     // This copies our CSS file
-    eleventyConfig.addPassthroughCopy({"_includes/css": "css"});
+    eleventyConfig.addPassthroughCopy({ "_includes/css": "css" });
 
     // --- Collections ---
     // We removed the old 'posts' and 'tagList' collections.
@@ -53,5 +96,5 @@ module.exports = function (eleventyConfig) {
         templateFormats: ["md", "njk", "html"]
     };
 
-    
+
 };

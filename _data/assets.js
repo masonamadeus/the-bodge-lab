@@ -15,7 +15,7 @@ function getMediaType(ext) {
     if (IMAGE_EXTENSIONS.includes(ext)) return 'image';
     if (VIDEO_EXTENSIONS.includes(ext)) return 'video';
     if (AUDIO_EXTENSIONS.includes(ext)) return 'audio';
-    return null;
+    return 'other';
 }
 
 function scanDir(dir, webPath, contentDir) {
@@ -36,14 +36,14 @@ function scanDir(dir, webPath, contentDir) {
             }
 
             const mediaType = getMediaType(ext);
-            if (mediaType) {
-                assets.push({
-                    name: item,
-                    ext: ext,
-                    type: mediaType,
-                    url: `/${relativePath.replace(/\\/g, '/')}`
-                });
-            }
+
+            assets.push({
+                name: item,
+                ext: ext,
+                type: mediaType,
+                url: `/${relativePath.replace(/\\/g, '/')}`
+            });
+            
         }
     }
     return assets;

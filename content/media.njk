@@ -3,9 +3,12 @@ pagination:
   data: assets
   size: 1
   alias: media
-permalink: "{{ media.url }}.html"
+permalink: "{{ media.url | safe }}.html"
 eleventyExcludeFromCollections: true
-hideDownloadButton: true
+download: false
+layout: false
+downloadURL: "{{ media.url | safe }}"
+
 ---
 {% extends "layout.njk" %}
 
@@ -27,12 +30,16 @@ hideDownloadButton: true
       <source src="{{ media.url }}">
       Your browser does not support the audio tag.
     </audio>
+
+  {% elif media.type == 'other' %}
+    <p>
+      <iframe class="embed-container" src="{{ media.url }}">
+        <p>Your browser does not support embedded frames. <a href="{{ media.url }}">Download the file</a> to view it.</p>
+      </iframe>
+    </p>
   
   {% else %}
     <p>Cannot display this file type.</p>
   {% endif %}
 
-  <p>
-    <a href="{{ media.url }}" download>Download {{ media.name }}</a>
-  </p>
 {% endblock %}

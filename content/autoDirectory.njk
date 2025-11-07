@@ -4,14 +4,14 @@ pagination:
   data: directories
   size: 1
   alias: dir
-  physicalPath: "{{ dir.webPath }}"
+  physicalPath: "{{ dir.webPath | safe }}"
   layout: layout.njk
 # Create a permalink at the missing directory's path
-permalink: "{{ dir.webPath }}/"
+permalink: "{{ dir.webPath | safe }}/"
 # hide this from our 'directoryContents' lister
 eleventyExcludeFromCollections: true
 # hide download button
-hideDownloadButton: true
+download: false
 ---
 {#
   This file is just a generator.
