@@ -15,7 +15,7 @@
                     {% set accumulated_path = '' %}
                     {% for part in url_parts %}
                         {% if part and part != 'index.html' %}
-                            {% set accumulated_path = accumulated_path + '\\' + part %}
+                            {% set accumulated_path = accumulated_path + '/' + part %}
                             <span class="separator">\</span>
                             {% if not loop.last %}
                                 <a href="{{ accumulated_path }}/" class="breadcrumb">{{ part }}</a>
@@ -25,33 +25,33 @@
                         {% endif %}
                     {% endfor %}
                 </div>
-                
                 <div class="page-nav">
                     {% if url_parts.length > 2 %}
                         <a href="../" class="nav-link up">↑ Parent Directory</a>
                     {% endif %}
                 </div>
-                
-
-            {% if title and title != "Home" %}
-                <h1>{{ title }}</h1>
-            {% endif %}
-
-            {% if date %}
-                <p><em>Last updated: {{ date | readableDate }}</em></p>
-            {% endif %}
-        </header>
-        <main class="main-content">
-            {{ content | safe }}
-            
-            <div class="page-meta">
-                <hr>
-                <p>
-                    <a class="page-download-btn" href="/{{ page.inputPath }}" download>
-                        DOWNLOAD
-                    </a>
-                </p>
-            </div>
-        </main>
+                {% if title and title != "Home" %}
+                    <h1>{{ title }}</h1>
+                {% endif %}
+                {% if date %}
+                    <p>
+                        <em>Last updated: {{ date | readableDate }}</em>
+                    </p>
+                {% endif %}
+            </header>
+            <main class="main-content">
+                {% block content %}
+                    {{ content | safe }}
+                {% endblock %}
+                <div class="page-meta">
+                    <hr>
+                    <p>
+                        <a class="page-download-btn" href="/{{ page.inputPath | replace('content/', '') }}" download>
+                            DOWNLOAD
+                        </a>
+                    </p>
+                </div>
+            </main>
+        </body>
     </body>
 </html>

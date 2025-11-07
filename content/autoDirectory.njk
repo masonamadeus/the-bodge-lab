@@ -1,0 +1,18 @@
+---
+# 1. Paginate over our new 'directories' data
+pagination:
+  data: directories
+  size: 1
+  alias: dir
+# 2. Create a permalink at the missing directory's path
+permalink: "{{ dir.webPath }}/"
+# 3. Use our *existing* directory layout!
+layout: directory.njk
+# 4. Hide this from our 'directoryContents' lister
+eleventyExcludeFromCollections: true
+---
+{#
+  This file is just a generator.
+  The 'directory.njk' layout and 'content.11tydata.js'
+  will do all the real work of listing the contents.
+#}

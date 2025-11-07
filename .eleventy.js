@@ -30,47 +30,26 @@ module.exports = function (eleventyConfig) {
     eleventyConfig.addFilter("basename", p => path.basename(p));
 
     // --- Passthrough Copy ---
-    // 1. THIS IS THE BIG FIX for your download button.
-    // Instead of just copying ".md" files, we copy the *entire* content directory.
-    // Eleventy is smart: it will *still* process your templates (md, njk, html, txt)
-    // but will ALSO copy all *other* files (png, zip, blend, etc.)
+    // This copies *everything* from "content" to "_site"
     eleventyConfig.addPassthroughCopy("content");
-
-    // 2. This copies our new external CSS file
+    // This copies our CSS file
     eleventyConfig.addPassthroughCopy("_includes/css");
 
     // --- Collections ---
-
-    // 'posts' collection
-    eleventyConfig.addCollection("posts", function (collectionApi) {
-        return collectionApi.getFilteredByGlob("./content/**/*.md")
-            .filter(item => {
-                return !item.inputPath.endsWith('index.md') &&
-                       !item.inputPath.endsWith('categories.md') &&
-                       !item.inputPath.endsWith('.txt'); // 3. Exclude .txt from 'posts'
-            });
-    });
-
-    // 'tagList' collection
-    eleventyConfig.addCollection("tagList", function(collectionApi) {
-        const tags = new Set();
-        collectionApi.getAll().forEach(item => {
-            if (!item.data.tags) return;
-            item.data.tags.forEach(tag => tags.add(tag));
-        });
-        return Array.from(tags);
-    });
+    // We removed the old 'posts' and 'tagList' collections.
 
     // --- Config Return ---
     return {
         dir: {
             input: "content",
             includes: "../_includes",
+            data: "../_data",
             output: "_site"
         },
-        // 4. THIS IS THE FIX for test.txt.
-        // Tell Eleventy to treat .txt files as templates.
-        // Now they will be added to `collections.all` and our macro will find them.
-        templateFormats: ["md", "njk", "html", "txt"]
+        // We *still* process md and njk files so that our
+        // index.md pages are turned into directory listings.
+        templateFormats: ["md", "njk", "html"]
     };
+
+    
 };

@@ -1,13 +1,25 @@
 ---
 layout: layout.njk
 ---
-{# Import the macro we just created #}
-{% import "macros/directoryListing.njk" as directoryListing %}
 
 <h2>{{ title }}</h2>
 
-{# Call the macro, passing it all collections and the current page #}
-{{ directoryListing.listFiles(collections.all, page) }}
+{# Check if our computed data exists #}
+{% if directoryContents %}
+  <ul class="dir-listing">
+    
+    {# Loop over the directories #}
+    {% for dir in directoryContents.directories %}
+      <li><span>📁</span><a href="{{ dir.url }}">{{ dir.name }}/</a></li>
+    {% endfor %}
+
+    {# Loop over the files #}
+    {% for file in directoryContents.files %}
+      <li><span>📄</span><a href="{{ file.url }}">{{ file.name }}</a></li>
+    {% endfor %}
+
+  </ul>
+{% endif %}
 
 <hr>
 
