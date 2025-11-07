@@ -1,6 +1,7 @@
 const { execSync } = require("child_process");
 const fs = require('fs');
 const path = require('path');
+const projectRoot = path.join(__dirname, '..');
 
 const {
     TEMPLATE_EXTENSIONS,
@@ -28,11 +29,7 @@ module.exports = {
     },
 
     directoryContents: data => {
-      if (data.layout !== "directory.njk") {
-        return null;
-      }
 
-      // --- THIS IS THE NEW, ROBUST LOGIC ---
       let dirPath;
       // __dirname is the absolute path to the 'content' folder
       // (e.g., P:\...\the-bodge-lab\content)
@@ -45,15 +42,12 @@ module.exports = {
       
       // Case 2: It's a manual .md file
       } else {
-        // data.page.inputPath will be "index.md" or "posts/index.md"
-        // We get its directory ("." or "posts")
-        // and join it with __dirname.
-        dirPath = path.join(__dirname, path.dirname(data.page.inputPath));
+        
+        dirPath = path.join(projectRoot, path.dirname(data.page.inputPath));
       }
       
       // This creates a clean base web path like "/" or "/posts/"
       const webPathRoot = (data.page.url === "/") ? "/" : (data.page.url.substring(0, data.page.url.lastIndexOf('/')) + "/");
-      // --- END NEW LOGIC ---
 
       let directories = [];
       let files = [];

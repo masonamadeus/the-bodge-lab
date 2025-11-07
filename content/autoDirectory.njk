@@ -4,6 +4,8 @@ pagination:
   data: directories
   size: 1
   alias: dir
+  is_directory: true
+  physicalPath: "{{ dir.webPath }}"
 # 2. Create a permalink at the missing directory's path
 permalink: "{{ dir.webPath }}/"
 # 3. Use our *existing* directory layout!

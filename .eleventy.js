@@ -1,6 +1,7 @@
 // Node.js modules for file system and path handling
 const { DateTime } = require("luxon");
 const path = require('path');
+const { MEDIA_EXTENSIONS } = require('./_includes/config/fileTypes.js');
 
 // --- Main Eleventy Config ---
 module.exports = function (eleventyConfig) {
@@ -30,10 +31,11 @@ module.exports = function (eleventyConfig) {
     eleventyConfig.addFilter("basename", p => path.basename(p));
 
     // --- Passthrough Copy ---
-    // This copies *everything* from "content" to "_site"
+
     eleventyConfig.addPassthroughCopy("content");
+    
     // This copies our CSS file
-    eleventyConfig.addPassthroughCopy("_includes/css");
+    eleventyConfig.addPassthroughCopy({"_includes/css": "css"});
 
     // --- Collections ---
     // We removed the old 'posts' and 'tagList' collections.
