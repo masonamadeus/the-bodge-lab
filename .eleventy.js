@@ -1,3 +1,5 @@
+// .eleventy.js
+
 // Node.js modules for file system and path handling
 const { DateTime } = require("luxon");
 const path = require('path');
@@ -73,6 +75,7 @@ module.exports = function (eleventyConfig) {
 
     // --- Passthrough Copy ---
 
+    // Entire content folder. NECESSARY
     eleventyConfig.addPassthroughCopy("content");
 
     // CSS file

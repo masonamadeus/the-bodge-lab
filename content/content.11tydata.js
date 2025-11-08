@@ -1,13 +1,10 @@
+// content/content.11tydata.js
 const { execSync } = require("child_process");
 const fs = require('fs');
 const path = require('path');
-const projectRoot = path.join(__dirname, '..');
+const fileTree = require('../_data/filetree.js');
 
-const {
-  TEMPLATE_EXTENSIONS,
-  MEDIA_EXTENSIONS
-} = require('../_includes/config/fileTypes.js');
-
+// --- This is your original Git function. We keep it! ---
 function getGitLastModified(inputPath) {
   try {
     const cmd = `git log -1 --format=%cI "${inputPath}"`;
@@ -21,11 +18,36 @@ function getGitLastModified(inputPath) {
   return new Date();
 }
 
-module.exports = {
+/**
+ * Helper function to find a node in the filetree by its webPath.
+ * This was fixed in the previous step and is correct.
+ */
+function findNodeByWebPath(webPath, node) {
+    if (!node) return null;
+    let cleanWebPath = path.normalize(webPath).replace(/\\/g, '/');
+    let cleanNodePath = path.normalize(node.webPath).replace(/\\/g, '/');
+    if (cleanWebPath.length > 1 && cleanWebPath.endsWith('/')) {
+        cleanWebPath = cleanWebPath.slice(0, -1);
+    }
+    if (cleanNodePath.length > 1 && cleanNodePath.endsWith('/')) {
+        cleanNodePath = cleanNodePath.slice(0, -1);
+    }
+    if (cleanNodePath === cleanWebPath) {
+        return node;
+    }
+    if (node.isDirectory && node.children) {
+        for (const child of node.children) {
+            const found = findNodeByWebPath(webPath, child);
+            if (found) return found;
+        }
+    }
+    return null;
+}
 
+module.exports = {
   layout: "layout.njk",
   download: true,
-  directory: true,
+  directory: true, 
 
   eleventyComputed: {
 
@@ -33,77 +55,65 @@ module.exports = {
       return data.date || getGitLastModified(data.page.inputPath);
     },
 
+    directoryTitle: data => {
+        // --- FIX #1: DECODE THE URL ---
+        const pageUrl = decodeURIComponent(data.page.url.replace(/&amp;/g, '&'));
+        let dirNode = null;
+
+        if (pageUrl.endsWith('.html')) {
+            const parentUrl = path.dirname(pageUrl) + '/';
+            dirNode = findNodeByWebPath(parentUrl, fileTree);
+        } else {
+            dirNode = findNodeByWebPath(pageUrl, fileTree);
+        }
+
+        if (dirNode && dirNode.title) {
+            return dirNode.title;
+        } else if (dirNode) {
+            return dirNode.name;
+        }
+        
+        return data.title || "Directory";
+    },
+
     directoryContents: data => {
-      let dirPath;
       let directoryUrl;
 
-      // 1. Get the correct, UN-ESCAPED directory URL.
       if (data.physicalPath) {
-        // Case 1: Auto-generated page. data.physicalPath is already raw.
         directoryUrl = data.physicalPath;
-
       } else if (data.page.url.endsWith('.html')) {
-        // Case 2: File page. Get the parent URL and un-escape it.
-        let escapedUrl = data.page.url.substring(0, data.page.url.lastIndexOf('/')) + '/';
-        directoryUrl = escapedUrl.replace(/&amp;/g, '&');
-
+        directoryUrl = path.dirname(data.page.url) + '/';
       } else {
-        // Case 3: Manual directory page. Get the URL and un-escape it.
-        directoryUrl = data.page.url.replace(/&amp;/g, '&');
+        directoryUrl = data.page.url;
       }
+      
+      // --- FIX #2: DECODE THE URL ---
+      const cleanUrl = decodeURIComponent(directoryUrl.replace(/&amp;/g, '&'));
+      
+      const dirNode = findNodeByWebPath(cleanUrl, fileTree); // This will now work
 
-      // 2. Use the clean, un-escaped URL to find the physical folder.
-      dirPath = path.join(__dirname, directoryUrl);
-
-      // 3. Use the clean, un-escaped URL as the base for all new links.
-      const webPathRoot = directoryUrl;
+      if (!dirNode || !dirNode.children) {
+        return { directories: [], files: [], pages: [] };
+      }
 
       let directories = [];
       let files = [];
       let pages = [];
 
-      try {
-        if (!fs.existsSync(dirPath)) {
-          console.warn(`[11tydata] Directory not found, skipping: ${dirPath}`);
-          return { directories: [], files: [] };
+      for (const item of dirNode.children) {
+        const itemUrl = cleanUrl.endsWith('/') ? cleanUrl : cleanUrl + '/';
+
+        if (item.isDirectory) {
+            directories.push({ name: item.name, url: `${itemUrl}${item.name}/` });
+        } 
+        else if (item.isTemplate && !item.isIndex) {
+            const baseName = path.basename(item.name, item.ext);
+            pages.push({ name: item.name, url: `${itemUrl}${baseName}/` });
+        } 
+        else if (item.isMedia) {
+            files.push({ name: item.name, url: `${itemUrl}${item.name}.html` });
         }
-
-        const items = fs.readdirSync(dirPath);
-        for (const item of items) {
-
-          if (item === 'media.njk' || item === 'autoDirectory.njk' || item === 'content.11tydata.js') continue;
-
-          const itemPath = path.join(dirPath, item);
-          const stat = fs.statSync(itemPath);
-          const ext = path.extname(item).toLowerCase();
-
-          // 1. Handle Directories
-          if (stat.isDirectory()) {
-            // webPathRoot is now un-escaped, so this link is correct.
-            directories.push({ name: item, url: `${webPathRoot}${item}/` });
-            continue;
-          }
-
-          // 2. Handle Templates
-          if (TEMPLATE_EXTENSIONS.includes(ext)) {
-            if (item === 'index.md' || item === 'index.njk') continue;
-            const baseName = path.basename(item, ext);
-            pages.push({ name: item, url: `${webPathRoot}${baseName}/` });
-
-            // 3. Handle ALL OTHER Files (as Media Pages)
-          } else {
-            // webPathRoot is now un-escaped, so this link is correct.
-            files.push({ name: item, url: `${webPathRoot}${item}.html` });
-          }
-        }
-      } catch (e) {
-        console.warn(`Error reading directory ${dirPath} for page ${data.page.url}: ${e}`);
-        return null;
       }
-
-      directories.sort((a, b) => a.name.localeCompare(b.name));
-      files.sort((a, b) => a.name.localeCompare(b.name));
-      pages.sort((a, b) => a.name.localeCompare(b.name));
 
       return { directories, files, pages };
     }

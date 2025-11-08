@@ -41,7 +41,7 @@ a:hover {
 }
 hr {
   border: 0;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 2px solid var(--border-color);
   margin: calc(var(--base-spacing) * 2) 0;
 }
 h1 {
@@ -54,10 +54,10 @@ h1 {
 }
 .breadcrumb-nav {
   font-size: 1.1em;
-  margin-bottom: var(--base-spacing);
   border-bottom: 1px solid var(--border-color);
-  padding-bottom: var(--base-spacing);
+  padding-bottom: calc(var(--base-spacing)*0.5);
   color: var(--text-muted);
+  line-height:normal;
 }
 .breadcrumb {
   color: var(--accent-color);
@@ -70,12 +70,22 @@ h1 {
 }
 .page-nav {
   display: flex;
-  justify-content: right;
+  justify-content: space-between; /* This is the key change */
+  align-items: center;
   padding: var(--base-spacing) 0;
+  font-size: 0.9em;
+  border-bottom: 2px solid var(--border-color);
 }
+
+/* This styles the new date location */
+.page-meta-date em {
+  color: var(--border-color);
+  font-style: italic;
+}
+
 .nav-link.up {
   font-weight: bold;
-  color: var(--text-muted);
+  color: var(--accent-color);
 }
 .nav-link:hover {
   color: var(--accent-color);
@@ -92,12 +102,14 @@ h1 {
 }
 .directory-title {
   font-size: 1.2em;
-  color: var(--text-color);
-  border-bottom: 2px solid var(--border-color);
+  color: var(--accent-color);
+  padding-bottom:0.3em;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0.5em;
 }
 .dir-listing {
   list-style: none;
-  padding: 0;
+  margin: 0;
 }
 .dir-listing li {
   font-family: var(--mono-font);
@@ -110,9 +122,16 @@ h1 {
   width: 1.2em;
   height: 1.2em;
   margin-right: 0.75em;
-  /* Fills the icon with our generated accent color */
-  fill: var(--accent-color);
   flex-shrink: 0;
+  
+  /* 1. Set the background color to your theme variable */
+  background-color: var(--text-color);
+
+  /* 2. Use the SVG as a mask (a "cookie-cutter") */
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+
 }
 
 /* --- 6. Shortcode & Media Styles --- */

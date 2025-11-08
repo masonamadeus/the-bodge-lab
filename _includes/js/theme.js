@@ -12,8 +12,6 @@
   }
 
   // --- Font Palettes ---
-  
-  // A list of safe, minimalist font stacks
   const fontPalettes = [
     'system-ui, -apple-system, sans-serif',
     '"Merriweather", "Georgia", serif',
@@ -21,37 +19,65 @@
     '"Palatino", "Book Antiqua", serif'
   ];
   
-  // --- Generate Unique Theme ---
+  // --- 1. Generate Unique Seed ---
   
-  // Create the deterministic seed from the user agent
-  const seed = getSeed(navigator.userAgent);
+  // Combine multiple data points for a more unique ID.
+  const uniqueString = [
+    navigator.userAgent,
+    navigator.language || (navigator.languages && navigator.languages[0]),
+    (screen.width || 0) + 'x' + (screen.height || 0),
+    new Date().getTimezoneOffset(),
+    navigator.hardwareConcurrency || 1
+  ].join('|');
   
-  // "Roll the dice" for the hue (0-359)
-  const baseHue = seed % 360;
+  const seed = getSeed(uniqueString);
+
+  // --- 2. Generate Font Theme ---
   
-  // Pick a font palette from the list
   const bodyFont = fontPalettes[seed % fontPalettes.length];
-  
-  // Set the mono font (if body is already mono, use it, else default)
   const monoFont = bodyFont.includes('monospace') ? bodyFont : 'monospace';
 
-  // --- 3. Apply the Theme as CSS Variables ---
+  // --- 3. Generate THREE Independent Hues ---
+  // This is the new logic. We use bit-shifting to "roll the dice"
+  // three separate times from the same seed.
+  // This gives us three hues that are not mathematically related in a simple way.
+
+  // Hue for Base UI (Text & Background)
+  const baseUIHue = seed % 360; 
   
-  // We apply these to the <html> tag (document.documentElement)
-  // This must run *before* the body renders to prevent a flash of
-  // unstyled content.
+  // Hue for Primary Accents (Links, Icons)
+  // We use a right-shift to get a "different" number from the seed.
+  const accent1Hue = (seed >> 8) % 360;
+  
+  // Hue for Secondary Accents (Borders, Tags)
+  // We shift by a different amount for a third, independent hue.
+  const accent2Hue = (seed >> 16) % 360;
+
+  // --- 4. Apply the Theme as CSS Variables ---
+  //
+  // This is how we "ensure they're complimentary."
+  // We force the Lightness (the 'L' in HSL) to fixed, high-contrast values.
+  // The hues (H) can be anything, but the Lightness (L) guarantees readability.
+  //
   const root = document.documentElement;
   
-  // Set the font variables
+  // Apply fonts
   root.style.setProperty('--body-font', bodyFont);
   root.style.setProperty('--mono-font', monoFont);
 
-  // Set the *entire* color palette based on the single generated hue
-  root.style.setProperty('--accent-hue', baseHue);
-  root.style.setProperty('--bg-color', `hsl(${baseHue}, 20%, 85%)`);
-  root.style.setProperty('--text-color', `hsl(${baseHue}, 50%, 10%)`);
-  root.style.setProperty('--text-muted', `hsl(${baseHue}, 10%, 30%)`);
-  root.style.setProperty('--border-color', `hsl(${baseHue}, 20%, 50%)`);
-  root.style.setProperty('--bg-muted', `hsl(${baseHue}, 20%, 75%)`);
-  root.style.setProperty('--accent-color', `hsl(${baseHue}, 70%, 20%)`);
+  // Apply Base UI (uses baseUIHue)
+  // This creates a "light-color-1" and a "dark-color-1"
+  // L=99% (bg) vs L=15% (text) is extremely high contrast.
+  root.style.setProperty('--bg-color', `hsl(${baseUIHue}, 80%, 90%)`);
+  root.style.setProperty('--text-color', `hsl(${baseUIHue}, 50%, 20%)`);
+  root.style.setProperty('--text-muted', `hsl(${baseUIHue}, 25%, 35%)`);
+  
+  // Apply Primary Accents (uses accent1Hue)
+  // This is a "bright-color-2"
+  root.style.setProperty('--accent-color', `hsl(${accent1Hue}, 70%, 45%)`);
+  
+  // Apply Secondary Accents (uses accent2Hue)
+  // This is a "light-color-3" and "very-light-color-3"
+  root.style.setProperty('--border-color', `hsl(${accent2Hue}, 50%, 35%)`);
+  root.style.setProperty('--bg-muted', `hsl(${accent2Hue}, 60%, 80%)`);
 })();

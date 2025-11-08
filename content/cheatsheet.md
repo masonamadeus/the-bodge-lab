@@ -1,9 +1,10 @@
-
 ---
-title: "Bodge Lab: Post Authoring Cheatsheet"
+title: "Cheatsheet"
 ---
 
 {% raw %}
+# Bodge Lab: Post Authoring Cheatsheet
+
 ## Front Matter Options
 
 

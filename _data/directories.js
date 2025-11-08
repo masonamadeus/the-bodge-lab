@@ -1,59 +1,31 @@
-const fs = require('fs');
-const path = require('path');
+// _data/directories.js
+const fileTree = require('./filetree.js');
 
-// --- IMPORT our config ---
-const { TEMPLATE_EXTENSIONS } = require('../_includes/config/fileTypes.js');
-
-// Get the list of what we consider 'index' files
-const INDEX_FILES = TEMPLATE_EXTENSIONS.map(ext => `index${ext}`);
-
-function scanForMissingIndexes(dir, webPath, contentDir) {
+function findMissingIndexes(node) {
     let missing = [];
-    
-    // Check if the current directory *itself* has an index file
-    let hasIndex = false;
-    for (const indexFile of INDEX_FILES) {
-        if (fs.existsSync(path.join(dir, indexFile))) {
-            hasIndex = true;
-            break;
-        }
+    if (!node || !node.isDirectory) {
+        return [];
     }
-
-    // If it DOES NOT have an index, add it to our list
-    // (We skip the root 'content' folder itself)
-    if (!hasIndex && webPath) {
+    
+    if (!node.hasIndex && node.webPath !== '/') {
         missing.push({
-            webPath: webPath.replace(/\\/g, '/')
+            webPath: node.webPath.replace(/\\/g, '/')
         });
     }
 
-    // --- Now, recurse into subdirectories ---
-    const items = fs.readdirSync(dir, { withFileTypes: true });
-    for (const item of items) {
-        if (item.isDirectory()) {
-            missing = missing.concat(
-                scanForMissingIndexes(
-                    path.join(dir, item.name),
-                    `${webPath}/${item.name}`,
-                    contentDir
-                )
-            );
+    for (const child of node.children) {
+        if (child.isDirectory) {
+            missing = missing.concat(findMissingIndexes(child));
         }
     }
-
     return missing;
 }
 
 module.exports = () => {
     try {
-        const contentDir = path.join(__dirname, '..', 'content');
-        if (!fs.existsSync(contentDir)) {
-            console.warn("[directories.js] 'content' directory not found.");
-            return [];
-        }
-        return scanForMissingIndexes(contentDir, '', contentDir);
+        return findMissingIndexes(fileTree);
     } catch (err) {
-        console.error("[directories.js] Failed to scan directories:", err);
+        console.error("[directories.js] Failed to process fileTree:", err);
         return [];
     }
 };
