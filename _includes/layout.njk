@@ -29,10 +29,17 @@
                 </div>
                 <div
                     class="page-nav">
-                    {# Left Side: Parent Link #}
+                    {# Left Side: Date #}
+                    {% if date and page.url != "/" %}
+                        <div class="page-meta-date">
+                            <i>
+                                <em>Updated: {{ date | readableDate }}</em>
+                            </i>
+                        </div>
+                    {% endif %}
+                    {# Right Side: Parent Link #}
                     {% if page.url != "/" %}
-                    <div>
-                        
+                        <div>
                             {# 1. Get the current URL #}
                             {% set my_url = page.url %}
                             {# 2. Strip trailing slash (unless it's the root) #}
@@ -41,19 +48,9 @@
                             {% endif %}
                             {# 3. Find the parent directory path #}
                             {% set parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/' %}
-                            <a href="{{ parent_href }}" class="nav-link up">↑ Up One Level</a>
-                        
-                    </div>
+                            <a href="{{ parent_href }}" class="nav-link up">⮤ Up One Level</a>
+                        </div>
                     {% endif %}
-                    {# Right Side: Date #}
-                    
-                    {% if date and page.url != "/" %}
-                    <div class="page-meta-date">
-                            <i>
-                                <em>Updated: {{ date | readableDate }}</em>
-                            </i>
-                    </div>
-                        {% endif %}
                 </div>
             </nav>
         </header>
@@ -91,7 +88,20 @@
             {% set hasContent = hasDirs or hasPages or hasFiles %}
             {% if hasContent %}
                 <section class="directory-container">
-                    <h3 class="directory-title">{{ directoryTitle | safe }}</h3>
+                    <div class="directory-header">
+                        {% if page.url != "/" %}
+                            {# 1. Get the current URL #}
+                            {% set my_url = page.url %}
+                            {# 2. Strip trailing slash ... #}
+                            {% if my_url.endsWith('/') and my_url.length > 1 %}
+                                {% set my_url = my_url.substring(0, my_url.length - 1) %}
+                            {% endif %}
+                            {# 3. Find the parent directory path #}
+                            {% set parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/' %}
+                            <a href="{{ parent_href }}" class="nav-link-small up">⮤</a>
+                        {% endif %}
+                        <h3 class="directory-title">{{ directoryTitle | safe }}</h3>
+                    </div>
                     {# 2. Directory Contents Listing #}
                     {% if directoryContents %}
                         <ul class="dir-listing">
@@ -100,36 +110,29 @@
                                     <span
                                         class="icon"
                                         style="-webkit-mask-image: url('/config/foldericon.svg'); mask-image: url('/config/foldericon.svg');"></span>
-                                    <a href="{{ dir.url }}">{{ dir.name }}/</a>
+                                    <a href="{{ dir.url }}">{{ dir.name }}</a>
                                 </li>
                             {% endfor %}
                             {% for page in directoryContents.pages %}
                                 <li>
-                                    <span
-                                        class="icon"
-                                        style="-webkit-mask-image: url('/config/pageicon.svg'); mask-image: url('/config/pageicon.svg');"></span>
+                                    <span class="icon" style="-webkit-mask-image: url('/config/pageicon.svg'); mask-image: url('/config/pageicon.svg');"></span>
                                     <a href="{{ page.url }}">{{ page.name }}</a>
                                 </li>
                             {% endfor %}
                             {% for file in directoryContents.files %}
                                 <li>
-                                    <span
-                                        class="icon"
-                                        style="-webkit-mask-image: url('/config/fileicon.svg'); mask-image: url('/config/fileicon.svg');"></span>
+                                    <span class="icon" style="-webkit-mask-image: url('/config/fileicon.svg'); mask-image: url('/config/fileicon.svg');"></span>
                                     <a href="{{ file.url }}">{{ file.name }}</a>
                                 </li>
                             {% endfor %}
                         </ul>
                     {% endif %}
                 </section>
-                
-        
-        <div class = "site-options-row">
-        <button id="theme-toggle" class="theme-toggle">Dark Mode</button>
-        </div>
+                <div class="site-options-row">
+                    <button id="theme-toggle" class="theme-toggle">Dark Mode</button>
+                </div>
             {% endif %}
-            
         {% endif %}
         <script src="/js/main.js"></script>
     </body>
-</html>
+</html></body></html>

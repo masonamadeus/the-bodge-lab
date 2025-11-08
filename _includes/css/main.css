@@ -95,6 +95,17 @@ h1 {
   color: var(--accent-color);
 }
 
+.nav-link-small.up {
+  font-weight: bold;
+  color: var(--accent-color);
+  font-size: 1em; /* Match the title size */
+  text-decoration: none;
+  line-height: 1; /* Helps with alignment */
+}
+.nav-link-small.up:hover {
+  text-decoration: none;
+}
+
 /* --- 4. Main Content Blocks --- */
 .page-meta {
   margin-top: 0;
@@ -113,13 +124,20 @@ h1 {
   background-color: var(--bg-muted);
   padding: calc(var(--base-spacing)*0.5);
 }
-.directory-title {
-  font-size: 1.2em;
-  color: var(--accent-color);
-  padding-bottom:0.3em;
+.directory-header {
+  display: flex;
+  justify-content: left;
+  align-items: center;
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 0.5em;
 }
+
+.directory-title {
+  font-size: 1.2em;
+  color: var(--accent-color);
+  margin: 0.2em;
+}
+
 .dir-listing {
   list-style: none;
   margin: 0;
