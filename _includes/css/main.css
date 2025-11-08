@@ -89,6 +89,7 @@ h1 {
 
 .nav-link.up {
   font-weight: bold;
+  font-size: 1em;
   color: var(--accent-color);
 }
 .nav-link:hover {

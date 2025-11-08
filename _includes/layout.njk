@@ -29,14 +29,7 @@
                 </div>
                 <div
                     class="page-nav">
-                    {# Left Side: Date #}
-                    {% if date and page.url != "/" %}
-                        <div class="page-meta-date">
-                            <i>
-                                <em>Updated: {{ date | readableDate }}</em>
-                            </i>
-                        </div>
-                    {% endif %}
+                    
                     {# Right Side: Parent Link #}
                     {% if page.url != "/" %}
                         <div>
@@ -48,7 +41,15 @@
                             {% endif %}
                             {# 3. Find the parent directory path #}
                             {% set parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/' %}
-                            <a href="{{ parent_href }}" class="nav-link up">⮤ Up One Level</a>
+                            <a href="{{ parent_href }}" class="nav-link up">⇡ Up One Level</a>
+                        </div>
+                    {% endif %}
+                    {# Left Side: Date #}
+                    {% if date and page.url != "/" %}
+                        <div class="page-meta-date">
+                            <i>
+                                <em>Updated: {{ date | readableDate }}</em>
+                            </i>
                         </div>
                     {% endif %}
                 </div>
@@ -98,9 +99,10 @@
                             {% endif %}
                             {# 3. Find the parent directory path #}
                             {% set parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/' %}
-                            <a href="{{ parent_href }}" class="nav-link-small up">⮤</a>
+                            <a href="{{ parent_href }}" class="nav-link-small up">..\ </a>
                         {% endif %}
                         <h3 class="directory-title">{{ directoryTitle | safe }}</h3>
+                  
                     </div>
                     {# 2. Directory Contents Listing #}
                     {% if directoryContents %}
