@@ -85,7 +85,15 @@ module.exports = function (eleventyConfig) {
     eleventyConfig.addPassthroughCopy({"_includes/js": "js"});
 
     // --- Collections ---
-    
+
+    // Creates a list of all tags
+    eleventyConfig.addCollection("tagList", function(collectionApi) {
+      let tagSet = new Set();
+      collectionApi.getAll().forEach(item => {
+        (item.data.tags || []).forEach(tag => tagSet.add(tag));
+      });
+      return [...tagSet].sort();
+    });
 
     // --- Config Return ---
     return {

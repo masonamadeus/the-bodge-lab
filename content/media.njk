@@ -33,7 +33,7 @@ downloadURL: "{{ media.url | safe }}"
 
   {% elif media.type == 'other' %}
     <p>
-      <iframe class="embed-container" src="{{ media.url }}">
+      <iframe class="embed-container" style="background-color: #FFFF!important;"src="{{ media.url }}">
         <p>Your browser does not support embedded frames. <a href="{{ media.url }}">Download the file</a> to view it.</p>
       </iframe>
     </p>

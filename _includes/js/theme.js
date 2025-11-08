@@ -1,6 +1,16 @@
 // _includes/js/theme.js
 (function () {
 
+  const fontPalettes = [
+    "system-ui, -apple-system, sans-serif",
+    "'Georgia', serif",
+    "'Times New Roman', serif",
+    "'Arial', sans-serif",
+    "'Verdana', sans-serif",
+    "'Courier New', monospace",
+    "'Lucida Console', monospace"
+  ];
+
   // --- A. HELPER FUNCTIONS ---
 
   function getSeed(str) {
@@ -96,33 +106,42 @@
     return currentL;
   }
 
-  // --- B. GATHER ALL USER DATA (EVEN MORE) ---
+  // --- B. CREATE OR RETRIEVE SEED ---
 
-  const uniqueString = [
-    navigator.userAgent,
-    navigator.language || (navigator.languages && navigator.languages[0]),
-    (screen.width || 0) + 'x' + (screen.height || 0),
-    new Date().getTimezoneOffset(),
-    navigator.hardwareConcurrency || 1,
-    navigator.deviceMemory || 0,
-    window.devicePixelRatio || 0,
-    (navigator.plugins || []).length,
-    (navigator.mimeTypes || []).length,
-    navigator.platform || "",
-    navigator.vendor || "",
-    screen.colorDepth || 0,
+ let seed;
+  const customSeed = localStorage.getItem('themeSeed');
 
-    // --- HERE ARE THE NEW DATA POINTS ---
-    navigator.webdriver || false, // Is the user a bot/automation?
-    (screen.availWidth || 0) + 'x' + (screen.availHeight || 0), // Available screen (minus taskbars)
-    navigator.maxTouchPoints || 0, // Are they on a touchscreen?
-    navigator.doNotTrack || "unspecified", // Do Not Track setting
-    Intl.DateTimeFormat().resolvedOptions().timeZone || "" // IANA Timezone (e.g., "America/New_York")
-    // --- END NEW DATA ---
-
-  ].join('|');
-
-  const seed = getSeed(uniqueString);
+  if (customSeed) {
+    // 1. Use the custom seed if it exists
+    seed = parseInt(customSeed, 10);
+  } else {
+    // 2. Otherwise, generate the default fingerprint
+    const uniqueString = [
+      navigator.userAgent,
+      navigator.language || (navigator.languages && navigator.languages[0]),
+      (screen.width || 0) + 'x' + (screen.height || 0),
+      new Date().getTimezoneOffset(),
+      navigator.hardwareConcurrency || 1,
+      navigator.deviceMemory || 0,
+      window.devicePixelRatio || 0,
+      (navigator.plugins || []).length,
+      (navigator.mimeTypes || []).length,
+      navigator.platform || "",
+      navigator.vendor || "",
+      screen.colorDepth || 0,
+      navigator.webdriver || false,
+      (screen.availWidth || 0) + 'x' + (screen.availHeight || 0),
+      navigator.maxTouchPoints || 0,
+      navigator.doNotTrack || "unspecified",
+      Intl.DateTimeFormat().resolvedOptions().timeZone || ""
+    ].join('|');
+    
+    seed = getSeed(uniqueString);
+    
+    // 3. Store the *first* default seed to make it "sticky"
+    // This prevents the theme from changing on minor fingerprint updates
+    localStorage.setItem('themeSeed', seed.toString());
+  }
 
 
   // --- C. GENERATE THE UNIQUE "BODGE" PALETTE ---
@@ -237,6 +256,7 @@ const final_dark_accent_l = Math.max(l_dark_accent_vs_bg, l_dark_accent_vs_muted
   // 6. Set the data-theme for CSS and the toggle script
   root.setAttribute('data-theme', currentTheme);
 
+  
   // 7. Apply font theme
   const bodyFont = fontPalettes[seed % fontPalettes.length];
   const monoFont = bodyFont.includes('monospace') ? bodyFont : 'monospace';
