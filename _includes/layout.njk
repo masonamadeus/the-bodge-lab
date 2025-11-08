@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        <script src="/js/theme.js"></script>
         <meta charset="UTF-8">
         <title>BodgeLab: {{ title }}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -53,6 +54,7 @@
             </nav>
         </header>
 
+
         <main class="main-content">
             {% block content %}
                 {{ content | safe }}
@@ -76,10 +78,10 @@
                     </p>
                 {% endif %}
             </div>
-        </main> {# <-- MAIN CONTENT ENDS HERE #}
+        </main>
 
-        {# --- DIRECTORY LISTING IS NOW ITS OWN SECTION --- #}
-        {% if not hideDirectory %}
+        {# --- DIRECTORY LISTING SECTION --- #}
+        {% if directory %}
         <section class="directory-container">
             <hr>
             {# 1. Smart Title Logic #}
@@ -113,13 +115,19 @@
                 <ul class="dir-listing">
                     {% for dir in directoryContents.directories %}
                         <li>
-                            <span>📁</span>
+                            <img src="/site resources/foldericon.svg" alt="Folder" class="icon">
                             <a href="{{ dir.url }}">{{ dir.name }}/</a>
+                        </li>
+                    {% endfor %}
+                    {% for page in directoryContents.pages %}
+                        <li>
+                            <img src="/site resources/pageicon.svg" alt="File" class="icon">
+                            <a href="{{ page.url }}">{{ page.name }}</a>
                         </li>
                     {% endfor %}
                     {% for file in directoryContents.files %}
                         <li>
-                            <span>📄</span>
+                            <img src="/site resources/fileicon.svg" alt="File" class="icon">
                             <a href="{{ file.url }}">{{ file.name }}</a>
                         </li>
                     {% endfor %}

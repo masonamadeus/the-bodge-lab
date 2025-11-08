@@ -1,6 +1,6 @@
 ---
 title: "My First Page"
-hideDirectory: true
+directory: false
 ---
 
 This is my very first page!

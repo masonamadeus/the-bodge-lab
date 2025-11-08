@@ -51,7 +51,6 @@ module.exports = function (eleventyConfig) {
     });
 
     // 3. Image Shortcode (with Download Overlay)
-    // This replicates your custom CSS container
     // Usage: {% image "/path/to/img.jpg", "Alt text for the image" %}
     eleventyConfig.addShortcode("image", function (src, alt = "") {
         return `<div class="image-container">
@@ -63,7 +62,6 @@ module.exports = function (eleventyConfig) {
     });
 
     // 4. Embed Shortcode (for PDF, TXT, etc.)
-    // This uses your iframe container style
     // Usage: {% embed "/path/to/document.pdf" %}
     eleventyConfig.addShortcode("embed", function (src) {
         return `<p>
@@ -77,11 +75,14 @@ module.exports = function (eleventyConfig) {
 
     eleventyConfig.addPassthroughCopy("content");
 
-    // This copies our CSS file
+    // CSS file
     eleventyConfig.addPassthroughCopy({ "_includes/css": "css" });
 
+    // Theme JS Script
+    eleventyConfig.addPassthroughCopy({"_includes/js": "js"});
+
     // --- Collections ---
-    // We removed the old 'posts' and 'tagList' collections.
+    
 
     // --- Config Return ---
     return {
@@ -91,7 +92,7 @@ module.exports = function (eleventyConfig) {
             data: "../_data",
             output: "_site"
         },
-        // We *still* process md and njk files so that our
+        // Still process md and njk files so that our
         // index.md pages are turned into directory listings.
         templateFormats: ["md", "njk", "html"]
     };

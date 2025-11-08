@@ -25,6 +25,7 @@ module.exports = {
 
   layout: "layout.njk",
   download: true,
+  directory: true,
 
   eleventyComputed: {
 
@@ -59,6 +60,7 @@ module.exports = {
 
       let directories = [];
       let files = [];
+      let pages = [];
 
       try {
         if (!fs.existsSync(dirPath)) {
@@ -86,7 +88,7 @@ module.exports = {
           if (TEMPLATE_EXTENSIONS.includes(ext)) {
             if (item === 'index.md' || item === 'index.njk') continue;
             const baseName = path.basename(item, ext);
-            files.push({ name: item, url: `${webPathRoot}${baseName}/` });
+            pages.push({ name: item, url: `${webPathRoot}${baseName}/` });
 
             // 3. Handle ALL OTHER Files (as Media Pages)
           } else {
@@ -101,8 +103,9 @@ module.exports = {
 
       directories.sort((a, b) => a.name.localeCompare(b.name));
       files.sort((a, b) => a.name.localeCompare(b.name));
+      pages.sort((a, b) => a.name.localeCompare(b.name));
 
-      return { directories, files };
+      return { directories, files, pages };
     }
   }
 };

@@ -1,6 +1,5 @@
 ---
 title: My first motherfucking post
-hideDirectory: true
 ---
 
 # Whats up shitbirds

@@ -1,124 +1,169 @@
-/* --- From layout.njk --- */
-body {
-    font-family: system-ui, -apple-system, sans-serif;
-    max-width: 1000px;
-    margin: 2em auto;
-    padding: 0 1em;
-    line-height: 1.5;
+/* --- 1. Root Variables & Theme --- */
+:root {
+  /* These are the "default" fallbacks. 
+    Our client-side JS will override these.
+  */
+  --body-font: system-ui, -apple-system, sans-serif;
+  --mono-font: monospace;
+
+  /* Colors (Calculated from a base hue) */
+  --accent-hue: 210; /* Default blue */
+  --bg-color: hsl(var(--accent-hue), 10%, 99%);
+  --text-color: hsl(var(--accent-hue), 20%, 15%);
+  --text-muted: hsl(var(--accent-hue), 10%, 40%);
+  --border-color: hsl(var(--accent-hue), 20%, 90%);
+  --bg-muted: hsl(var(--accent-hue), 20%, 95%);
+  --accent-color: hsl(var(--accent-hue), 70%, 45%);
+  
+  /* Sizing */
+  --max-width: 1000px;
+  --line-height: 1;
+  --base-spacing: 1em;
 }
+
+/* --- 2. General Page Setup --- */
+body {
+  font-family: var(--body-font);
+  color: var(--text-color);
+  background: var(--bg-color);
+  max-width: var(--max-width);
+  margin: calc(var(--base-spacing) * 2) auto;
+  padding: 0 var(--base-spacing);
+  line-height: var(--line-height);
+}
+
+a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+hr {
+  border: 0;
+  border-bottom: 1px solid var(--border-color);
+  margin: calc(var(--base-spacing) * 2) 0;
+}
+h1 {
+  margin-top: 1.5em;
+}
+
+/* --- 3. Header & Navigation --- */
 .nav-container {
-    margin-bottom: 2em;
+  margin-bottom: calc(var(--base-spacing) * 2);
 }
 .breadcrumb-nav {
-    font-size: 1.1em;
-    margin-bottom: 0.5em;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 0.5em;
+  font-size: 1.1em;
+  margin-bottom: var(--base-spacing);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: var(--base-spacing);
+  color: var(--text-muted);
 }
 .breadcrumb {
-    color: #0066cc;
-    text-decoration: none;
-}
-.breadcrumb:hover {
-    text-decoration: underline;
-}
-.page-nav {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5em 0;
-}
-.nav-link {
-    color: #666;
-    text-decoration: none;
-    font-size: 0.9em;
-}
-.nav-link:hover {
-    color: #0066cc;
-}
-.nav-link.up {
-    font-weight: bold;
+  color: var(--accent-color);
 }
 .current {
-    color: #666;
+  color: var(--text-muted);
 }
 .separator {
-    color: #999;
-    margin: 0 0.2em;
+  margin: 0 0.2em;
 }
-.tag-list {
-    display: inline-flex;
-    gap: 0.5em;
-    margin-left: 1em;
+.page-nav {
+  display: flex;
+  justify-content: right;
+  padding: var(--base-spacing) 0;
 }
-.tag {
-    background: #e9ecef;
-    padding: 0.2em 0.6em;
-    border-radius: 12px;
-    font-size: 0.85em;
-    color: #495057;
-    text-decoration: none;
+.nav-link.up {
+  font-weight: bold;
+  color: var(--text-muted);
 }
-.tag:hover {
-    background: #dee2e6;
-}
-.image-container {
-    position: relative;
-    display: inline-block;
-}
-.image-container img {
-    display: block;
-}
-.download-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    text-decoration: none;
-    font-size: 2em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-.image-container:hover .download-overlay {
-    opacity: 1;
+.nav-link:hover {
+  color: var(--accent-color);
 }
 
-/* --- From directoryListing.njk --- */
+/* --- 4. Main Content Blocks --- */
+.page-meta {
+  margin-top: 0;
+}
+
+/* --- 5. Directory Listing Section --- */
+.directory-container {
+  margin-top: calc(var(--base-spacing) * 2);
+}
+.directory-title {
+  font-size: 1.2em;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5em;
+  margin-bottom: 1em;
+}
 .dir-listing {
-    list-style: none;
-    padding: 0;
+  list-style: none;
+  padding: 0;
 }
 .dir-listing li {
-    font-family: monospace;
-    font-size: 1.1em;
-    margin-bottom: 0.5em;
+  font-family: var(--mono-font);
+  font-size: 1.1em;
+  margin-bottom: 0.5em;
+  display: flex;
+  align-items: center;
 }
-.dir-listing span {
-    display: inline-block;
-    width: 2em;
+.dir-listing .icon {
+  width: 1.2em;
+  height: 1.2em;
+  margin-right: 0.75em;
+  /* Fills the icon with our generated accent color */
+  fill: var(--accent-color);
+  flex-shrink: 0;
 }
 
+/* --- 6. Shortcode & Media Styles --- */
+.image-container {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+.image-container img {
+  display: block;
+  max-width: 100%;
+}
+.download-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  text-decoration: none;
+  font-size: 2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.image-container:hover .download-overlay {
+  opacity: 1;
+}
 .embed-container {
-    border: 1px solid rgba(0, 0, 0, 0.3);
-    background: rgba(0, 0, 0, 0.1);
-    width: 100%;
-    height: 80vh; /* 80% of the viewport height */
+  border: 1px solid var(--border-color);
+  background: var(--bg-muted);
+  width: 100%;
+  height: 80vh;
 }
-
-/* --- New Directory Container --- */
-.directory-container {
-    margin-top: 2em;
+.tag-list {
+  display: inline-flex;
+  gap: 0.5em;
+  margin-left: 1em;
 }
-
-.directory-title {
-    font-size: 1.2em;
-    color: #333;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
-    padding-bottom: 0.5em;
-    margin-bottom: 1em;
+.tag {
+  background: var(--bg-muted);
+  padding: 0.2em 0.6em;
+  border-radius: 12px;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+.tag:hover {
+  background: var(--border-color);
 }
