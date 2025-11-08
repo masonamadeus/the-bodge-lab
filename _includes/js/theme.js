@@ -214,7 +214,7 @@ const final_dark_accent_l = Math.max(l_dark_accent_vs_bg, l_dark_accent_vs_muted
   // 4. Define BOTH Light and Dark Palettes based on these *corrected* values
   const lightPalette = {
     '--bg-color': `hsl(${baseUIHue}, ${light_bg_s}%, ${light_bg_l}%)`,
-    '--bg-color-bright': `hsl(${baseUIHue}, ${light_bg_s}%, ${Math.min(100, light_bg_l + 16)}%)`,
+    '--bg-color-bright': `hsl(${baseUIHue}, ${light_bg_s}%, ${Math.min(100, light_bg_l + 9)}%)`,
     '--text-color': `hsl(${baseUIHue}, ${light_text_s}%, ${final_light_text_on_muted_l}%)`, // Use the most-corrected value
     '--text-muted': `hsl(${baseUIHue}, ${light_text_muted_s}%, ${final_light_text_muted_l}%)`,
     '--accent-color': `hsl(${accent1Hue}, ${accent1_s}%, ${final_light_accent_l}%)`,
