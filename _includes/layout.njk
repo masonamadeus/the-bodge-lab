@@ -43,9 +43,6 @@
                     {% endif %}
                 </div>
                 
-                {% if title and title != "Home" %}
-                    <h1>{{ title }}</h1>
-                {% endif %}
                 {% if date %}
                     <p>
                         <em>Last updated: {{ date | readableDate }}</em>
@@ -83,7 +80,6 @@
         {# --- DIRECTORY LISTING SECTION --- #}
         {% if directory %}
         <section class="directory-container">
-            <hr>
             {# 1. Smart Title Logic #}
             {% set dir_list_title = "" %}
             {% if page.url.endsWith('.html') %}
@@ -108,7 +104,8 @@
                 {% set dir_list_title = title %}
             {% endif %}
             
-            <h2 class="directory-title">{{ dir_list_title | safe }}</h2>
+            <hr>
+            <h3 class="directory-title">{{ dir_list_title | safe }}</h3>
 
             {# 2. Directory Contents Listing #}
             {% if directoryContents %}

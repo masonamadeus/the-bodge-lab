@@ -48,10 +48,10 @@
 
   // Set the *entire* color palette based on the single generated hue
   root.style.setProperty('--accent-hue', baseHue);
-  root.style.setProperty('--bg-color', `hsl(${baseHue}, 20%, 89%)`);
+  root.style.setProperty('--bg-color', `hsl(${baseHue}, 20%, 85%)`);
   root.style.setProperty('--text-color', `hsl(${baseHue}, 50%, 10%)`);
   root.style.setProperty('--text-muted', `hsl(${baseHue}, 10%, 30%)`);
-  root.style.setProperty('--border-color', `hsl(${baseHue}, 20%, 90%)`);
-  root.style.setProperty('--bg-muted', `hsl(${baseHue}, 20%, 95%)`);
-  root.style.setProperty('--accent-color', `hsl(${baseHue}, 70%, 35%)`);
+  root.style.setProperty('--border-color', `hsl(${baseHue}, 20%, 50%)`);
+  root.style.setProperty('--bg-muted', `hsl(${baseHue}, 20%, 75%)`);
+  root.style.setProperty('--accent-color', `hsl(${baseHue}, 70%, 20%)`);
 })();
