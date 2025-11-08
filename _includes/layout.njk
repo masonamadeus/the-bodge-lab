@@ -54,7 +54,7 @@
                 </div>
             </nav>
         </header>
-        {% if content %}
+        {% if content or media %}
             <main class="main-content">
                 {% block content %}
                     {{ content | safe }}
