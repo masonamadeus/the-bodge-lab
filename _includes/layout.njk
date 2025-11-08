@@ -30,8 +30,9 @@
                 <div
                     class="page-nav">
                     {# Left Side: Parent Link #}
+                    {% if page.url != "/" %}
                     <div>
-                        {% if page.url != "/" %}
+                        
                             {# 1. Get the current URL #}
                             {% set my_url = page.url %}
                             {# 2. Strip trailing slash (unless it's the root) #}
@@ -40,17 +41,19 @@
                             {% endif %}
                             {# 3. Find the parent directory path #}
                             {% set parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/' %}
-                            <a href="{{ parent_href }}" class="nav-link up">↑ Parent Directory</a>
-                        {% endif %}
+                            <a href="{{ parent_href }}" class="nav-link up">↑ Up One Level</a>
+                        
                     </div>
+                    {% endif %}
                     {# Right Side: Date #}
+                    
+                    {% if date and page.url != "/" %}
                     <div class="page-meta-date">
-                        {% if date %}
                             <i>
                                 <em>Updated: {{ date | readableDate }}</em>
                             </i>
-                        {% endif %}
                     </div>
+                        {% endif %}
                 </div>
             </nav>
         </header>
@@ -119,8 +122,14 @@
                         </ul>
                     {% endif %}
                 </section>
+                
+        
+        <div class = "site-options-row">
+        <button id="theme-toggle" class="theme-toggle">Dark Mode</button>
+        </div>
             {% endif %}
+            
         {% endif %}
-        <script src="/js/rotato.js"></script>
+        <script src="/js/main.js"></script>
     </body>
 </html>

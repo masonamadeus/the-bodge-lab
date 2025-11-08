@@ -9,6 +9,7 @@
   /* Colors (Calculated from a base hue) */
   --accent-hue: 210; /* Default blue */
   --bg-color: hsl(var(--accent-hue), 10%, 99%);
+  --bg-color-bright: hsl(var(--accent-hue), 15%, 100%);
   --text-color: hsl(var(--accent-hue), 20%, 15%);
   --text-muted: hsl(var(--accent-hue), 10%, 40%);
   --border-color: hsl(var(--accent-hue), 20%, 90%);
@@ -45,7 +46,7 @@ hr {
   margin: calc(var(--base-spacing) * 2) 0;
 }
 h1 {
-  margin-top: 1.5em;
+  margin-top: 0.5em;
 }
 
 /* --- 3. Header & Navigation --- */
@@ -56,8 +57,10 @@ h1 {
   font-size: 1.1em;
   border-bottom: 1px solid var(--border-color);
   padding-bottom: calc(var(--base-spacing)*0.5);
+  padding-top: calc(var(--base-spacing)*0.5);
   color: var(--text-muted);
   line-height:normal;
+  background-color: var(--bg-muted);
 }
 .breadcrumb {
   color: var(--accent-color);
@@ -96,9 +99,18 @@ h1 {
   margin-top: 0;
 }
 
+.main-content {
+  background-color: var(--bg-color-bright);
+  padding-top: var(--base-spacing);
+  padding-bottom: var(--base-spacing);
+  padding-left: var(--base-spacing);
+  padding-right: var(--base-spacing);
+}
+
 /* --- 5. Directory Listing Section --- */
 .directory-container {
-  margin-top: 0;
+  background-color: var(--bg-muted);
+  padding: calc(var(--base-spacing)*0.5);
 }
 .directory-title {
   font-size: 1.2em;
@@ -183,4 +195,39 @@ h1 {
 }
 .tag:hover {
   background: var(--border-color);
+}
+
+.site-options-row {
+  /* 1. Use Flexbox to manage items inside */
+  display: flex;
+
+  /* 2. Push all items to the right */
+  justify-content: flex-end; 
+  
+  /* 3. Add space *between* buttons (for when you add more) */
+  gap: 0.5em;
+
+  /* 4. Keep your original top margin */
+  margin-top: -0.5em;
+  
+  /* Remove all other styles (text-align, translate, etc.) */
+}
+
+.theme-toggle {
+  /* --- Your original styles --- */
+  background: var(--bg-muted);
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-right: none;
+  color: var(--text-muted);
+
+  /* --- Styles moved from .site-options-row --- */
+  padding: 0.4em 0.8em;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.theme-toggle:hover {
+  color: var(--text-color);
+  border-color: var(--accent-color);
 }
