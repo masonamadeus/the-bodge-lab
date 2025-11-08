@@ -73,6 +73,84 @@ module.exports = function (eleventyConfig) {
 </p>`;
     });
 
+    // 5. YouTube Shortcode
+    // Usage: {% yt "VIDEO_ID" %} or {% yt "https://www.youtube.com/watch?v=..." %}
+    eleventyConfig.addShortcode("yt", function (videoUrl) {
+      // Helper function to extract the ID
+      function getYouTubeID(url) {
+        let ID = '';
+        url = url.replace(/(>|<)/gi, '').split(/(vi\/|v=|\/v\/|youtu\.be\/|\/embed\/)/);
+        if (url[2] !== undefined) {
+          ID = url[2].split(/[^0-9a-z_\-]/i);
+          ID = ID[0];
+        } else {
+          ID = url;
+        }
+        return ID;
+      }
+      
+      const videoID = getYouTubeID(videoUrl);
+
+      // We wrap it in a div for responsive styling
+      return `<div class="video-embed-container">
+  <iframe
+    src="https://www.youtube.com/embed/${videoID}"
+    title="YouTube video player"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen
+    loading="lazy">
+  </iframe>
+</div>`;
+    });
+
+    // 6. NEW: Layout Row (Flex Container)
+    // Usage: {% row %} ... {% endrow %}
+    eleventyConfig.addPairedShortcode("row", function (content) {
+      // This creates the flexbox container
+      return `<div class="layout-row">${content}</div>`;
+    });
+
+    // 7. NEW: Layout Column (Flex Item)
+    // Usage: {% col %} or {% col "half" %}
+    eleventyConfig.addPairedShortcode("col", function (content, width) {
+      let className = 'layout-col';
+      if (width) {
+        // Creates classes like "layout-col-half", "layout-col-one-third"
+        className += ` layout-col-${width}`;
+      }
+      return `<div class="${className}">${content}</div>`;
+    });
+
+    // 8. NEW: "Grid" Shortcode (The *easy* way)
+    //    Usage: {% grid "half, half" %} ...content... ...content... {% endgrid %}
+    eleventyConfig.addPairedShortcode("grid", function (content, widths) {
+      
+      // 1. Split the content at our '' separator
+      const columns = content.split("``");
+      
+      // 2. Split the widths string into an array
+      //    "half, half" -> ["half", "half"]
+      const widthArray = (widths || "half, half").split(',').map(s => s.trim());
+
+      // 3. Build the HTML for each column
+      const columnHtml = columns.map((colContent, i) => {
+        // Get the width for this column, or use the last one if undefined
+        const width = widthArray[i] || widthArray[widthArray.length - 1] || '';
+        
+        let className = 'layout-col';
+        if (width) {
+          className += ` layout-col-${width}`;
+        }
+        
+        // Return the column, wrapping the user's content
+        return `<div class="${className}">${colContent}</div>`;
+      }).join('');
+
+      // 4. Wrap all columns in the "layout-row" container
+      return `<div class="layout-row">${columnHtml}</div>`;
+    });
+
     // --- Passthrough Copy ---
 
     // Entire content folder. NECESSARY

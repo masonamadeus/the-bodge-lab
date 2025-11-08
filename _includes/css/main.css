@@ -5,6 +5,7 @@
   */
   --body-font: system-ui, -apple-system, sans-serif;
   --mono-font: monospace;
+  
 
   /* Colors (Calculated from a base hue) */
   --accent-hue: 210; /* Default blue */
@@ -230,4 +231,66 @@ h1 {
 .theme-toggle:hover {
   color: var(--text-color);
   border-color: var(--accent-color);
+}
+
+/* This div is the wrapper from the shortcode */
+.video-embed-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 Aspect Ratio (9 / 16 = 0.5625) */
+  background: var(--bg-muted); /* Shows a bg color while loading */
+}
+
+/* This is the iframe inside */
+.video-embed-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* --- 8. Layout Shortcodes --- */
+.layout-row {
+  display: flex;
+  flex-wrap: wrap; /* Allows columns to stack on mobile */
+  gap: 1.5em;      /* This is the "gutter" between columns */
+  margin: 1.5em 0; /* Adds space above/below the row */
+}
+
+.layout-col {
+  /* Mobile-first: 100% width */
+  flex-basis: 100%;
+}
+
+/* On screens 768px and wider (tablets/desktops) */
+@media (min-width: 768px) {
+  .layout-col {
+    /* Default column: grows to fill space */
+    flex: 1;
+    /* Reset basis to auto */
+    flex-basis: auto;
+  }
+  
+  .layout-col-half {
+    /* 50% minus half the gap */
+    flex-basis: calc(50% - 0.75em);
+    flex-grow: 0; /* Don't grow or shrink */
+  }
+
+  .layout-col-one-third {
+    flex-basis: calc(33.333% - 1em);
+    flex-grow: 0;
+  }
+
+  .layout-col-two-thirds {
+    flex-basis: calc(66.666% - 0.5em);
+    flex-grow: 0;
+  }
+
+  .layout-col > :first-child {
+  margin-top: 0;
+}
 }
