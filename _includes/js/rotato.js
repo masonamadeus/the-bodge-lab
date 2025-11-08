@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxTilt = 0.5; 
 
     // get all the main page containers
-    const elements = document.querySelectorAll('header, main, section, div');
+    const elements = document.querySelectorAll('header, main, section, div, h1, h2, h3, h4, h5, h6, p');
 
     // 2. Loop through each one
     elements.forEach(el => {
