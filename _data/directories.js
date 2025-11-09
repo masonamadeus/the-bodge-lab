@@ -1,5 +1,4 @@
 // _data/directories.js
-const fileTree = require('./filetree.js');
 
 function findMissingIndexes(node) {
     let missing = [];
@@ -21,11 +20,11 @@ function findMissingIndexes(node) {
     return missing;
 }
 
-module.exports = () => {
+module.exports = (configData) => {
     try {
-        return findMissingIndexes(fileTree);
+        return findMissingIndexes(configData.filetree);
     } catch (err) {
-        console.error("[directories.js] Failed to process fileTree:", err);
+        console.error("[directories.js] Failed to process configData.filetree:", err);
         return [];
     }
 };

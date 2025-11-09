@@ -1,7 +1,7 @@
 ---
 title: "Theme Roller"
 download: false
-directory: false
+directory: true
 ---
 <style>
     /* --- 7. Theme Roller Styles --- */

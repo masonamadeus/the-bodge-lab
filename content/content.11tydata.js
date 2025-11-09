@@ -2,7 +2,6 @@
 const { execSync } = require("child_process");
 const fs = require('fs');
 const path = require('path');
-const fileTree = require('../_data/filetree.js');
 
 // --- This is your original Git function. We keep it! ---
 function getGitLastModified(inputPath) {
@@ -53,9 +52,9 @@ module.exports = {
 
   eleventyComputed: {
 
-    date: data => {
+    /*date: data => {
       return data.date || getGitLastModified(data.page.inputPath);
-    },
+    },*/
 
     directoryTitle: data => {
       
@@ -64,9 +63,9 @@ module.exports = {
 
         if (pageUrl.endsWith('.html')) {
             const parentUrl = path.dirname(pageUrl) + '/';
-            dirNode = findNodeByWebPath(parentUrl, fileTree);
+            dirNode = findNodeByWebPath(parentUrl, data.filetree);
         } else {
-            dirNode = findNodeByWebPath(pageUrl, fileTree);
+            dirNode = findNodeByWebPath(pageUrl, data.filetree);
         }
 
         if (!dirNode && !pageUrl.endsWith('.html') && pageUrl !== '/') {
@@ -77,7 +76,7 @@ module.exports = {
             const parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/';
             const parentUrl = decodeURIComponent(parent_href.replace(/&amp;/g, '&'));
 
-            dirNode = findNodeByWebPath(parentUrl, fileTree); // Try again with parent
+            dirNode = findNodeByWebPath(parentUrl, data.filetree); // Try again with parent
         }
 
         if (dirNode && dirNode.title) {
@@ -102,7 +101,7 @@ module.exports = {
       
       let cleanUrl = decodeURIComponent(directoryUrl.replace(/&amp;/g, '&'));
       
-      let dirNode = findNodeByWebPath(cleanUrl, fileTree); // This will now work
+      let dirNode = findNodeByWebPath(cleanUrl, data.filetree); // This will now work
 
       // If the node wasn't found, it's a "post" page.
       // Find its parent URL (using the layout's logic) and try again.
@@ -115,7 +114,7 @@ module.exports = {
           
           // IMPORTANT: We set cleanUrl to the PARENT's URL now
           cleanUrl = decodeURIComponent(parent_href.replace(/&amp;/g, '&')); 
-          dirNode = findNodeByWebPath(cleanUrl, fileTree); // Try again
+          dirNode = findNodeByWebPath(cleanUrl, data.filetree); // Try again
       }
 
       if (!dirNode || !dirNode.children) {
@@ -134,7 +133,7 @@ module.exports = {
         } 
         else if (item.isTemplate && !item.isIndex) {
             const baseName = path.basename(item.name, item.ext);
-            pages.push({ name: item.name, url: `${itemUrl}${baseName}/` });
+            pages.push({ name: `⇲ ${baseName}`, url: `${itemUrl}${baseName}/` });
         } 
         else if (item.isMedia) {
             files.push({ name: item.name, url: `${itemUrl}${item.name}.html` });

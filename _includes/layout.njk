@@ -45,10 +45,10 @@
                         </div>
                     {% endif %}
                     {# Left Side: Date #}
-                    {% if date and page.url != "/" %}
+                    {% if page.date and page.url != "/" %}
                         <div class="page-meta-date">
                             <i>
-                                <em>Updated: {{ date | readableDate }}</em>
+                                <em>Modified: {{ page.date | readableDate }}(ish)</em>
                             </i>
                         </div>
                     {% endif %}
@@ -112,7 +112,7 @@
                                     <span
                                         class="icon"
                                         style="-webkit-mask-image: url('/config/foldericon.svg'); mask-image: url('/config/foldericon.svg');"></span>
-                                    <a href="{{ dir.url }}">{{ dir.name }}</a>
+                                    <a href="{{ dir.url }}">{{ dir.name }}\</a>
                                 </li>
                             {% endfor %}
                             {% for page in directoryContents.pages %}

@@ -1,6 +1,4 @@
 // _data/assets.js
-const fileTree = require('./filetree.js');
-
 function getAssets(node) {
     let assets = [];
     if (!node || !node.children) {
@@ -21,11 +19,11 @@ function getAssets(node) {
     return assets;
 }
 
-module.exports = () => {
+module.exports = (configData) => {
     try {
-        return getAssets(fileTree);
+        return getAssets(configData.filetree);
     } catch (err) {
-        console.error("[assets.js] Failed to process fileTree:", err);
+        console.error("[assets.js] Failed to process configData.filetree:", err);
         return [];
     }
 };

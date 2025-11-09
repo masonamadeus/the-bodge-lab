@@ -23,7 +23,6 @@ const SYSTEM_FILES = [
 ];
 
 const INDEX_FILES = TEMPLATE_EXTENSIONS.map(ext => `index${ext}`);
-const contentDir = path.join(__dirname, '..', 'content');
 
 function getMediaType(ext) {
     if (IMAGE_EXTENSIONS.includes(ext)) return 'image';
@@ -113,15 +112,6 @@ function scanDir(dirPath, webPath) {
 }
 
 // --- Module Export ---
-try {
-    if (!fs.existsSync(contentDir)) {
-        console.warn("[filetree.js] 'content' directory not found.");
-        module.exports = {};
-    } else {
-        const fileTree = scanDir(contentDir, '/');
-        module.exports = fileTree;
-    }
-} catch (err) {
-    console.error("[filetree.js] Failed to scan directories:", err);
-    module.exports = {};
-}
+module.exports = {
+    scanDir
+};
