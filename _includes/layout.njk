@@ -2,6 +2,7 @@
 <html lang="en">
     <head>
         <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
         <meta charset="UTF-8">
         <title>BodgeLab: {{ title }}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,24 +32,16 @@
                     class="page-nav">
                     
                     {# Right Side: Parent Link #}
-                    {% if page.url != "/" %}
+                    {% if parentUrl %}
                         <div>
-                            {# 1. Get the current URL #}
-                            {% set my_url = page.url %}
-                            {# 2. Strip trailing slash (unless it's the root) #}
-                            {% if my_url.endsWith('/') and my_url.length > 1 %}
-                                {% set my_url = my_url.substring(0, my_url.length - 1) %}
-                            {% endif %}
-                            {# 3. Find the parent directory path #}
-                            {% set parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/' %}
-                            <a href="{{ parent_href }}" class="nav-link up">⇡ Up One Level</a>
+                            <a href="{{ parentUrl }}" class="nav-link up">⇡ Up One Level</a>
                         </div>
                     {% endif %}
                     {# Left Side: Date #}
                     {% if page.date and page.url != "/" %}
                         <div class="page-meta-date">
                             <i>
-                                <em>Modified: {{ page.date | readableDate }}(ish)</em>
+                                <em>Modified: {{ page.date | readableDate }}</em>
                             </i>
                         </div>
                     {% endif %}
@@ -90,16 +83,8 @@
             {% if hasContent %}
                 <section class="directory-container">
                     <div class="directory-header">
-                        {% if page.url != "/" %}
-                            {# 1. Get the current URL #}
-                            {% set my_url = page.url %}
-                            {# 2. Strip trailing slash ... #}
-                            {% if my_url.endsWith('/') and my_url.length > 1 %}
-                                {% set my_url = my_url.substring(0, my_url.length - 1) %}
-                            {% endif %}
-                            {# 3. Find the parent directory path #}
-                            {% set parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/' %}
-                            <a href="{{ parent_href }}" class="nav-link-small up">..\ </a>
+                        {% if parentUrl %}
+                            <a href="{{ parentUrl }}" class="nav-link-small up">..\ </a>
                         {% endif %}
                         <h3 class="directory-title">{{ directoryTitle | safe }}</h3>
                   
@@ -115,10 +100,18 @@
                                     <a href="{{ dir.url }}">{{ dir.name }}\</a>
                                 </li>
                             {% endfor %}
-                            {% for page in directoryContents.pages %}
+                            {% for item in directoryContents.pages %}
                                 <li>
                                     <span class="icon" style="-webkit-mask-image: url('/config/pageicon.svg'); mask-image: url('/config/pageicon.svg');"></span>
-                                    <a href="{{ page.url }}">{{ page.name }}</a>
+                                    
+                                    {% if item.isCurrent %}
+                                        {# It's the current page, so make it bold and not a link #}
+                                        <strong>{{ item.name }}</strong>
+                                    {% else %}
+                                        {# It's not the current page, so make it a normal link #}
+                                        <a href="{{ item.url }}">{{ item.name }}</a>
+                                    {% endif %}
+
                                 </li>
                             {% endfor %}
                             {% for file in directoryContents.files %}

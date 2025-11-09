@@ -1,48 +1,47 @@
 // content/content.11tydata.js
-const { execSync } = require("child_process");
-const fs = require('fs');
 const path = require('path');
 
-// --- This is your original Git function. We keep it! ---
-function getGitLastModified(inputPath) {
-  try {
-    const cmd = `git log -1 --format=%cI "${inputPath}"`;
-    const date = execSync(cmd).toString().trim();
-    if (date) {
-      return new Date(date);
+/**
+ * Normalizes a web path from data.page.url to be used as a consistent lookup key.
+ * - Decodes URL-encoded characters (e.g., /Bug%20&%20Moss/ -> /Bug & Moss/)
+ * - Replaces backslashes
+ * - Removes trailing slash (unless it's the root)
+ */
+function normalizeLookupKey(webPath) {
+    let key = path.normalize(decodeURIComponent(webPath.replace(/&amp;/g, '&'))).replace(/\\/g, '/');
+    if (key.length > 1 && key.endsWith('/')) {
+        key = key.slice(0, -1);
     }
-  } catch (e) {
-    // ...
-  }
-  return new Date();
+    // Handle the root path, which might become an empty string
+    return key || '/';
 }
 
 /**
- * Helper function to find a node in the filetree by its webPath.
- * This was fixed in the previous step and is correct.
+ * This is the new helper function.
+ * It correctly finds the directory node that should be listed.
  */
-function findNodeByWebPath(webPath, node) {
-    if (!node) return null;
-    let cleanWebPath = path.normalize(webPath).replace(/\\/g, '/');
-    let cleanNodePath = path.normalize(node.webPath).replace(/\\/g, '/');
-    if (cleanWebPath.length > 1 && cleanWebPath.endsWith('/')) {
-        cleanWebPath = cleanWebPath.slice(0, -1);
-    }
-    if (cleanNodePath.length > 1 && cleanNodePath.endsWith('/')) {
-        cleanNodePath = cleanNodePath.slice(0, -1);
-    }
-    if (cleanNodePath === cleanWebPath) {
-        return node;
-    }
-    if (node.isDirectory && node.children) {
-        for (const child of node.children) {
-            const found = findNodeByWebPath(webPath, child);
-            if (found) return found;
-        }
-    }
-    return null;
-}
+function getDirectoryNode(data) {
+    const pageKey = normalizeLookupKey(data.page.url);
 
+    // CASE 1: This is an auto-generated directory page.
+    // We can reliably identify it by its inputPath.
+    if (data.page.inputPath.endsWith("autoDirectory.njk")) {
+        // We want to list *this* directory's children.
+        return data.filetree.lookupByPath[pageKey];
+    } 
+    
+    // CASE 2: This is an index.md page.
+    // It also functions as the index for its own directory.
+    if (data.page.inputPath.endsWith("index.md")) {
+        // We also want to list *this* directory's children.
+        return data.filetree.lookupByPath[pageKey];
+    }
+    
+    // CASE 3: This is a "File" page (e.g., categories.md or any-post.md)
+    // We want to list its *parent's* children.
+    const parentKey = normalizeLookupKey(path.dirname(pageKey));
+    return data.filetree.lookupByPath[parentKey];
+}
 
 
 module.exports = {
@@ -52,91 +51,77 @@ module.exports = {
 
   eleventyComputed: {
 
-    /*date: data => {
-      return data.date || getGitLastModified(data.page.inputPath);
-    },*/
-
     directoryTitle: data => {
-      
-        const pageUrl = decodeURIComponent(data.page.url.replace(/&amp;/g, '&'));
-        let dirNode = null;
-
-        if (pageUrl.endsWith('.html')) {
-            const parentUrl = path.dirname(pageUrl) + '/';
-            dirNode = findNodeByWebPath(parentUrl, data.filetree);
-        } else {
-            dirNode = findNodeByWebPath(pageUrl, data.filetree);
+        // Use the helper to find the correct directory node
+        const dirNode = getDirectoryNode(data);
+        if (dirNode) {
+            return dirNode.title || dirNode.name;
         }
-
-        if (!dirNode && !pageUrl.endsWith('.html') && pageUrl !== '/') {
-            let my_url = data.page.url; // Use original (potentially encoded) URL
-            if (my_url.endsWith('/') && my_url.length > 1) {
-                my_url = my_url.substring(0, my_url.length - 1);
-            }
-            const parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/';
-            const parentUrl = decodeURIComponent(parent_href.replace(/&amp;/g, '&'));
-
-            dirNode = findNodeByWebPath(parentUrl, data.filetree); // Try again with parent
-        }
-
-        if (dirNode && dirNode.title) {
-            return dirNode.title;
-        } else if (dirNode) {
-            return dirNode.name;
-        }
-        
+        // Fallback
         return data.title || "Directory";
     },
 
+    parentUrl: data => {
+      // The root page has no parent
+      if (data.page.url === "/") {
+        return null;
+      }
+
+      let my_url = data.page.url;
+
+      // Strip trailing slash if it exists
+      if (my_url.length > 1 && my_url.endsWith('/')) {
+        my_url = my_url.substring(0, my_url.length - 1);
+      }
+      
+      // Find the last slash and get everything before it
+      return my_url.substring(0, my_url.lastIndexOf('/')) + '/';
+    },
+
     directoryContents: data => {
-      let directoryUrl;
-
-      if (data.physicalPath) {
-        directoryUrl = data.physicalPath;
-      } else if (data.page.url.endsWith('.html')) {
-        directoryUrl = path.dirname(data.page.url) + '/';
-      } else {
-        directoryUrl = data.page.url;
-      }
-      
-      let cleanUrl = decodeURIComponent(directoryUrl.replace(/&amp;/g, '&'));
-      
-      let dirNode = findNodeByWebPath(cleanUrl, data.filetree); // This will now work
-
-      // If the node wasn't found, it's a "post" page.
-      // Find its parent URL (using the layout's logic) and try again.
-      if (!dirNode && !data.physicalPath && !data.page.url.endsWith('.html') && data.page.url !== '/') {
-          let my_url = data.page.url; // Use original (potentially encoded) URL
-          if (my_url.endsWith('/') && my_url.length > 1) {
-              my_url = my_url.substring(0, my_url.length - 1);
-          }
-          const parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/';
-          
-          // IMPORTANT: We set cleanUrl to the PARENT's URL now
-          cleanUrl = decodeURIComponent(parent_href.replace(/&amp;/g, '&')); 
-          dirNode = findNodeByWebPath(cleanUrl, data.filetree); // Try again
-      }
+      // Use the helper to find the correct directory node
+      const dirNode = getDirectoryNode(data);
 
       if (!dirNode || !dirNode.children) {
         return { directories: [], files: [], pages: [] };
       }
 
+      // Use the dirNode's webPath as the base for link URLs
+      const cleanUrl = dirNode.webPath === '/' ? '/' : `${dirNode.webPath}/`;
+      
       let directories = [];
       let files = [];
       let pages = [];
 
       for (const item of dirNode.children) {
-        const itemUrl = cleanUrl.endsWith('/') ? cleanUrl : cleanUrl + '/';
-
+        // FOR DIRECTORY PAGES
         if (item.isDirectory) {
-            directories.push({ name: item.name, url: `${itemUrl}${item.name}/` });
+            directories.push({ name: item.name, url: `${cleanUrl}${item.name}/` });
         } 
+
+        // FOR TEMPLATE PAGES
         else if (item.isTemplate && !item.isIndex) {
             const baseName = path.basename(item.name, item.ext);
-            pages.push({ name: `⇲ ${baseName}`, url: `${itemUrl}${baseName}/` });
-        } 
+            // This is the URL for the item in the list
+            const itemUrl = `${cleanUrl}${baseName}/`;
+            
+            // This is the URL of the page we're currently on
+            const mainPageUrl = normalizeLookupKey(data.page.url) + '/';
+
+            // Compare them!
+            const isCurrent = (itemUrl === mainPageUrl);
+
+            pages.push({ 
+                name: `» ${baseName}`, 
+                url: itemUrl,
+                isCurrent: isCurrent  // Add the new property
+            });
+        }
+
+        // FOR MEDIA FILES
         else if (item.isMedia) {
-            files.push({ name: item.name, url: `${itemUrl}${item.name}.html` });
+            // Link to the media *page*, not the raw file
+            files.push({ name: item.name, url: `${cleanUrl}${item.name}.html` });
         }
       }
 

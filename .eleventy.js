@@ -3,8 +3,8 @@
 // Node.js modules for file system and path handling
 const { DateTime } = require("luxon");
 const path = require('path');
-const { MEDIA_EXTENSIONS } = require('./_includes/config/fileTypes.js');
-const { scanDir } = require('./_11ty/filetree.js');
+const { MEDIA_EXTENSIONS } = require('./_11ty/fileTypes.js');
+const { generateFileTreeData } = require('./_11ty/filetree.js');
 const gitCommitDate = require("eleventy-plugin-git-commit-date");
 
 let fileTreeCache = null;
@@ -22,12 +22,9 @@ module.exports = function (eleventyConfig) {
       return fileTreeCache;
     }
 
-    // Run the expensive scan ONCE
-    // Note: You should convert scanDir to be async (e.g., use fs.promises.readdir)
-    // For now, this will at least cache the sync version.
-    const contentDir = path.join(__dirname, 'content');
-    fileTreeCache = scanDir(contentDir, '/'); // Assuming scanDir is your main function
 
+    const contentDir = path.join(__dirname, 'content');
+    fileTreeCache = generateFileTreeData(contentDir);
     return fileTreeCache;
   });
 
@@ -57,7 +54,7 @@ module.exports = function (eleventyConfig) {
 
   // --- Shortcodes ---
 
-  // 1. Video Shortcode
+  //  Video Shortcode
   // Usage: {% video "/path/to/my/video.mp4" %}
   eleventyConfig.addShortcode("video", function (src) {
     return `<video controls style="width: 100%;">
@@ -66,7 +63,7 @@ module.exports = function (eleventyConfig) {
 </video>`;
   });
 
-  // 2. Audio Shortcode
+  // Audio Shortcode
   // Usage: {% audio "/path/to/my/audio.mp3" %}
   eleventyConfig.addShortcode("audio", function (src) {
     return `<audio controls style="width: 100%;">
@@ -75,7 +72,7 @@ module.exports = function (eleventyConfig) {
 </audio>`;
   });
 
-  // 3. Image Shortcode (with Download Overlay)
+  // Image Shortcode (with Download Overlay)
   // Usage: {% image "/path/to/img.jpg", "Alt text for the image" %}
   eleventyConfig.addShortcode("image", function (src, alt = "") {
     return `<div class="image-container">
@@ -86,7 +83,7 @@ module.exports = function (eleventyConfig) {
 </div>`;
   });
 
-  // 4. Embed Shortcode (for PDF, TXT, etc.)
+  // Embed Shortcode (for PDF, TXT, etc.)
   // Usage: {% embed "/path/to/document.pdf" %}
   eleventyConfig.addShortcode("embed", function (src) {
     return `<p>
@@ -96,7 +93,18 @@ module.exports = function (eleventyConfig) {
 </p>`;
   });
 
-  // 5. YouTube Shortcode
+  // 3D Model Shortcode
+    // Usage: {% model "/path/to/my-model.glb" %}
+    eleventyConfig.addShortcode("3d", function (src) {
+      return `<model-viewer 
+  src="${src}" 
+  camera-controls 
+  auto-rotate 
+  style="width: 100%; height: 400px; background-color: var(--bg-muted);">
+</model-viewer>`;
+    });
+
+  // YouTube Shortcode
   // Usage: {% yt "VIDEO_ID" %} or {% yt "https://www.youtube.com/watch?v=..." %}
   eleventyConfig.addShortcode("yt", function (videoUrl) {
     // Helper function to extract the ID

@@ -16,32 +16,36 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.transform = `rotate(${randomTilt}deg)`;
     });
 
+    // LIGHT / DARK MODE TOGGLE
     (function() {
     const toggleButton = document.getElementById('theme-toggle');
     if (toggleButton) {
       
-      // Helper function to apply a palette (no reload needed!)
-      function applyTheme(theme, palette) {
-        const root = document.documentElement;
-        for (const [key, value] of Object.entries(palette)) {
-          root.style.setProperty(key, value);
-        }
-        root.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
-      }
-      
+      // The toggle button's click listener
       toggleButton.addEventListener('click', () => {
         const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        let newTheme;
         
         if (currentTheme === 'light') {
           // Switch to Dark
+          newTheme = 'dark';
           toggleButton.innerText = "Light Mode";
-          applyTheme('dark', window.__THEME__.dark);
         } else {
           // Switch to Light
+          newTheme = 'light';
           toggleButton.innerText = "Dark Mode";
-          applyTheme('light', window.__THEME__.light);
         }
+        
+        // Call the global function from theme.js
+        if (window.applyTheme) {
+          window.applyTheme(newTheme);
+        }
+
+        // Dispatch an event so the customizer page knows we toggled
+        const event = new CustomEvent('theme:toggled', {
+          detail: { newTheme: newTheme }
+        });
+        document.dispatchEvent(event);
       });
       
       // Set initial button text

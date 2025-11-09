@@ -31,9 +31,9 @@ directory: true
 </style>
 ## Re-roll Your Theme
 
-Your current theme is generated from a unique "seed" based on your browser.
+When you first visited The Bodge Lab, I created a custom theme just for you - based on a bunch of your device and browser data!
 
-If you don't like it, you can get a new random one here. This new theme will be saved locally and used on all subsequent visits.
+If you don't like the theme I made for you, you can get a new random theme here! This new theme will be saved locally and used on all subsequent visits.
 
 <button id="theme-reroll" class="theme-roller-button">🎲 Re-roll Theme</button>
 <button id="theme-reset" class="theme-roller-button reset">Reset to Default</button>
@@ -47,26 +47,27 @@ document.addEventListener('DOMContentLoaded', () => {
       if (rerollButton) {
         // 1. Re-roll Button
         rerollButton.addEventListener('click', () => {
+          // Disable any custom theme
+          localStorage.removeItem('customThemeFull');
+          
           // Generate a new random seed
           const newSeed = Math.floor(Math.random() * 99999999);
-          
-          // Store it in localStorage
           localStorage.setItem('themeSeed', newSeed.toString());
           
-          // Reload the page to see the new theme
           location.reload();
         });
 
         // 2. Reset Button
         resetButton.addEventListener('click', () => {
+          // Disable any custom theme
+          localStorage.removeItem('customThemeFull');
+
           // Remove the custom seed
           localStorage.removeItem('themeSeed');
           
-          // Reload the page to get the default fingerprint theme
           location.reload();
         });
       }
     })();
-
 });
 </script>

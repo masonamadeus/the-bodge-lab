@@ -1,10 +1,11 @@
 ---
 title: "All Categories"
+directory: false
 ---
 
 # All Categories
 
-A list of all topics on this site.
+A list of all tags on this site.
 
 {% if collections.tagList %}
   <ul>
