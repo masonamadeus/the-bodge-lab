@@ -44,6 +44,8 @@ function findNodeByWebPath(webPath, node) {
     return null;
 }
 
+
+
 module.exports = {
   layout: "layout.njk",
   download: true,
@@ -56,7 +58,7 @@ module.exports = {
     },
 
     directoryTitle: data => {
-        // --- FIX #1: DECODE THE URL ---
+      
         const pageUrl = decodeURIComponent(data.page.url.replace(/&amp;/g, '&'));
         let dirNode = null;
 
@@ -65,6 +67,17 @@ module.exports = {
             dirNode = findNodeByWebPath(parentUrl, fileTree);
         } else {
             dirNode = findNodeByWebPath(pageUrl, fileTree);
+        }
+
+        if (!dirNode && !pageUrl.endsWith('.html') && pageUrl !== '/') {
+            let my_url = data.page.url; // Use original (potentially encoded) URL
+            if (my_url.endsWith('/') && my_url.length > 1) {
+                my_url = my_url.substring(0, my_url.length - 1);
+            }
+            const parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/';
+            const parentUrl = decodeURIComponent(parent_href.replace(/&amp;/g, '&'));
+
+            dirNode = findNodeByWebPath(parentUrl, fileTree); // Try again with parent
         }
 
         if (dirNode && dirNode.title) {
@@ -87,10 +100,23 @@ module.exports = {
         directoryUrl = data.page.url;
       }
       
-      // --- FIX #2: DECODE THE URL ---
-      const cleanUrl = decodeURIComponent(directoryUrl.replace(/&amp;/g, '&'));
+      let cleanUrl = decodeURIComponent(directoryUrl.replace(/&amp;/g, '&'));
       
-      const dirNode = findNodeByWebPath(cleanUrl, fileTree); // This will now work
+      let dirNode = findNodeByWebPath(cleanUrl, fileTree); // This will now work
+
+      // If the node wasn't found, it's a "post" page.
+      // Find its parent URL (using the layout's logic) and try again.
+      if (!dirNode && !data.physicalPath && !data.page.url.endsWith('.html') && data.page.url !== '/') {
+          let my_url = data.page.url; // Use original (potentially encoded) URL
+          if (my_url.endsWith('/') && my_url.length > 1) {
+              my_url = my_url.substring(0, my_url.length - 1);
+          }
+          const parent_href = my_url.substring(0, my_url.lastIndexOf('/')) + '/';
+          
+          // IMPORTANT: We set cleanUrl to the PARENT's URL now
+          cleanUrl = decodeURIComponent(parent_href.replace(/&amp;/g, '&')); 
+          dirNode = findNodeByWebPath(cleanUrl, fileTree); // Try again
+      }
 
       if (!dirNode || !dirNode.children) {
         return { directories: [], files: [], pages: [] };
