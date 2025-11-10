@@ -151,7 +151,7 @@ module.exports = function (eleventyConfig) {
     src="${resolvedSrc}" 
     camera-controls 
     auto-rotate 
-    poster="../config/3dloading.svg" 
+    poster="/config/3dloading.svg" 
     style="width: 100%; height: 400px; background-color: var(--bg-muted);">
   </model-viewer>
   <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p>
