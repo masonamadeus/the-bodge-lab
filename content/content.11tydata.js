@@ -71,28 +71,26 @@ function extractImage(content, page) {
     return null;
   }
   
-  // Regex to find: {% image "path/to/image.jpg" ... %}
   const imageRegex = /\{%\s*image\s*\"([^\"]+)\"/;
   const match = content.match(imageRegex);
 
   if (match && match[1]) {
-    const imagePath = match[1]; // e.g., "./files/TEMPTATIONS_LQ.webp"
+    const imagePath = match[1];
     
-    // Resolve the relative path into a root-relative web path
     try {
-      // 1. Get the directory of the markdown file
       const pageDir = path.dirname(page.inputPath);
       
-      // 2. Resolve the relative image path from that directory
+      // --- THIS IS THE FIX ---
+      // __dirname is *already* the 'content' folder.
+      const contentDir = path.resolve(__dirname); 
+      // --- END FIX ---
+      
+      // 2. Resolve the relative image path from the page's directory
       const physicalImagePath = path.resolve(pageDir, imagePath);
       
-      // 3. Get the root 'content' directory
-      const contentDir = path.resolve(__dirname); // This works because we are in /content/
-      
-      // 4. Get the relative path from /content/ to the image
+      // 3. Get the relative path from /content/ to the image
       const webPath = path.relative(contentDir, physicalImagePath);
       
-      // 5. Ensure it's a web-friendly path (forward slashes)
       return '/' + webPath.replace(/\\/g, '/');
     } catch (e) {
       console.warn(`[SEO] Could not resolve image path: ${imagePath} in ${page.inputPath}`);
@@ -102,26 +100,28 @@ function extractImage(content, page) {
   return null;
 }
 
-/**
- * Extracts the first H1 from raw markdown.
- */
+// this is supposed to extract the first h1 from markdown content
 function extractH1(content) {
   if (!content) {
+    console.log("no content")
     return null;
   }
-  
-  // 1. Remove front matter (if it exists) to avoid matching a title *in* the front matter.
-  const contentOnly = content.replace(/---[\s\S]*?---/, '');
-  
-  // 2. Look for the first H1.
-  // This is more robust: it allows for whitespace/newlines before the '#'
-  // and still uses the multiline (m) flag.
-  const match = contentOnly.match(/^\s*#\s+(.+)/m);
+  console.log(content)
+  // --- START FIX ---
+  // Split the content by front matter dashes
+  const parts = content.split('---');
+
+  // Use the content *after* the front matter (if it exists)
+  // parts.length > 2 means there was front matter
+  const markdownContent = parts.length > 2 ? parts.slice(2).join('---') : content;
+  // --- END FIX ---
+
+  // Look for the first markdown H1 in the *actual content*
+  const match = markdownContent.match(/#\s+(.+)/m);
   
   if (match && match[1]) {
     return match[1].trim();
   }
-  
   return null;
 }
 
@@ -134,14 +134,20 @@ module.exports = {
 
     title: data => {
       // 1. Check for a hard-coded title in front matter.
+      // This is always highest priority.
       if (data.title) {
         return data.title;
       }
 
-      // 2. Check if this is a directory page (from autoDirectory.njk)
+      // 2. Check if this is a MEDIA PAGE (from media.njk)
+      // If so, use the paginated media file's name.
+      if (data.page.inputPath.endsWith("media.njk") && data.media) {
+        return data.media.name;
+      }
+
+      // 3. Check if this is an AUTO-DIRECTORY PAGE (from autoDirectory.njk)
+      // If so, use the filetree node's title.
       if (data.page.inputPath.endsWith("autoDirectory.njk")) {
-        // We call getDirectoryNode directly.
-        // This avoids any circular dependency.
         const dirNode = getDirectoryNode(data);
         if (dirNode) {
           return dirNode.title || dirNode.name;
@@ -149,15 +155,15 @@ module.exports = {
         return "Directory"; // Fallback for dir
       }
       
-      // 3. For any other page (like Temptations), try to find the first H1.
-      const h1 = extractH1(data.page.templateContent);
-      console.log(data.page.templateContent)
+      // 4. For any other page, try to find the first H1 in the RAW markdown.
+      // We MUST use data.page.inputContent here.
+      console.log(data.page.inputContent)
+      const h1 = extractH1(data.page.rawInput);
       if (h1) {
-        console.log(`[Title] Using extracted H1 for title: "${h1}"`);
         return h1;
       } 
 
-      // 4. As a last resort, use the site default.
+      // 5. As a last resort, use the site default.
       return "The Bodge Lab";
     },
 
@@ -259,13 +265,13 @@ module.exports = {
       // Get Description
       //    Front Matter `description:` > Auto-excerpt > Default
       const seoDescription = data.description ||
-                             extractExcerpt(data.page.templateContent) ||
+                             extractExcerpt(data.page.rawInput) ||
                              meta.defaultDescription;
                              
       // Get Image
       //    Front Matter `image:` > First `{% image %}` > Default
       let imagePath = data.image ||
-                      extractImage(data.page.templateContent, page) ||
+                      extractImage(data.page.rawInput, data.page) ||
                       meta.defaultImage;
       
       // Build absolute URLs
