@@ -244,7 +244,7 @@ module.exports = function (eleventyConfig) {
   // --- Passthrough Copy ---
 
   // Entire content folder passthrough so that we can easily download any file
-  //eleventyConfig.addPassthroughCopy("content");
+  eleventyConfig.addPassthroughCopy("content");
 
   // CSS file
   eleventyConfig.addPassthroughCopy({ "_includes/css": "css" });
@@ -273,7 +273,7 @@ module.exports = function (eleventyConfig) {
     },
     // Still process md and njk files so that our
     // index.md pages are turned into directory listings.
-    //templateFormats: ["md", "njk", "html"]
+    templateFormats: ["md", "njk", "html"]
   };
 
 
