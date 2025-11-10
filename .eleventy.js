@@ -7,10 +7,29 @@ const { MEDIA_EXTENSIONS } = require('./_11ty/fileTypes.js');
 const { generateFileTreeData } = require('./_11ty/filetree.js');
 const gitCommitDate = require("eleventy-plugin-git-commit-date");
 
+const markdownIt = require("markdown-it");
+const mdLinkAttributes = require("markdown-it-link-attributes");
+
+const mdLib = markdownIt({
+    html: true, // Allow HTML in markdown
+    breaks: true, // Convert newlines to <br>
+    linkify: true // Automatically find links and make them clickable
+  })
+  .use(mdLinkAttributes, {
+    // This adds these attributes to *all* links
+    attrs: {
+      target: "_blank",
+      rel: "noopener noreferrer"
+    }
+  });
+
 let fileTreeCache = null;
 
 // --- Main Eleventy Config ---
 module.exports = function (eleventyConfig) {
+
+  // --- Markdown Configuration ---
+  eleventyConfig.setLibrary("md", mdLib);
 
   // --- Plugins ---
   eleventyConfig.addPlugin(gitCommitDate);
@@ -54,56 +73,90 @@ module.exports = function (eleventyConfig) {
 
   // --- Shortcodes ---
 
+ /**
+   * Helper function to resolve relative paths.
+   * "this" is the Eleventy shortcode context.
+   */
+  const contentDir = path.join(__dirname, 'content');
+  function resolveSrc(src) {
+    if (src.startsWith('http') || src.startsWith('/')) {
+      return src; // It's already an absolute URL or root-relative path
+    }
+
+    // It's a relative path. Resolve it based on the current page's input path.
+    const pagePath = path.dirname(this.page.inputPath);
+    const resolvedPath = path.resolve(pagePath, src);
+    
+    // Make it a root-relative web path
+    const webPath = path.relative(contentDir, resolvedPath);
+    
+    // Convert Windows backslashes to web forward slashes
+    return '/' + webPath.replace(/\\/g, '/');
+  }
+
   //  Video Shortcode
-  // Usage: {% video "/path/to/my/video.mp4" %}
   eleventyConfig.addShortcode("video", function (src) {
-    return `<video controls style="width: 100%;">
-  <source src="${src}">
-  Your browser does not support the video tag.
-</video>`;
+    const resolvedSrc = resolveSrc.call(this, src); // Resolve the path
+    const filename = path.basename(resolvedSrc);
+    return `<div class="media-embed-wrapper">
+  <video controls style="width: 100%;">
+    <source src="${resolvedSrc}">
+    Your browser does not support the video tag.
+  </video>
+  <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p></div>`;
   });
 
   // Audio Shortcode
-  // Usage: {% audio "/path/to/my/audio.mp3" %}
   eleventyConfig.addShortcode("audio", function (src) {
-    return `<audio controls style="width: 100%;">
-  <source src="${src}">
-  Your browser does not support the audio tag.
-</audio>`;
+    const resolvedSrc = resolveSrc.call(this, src); // Resolve the path
+    const filename = path.basename(resolvedSrc);
+    return `<div class="media-embed-wrapper">
+  <audio controls style="width: 100%;">
+    <source src="${resolvedSrc}">
+    Your browser does not support the audio tag.
+  </audio>
+  <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p></div>`;
   });
 
-  // Image Shortcode (with Download Overlay)
-  // Usage: {% image "/path/to/img.jpg", "Alt text for the image" %}
+  // Image Shortcode
   eleventyConfig.addShortcode("image", function (src, alt = "") {
-    return `<div class="image-container">
-  <img src="${src}" alt="${alt}">
-  <a href="${src}" class="download-overlay" download>
-    📥
-  </a>
-</div>`;
+    const resolvedSrc = resolveSrc.call(this, src); // Resolve the path
+    const filename = path.basename(resolvedSrc);
+    return `<div class="media-embed-wrapper">
+  <div class="image-container">
+    <img src="${resolvedSrc}" alt="${alt}">
+  </div>
+  <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p></div>`;
   });
 
-  // Embed Shortcode (for PDF, TXT, etc.)
-  // Usage: {% embed "/path/to/document.pdf" %}
+  // Embed Shortcode
   eleventyConfig.addShortcode("embed", function (src) {
-    return `<p>
-  <iframe class="embed-container" src="${src}">
-    <p>Your browser does not support embedded frames. <a href="${src}">Download the file</a> to view it.</p>
-  </iframe>
-</p>`;
+    const resolvedSrc = resolveSrc.call(this, src); // Resolve the path
+    const filename = path.basename(resolvedSrc);
+    return `<div class="media-embed-wrapper">
+  <p>
+    <iframe class="embed-container" style="background-color:light-dark(#FFFFFF,#000000);" src="${resolvedSrc}">
+      <p>Your browser does not support embedded frames. <a href="${resolvedSrc}">Download the file</a> to view it.</p>
+    </iframe>
+  </p>
+  <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p></div>`;
   });
 
   // 3D Model Shortcode
-    // Usage: {% model "/path/to/my-model.glb" %}
     eleventyConfig.addShortcode("3d", function (src) {
-      return `<model-viewer 
-  src="${src}" 
-  camera-controls 
-  auto-rotate 
-  style="width: 100%; height: 400px; background-color: var(--bg-muted);">
-</model-viewer>`;
+      const resolvedSrc = resolveSrc.call(this, src); // Resolve the path
+      const filename = path.basename(resolvedSrc);
+      return `<div class="media-embed-wrapper">
+  <model-viewer 
+    src="${resolvedSrc}" 
+    camera-controls 
+    auto-rotate 
+    poster="../config/3dloading.svg" 
+    style="width: 100%; height: 400px; background-color: var(--bg-muted);">
+  </model-viewer>
+  <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p>
+</div>`;
     });
-
   // YouTube Shortcode
   // Usage: {% yt "VIDEO_ID" %} or {% yt "https://www.youtube.com/watch?v=..." %}
   eleventyConfig.addShortcode("yt", function (videoUrl) {
@@ -121,28 +174,33 @@ module.exports = function (eleventyConfig) {
     }
 
     const videoID = getYouTubeID(videoUrl);
+    const videoLink = `https://www.youtube.com/watch?v=${videoID}`;
 
     // We wrap it in a div for responsive styling
-    return `<div class="video-embed-container">
-  <iframe
-    src="https://www.youtube.com/embed/${videoID}"
-    title="YouTube video player"
-    frameborder="0"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-    allowfullscreen
-    loading="lazy">
-  </iframe>
+    return `<div class="media-embed-wrapper">
+  <div class="video-embed-container">
+    <iframe
+      src="https://www.youtube.com/embed/${videoID}"
+      title="YouTube video player"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+      loading="lazy">
+    </iframe>
+  </div>
+  <p class="download-btn-container"><a href="${videoLink}" class="page-download-btn" target="_blank" rel="noopener noreferrer">VIEW ON YOUTUBE</a></p>
 </div>`;
   });
 
-  // 6. NEW: Layout Row (Flex Container)
+
+  // Layout Row (Flex Container)
   // Usage: {% row %} ... {% endrow %}
   eleventyConfig.addPairedShortcode("row", function (content) {
     // This creates the flexbox container
     return `<div class="layout-row">${content}</div>`;
   });
 
-  // 7. NEW: Layout Column (Flex Item)
+  // Layout Column (Flex Item)
   // Usage: {% col %} or {% col "half" %}
   eleventyConfig.addPairedShortcode("col", function (content, width) {
     let className = 'layout-col';
@@ -153,7 +211,7 @@ module.exports = function (eleventyConfig) {
     return `<div class="${className}">${content}</div>`;
   });
 
-  // 8. NEW: "Grid" Shortcode (The *easy* way)
+  // "Grid" Shortcode (The *easy* way)
   //    Usage: {% grid "half, half" %} ...content... ...content... {% endgrid %}
   eleventyConfig.addPairedShortcode("grid", function (content, widths) {
 
@@ -184,7 +242,7 @@ module.exports = function (eleventyConfig) {
 
   // --- Passthrough Copy ---
 
-  // Entire content folder. NECESSARY
+  // Entire content folder. NECESSARY FOR UNIVERSAL DOWNLOAD LINKS
   eleventyConfig.addPassthroughCopy("content");
 
   // CSS file

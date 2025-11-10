@@ -64,9 +64,9 @@
                             {% set download_href = "/" + page.inputPath | replace('content/', '') %}
                         {% endif %}
                         <hr>
-                        <p>
+                        <p class="download-btn-container">
                             <a class="page-download-btn" href="{{ download_href | safe }}" download>
-                                DOWNLOAD
+                                DOWNLOAD "{{ download_filename | safe }}" ⤓
                             </a>
                         </p>
                     </div>

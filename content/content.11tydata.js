@@ -8,12 +8,12 @@ const path = require('path');
  * - Removes trailing slash (unless it's the root)
  */
 function normalizeLookupKey(webPath) {
-    let key = path.normalize(decodeURIComponent(webPath.replace(/&amp;/g, '&'))).replace(/\\/g, '/');
-    if (key.length > 1 && key.endsWith('/')) {
-        key = key.slice(0, -1);
-    }
-    // Handle the root path, which might become an empty string
-    return key || '/';
+  let key = path.normalize(decodeURIComponent(webPath.replace(/&amp;/g, '&'))).replace(/\\/g, '/');
+  if (key.length > 1 && key.endsWith('/')) {
+    key = key.slice(0, -1);
+  }
+  // Handle the root path, which might become an empty string
+  return key || '/';
 }
 
 /**
@@ -21,44 +21,44 @@ function normalizeLookupKey(webPath) {
  * It correctly finds the directory node that should be listed.
  */
 function getDirectoryNode(data) {
-    const pageKey = normalizeLookupKey(data.page.url);
+  const pageKey = normalizeLookupKey(data.page.url);
 
-    // CASE 1: This is an auto-generated directory page.
-    // We can reliably identify it by its inputPath.
-    if (data.page.inputPath.endsWith("autoDirectory.njk")) {
-        // We want to list *this* directory's children.
-        return data.filetree.lookupByPath[pageKey];
-    } 
-    
-    // CASE 2: This is an index.md page.
-    // It also functions as the index for its own directory.
-    if (data.page.inputPath.endsWith("index.md")) {
-        // We also want to list *this* directory's children.
-        return data.filetree.lookupByPath[pageKey];
-    }
-    
-    // CASE 3: This is a "File" page (e.g., categories.md or any-post.md)
-    // We want to list its *parent's* children.
-    const parentKey = normalizeLookupKey(path.dirname(pageKey));
-    return data.filetree.lookupByPath[parentKey];
+  // CASE 1: This is an auto-generated directory page.
+  // We can reliably identify it by its inputPath.
+  if (data.page.inputPath.endsWith("autoDirectory.njk")) {
+    // We want to list *this* directory's children.
+    return data.filetree.lookupByPath[pageKey];
+  }
+
+  // CASE 2: This is an index.md page.
+  // It also functions as the index for its own directory.
+  if (data.page.inputPath.endsWith("index.md")) {
+    // We also want to list *this* directory's children.
+    return data.filetree.lookupByPath[pageKey];
+  }
+
+  // CASE 3: This is a "File" page (e.g., categories.md or any-post.md)
+  // We want to list its *parent's* children.
+  const parentKey = normalizeLookupKey(path.dirname(pageKey));
+  return data.filetree.lookupByPath[parentKey];
 }
 
 
 module.exports = {
   layout: "layout.njk",
   download: true,
-  directory: true, 
+  directory: true,
 
   eleventyComputed: {
 
     directoryTitle: data => {
-        // Use the helper to find the correct directory node
-        const dirNode = getDirectoryNode(data);
-        if (dirNode) {
-            return dirNode.title || dirNode.name;
-        }
-        // Fallback
-        return data.title || "Directory";
+      // Use the helper to find the correct directory node
+      const dirNode = getDirectoryNode(data);
+      if (dirNode) {
+        return dirNode.title || dirNode.name;
+      }
+      // Fallback
+      return data.title || "Directory";
     },
 
     parentUrl: data => {
@@ -73,7 +73,7 @@ module.exports = {
       if (my_url.length > 1 && my_url.endsWith('/')) {
         my_url = my_url.substring(0, my_url.length - 1);
       }
-      
+
       // Find the last slash and get everything before it
       return my_url.substring(0, my_url.lastIndexOf('/')) + '/';
     },
@@ -88,7 +88,7 @@ module.exports = {
 
       // Use the dirNode's webPath as the base for link URLs
       const cleanUrl = dirNode.webPath === '/' ? '/' : `${dirNode.webPath}/`;
-      
+
       let directories = [];
       let files = [];
       let pages = [];
@@ -96,36 +96,49 @@ module.exports = {
       for (const item of dirNode.children) {
         // FOR DIRECTORY PAGES
         if (item.isDirectory) {
-            directories.push({ name: item.name, url: `${cleanUrl}${item.name}/` });
-        } 
+          directories.push({ name: item.name, url: `${cleanUrl}${item.name}/` });
+        }
 
         // FOR TEMPLATE PAGES
         else if (item.isTemplate && !item.isIndex) {
-            const baseName = path.basename(item.name, item.ext);
-            // This is the URL for the item in the list
-            const itemUrl = `${cleanUrl}${baseName}/`;
-            
-            // This is the URL of the page we're currently on
-            const mainPageUrl = normalizeLookupKey(data.page.url) + '/';
+          const baseName = path.basename(item.name, item.ext);
+          // This is the URL for the item in the list
+          const itemUrl = `${cleanUrl}${baseName}/`;
 
-            // Compare them!
-            const isCurrent = (itemUrl === mainPageUrl);
+          // This is the URL of the page we're currently on
+          const mainPageUrl = normalizeLookupKey(data.page.url) + '/';
 
-            pages.push({ 
-                name: `» ${baseName}`, 
-                url: itemUrl,
-                isCurrent: isCurrent  // Add the new property
-            });
+          // Compare them!
+          const isCurrent = (itemUrl === mainPageUrl);
+
+          pages.push({
+            name: `» ${baseName}`,
+            url: itemUrl,
+            isCurrent: isCurrent  // Add the new property
+          });
         }
 
         // FOR MEDIA FILES
         else if (item.isMedia) {
-            // Link to the media *page*, not the raw file
-            files.push({ name: item.name, url: `${cleanUrl}${item.name}.html` });
+          // Link to the media *page*, not the raw file
+          files.push({ name: item.name, url: `${cleanUrl}${item.name}.html` });
         }
       }
 
       return { directories, files, pages };
-    }
+    },
+    download_filename: data => {
+      if (data.media && data.media.url) {
+        // This is a media page (from media.njk)
+        return path.basename(data.media.url);
+      }
+      if (data.page && data.page.inputPath) {
+        // This is a post page (e.g., .md file)
+        return path.basename(data.page.inputPath);
+      }
+      // Fallback
+      return "file";
+    },
   }
+
 };

@@ -15,31 +15,34 @@ downloadURL: "{{ media.url | safe }}"
 {% block content %}
   <h2>{{ media.name }}</h2>
 
-  {# --- THIS IS THE NEW CLEAN LOGIC --- #}
+  {# --- This is the new, simplified logic --- #}
+  
   {% if media.type == 'image' %}
-    <p><img src="{{ media.url }}" alt="{{ media.name }}" style="max-width: 100%;"></p>
-
+    
+    {% image media.url, media.name %}
+  
   {% elif media.type == 'video' %}
-    <video controls style="max-width: 100%;">
-      <source src="{{ media.url }}">
-      Your browser does not support the video tag.
-    </video>
-
+  
+    {% video media.url %}
+  
   {% elif media.type == 'audio' %}
-    <audio controls>
-      <source src="{{ media.url }}">
-      Your browser does not support the audio tag.
-    </audio>
-
+  
+    {% audio media.url %}
+  
+  {# We must check for .glb *before* 'other' #}
+  {% elif media.ext == '.glb' %}
+  
+    {% 3d media.url %} 
+  
   {% elif media.type == 'other' %}
-    <p>
-      <iframe class="embed-container" style="background-color: #FFFF!important;"src="{{ media.url }}">
-        <p>Your browser does not support embedded frames. <a href="{{ media.url }}">Download the file</a> to view it.</p>
-      </iframe>
-    </p>
+  
+    {# This handles PDF, .txt, etc. #}
+    {% embed media.url %}
   
   {% else %}
+  
     <p>Cannot display this file type.</p>
+  
   {% endif %}
 
 {% endblock %}
