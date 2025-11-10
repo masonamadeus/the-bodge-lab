@@ -17,8 +17,7 @@ function normalizeLookupKey(webPath) {
 }
 
 /**
- * This is the new helper function.
- * It correctly finds the directory node that should be listed.
+ * correctly finds the directory node that should be listed.
  */
 function getDirectoryNode(data) {
   const pageKey = normalizeLookupKey(data.page.url);
@@ -43,6 +42,88 @@ function getDirectoryNode(data) {
   return data.filetree.lookupByPath[parentKey];
 }
 
+/**
+ * Extracts a 155-character excerpt from raw markdown content.
+ */
+function extractExcerpt(content) {
+  if (!content) {
+    return null;
+  }
+  // Remove Nunjucks shortcodes, markdown links, and formatting
+  let excerpt = content
+    .replace(/\{%[^%]*%\}/g, '') // Remove shortcodes
+    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Remove markdown links
+    .replace(/[#*_`]/g, '') // Remove markdown formatting
+    .replace(/\s+/g, ' ') // Consolidate whitespace
+    .trim();
+  
+  if (excerpt.length > 155) {
+    excerpt = excerpt.substring(0, 155).trim() + '...';
+  }
+  return excerpt;
+}
+
+/**
+ * Finds the first `{% image ... %}` shortcode and resolves its path.
+ */
+function extractImage(content, page) {
+  if (!content) {
+    return null;
+  }
+  
+  const imageRegex = /\{%\s*image\s*\"([^\"]+)\"/;
+  const match = content.match(imageRegex);
+
+  if (match && match[1]) {
+    const imagePath = match[1];
+    
+    try {
+      const pageDir = path.dirname(page.inputPath);
+      
+      // --- THIS IS THE FIX ---
+      // __dirname is *already* the 'content' folder.
+      const contentDir = path.resolve(__dirname); 
+      // --- END FIX ---
+      
+      // 2. Resolve the relative image path from the page's directory
+      const physicalImagePath = path.resolve(pageDir, imagePath);
+      
+      // 3. Get the relative path from /content/ to the image
+      const webPath = path.relative(contentDir, physicalImagePath);
+      
+      return '/' + webPath.replace(/\\/g, '/');
+    } catch (e) {
+      console.warn(`[SEO] Could not resolve image path: ${imagePath} in ${page.inputPath}`);
+      return null;
+    }
+  }
+  return null;
+}
+
+// this is supposed to extract the first h1 from markdown content
+function extractH1(content) {
+  if (!content) {
+    console.log("no content")
+    return null;
+  }
+  console.log(content)
+  // --- START FIX ---
+  // Split the content by front matter dashes
+  const parts = content.split('---');
+
+  // Use the content *after* the front matter (if it exists)
+  // parts.length > 2 means there was front matter
+  const markdownContent = parts.length > 2 ? parts.slice(2).join('---') : content;
+  // --- END FIX ---
+
+  // Look for the first markdown H1 in the *actual content*
+  const match = markdownContent.match(/#\s+(.+)/m);
+  
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  return null;
+}
 
 module.exports = {
   layout: "layout.njk",
@@ -51,14 +132,47 @@ module.exports = {
 
   eleventyComputed: {
 
+    title: data => {
+      // 1. Check for a hard-coded title in front matter.
+      // This is always highest priority.
+      if (data.title) {
+        return data.title;
+      }
+
+      // 2. Check if this is a MEDIA PAGE (from media.njk)
+      // If so, use the paginated media file's name.
+      if (data.page.inputPath.endsWith("media.njk") && data.media) {
+        return data.media.name;
+      }
+
+      // 3. Check if this is an AUTO-DIRECTORY PAGE (from autoDirectory.njk)
+      // If so, use the filetree node's title.
+      if (data.page.inputPath.endsWith("autoDirectory.njk")) {
+        const dirNode = getDirectoryNode(data);
+        if (dirNode) {
+          return dirNode.title || dirNode.name;
+        }
+        return "Directory"; // Fallback for dir
+      }
+      
+      // 4. For any other page, try to find the first H1 in the RAW markdown.
+      // We MUST use data.page.inputContent here.
+      console.log(data.page.inputContent)
+      const h1 = extractH1(data.page.rawInput);
+      if (h1) {
+        return h1;
+      } 
+
+      // 5. As a last resort, use the site default.
+      return "The Bodge Lab";
+    },
+
     directoryTitle: data => {
-      // Use the helper to find the correct directory node
       const dirNode = getDirectoryNode(data);
       if (dirNode) {
         return dirNode.title || dirNode.name;
       }
-      // Fallback
-      return data.title || "Directory";
+      return "Directory"; // Fallback
     },
 
     parentUrl: data => {
@@ -138,6 +252,37 @@ module.exports = {
       }
       // Fallback
       return "file";
+    },
+
+    // open graph and SEO metadata
+    seo: data => {
+      // data.meta is from _data/meta.js
+      // data.page is the current page
+      // data.content is the raw markdown content
+      const meta = data.meta;
+      const page = data.page;
+      
+      // Get Description
+      //    Front Matter `description:` > Auto-excerpt > Default
+      const seoDescription = data.description ||
+                             extractExcerpt(data.page.rawInput) ||
+                             meta.defaultDescription;
+                             
+      // Get Image
+      //    Front Matter `image:` > First `{% image %}` > Default
+      let imagePath = data.image ||
+                      extractImage(data.page.rawInput, data.page) ||
+                      meta.defaultImage;
+      
+      // Build absolute URLs
+      const seoImage = new URL(imagePath, meta.url).href;
+      const seoUrl = new URL(page.url, meta.url).href;
+      
+      return {
+        description: seoDescription,
+        image: seoImage,
+        url: seoUrl
+      };
     },
   }
 
