@@ -273,7 +273,7 @@ module.exports = function (eleventyConfig) {
     },
     // Still process md and njk files so that our
     // index.md pages are turned into directory listings.
-    templateFormats: ["md", "njk", "html"]
+    //templateFormats: ["md", "njk", "html"]
   };
 
 

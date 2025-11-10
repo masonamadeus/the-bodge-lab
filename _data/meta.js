@@ -5,5 +5,7 @@ module.exports = {
   defaultImage: "/config/sitebg2.webp",
   
   // Default description for pages without content
-  defaultDescription: "The Bodge Lab: a curious folder on the internet."
-};
+  defaultDescription: "The Bodge Lab: a curious folder on the internet.",
+
+  repoUrlBase: "https://raw.githubusercontent.com/masonamadeus/the-bodge-lab/main/",
+}

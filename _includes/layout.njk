@@ -75,11 +75,12 @@
                         {% else %}
                             {# This is a post page. Use the page.inputPath (e.g., /posts/firstpost.md) #}
                             {#{% set download_href = "data:text/markdown;charset=utf-8," + page.inputContent | urlencode %}#}
-                            {% set download_href = "/" + page.inputPath | replace('content/', '') %}
+                
+                            {% set download_href = "data:application/octet-stream;charset=utf-8," + (page.rawInput | urlencode) %}
                         {% endif %}
                         <hr>
                         <p class="download-btn-container">
-                            <a class="page-download-btn" href="{{ download_href | safe }}" download>
+                            <a class="page-download-btn" href="{{ download_href | safe }}" download="{{ download_filename | safe }}">
                                 DOWNLOAD "{{ download_filename | safe }}" ⤓
                             </a>
                         </p>

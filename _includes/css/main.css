@@ -32,8 +32,9 @@ body {
   margin: calc(var(--base-spacing) * 2) auto;
   padding: 0 var(--base-spacing);
   line-height: var(--line-height);
-  background-image: url(/config/sitebg.svg);
+  background-image: url(/config/sitebg3.svg);
   background-attachment: fixed;
+  background-size:cover;
   background-repeat:repeat-y;
   background-position-x: center;
 }
@@ -82,11 +83,12 @@ li {
 }
 .page-nav {
   display: flex;
-  justify-content: space-between; /* This is the key change */
+  justify-content: space-between;
   align-items: center;
   padding: var(--base-spacing) 0;
   font-size: 0.9em;
   border-bottom: 2px solid var(--border-color);
+  background-color: hsl(from var(--bg-color) h s l / 0.7);
 }
 
 /* This styles the new date location */
