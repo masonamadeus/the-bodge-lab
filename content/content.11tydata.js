@@ -103,10 +103,10 @@ function extractImage(content, page) {
 // this is supposed to extract the first h1 from markdown content
 function extractH1(content) {
   if (!content) {
-    console.log("no content")
+    console.log("H1: no content")
     return null;
   }
-  console.log(content)
+  console.log(`H1: found ${content}`)
   // --- START FIX ---
   // Split the content by front matter dashes
   const parts = content.split('---');
@@ -156,8 +156,6 @@ module.exports = {
       }
       
       // 4. For any other page, try to find the first H1 in the RAW markdown.
-      // We MUST use data.page.inputContent here.
-      console.log(data.page.inputContent)
       const h1 = extractH1(data.page.rawInput);
       if (h1) {
         return h1;

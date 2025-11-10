@@ -74,6 +74,7 @@
                             {% set download_href = media.url %}
                         {% else %}
                             {# This is a post page. Use the page.inputPath (e.g., /posts/firstpost.md) #}
+                            {#{% set download_href = "data:text/markdown;charset=utf-8," + page.inputContent | urlencode %}#}
                             {% set download_href = "/" + page.inputPath | replace('content/', '') %}
                         {% endif %}
                         <hr>
