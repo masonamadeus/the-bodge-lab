@@ -95,16 +95,13 @@
   function generatePalette(inputs, isDark = false) {
     const { bg_obj, text_obj, text_muted_obj, accent_obj, bg_muted_obj } = inputs;
     
-    // --- THIS IS THE FIX ---
-    // The backgrounds to check against are simply the ones passed in.
-    // The old, buggy 'other_bg_obj' logic is gone.
+    // Checking text contrast against the backgrounds
     const check_bg_obj = bg_obj;
     const check_muted_bg_obj = { 
         h: bg_muted_obj.h, 
         s: bg_muted_obj.border_s || bg_muted_obj.s, 
         l: bg_muted_obj.border_l || bg_muted_obj.l 
     };
-    // --- END FIX ---
 
     const RATIO_TEXT = 4.5;
     const RATIO_ACCENT = 3.0;
@@ -171,9 +168,7 @@
         navigator.userAgent, navigator.language || (navigator.languages && navigator.languages[0]),
         (screen.width || 0) + 'x' + (screen.height || 0), new Date().getTimezoneOffset(),
         navigator.hardwareConcurrency || 1, navigator.deviceMemory || 0,
-        window.devicePixelRatio || 0, (navigator.plugins || []).length,
-        (navigator.mimeTypes || []).length, navigator.platform || "",
-        navigator.vendor || "", screen.colorDepth || 0,
+        window.devicePixelRatio || 0, screen.colorDepth || 0,
         navigator.webdriver || false, (screen.availWidth || 0) + 'x' + (screen.availHeight || 0),
         navigator.maxTouchPoints || 0, navigator.doNotTrack || "unspecified",
         Intl.DateTimeFormat().resolvedOptions().timeZone || ""

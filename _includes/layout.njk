@@ -18,6 +18,7 @@
         <meta name="twitter:image" content="{{ seo.image }}">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="/css/main.css">
+        <link href="/css/prism.css" rel="stylesheet"/>
     </head>
     <body>
         <header>
@@ -39,8 +40,7 @@
                         {% endif %}
                     {% endfor %}
                 </div>
-                <div
-                    class="page-nav">
+                <div class="page-nav">
                     {# Right Side: Parent Link #}
                     {% if parentUrl %}
                         <div>
@@ -75,7 +75,7 @@
                         {% set download_href = "data:application/octet-stream;charset=utf-8," + (page.rawInput | urlencode) %}
                         {% endif %}
                         <hr>
-                            <p class="download-btn-container"> <a class="page-share-btn" href="/share/{{ uid }}/" title="Get permanent link">
+                            <p class="download-btn-container"> <a class="page-share-btn" href="/s/{{ uid }}/" title="Get permanent link">
                                 ↻ SHARE
                             </a>
                             <a class="page-download-btn" href="{{ download_href | safe }}" download="{{ download_filename | safe }}">
@@ -139,7 +139,6 @@
                 </div>
             {% endif %}
         {% endif %}
-
         <!-- {% if uid %}
             <script>
                 // REPLACE URL IN BAR WITH SHARELINK

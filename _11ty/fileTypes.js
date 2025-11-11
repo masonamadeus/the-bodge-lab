@@ -54,6 +54,7 @@ const SYSTEM_FILES = [
     '404.njk',
     'search.json.njk',
     'share.njk',
+    '_generators'
 ];
 
 // Export all our definitions

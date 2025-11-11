@@ -6,22 +6,54 @@ const path = require('path');
 const { MEDIA_EXTENSIONS, TEMPLATE_EXTENSIONS, PASSTHROUGH_EXTENSIONS } = require('./_11ty/fileTypes.js');
 const { generateFileTreeData } = require('./_11ty/filetree.js');
 const gitCommitDate = require("eleventy-plugin-git-commit-date");
+const syntaxHighlight = require("@11ty/eleventy-plugin-syntaxhighlight");
 
 const markdownIt = require("markdown-it");
 const mdLinkAttributes = require("markdown-it-link-attributes");
+
+/**
+ * A custom rule for markdown-it's renderer to add target="_blank" and rel="..." 
+ * ONLY to links that start with http:// or https://.
+ */
+function markdownLinkExternal(md) {
+  // Save the original link_open rule
+  const defaultRender = md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
+    return self.renderToken(tokens, idx, options);
+  };
+
+  // Replace the link_open rule with our custom function
+  md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+    const token = tokens[idx];
+    // Find the index of the 'href' attribute
+    const hrefIndex = token.attrIndex('href');
+
+    if (hrefIndex >= 0) {
+      const href = token.attrs[hrefIndex][1];
+      
+      // Check if the link starts with http:// or https:// (is external)
+      if (href.startsWith('http://') || href.startsWith('https://')) {
+        
+        // Add target="_blank"
+        token.attrPush(['target', '_blank']);
+        
+        // Add rel="noopener noreferrer" for security
+        token.attrPush(['rel', 'noopener noreferrer']);
+      }
+      // If the link is internal (e.g., starts with /, #, or a relative path), we do nothing,
+      // which keeps it opening in the same window/tab.
+    }
+
+    // Call the original renderer function to maintain other behaviors
+    return defaultRender(tokens, idx, options, env, self);
+  };
+}
 
 const mdLib = markdownIt({
     html: true, // Allow HTML in markdown
     breaks: true, // Convert newlines to <br>
     linkify: true // Automatically find links and make them clickable
   })
-  .use(mdLinkAttributes, {
-    // This adds these attributes to *all* links
-    attrs: {
-      target: "_blank",
-      rel: "noopener noreferrer"
-    }
-  });
+  .use(markdownLinkExternal);
 
   
 let fileTreeCache = null;
@@ -34,6 +66,7 @@ module.exports = function (eleventyConfig) {
 
   // --- Plugins ---
   eleventyConfig.addPlugin(gitCommitDate);
+  eleventyConfig.addPlugin(syntaxHighlight);
 
   // --- Global Data: Filetree ---
   eleventyConfig.addGlobalData("filetree", async () => {

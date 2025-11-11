@@ -1,5 +1,5 @@
 ---
-title: "Custom Theme Inputs"
+title: "customize theme"
 download: false
 directory: true
 ---
