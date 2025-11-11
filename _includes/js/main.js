@@ -103,42 +103,115 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Create a global object to hold our functions
   window.BodgeLab = window.BodgeLab || {};
+  let searchDataCache = null; // This is our new client-side cache
 
+  /**
+   * Fetches search data from the .json file, or returns cached data.
+   */
+  window.BodgeLab.getSearchData = async () => {
+    if (searchDataCache) {
+      return searchDataCache; // Return data from cache
+    }
+
+    try {
+      const response = await fetch('/search.json');
+      const data = await response.json();
+      searchDataCache = data; // Store data in cache
+      return data;
+    } catch (err) {
+      console.error('Error fetching search data:', err);
+      return []; // Return empty on error
+    }
+  };
+
+  /**
+   * decodes HTML and shit
+   */
+  function decodeSearchString(str) {
+    if (!str) return '';
+    
+    // 1. Decode URL encoding (%20 -> space, %26 -> &, etc.)
+    // We use try/catch in case the string is partially malformed.
+    try {
+      str = decodeURIComponent(str);
+    } catch (e) {
+      // If it fails, proceed with the original string, letting the HTML decoder handle what it can.
+    }
+    
+    // 2. Decode ALL HTML entities using a temporary DOM element.
+    // This is the most reliable way to handle &amp;, &quot;, etc.
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = str;
+    str = textarea.value;
+
+    return str;
+  }
   /**
    * Runs a search query against a list of pages.
    * @param {string} query - The user's search text.
    * @param {Array} allPages - The full list of pages from filetree.
    * @returns {Array} - A sorted array of matched pages.
    */
-  window.BodgeLab.runSearch = (query, allPages) => {
-    // 1. Clean the user's query into keywords
-    const keywords = query.toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, ' ') // Replace non-alphanumeric with spaces
-      .split(/\s+/)                  // Split on one or more spaces
-      .filter(k => k.length > 0 && k !== 'index');
+ window.BodgeLab.runSearch = (query, allPages) => {
+  
+  // --- THIS IS THE FIX ---
+  // 1. Decode the incoming query string FIRST. This ensures %20 becomes a space.
+  const decodedQuery = decodeSearchString(query);
+  // --- END FIX ---
+  
+  // 2. Clean the user's query into keywords
+  // We now use the already decoded query string here:
+  const keywords = decodedQuery.toLowerCase()
+    .replace(/[\/\-]/g, ' ')          // Treat slashes and hyphens as spaces
+    .replace(/[^a-z0-9\s]/g, '')   // Remove all other punctuation (which is now just spaces)
+    .split(/\s+/)                  
+    .filter(k => k.length > 0 && k !== 'index');
 
-    if (keywords.length === 0) {
-      return []; // Return empty array if no query
+  if (keywords.length === 0) {
+    return []; // Return empty array if no query
+  }
+
+  // 3. Run the search with new scoring
+  const results = allPages.map(page => {
+    let score = 0;
+    
+    // These strings are already decoded inside the map function
+    const decodedUrl = decodeSearchString(page.url);
+    const decodedTitle = decodeSearchString(page.title || "");
+
+    // Normalize URL and Title in the same way as the query
+    const cleanUrl = decodedUrl.toLowerCase()
+      .replace(/[\/\-]/g, ' ')
+      .replace(/[^a-z0-9\s]/g, '');
+      
+    const cleanTitle = decodedTitle.toLowerCase()
+      .replace(/[\/\-]/g, ' ')
+      .replace(/[^a-z0-9\s]/g, '');
+
+    // Bonus for an exact title match
+    if (cleanTitle === keywords.join(' ')) {
+      score += 10;
     }
 
-    // 2. Run the search
-    const results = allPages.map(page => {
-      let score = 0;
-      const cleanUrl = page.url.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ');
-      const cleanTitle = (page.title || "").toLowerCase().replace(/[^a-z0-9\s-]/g, ' ');
+    keywords.forEach(keyword => {
+      // High score for each keyword in the title
+      if (cleanTitle.includes(keyword)) {
+        score += 3;
+      }
+      
+      // Low score for each keyword in the URL
+      if (cleanUrl.includes(keyword)) {
+        score += 1;
+      }
+    });
 
-      keywords.forEach(keyword => {
-        if (cleanUrl.includes(keyword)) score += 2;
-        if (cleanTitle.includes(keyword)) score += 1;
-      });
+    return { ...page, score };
+  })
+    .filter(page => page.score > 0)
+    .sort((a, b) => b.score - a.score); // Sort by highest score
 
-      return { ...page, score };
-    })
-      .filter(page => page.score > 0)
-      .sort((a, b) => b.score - a.score);
-
-    return results;
-  };
+  return results;
+};
 
   /**
    * Renders search results into a container element.

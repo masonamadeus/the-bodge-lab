@@ -40,17 +40,22 @@ download: false
   <p><i>Waiting you to start typing...</i></p>
 </div>
 
-
 <script>
-  // 1. Get the data and elements
-  const allPages = {{ filetree.allPages | dump | safe }};
-  const searchInput = document.getElementById('search-box');
-  const resultsContainer = document.getElementById('search-results');
+  // --- ADD THIS LISTENER WRAPPER ---
+  document.addEventListener('bodgelab:searchready', () => {
 
-  // 2. Add the event listener
-  searchInput.addEventListener('input', () => {
-    const query = searchInput.value;
-    const results = window.BodgeLab.runSearch(query, allPages);
-    window.BodgeLab.renderResults(results, resultsContainer, query);
+    // 1. Get the data and elements
+    const allPages = {{ filetree.allPages | dump | safe }};
+    const searchInput = document.getElementById('search-box');
+    const resultsContainer = document.getElementById('search-results');
+    
+    // 2. Add the event listener
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value;
+      const results = window.BodgeLab.runSearch(query, allPages);
+      window.BodgeLab.renderResults(results, resultsContainer, query);
+    });
+
+  // --- AND CLOSE IT HERE ---
   });
 </script>

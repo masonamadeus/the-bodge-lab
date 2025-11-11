@@ -60,7 +60,6 @@
         </header>
         {% if content or media %}
             <main class="main-content">
-                <p>{{ page.data.title }}</p>
                 {% block content %}
                     {{ content | safe }}
                 {% endblock %}
@@ -143,7 +142,7 @@
 
         <!-- {% if uid %}
             <script>
-                // This script will only be added to pages that have a UID
+                // REPLACE URL IN BAR WITH SHARELINK
                 (function () { // 1. This is the "permanent" URL
                     const permanentUrl = "/share/{{ uid }}/";
                     // 2. This is the URL we are currently at

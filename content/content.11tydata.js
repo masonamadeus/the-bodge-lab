@@ -129,7 +129,6 @@ function extractImage(content, page) {
 // this is supposed to extract the first h1 from markdown content
 function extractH1(content) {
   if (!content) {
-    console.log("H1: no content")
     return null;
   }
   // --- START FIX ---
@@ -201,7 +200,6 @@ module.exports = {
         // If it is, return that value, giving it top priority.
         return data.permalink;
       }
-      console.log(`[permalink] No permalink set for ${data.page.inputPath}`);
       // If not, return 'undefined' to let Eleventy use its
       // default file-based URL logic.
       return undefined;

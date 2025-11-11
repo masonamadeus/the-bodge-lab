@@ -52,8 +52,8 @@ const SYSTEM_FILES = [
     'content.11tydata.js',
     'tags.njk',
     '404.njk',
-    'search.njk',
-    'share',
+    'search.json.njk',
+    'share.njk',
 ];
 
 // Export all our definitions

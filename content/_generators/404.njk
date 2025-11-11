@@ -22,30 +22,30 @@ download: false
 
 
 <script>
-  // 1. Listen for the 'bodgelab:searchready' event from main.js
-  document.addEventListener('bodgelab:searchready', () => {
+  // 1. Listen for the 'bodgelab:searchready' event
+  document.addEventListener('bodgelab:searchready', async () => {
     
-    // 2. Get the data and elements (using your existing data dump)
-    const allPages = {{ filetree.allPages | dump | safe }};
+    // 2. Get the data and elements
     const resultsContainer = document.getElementById('smart-search-results');
     
-    // 3. Get the query from the bad URL
+    // 3. Fetch the search data (or get from cache)
+    resultsContainer.innerHTML = '<p><i>Loading search data...</i></p>';
+    const allPages = await window.BodgeLab.getSearchData();
+ 
+    // 4. Get the query from the bad URL
     const badPath = window.location.pathname.toLowerCase();
     
-    // 4. Run the search
+    // 5. Run the search
     const results = window.BodgeLab.runSearch(badPath, allPages);
 
-    // --- THIS IS THE NEW LOGIC ---
-    // 5. Check if there is exactly one result
+    // 6. Check for single result and redirect
     if (results.length === 1) {
-      // It's a single, high-confidence match. Redirect!
       const redirectUrl = results[0].url;
       resultsContainer.innerHTML = `<p><i>One match found! Redirecting you to: <a href="${redirectUrl}">${redirectUrl}</a>...</i></p>`;
       window.location.href = redirectUrl;
     } else {
-      // 6. Otherwise (0 or 2+ results), just render the list as normal
+      // 7. Render list
       window.BodgeLab.renderResults(results, resultsContainer, badPath);
     }
-    // --- END NEW LOGIC ---
   });
 </script>

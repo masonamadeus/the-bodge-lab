@@ -68,7 +68,17 @@ function scanDir(dirPath, webPath, collector) {
 
             if (!childNode.hasIndex) {
                 collector.directories.push({ webPath: childNode.webPath });
+
+                // Also add it to the pages list because we'll autogenerate an index
+                /*  Commented out for now, I'll see if I change my mind later.
+                collector.allPages.push({
+                    url: childNode.webPath + '/', // Add trailing slash
+                    title: childNode.title // This is set to node.name by default
+                });
+                //*/
             }
+
+            
         } else { // This is the file-handling logic
             
             const isTemplate = TEMPLATE_EXTENSIONS.includes(ext);
