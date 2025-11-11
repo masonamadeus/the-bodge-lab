@@ -95,10 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   })();
 
-  // _includes/js/main.js
-
-  // ... (your existing tilt-effect code) ...
-
   /*
   =========================================
    SITE SEARCH
@@ -169,4 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   };
+  
+  const event = new CustomEvent('bodgelab:searchready');
+  document.dispatchEvent(event);
 });

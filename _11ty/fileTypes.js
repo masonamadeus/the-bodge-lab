@@ -46,6 +46,16 @@ const PASSTHROUGH_EXTENSIONS = [
     ...MISC_EXTENSIONS
 ];
 
+const SYSTEM_FILES = [
+    'media.njk',
+    'autoDirectory.njk',
+    'content.11tydata.js',
+    'tags.njk',
+    '404.njk',
+    'search.njk',
+    'share',
+];
+
 // Export all our definitions
 module.exports = {
     TEMPLATE_EXTENSIONS,
@@ -55,5 +65,6 @@ module.exports = {
     DATA_EXTENSIONS,
     DOCUMENT_EXTENSIONS,
     MISC_EXTENSIONS,
-    PASSTHROUGH_EXTENSIONS
+    PASSTHROUGH_EXTENSIONS,
+    SYSTEM_FILES
 };

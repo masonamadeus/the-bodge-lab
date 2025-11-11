@@ -3,25 +3,15 @@ const fs = require('fs');
 const path = require('path');
 const matter = require('gray-matter');
 
-// --- THIS IS THE IMPORT FIX ---
-// We now import all the types we need
 const {
     TEMPLATE_EXTENSIONS,
     IMAGE_EXTENSIONS,
     VIDEO_EXTENSIONS,
-    AUDIO_EXTENSIONS
+    AUDIO_EXTENSIONS,
+    SYSTEM_FILES
 } = require('./fileTypes.js');
-// --- END FIX ---
 
-const SYSTEM_FILES = [
-    'media.njk',
-    'autoDirectory.njk',
-    'content.11tydata.js',
-    'tags.njk',
-    '404.njk',
-    'search.njk',
-    'share'
-];
+
 
 const INDEX_FILES = TEMPLATE_EXTENSIONS.map(ext => `index${ext}`);
 
@@ -65,12 +55,11 @@ function scanDir(dirPath, webPath, collector) {
             continue;
         }
 
-        // --- LOGIC CLEANUP ---
-        // These are defined once per item in the loop
+        
         const itemPhysicalPath = path.join(dirPath, item.name);
         const itemWebPath = (webPath === '/' ? '' : webPath) + '/' + item.name;
         const ext = path.extname(item.name).toLowerCase();
-        // --- END CLEANUP ---
+       
 
         if (item.isDirectory()) {
             // Recurse and add the child directory node
@@ -80,20 +69,18 @@ function scanDir(dirPath, webPath, collector) {
             if (!childNode.hasIndex) {
                 collector.directories.push({ webPath: childNode.webPath });
             }
-        } else { 
-            // This is the file-handling logic, no more redundant definitions
+        } else { // This is the file-handling logic
+            
             const isTemplate = TEMPLATE_EXTENSIONS.includes(ext);
-            const isMedia = !isTemplate; // This is now correct!
+            const isMedia = !isTemplate;
             const isIndex = INDEX_FILES.includes(item.name);
-            let title = null;
+            
+            let frontMatterData = {}; // Initialize an empty object
 
             if (isTemplate) {
                 try {
                     const fileContent = fs.readFileSync(itemPhysicalPath, 'utf8');
-                    const { data } = matter(fileContent);
-                    if (data.title) {
-                        title = data.title;
-                    }
+                    frontMatterData = matter(fileContent).data;
                 } catch (e) {
                     console.warn(`[filetree.js] Could not read front matter from ${itemPhysicalPath}`);
                 }
@@ -102,12 +89,15 @@ function scanDir(dirPath, webPath, collector) {
             if (isIndex) {
                 node.hasIndex = true;
                 node.indexFile = item.name;
-                if (title) {
-                    node.title = title;
+                if (frontMatterData.title) {
+                    node.title = frontMatterData.title;
                 }
             }
 
             const fileNode = {
+                ...frontMatterData, 
+                
+                // Our calculated properties (will override any conflicts)
                 name: item.name,
                 physicalPath: itemPhysicalPath,
                 webPath: itemWebPath.replace(/\\/g, '/'),
@@ -116,8 +106,7 @@ function scanDir(dirPath, webPath, collector) {
                 isTemplate: isTemplate,
                 isMedia: isMedia,
                 isIndex: isIndex,
-                mediaType: getMediaType(ext), // This now works
-                title: title
+                mediaType: getMediaType(ext)
             };
 
             node.children.push(fileNode);
@@ -134,11 +123,35 @@ function scanDir(dirPath, webPath, collector) {
                 });
             }
 
-            if (isTemplate && !isIndex) {
-                const pageUrl = fileNode.webPath.replace(new RegExp(ext + '$'), '/');
+           if (isTemplate) {
+                let pageUrl;
+                let pageTitle;
+
+                if (isIndex) {
+                    // An index file's URL is its parent directory's webPath
+                    pageUrl = webPath; // e.g., "/" or "/Bug & Moss"
+                    
+                    // Use front matter title, fallback to directory name
+                    pageTitle = frontMatterData.title || node.name;
+                    
+                    // Handle the root "content" name
+                    if (pageTitle === 'content') pageTitle = 'The Bodge Lab'; 
+                } else {
+                    // A regular page's URL
+                    pageUrl = fileNode.webPath.replace(new RegExp(ext + '$'), '/');
+                    pageTitle = frontMatterData.title || path.basename(fileNode.name, ext);
+                }
+                
+                if (pageUrl === '') pageUrl = '/'; // Fix root path
+                
+                // Add trailing slash consistently
+                if (pageUrl !== '/' && !pageUrl.endsWith('/')) {
+                    pageUrl += '/';
+                }
+
                 collector.allPages.push({
                     url: pageUrl,
-                    title: title || path.basename(fileNode.name, ext)
+                    title: pageTitle
                 });
             }
         }

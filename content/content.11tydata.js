@@ -265,7 +265,7 @@ module.exports = {
       return my_url.substring(0, my_url.lastIndexOf('/')) + '/';
     },
 
-    directoryContents: data => {
+   directoryContents: data => {
       // Use the helper to find the correct directory node
       const dirNode = getDirectoryNode(data);
 
@@ -289,19 +289,25 @@ module.exports = {
         // FOR TEMPLATE PAGES
         else if (item.isTemplate && !item.isIndex) {
           const baseName = path.basename(item.name, item.ext);
-          // This is the URL for the item in the list
-          const itemUrl = `${cleanUrl}${baseName}/`;
+          
+          // --- THIS LOGIC NOW WORKS ---
+          // 'item' now has all front matter properties from filetree.js
+          
+          // 1. Get the URL
+          const itemUrl = item.permalink || `${cleanUrl}${baseName}/`;
 
-          // This is the URL of the page we're currently on
-          const mainPageUrl = normalizeLookupKey(data.page.url) + '/';
+          // 2. Get the Name
+          const itemName = item.title || baseName;
+          // --- END FIX ---
 
-          // Compare them!
-          const isCurrent = (itemUrl === mainPageUrl);
+          // 3. Check if it's the current page
+          const mainPageUrl = normalizeLookupKey(data.page.url);
+          const isCurrent = (normalizeLookupKey(itemUrl) === mainPageUrl);
 
           pages.push({
-            name: `» ${baseName}`,
+            name: `» ${itemName}`, // Use the title
             url: itemUrl,
-            isCurrent: isCurrent  // Add the new property
+            isCurrent: isCurrent
           });
         }
 
