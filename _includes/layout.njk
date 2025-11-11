@@ -7,13 +7,11 @@
         <title>BodgeLab: {{ title }}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="{{ seo.description }}">
-        
         <meta property="og:title" content="BodgeLab: {{ title }}">
         <meta property="og:description" content="{{ seo.description }}">
         <meta property="og:image" content="{{ seo.image }}">
         <meta property="og:url" content="{{ seo.url }}">
         <meta property="og:type" content="website">
-        
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:title" content="BodgeLab: {{ title }}">
         <meta name="twitter:description" content="{{ seo.description }}">
@@ -43,11 +41,10 @@
                 </div>
                 <div
                     class="page-nav">
-                    
                     {# Right Side: Parent Link #}
                     {% if parentUrl %}
                         <div>
-                            <a href="{{ parentUrl }}" class="nav-link up">⇡ Go Up</a>
+                            <a href="{{ parentUrl }}" class="nav-link up">⇱ Go Up</a>
                         </div>
                     {% endif %}
                     {# Left Side: Date #}
@@ -63,6 +60,7 @@
         </header>
         {% if content or media %}
             <main class="main-content">
+                <p>{{ page.data.title }}</p>
                 {% block content %}
                     {{ content | safe }}
                 {% endblock %}
@@ -75,11 +73,12 @@
                         {% else %}
                             {# This is a post page. Use the page.inputPath (e.g., /posts/firstpost.md) #}
                             {#{% set download_href = "data:text/markdown;charset=utf-8," + page.inputContent | urlencode %}#}
-                
-                            {% set download_href = "data:application/octet-stream;charset=utf-8," + (page.rawInput | urlencode) %}
+                        {% set download_href = "data:application/octet-stream;charset=utf-8," + (page.rawInput | urlencode) %}
                         {% endif %}
                         <hr>
-                        <p class="download-btn-container">
+                            <p class="download-btn-container"> <a class="page-share-btn" href="/share/{{ uid }}/" title="Get permanent link">
+                                ↻ SHARE
+                            </a>
                             <a class="page-download-btn" href="{{ download_href | safe }}" download="{{ download_filename | safe }}">
                                 DOWNLOAD "{{ download_filename | safe }}" ⤓
                             </a>
@@ -99,10 +98,10 @@
                 <section class="directory-container">
                     <div class="directory-header">
                         {% if parentUrl %}
-                            <a href="{{ parentUrl }}" class="nav-link-small up">..\ </a>
+                            <a href="{{ parentUrl }}" class="nav-link-small up">..\
+                            </a>
                         {% endif %}
                         <h3 class="directory-title">{{ directoryTitle | safe }}</h3>
-                  
                     </div>
                     {# 2. Directory Contents Listing #}
                     {% if directoryContents %}
@@ -111,14 +110,13 @@
                                 <li>
                                     <span
                                         class="icon"
-                                        style="-webkit-mask-image: url('/config/foldericon.svg'); mask-image: url('/config/foldericon.svg');"></span>
+                                        style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
                                     <a href="{{ dir.url }}">{{ dir.name }}\</a>
                                 </li>
                             {% endfor %}
                             {% for item in directoryContents.pages %}
                                 <li>
-                                    <span class="icon" style="-webkit-mask-image: url('/config/pageicon.svg'); mask-image: url('/config/pageicon.svg');"></span>
-                                    
+                                    <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
                                     {% if item.isCurrent %}
                                         {# It's the current page, so make it bold and not a link #}
                                         <strong>{{ item.name }}</strong>
@@ -126,12 +124,11 @@
                                         {# It's not the current page, so make it a normal link #}
                                         <a href="{{ item.url }}">{{ item.name }}</a>
                                     {% endif %}
-
                                 </li>
                             {% endfor %}
                             {% for file in directoryContents.files %}
                                 <li>
-                                    <span class="icon" style="-webkit-mask-image: url('/config/fileicon.svg'); mask-image: url('/config/fileicon.svg');"></span>
+                                    <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
                                     <a href="{{ file.url }}">{{ file.name }}</a>
                                 </li>
                             {% endfor %}
@@ -143,6 +140,23 @@
                 </div>
             {% endif %}
         {% endif %}
+
+        <!-- {% if uid %}
+            <script>
+                // This script will only be added to pages that have a UID
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/share/{{ uid }}/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+            </script>
+        {% endif %} -->
         <script src="/js/main.js"></script>
     </body>
 </html></body></html>

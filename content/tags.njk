@@ -1,33 +1,28 @@
 ---
-# 1. Paginate over your "tagList" collection
 pagination:
   data: collections.tagList
   size: 1
   alias: tag
-  # "tag" will now be a string like "REAPER" or "Nunjucks"
-
-# 2. Create a permalink for each tag page
 permalink: /tags/{{ tag | slugify }}/
-
-# 3. Exclude these pages from sitemaps, etc.
 eleventyExcludeFromCollections: true
+layout: "layout.njk"
+directory: true 
+download: false
 ---
-{# --- Page Content --- #}
 
-{# 4. Set the page title to the tag name #}
-<h1>{{ tag }}</h1>
+{# 1. Title for the page #}
+<h2>Posts tagged with "{{ tag }}"</h2>
 
-<p>All posts tagged with "{{ tag }}":</p>
-
-{# 5. Loop over the collection for THAT tag #}
+{# 2. List of posts #}
 <ul>
-  {% for post in collections[tag] | reverse %}
-    <li>
-      <a href="{{ post.url }}">{{ post.data.title }}</a>
-    </li>
-  {% endfor %}
+{% set tagPosts = collections[tag] %}
+{% for post in tagPosts | reverse %}
+  <li>
+    <a href="{{ post.url }}">{{ post.data.title }}</a>
+  </li>
+{% endfor %}
 </ul>
 
-{# 6. Add a link back to the main categories page #}
 <hr>
-<p><a href="/categories/">← View All Categories</a></p>
+{# 6. Add a link back to the main categories page #}
+<p><a href="/tags/">← View All Tags</a></p>

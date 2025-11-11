@@ -1,0 +1,3 @@
+- fake banner ad showing a random page
+- featured post on homepage
+- absolute URL system even if I rearrange files/folders

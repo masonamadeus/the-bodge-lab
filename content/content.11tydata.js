@@ -17,6 +17,32 @@ function normalizeLookupKey(webPath) {
 }
 
 /**
+ * Creates a URL-friendly "slug" from a string.
+ */
+function slugify(str) {
+  if (!str) return 'page';
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // remove invalid chars
+    .replace(/\s+/g, '-') // collapse whitespace to -
+    .replace(/-+/g, '-'); // collapse dashes
+}
+
+/**
+ * Generates a simple hash from a string (for collision-proofing).
+ */
+function getSeed(str) {
+  let hash = 0;
+  if (str.length === 0) return hash;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash);
+}
+
+/**
  * correctly finds the directory node that should be listed.
  */
 function getDirectoryNode(data) {
@@ -106,7 +132,6 @@ function extractH1(content) {
     console.log("H1: no content")
     return null;
   }
-  console.log(`H1: found ${content}`)
   // --- START FIX ---
   // Split the content by front matter dashes
   const parts = content.split('---');
@@ -131,6 +156,56 @@ module.exports = {
   directory: true,
 
   eleventyComputed: {
+
+    uid: data => {
+      // 1. Use existing UID if present in front matter
+      if (data.uid) {
+        return data.uid;
+      }
+
+      // 2. Don't generate UIDs for system pages
+      if (data.page.url === "/" || 
+          (data.page.inputPath.endsWith("media.njk") && data.media) ||
+          data.page.inputPath.endsWith("autoDirectory.njk") ||
+          data.page.inputPath.includes("tags.njk") || // Stop pagination from getting UIDs
+          data.page.inputPath.includes("share.njk")) {
+        return null;
+      }
+
+      // 3. Generate a dynamic UID from the file path.
+      // This logic is independent of 'title' and breaks the circular dependency.
+      const relativePath = path.relative(__dirname, data.page.inputPath);
+      const dir = path.dirname(relativePath);
+      const filename = path.basename(relativePath, path.extname(relativePath));
+      
+      let parts = [];
+      if (dir !== '.' && dir !== '') {
+         parts = dir.split(path.sep);
+      }
+      parts.push(filename);
+      
+      const dynamicUid = parts
+        .map(part => slugify(part))
+        .filter(part => part !== 'index' && part !== '')
+        .join('-');
+
+      // 4. Add the hash back in to ensure uniqueness if you move files
+      const hash = getSeed(data.page.inputPath).toString(36).slice(-6);
+
+      return `${dynamicUid}-${hash}`;
+    },
+
+    permalink: data => {
+      // This checks if a permalink is set in a page's front matter.
+      if (data.permalink) {
+        // If it is, return that value, giving it top priority.
+        return data.permalink;
+      }
+      console.log(`[permalink] No permalink set for ${data.page.inputPath}`);
+      // If not, return 'undefined' to let Eleventy use its
+      // default file-based URL logic.
+      return undefined;
+    },
 
     title: data => {
       // 1. Check for a hard-coded title in front matter.

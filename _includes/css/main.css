@@ -32,7 +32,7 @@ body {
   margin: calc(var(--base-spacing) * 2) auto;
   padding: 0 var(--base-spacing);
   line-height: var(--line-height);
-  background-image: url(/config/sitebg3.svg);
+  background-image: url(/.config/sitebg3.svg);
   background-attachment: fixed;
   background-size:cover;
   background-repeat:repeat-y;

@@ -3,7 +3,7 @@
 // Node.js modules for file system and path handling
 const { DateTime } = require("luxon");
 const path = require('path');
-const { MEDIA_EXTENSIONS } = require('./_11ty/fileTypes.js');
+const { MEDIA_EXTENSIONS, TEMPLATE_EXTENSIONS, PASSTHROUGH_EXTENSIONS } = require('./_11ty/fileTypes.js');
 const { generateFileTreeData } = require('./_11ty/filetree.js');
 const gitCommitDate = require("eleventy-plugin-git-commit-date");
 
@@ -26,7 +26,7 @@ const mdLib = markdownIt({
   
 let fileTreeCache = null;
 
-// --- Main Eleventy Config ---
+// #region ELEVENTY CONFIG
 module.exports = function (eleventyConfig) {
 
   // --- Markdown Configuration ---
@@ -48,7 +48,7 @@ module.exports = function (eleventyConfig) {
     return fileTreeCache;
   });
 
-  // --- Filters ---
+  // #region FILTERS
   eleventyConfig.addFilter("readableDate", dateObj => {
     return DateTime.fromJSDate(dateObj, { zone: 'utc' }).toFormat("LLLL dd, yyyy");
   });
@@ -72,7 +72,9 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addFilter("dirname", p => path.dirname(p));
   eleventyConfig.addFilter("basename", p => path.basename(p));
 
-  // --- Shortcodes ---
+  // #endregion
+  
+  // #region EMBED SHORTCODES
 
  /**
    * Helper function to resolve relative paths.
@@ -158,6 +160,7 @@ module.exports = function (eleventyConfig) {
   <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p>
 </div>`;
     });
+
   // YouTube Shortcode
   // Usage: {% yt "VIDEO_ID" %} or {% yt "https://www.youtube.com/watch?v=..." %}
   eleventyConfig.addShortcode("yt", function (videoUrl) {
@@ -193,7 +196,9 @@ module.exports = function (eleventyConfig) {
 </div>`;
   });
 
+  //#endregion
 
+  // #region LAYOUT SHORTCODES
   // Layout Row (Flex Container)
   // Usage: {% row %} ... {% endrow %}
   eleventyConfig.addPairedShortcode("row", function (content) {
@@ -211,6 +216,7 @@ module.exports = function (eleventyConfig) {
     }
     return `<div class="${className}">${content}</div>`;
   });
+
 
   // "Grid" Shortcode (The *easy* way)
   //    Usage: {% grid "half, half" %} ...content... ...content... {% endgrid %}
@@ -241,18 +247,22 @@ module.exports = function (eleventyConfig) {
     return `<div class="layout-row">${columnHtml}</div>`;
   });
 
-  // --- Passthrough Copy ---
+  //#endregion
+
+  // #region PASSTHROUGHS
 
   // Entire content folder passthrough so that we can easily download any file
-  eleventyConfig.addPassthroughCopy("content");
+  //eleventyConfig.addPassthroughCopy("content");
 
   // CSS file
   eleventyConfig.addPassthroughCopy({ "_includes/css": "css" });
 
   // Theme JS Script
   eleventyConfig.addPassthroughCopy({ "_includes/js": "js" });
+  
+  //#endregion
 
-  // --- Collections ---
+  // #region COLLECTIONS
 
   // Creates a list of all tags
   eleventyConfig.addCollection("tagList", function (collectionApi) {
@@ -263,7 +273,17 @@ module.exports = function (eleventyConfig) {
     return [...tagSet].sort();
   });
 
-  // --- Config Return ---
+  // Collection of "permanent" pages (with page_id in front matter)
+  eleventyConfig.addCollection("permanent_pages", function(collectionApi) {
+    return collectionApi.getAll().filter(function(item) {
+      // Return pages that have 'page_id' in their data
+      return "uid" in item.data;
+    });
+  });
+// We need to remove the leading dot from each item.
+  const cleanTemplateFormats = TEMPLATE_EXTENSIONS.map(ext => ext.substring(1));
+  const cleanPassthroughFormats = PASSTHROUGH_EXTENSIONS.map(ext => ext.substring(1));
+
   return {
     dir: {
       input: "content",
@@ -271,10 +291,14 @@ module.exports = function (eleventyConfig) {
       data: "../_data",
       output: "_site"
     },
-    // Still process md and njk files so that our
-    // index.md pages are turned into directory listings.
-    //templateFormats: ["md", "njk", "html"]
+    
+    // 2. Feed Eleventy the "clean" lists.
+    templateFormats: [
+      ...cleanTemplateFormats,
+      ...cleanPassthroughFormats
+    ]
   };
 
-
 };
+
+//#endregion

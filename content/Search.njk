@@ -1,0 +1,56 @@
+---
+permalink: /search/
+layout: layout.njk
+title: "Search The Bodgelab"
+eleventyExcludeFromCollections: true
+directory: true 
+download: false 
+---
+
+<h2>Search the BodgeLab</h2>
+<p>Search for pages by title or URL. Results will appear as you type.</p>
+
+{# 1. The HTML for the search box and results #}
+<style>
+  #search-box {
+    width: 100%;
+    padding: 0.5em;
+    font-size: 1.2em;
+    margin-bottom: 1em;
+    border-radius: 0;
+    border: 1px solid var(--border-color);
+  }
+  #search-results ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  #search-results li {
+    margin-bottom: 1em;
+    border-bottom: 1px dashed var(--text-muted);
+    padding-bottom: 1em;
+  }
+  #search-results small {
+    color: var(--text-muted);
+  }
+</style>
+
+<input type="search" id="search-box" placeholder="Start typing to search..." autofocus>
+
+<div id="search-results">
+  <p><i>Waiting you to start typing...</i></p>
+</div>
+
+
+<script>
+  // 1. Get the data and elements
+  const allPages = {{ filetree.allPages | dump | safe }};
+  const searchInput = document.getElementById('search-box');
+  const resultsContainer = document.getElementById('search-results');
+
+  // 2. Add the event listener
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value;
+    const results = window.BodgeLab.runSearch(query, allPages);
+    window.BodgeLab.renderResults(results, resultsContainer, query);
+  });
+</script>
