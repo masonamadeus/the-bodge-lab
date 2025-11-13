@@ -2,4 +2,4 @@
 - featured post on homepage
 - absolute URL system even if I rearrange files/folders
 
--- IT'S JUST THE LINK IN THE DIRECTORY LISTING NOT THE PERMALINK
+-- download links for index.md pages should reflect the documents title from the filetree.
