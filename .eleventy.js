@@ -280,6 +280,26 @@ module.exports = function (eleventyConfig) {
     return `<div class="layout-row">${columnHtml}</div>`;
   });
 
+  // Text alignment shortcode. {%align "center"} {% endalign %}
+  eleventyConfig.addPairedShortcode("align", function(content, alignment = 'left') {
+    const validAlignments = ['left', 'right', 'center', 'justify'];
+    
+    // Use 'left' as a safe default if an invalid value is passed
+    const safeAlignment = validAlignments.includes(alignment) ? alignment : 'left';
+
+    // The 'content' variable contains the already-rendered HTML
+    // (e.g., from Markdown) from inside the shortcode block.
+    // We trim to avoid outputting empty divs if there's only whitespace.
+    const trimmedContent = content.trim();
+
+    if (!trimmedContent) {
+      return '';
+    }
+
+    return `<div class="text-${safeAlignment}">\n${trimmedContent}\n</div>`;
+  });
+
+
   //#endregion
 
   // #region PASSTHROUGHS

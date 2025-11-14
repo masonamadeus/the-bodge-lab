@@ -76,10 +76,11 @@
                         {% endif %}
                         <hr>
                             <p class="download-btn-container"> <a class="page-share-btn" href="/s/{{ uid }}/" title="Get permanent link">
-                                ↻ SHARE
+                                SHARE⇗
                             </a>
-                            <a class="page-download-btn" href="{{ download_href | safe }}" download="{{ download_filename | safe }}">
-                                DOWNLOAD "{{ download_filename | safe }}" ⤓
+                            
+                            <a class="page-download-btn nowrap" href="{{ download_href | safe }}" download="{{ download_filename | safe }}">
+                                DOWNLOAD ⤓
                             </a>
                         </p>
                     </div>
@@ -128,7 +129,7 @@
                             {% for file in directoryContents.files %}
                                 <li>
                                     <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
-                                    <a href="{{ file.url }}">{{ file.name }}</a>
+                                    <a style="nowrap" href="{{ file.url }}">{{ file.name }}</a>
                                 </li>
                             {% endfor %}
                         </ul>

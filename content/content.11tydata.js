@@ -318,13 +318,26 @@ module.exports = {
 
       return { directories, files, pages };
     },
+
+    // set download filename
     download_filename: data => {
+
+      
+      // This is a media page (from media.njk)
       if (data.media && data.media.url) {
-        // This is a media page (from media.njk)
         return path.basename(data.media.url);
       }
+
+      // This is a post page (e.g., .md file)
       if (data.page && data.page.inputPath) {
-        // This is a post page (e.g., .md file)
+        if (data.page.inputPath.endsWith("index.md")) {
+            // try to return the title for the index
+            if (data.title) return data.title+".md";
+          const h1 = extractH1(data.page.rawInput);
+          if (h1) {
+            return h1+".md";
+          } 
+        } 
         return path.basename(data.page.inputPath);
       }
       // Fallback

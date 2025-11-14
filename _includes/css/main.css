@@ -113,18 +113,15 @@ code {
 
 .download-btn-container{
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   margin:0;
-}
-.download-btn-container .page-download-btn{
+  line-height:1;
+  white-space: nowrap;  /* Prevents the text from wrapping */
+  overflow: hidden;     /* Hides the text that overflows */
+  text-overflow: ellipsis; /* Adds the '...' */
   font-size: 0.8em;
-  margin-left:auto;
-  margin-right:0;
-  margin-top:0;
-  padding-top:0;
-  text-align: right;
-  padding: 0.3em;
 }
+
 
 .nav-link {
   font-weight: bold;
@@ -182,6 +179,7 @@ code {
   list-style: none;
   margin: 0;
   line-height: 1;
+  padding-left:0.5em;
 }
 .dir-listing li {
   font-family: var(--mono-font);
@@ -334,4 +332,26 @@ code {
   .layout-col > :first-child {
   margin-top: 0;
 }
+}
+
+.nowrap {
+  white-space: nowrap;  /* Prevents the text from wrapping */
+  overflow: hidden;     /* Hides the text that overflows */
+  text-overflow: ellipsis; /* Adds the '...' */
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-justify {
+  text-align: justify;
 }
