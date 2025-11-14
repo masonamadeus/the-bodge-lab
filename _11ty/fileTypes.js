@@ -24,7 +24,7 @@ const AUDIO_EXTENSIONS = [
 const DATA_EXTENSIONS = [
     '.json', '.csv', '.yaml', '.yml', '.xml',
     '.zip', '.rar', '.7z', '.tar', '.gz','.js', '.css',
-    '.exe', '.dmg', '.azw',
+    '.exe', '.dmg', '.azw', '.lua'
 ];
 
 const DOCUMENT_EXTENSIONS = [

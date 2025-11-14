@@ -12,7 +12,9 @@ download: false
     
     <p>This is The <em>Bodge</em> Lab, so things get moved around!</p>
 <p>Based on the URL you tried, were you looking for one of these?</p>
-
+<div>
+    <p>Keywords: "<i id="search-keywords"></i>"</p>
+</div>
 <div id="smart-search-results">
     <p><i>Searching for matches...</i></p>
 </div>
@@ -27,6 +29,7 @@ download: false
     
     // 2. Get the data and elements
     const resultsContainer = document.getElementById('smart-search-results');
+    const keywordsContainer = document.getElementById('search-keywords')
     
     // 3. Fetch the search data (or get from cache)
     resultsContainer.innerHTML = '<p><i>Loading search data...</i></p>';
@@ -34,6 +37,12 @@ download: false
  
     // 4. Get the query from the bad URL
     const badPath = window.location.pathname.toLowerCase();
+    const keywords = badPath.replace(/[\/\-]/g, ' ')          // Treat slashes and hyphens as spaces
+    .replace(/[^a-z0-9\s]/g, '')   // Remove all other punctuation (which is now just spaces)
+    .split(/\s+/)                  
+    .filter(k => k.length > 0 && k !== 'index');
+
+    keywordsContainer.innerHTML = keywords;
     
     // 5. Run the search
     const results = window.BodgeLab.runSearch(badPath, allPages);
