@@ -44,13 +44,22 @@ download: false
   // --- ADD THIS LISTENER WRAPPER ---
   document.addEventListener('bodgelab:searchready', () => {
 
-    // 1. Get the data and elements
-    const allPages = {{ filetree.allPages | dump | safe }};
+    // 1. Get the elements
     const searchInput = document.getElementById('search-box');
     const resultsContainer = document.getElementById('search-results');
     
+    let allPages = null; // We'll lazy-load this
+
     // 2. Add the event listener
-    searchInput.addEventListener('input', () => {
+    searchInput.addEventListener('input', async () => {
+      
+      // 3. (NEW) Fetch data on first input, if we haven't already
+      if (!allPages) {
+        resultsContainer.innerHTML = '<p><i>Loading search data...</i></p>';
+        allPages = await window.BodgeLab.getSearchData();
+      }
+
+      // 4. Run the search and render
       const query = searchInput.value;
       const results = window.BodgeLab.runSearch(query, allPages);
       window.BodgeLab.renderResults(results, resultsContainer, query);

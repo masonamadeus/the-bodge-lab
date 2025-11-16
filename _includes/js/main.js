@@ -148,72 +148,190 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return str;
   }
-  /**
+
+/**
+   * Calculates the Levenshtein distance between two strings.
+   * (a.k.a. "edit distance")
+   */
+  const getLevenshteinDistance = (a, b) => {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+
+    const matrix = [];
+
+    // increment along the first column of each row
+    for (let i = 0; i <= b.length; i++) {
+      matrix[i] = [i];
+    }
+
+    // increment each column in the first row
+    for (let j = 0; j <= a.length; j++) {
+      matrix[0][j] = j;
+    }
+
+    // Fill in the rest of the matrix
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) == a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1, // substitution
+            matrix[i][j - 1] + 1,     // insertion
+            matrix[i - 1][j] + 1      // deletion
+          );
+        }
+      }
+    }
+    return matrix[b.length][a.length];
+  };
+  // --- End Helper ---
+
+/**
    * Runs a search query against a list of pages.
    * @param {string} query - The user's search text.
    * @param {Array} allPages - The full list of pages from filetree.
    * @returns {Array} - A sorted array of matched pages.
    */
- window.BodgeLab.runSearch = (query, allPages) => {
+  window.BodgeLab.runSearch = (query, allPages) => {
   
-  // --- THIS IS THE FIX ---
-  // 1. Decode the incoming query string FIRST. This ensures %20 becomes a space.
-  const decodedQuery = decodeSearchString(query);
-  // --- END FIX ---
-  
-  // 2. Clean the user's query into keywords
-  // We now use the already decoded query string here:
-  const keywords = decodedQuery.toLowerCase()
-    .replace(/[\/\-]/g, ' ')          // Treat slashes and hyphens as spaces
-    .replace(/[^a-z0-9\s]/g, '')   // Remove all other punctuation (which is now just spaces)
-    .split(/\s+/)                  
-    .filter(k => k.length > 0 && k !== 'index');
-
-  if (keywords.length === 0) {
-    return []; // Return empty array if no query
-  }
-
-  // 3. Run the search with new scoring
-  const results = allPages.map(page => {
-    let score = 0;
+    // (NEW) These are your "preset range numbers", now as ratios.
+    // 0.5 = 50% of the top score
+    // 0.2 = 20% of the top score
+    const STRICT_RATIO = 0.5;
+    const LOOSE_RATIO = 0.2; 
     
-    // These strings are already decoded inside the map function
-    const decodedUrl = decodeSearchString(page.url);
-    const decodedTitle = decodeSearchString(page.title || "");
+    // 1. Decode and clean the user's query
+    const decodedQuery = decodeSearchString(query);
+    const keywords = [...new Set( // Use a Set to get unique keywords
+      decodedQuery.toLowerCase()
+        .replace(/[\/\-]/g, ' ')
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(k => k.length > 0 && k !== 'index')
+    )];
 
-    // Normalize URL and Title in the same way as the query
-    const cleanUrl = decodedUrl.toLowerCase()
-      .replace(/[\/\-]/g, ' ')
-      .replace(/[^a-z0-9\s]/g, '');
-      
-    const cleanTitle = decodedTitle.toLowerCase()
-      .replace(/[\/\-]/g, ' ')
-      .replace(/[^a-z0-9\s]/g, '');
-
-    // Bonus for an exact title match
-    if (cleanTitle === keywords.join(' ')) {
-      score += 10;
+    if (keywords.length === 0) {
+      return [];
     }
+    
+    // 2. Calculate Inverse Document Frequency (IDF) Weights
+    const totalPages = allPages.length;
+    const keywordWeights = {};
 
     keywords.forEach(keyword => {
-      // High score for each keyword in the title
-      if (cleanTitle.includes(keyword)) {
-        score += 3;
+      let pagesWithKeyword = 0;
+      for (const page of allPages) {
+        const cleanTitle = decodeSearchString(page.title || "").toLowerCase();
+        const cleanUrl = decodeSearchString(page.url).toLowerCase();
+        if (cleanTitle.includes(keyword) || cleanUrl.includes(keyword)) {
+          pagesWithKeyword++;
+        }
       }
       
-      // Low score for each keyword in the URL
-      if (cleanUrl.includes(keyword)) {
-        score += 1;
-      }
+      const frequency = pagesWithKeyword / totalPages;
+      keywordWeights[keyword] = 1 - frequency; // 1.0 = very rare, 0.0 = very common
     });
 
-    return { ...page, score };
-  })
-    .filter(page => page.score > 0)
-    .sort((a, b) => b.score - a.score); // Sort by highest score
+    // 3. Score all pages
+    const scoredResults = allPages.map(page => {
+      let baseScore = 0;
+      let keywordsFound = 0;
+      
+      const decodedUrl = decodeSearchString(page.url);
+      const decodedTitle = decodeSearchString(page.title || "");
+      const cleanUrl = decodedUrl.toLowerCase().replace(/[\/\-]/g, ' ').replace(/[^a-z0-9\s]/g, '');
+      const cleanTitle = decodedTitle.toLowerCase().replace(/[\/\-]/g, ' ').replace(/[^a-z0-9\s]/g, '');
+      
+      const titleWords = cleanTitle.split(/\s+/);
+      const urlWords = cleanUrl.split(/\s+/);
 
-  return results;
-};
+      // 4. Get Base Score for each keyword
+      keywords.forEach(keyword => {
+        const weight = keywordWeights[keyword] || 0.5;
+        let found = false;
+        let titleScore = 0;
+        let urlScore = 0;
+
+        // 1. Check Title (High Score)
+        if (cleanTitle.includes(keyword)) {
+          titleScore = 3 * weight; // Exact (or partial) match
+          found = true;
+        } else {
+          const hasFuzzyTitleMatch = titleWords.some(w => getLevenshteinDistance(w, keyword) === 1);
+          if (hasFuzzyTitleMatch) {
+            titleScore = 1.5 * weight; // Half score for fuzzy
+            found = true;
+          }
+        }
+
+        // 2. Check URL (Low Score)
+        if (cleanUrl.includes(keyword)) {
+          urlScore = 0.5 * weight; 
+          found = true;
+        } else {
+          const hasFuzzyUrlMatch = urlWords.some(w => getLevenshteinDistance(w, keyword) === 1);
+          if (hasFuzzyUrlMatch) {
+            urlScore = 0.25 * weight; 
+            found = true;
+          }
+        }
+        
+        if (found) {
+          keywordsFound++;
+        }
+        
+        baseScore += (titleScore + urlScore);
+      });
+
+      // 5. Apply Bonuses to the Base Score
+      if (baseScore > 0) {
+        if (cleanTitle === keywords.join(' ')) {
+          baseScore += 10;
+        }
+        if (keywords.every(k => cleanTitle.includes(k))) {
+            baseScore += 5;
+        }
+      }
+
+      // 6. Calculate Match Ratio (our "scaling deduction")
+      const matchRatio = (keywords.length > 0) ? (keywordsFound / keywords.length) : 0;
+
+      // 7. Calculate Final Score
+      let finalScore = baseScore * matchRatio;
+
+      return { ...page, score: finalScore };
+    })
+      .filter(page => page.score > 0); // Only keep pages that matched at all
+
+    
+    // --- (NEW) 8. Apply Dynamic Threshold ---
+    
+    if (scoredResults.length === 0) {
+      return []; // No results, just quit
+    }
+    
+    // Sort *once* to find the best score
+    scoredResults.sort((a, b) => b.score - a.score);
+    
+    // Find the single best score
+    const maxScore = scoredResults[0].score;
+    
+    // Calculate our dynamic thresholds
+    const highDynamicThreshold = maxScore * STRICT_RATIO;
+    const lowDynamicThreshold = maxScore * LOOSE_RATIO;
+
+    // First, try to get results with the HIGH threshold
+    let finalResults = scoredResults.filter(page => page.score >= highDynamicThreshold);
+    
+    // If that returned 0 results, fall back to the LOW threshold
+    if (finalResults.length === 0) {
+      finalResults = scoredResults.filter(page => page.score >= lowDynamicThreshold);
+    }
+    
+    // Return the (already sorted) results
+    return finalResults;
+  };
 
   /**
    * Renders search results into a container element.

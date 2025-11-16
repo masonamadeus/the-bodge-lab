@@ -29,6 +29,13 @@ function markdownLinkExternal(md) {
 
     if (hrefIndex >= 0) {
       const href = token.attrs[hrefIndex][1];
+
+      if (href.includes(' ') && !href.startsWith('http') && !href.startsWith('mailto:')) {
+        // URL-encode the spaces
+        href = href.replace(/ /g, '%20');
+        // Update the href attribute
+        token.attrs[hrefIndex][1] = href;
+      }
       
       // Check if the link starts with http:// or https:// (is external)
       if (href.startsWith('http://') || href.startsWith('https://')) {

@@ -7,18 +7,19 @@ directory: false
 download: false
 ---
 
-<h2>Oops! Page Not Found (404)</h2>
+<h1>Oops! Page Not Found (404)</h1>
 <p>I couldn't find the page you were looking for. </p>
     
     <p>This is The <em>Bodge</em> Lab, so things get moved around!</p>
-<p>Based on the URL you tried, were you looking for one of these?</p>
-<div>
-    <p>Keywords: "<i id="search-keywords"></i>"</p>
-</div>
+
+ <h3>Based on the URL you tried, were you looking for one of these?</h3>
+
 <div id="smart-search-results">
     <p><i>Searching for matches...</i></p>
 </div>
-
+<div>
+    <p>Keywords: "<i id="search-keywords"></i>"</p>
+</div>
 <hr>
 <p>Or, you can try heading back to the <a href="/">homepage</a>.</p>
 
@@ -26,6 +27,29 @@ download: false
 <script>
   // 1. Listen for the 'bodgelab:searchready' event
   document.addEventListener('bodgelab:searchready', async () => {
+
+   /**
+   * decodes HTML and shit
+   */
+  function decodeSearchString(str) {
+    if (!str) return '';
+    
+    // 1. Decode URL encoding (%20 -> space, %26 -> &, etc.)
+    // We use try/catch in case the string is partially malformed.
+    try {
+      str = decodeURIComponent(str);
+    } catch (e) {
+      // If it fails, proceed with the original string, letting the HTML decoder handle what it can.
+    }
+    
+    // 2. Decode ALL HTML entities using a temporary DOM element.
+    // This is the most reliable way to handle &amp;, &quot;, etc.
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = str;
+    str = textarea.value;
+
+    return str;
+  }
     
     // 2. Get the data and elements
     const resultsContainer = document.getElementById('smart-search-results');
@@ -37,8 +61,9 @@ download: false
  
     // 4. Get the query from the bad URL
     const badPath = window.location.pathname.toLowerCase();
-    const keywords = badPath.replace(/[\/\-]/g, ' ')          // Treat slashes and hyphens as spaces
-    .replace(/[^a-z0-9\s]/g, '')   // Remove all other punctuation (which is now just spaces)
+    const keywords = decodeSearchString(badPath)
+    .replace(/[\/\-]/g, ' ')          // Treat slashes and hyphens as spaces
+    .replace(/[^a-z0-9\s]/g, ' ')   // Remove all other punctuation (which is now just spaces)
     .split(/\s+/)                  
     .filter(k => k.length > 0 && k !== 'index');
 
@@ -54,7 +79,7 @@ download: false
       window.location.href = redirectUrl;
     } else {
       // 7. Render list
-      window.BodgeLab.renderResults(results, resultsContainer, badPath);
+      window.BodgeLab.renderResults(results, resultsContainer, keywords);
     }
   });
 </script>

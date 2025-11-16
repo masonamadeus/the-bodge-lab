@@ -54,6 +54,7 @@ directory: true
   .theme-actions {
     margin-top: 1.5em;
     display: flex;
+    flex-wrap: wrap; /* Allow buttons to wrap on small screens */
     gap: 1em;
   }
   .theme-button {
@@ -64,26 +65,43 @@ directory: true
     font-size: 1em;
     cursor: pointer;
   }
-  .theme-button.reset {
+  .theme-button.reset,
+  .theme-button.random {
     background: var(--bg-muted);
     color: var(--text-color);
+    border: 1px solid var(--border-color);
+  }
+  .theme-button.reset:hover,
+  .theme-button.random:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+  }
+  /* Helper class for JS */
+  .hidden {
+    display: none;
   }
 </style>
 
 ## Customize Your Theme
 
-When you first visit The Bodge Lab, it creates a unique custom theme for you (based on various fingerprint data from your browser and device)!
+When you first visit The Bodge Lab, it creates a unique custom theme for you based on your device data!
 
-If you don't like it, or if you just want to have control over your own custom theme, you can customize it here.
+You can learn more about that [here](<../about the site/>).
+
+If you don't like it, you can customize it here. **All changes save automatically.**
 
 <hr>
 
 <div class="form-row">
-  <label for="font-name">Font Name:</label>
-  <input type="text" id="font-name" placeholder="Open Sans">
+  <label for="body-font-name">Body Font Name:</label>
+  <input type="text" id="body-font-name" placeholder="Open Sans">
+</div>
+<div class="form-row">
+  <label for="mono-font-name">Monospace Font Name:</label>
+  <input type="text" id="mono-font-name" placeholder="Roboto Mono">
 </div>
 
-You can use any font from [Google Fonts](https://fonts.google.com/). Just enter the name exactly as it appears on the site (e.g., "Roboto", "Open Sans", "Lobster", etc.). If you leave this blank, the default system font will be used.
+You can use any font from [Google Fonts](https://fonts.google.com/). Just enter the name exactly as it appears on the site.
 
 <hr>
 
@@ -139,10 +157,12 @@ You can use any font from [Google Fonts](https://fonts.google.com/). Just enter 
 
 The Bodge Theme Engine™ will attempt to adjust your color choices for proper contrast and accessibility, so they may change slightly when you save.
 
-Now... this adjustment might also fail, and you can definitely make the site unreadable if you try. Up to you, do what you want!
+Now... this adjustment might also fail, and you can definitely make the site unreadable if you try. 
+
+Up to you, do what you want!
 
 <div class="theme-actions">
-  <button id="save-custom-theme" class="theme-button">Save Theme</button>
+  <button id="theme-reroll" class="theme-button random">🎲 Randomize</button>
   <button id="reset-custom-theme" class="theme-button reset">Reset to Bodge Theme</button>
 </div>
 
@@ -193,11 +213,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   // --- End: Color Conversion Helpers ---
 
-  const saveBtn = document.getElementById('save-custom-theme');
+  // Button Elements
+  const rerollBtn = document.getElementById('theme-reroll');
   const resetBtn = document.getElementById('reset-custom-theme');
 
   // Input Elements
-  const fontInput = document.getElementById('font-name');
+  const bodyFontInput = document.getElementById('body-font-name');
+  const monoFontInput = document.getElementById('mono-font-name');
   const lightFieldset = document.getElementById('editor-light');
   const darkFieldset = document.getElementById('editor-dark');
   
@@ -228,13 +250,26 @@ document.addEventListener('DOMContentLoaded', () => {
       text_muted_obj: getHslFromHex(inputs.textMuted.value),
       accent_obj: getHslFromHex(inputs.accent.value),
       bg_muted_obj: getHslFromHex(inputs.bgMuted.value)
-      // Note: bodge properties (border_s, border_l) are missing, which is fine.
-      // The pipeline in theme.js already handles this.
     };
   }
 
   /**
-   * Real-time update function
+   * Silently builds the theme object and saves it to localStorage.
+   */
+  function saveCustomTheme() {
+    const finalTheme = {
+      bodyFont: bodyFontInput.value || 'system-ui',
+      monoFont: monoFontInput.value || 'monospace',
+      light: getInputsFromForm('light'),
+      dark: getInputsFromForm('dark')
+    };
+    
+    localStorage.setItem('customThemeFull', JSON.stringify(finalTheme));
+    localStorage.removeItem('themeSeed'); // Clear bodge seed
+  }
+
+  /**
+   * Real-time update function (for live preview)
    */
   function updateThemePreview(e) {
     if (window.updateThemePalette) {
@@ -260,7 +295,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Load Initial State ---
   const currentTheme = JSON.parse(localStorage.getItem('customThemeFull'));
   if (currentTheme) {
-    fontInput.value = currentTheme.fontName;
+    bodyFontInput.value = currentTheme.bodyFont;
+    monoFontInput.value = currentTheme.monoFont;
     
     // Populate Light Pickers
     lightInputs.bg.value = hslToHex(currentTheme.light.bg_obj.h, currentTheme.light.bg_obj.s, currentTheme.light.bg_obj.l);
@@ -278,14 +314,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Attach Listeners ---
-  fontInput.addEventListener('blur', (e) => {
-    // Font change applies to both themes, so we just reload
-    saveBtn.click();
-  });
   
-  // Attach realtime listeners to all 10 pickers
+  // Font inputs auto-save on 'blur' (when user clicks away)
+  bodyFontInput.addEventListener('blur', saveCustomTheme);
+  monoFontInput.addEventListener('blur', saveCustomTheme);
+  
+  // Attach auto-save listeners to all 10 pickers
   document.querySelectorAll('.realtime-picker').forEach(picker => {
+    // This listener handles the LIVE PREVIEW
     picker.addEventListener('input', updateThemePreview);
+    
+    // This listener handles the AUTO-SAVE
+    // 'change' fires only when the user *finishes* selecting a color
+    picker.addEventListener('change', saveCustomTheme);
   });
   
   // Listen for the toggle event
@@ -296,19 +337,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Set initial editor state
   toggleEditor(document.documentElement.getAttribute('data-theme'));
 
-  // Save Button
-  saveBtn.addEventListener('click', () => {
-    const finalTheme = {
-      fontName: fontInput.value || 'system-ui',
-      light: getInputsFromForm('light'),
-      dark: getInputsFromForm('dark')
-    };
+  // Randomize Button
+  rerollBtn.addEventListener('click', () => {
+    // Disable any custom theme
+    localStorage.removeItem('customThemeFull');
     
-    localStorage.setItem('customThemeFull', JSON.stringify(finalTheme));
-    localStorage.removeItem('themeSeed'); // Clear bodge seed
+    // Generate a new random seed
+    const newSeed = Math.floor(Math.random() * 99999999);
+    localStorage.setItem('themeSeed', newSeed.toString());
     
-    // We don't need to reload, but it's safer
-    location.reload(); 
+    location.reload();
   });
 
   // Reset Button

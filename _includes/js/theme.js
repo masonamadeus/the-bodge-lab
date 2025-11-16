@@ -2,27 +2,71 @@
 (function () {
 
   /**
-   * Dynamically loads a Google Font by creating a <link> tag.
+   * Dynamically loads Google Fonts by creating a <link> tag.
+   * Now accepts two font names to load in one request.
    */
-  function loadGoogleFont(fontName) {
-    if (!fontName || fontName === 'system-ui') return;
-    const formattedName = fontName.replace(/ /g, '+');
+  function loadGoogleFont(bodyFont, monoFont) {
+    const fonts = [];
+    
+    // Add body font if it's not a system font
+    if (bodyFont && bodyFont !== 'system-ui') {
+      fonts.push(bodyFont.replace(/ /g, '+'));
+    }
+    // Add mono font if it's not a system font
+    if (monoFont && monoFont !== 'monospace') {
+      fonts.push(monoFont.replace(/ /g, '+'));
+    }
+
+    // If no Google fonts to load, just exit
+    if (fonts.length === 0) return;
+
+    // Create a single <link> tag for all fonts
+    // e.g., family=Roboto&family=Roboto+Mono
+    const formattedQuery = fonts.map(f => `family=${f}:wght@400;700`).join('&');
+    
     const fontLink = document.createElement('link');
-    fontLink.href = `https://fonts.googleapis.com/css2?family=${formattedName}:wght@400;700&display=swap`;
+    fontLink.href = `https://fonts.googleapis.com/css2?${formattedQuery}&display=swap`;
     fontLink.rel = 'stylesheet';
+    
+    // Remove any old Google Font links
     document.querySelectorAll('link[href^="https://fonts.googleapis.com"]').forEach(el => el.remove());
+    
     document.head.appendChild(fontLink);
   }
 
-  // --- A. HELPER FUNCTIONS (Your original code) ---
-  const fontPalettes = [
-    "system-ui, -apple-system, sans-serif",
-    "'Georgia', serif",
-    "'Times New Roman', serif",
-    "'Arial', sans-serif",
-    "'Verdana', sans-serif",
-    "'Courier New', monospace",
-    "'Lucida Console', monospace"
+  // --- HELPER FUNCTIONS ---
+
+  const BODY_FONT_PALETTE = [
+    "Open Sans",
+    "Lato",
+    "Montserrat", 
+    "Noto Sans", 
+    "Poppins", 
+    "Merriweather", 
+    "PT Serif", 
+    "Lora", 
+    "Playfair Display",
+    "Galindo",
+    "M PLUS Rounded 1c",
+    "Quantico",
+    "Roboto",
+    "Saira",
+    "Signika Negative",
+    "Spectral",
+    "Wellfleet"
+  ];
+  
+  const MONO_FONT_PALETTE = [
+    "Roboto Mono",
+    "Source Code Pro",
+    "Inconsolata", "Fira Mono", 
+    "Ubuntu Mono",
+    "Space Mono",
+    "JetBrains Mono",
+    "DM Mono",
+    "Kode Mono",
+    "Overpass Mono",
+    "Reddit Mono"
   ];
 
   function getSeed(str) {
@@ -148,8 +192,9 @@
     if (customThemeJSON) {
       try {
         const theme = JSON.parse(customThemeJSON);
-        if (theme.fontName && theme.light && theme.dark) {
-          return { fontName: theme.fontName, light: theme.light, dark: theme.dark };
+        if (theme.bodyFont && theme.light && theme.dark) {
+          theme.monoFont = theme.monoFont || 'monospace';
+          return theme; 
         } else {
           localStorage.removeItem('customThemeFull');
         }
@@ -157,6 +202,7 @@
         localStorage.removeItem('customThemeFull');
       }
     }
+
 
     // --- BODGE MODE ---
     let seed;
@@ -196,6 +242,9 @@
     const accent2_muted_s = getSeededRandomInRange(seed, 22, 25, 35);
     const accent2_muted_l = getSeededRandomInRange(seed, 24, 78, 82);
     
+    const bodyFont = BODY_FONT_PALETTE[getSeededRandomInRange(seed, 0, 0, BODY_FONT_PALETTE.length - 1)];
+    const monoFont = MONO_FONT_PALETTE[getSeededRandomInRange(seed, 1, 0, MONO_FONT_PALETTE.length - 1)];
+
     // Create Light Inputs
     const lightInputs = {
       bg_obj: { h: baseUIHue, s: light_bg_s, l: light_bg_l },
@@ -220,9 +269,13 @@
       }
     };
     
-    const fontName = fontPalettes[seed % fontPalettes.length];
     
-    const bodgeTheme = { fontName: fontName, light: lightInputs, dark: darkInputs };
+    const bodgeTheme = { 
+      bodyFont: bodyFont, 
+      monoFont: monoFont, 
+      light: lightInputs, 
+      dark: darkInputs 
+    };
     localStorage.setItem('customThemeFull', JSON.stringify(bodgeTheme));
     
     return bodgeTheme;
@@ -243,10 +296,12 @@
   applyPalette(currentTheme === 'dark' ? darkPalette : lightPalette);
   
   document.documentElement.setAttribute('data-theme', currentTheme);
-  loadGoogleFont(allInputs.fontName);
-  const monoFont = allInputs.fontName.includes('monospace') ? allInputs.fontName : 'monospace';
-  document.documentElement.style.setProperty('--body-font', allInputs.fontName);
-  document.documentElement.style.setProperty('--mono-font', monoFont);
+  loadGoogleFont(allInputs.bodyFont, allInputs.monoFont);
+
+  const finalBodyFont = allInputs.bodyFont || 'system-ui';
+  const finalMonoFont = allInputs.monoFont || 'monospace';
+  document.documentElement.style.setProperty('--body-font', `"${finalBodyFont}", system-ui, sans-serif`);
+  document.documentElement.style.setProperty('--mono-font', `"${finalMonoFont}", monospace`);
 
   // --- EXPOSE FUNCTIONS for customizer & toggle ---
   
