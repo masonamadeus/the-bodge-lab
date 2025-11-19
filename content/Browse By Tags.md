@@ -1,9 +1,10 @@
 ---
-layout: "layout.njk"
-permalink: "/tags/"
-title: "Browse By Tags"
+layout: layout.njk
+permalink: /tags/
+title: Browse By Tags
 directory: true
 download: false
+uid: 8d9044b3
 ---
 
 ## Browse By Tags

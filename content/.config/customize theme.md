@@ -1,7 +1,8 @@
 ---
-title: "customize theme"
+title: customize theme
 download: false
 directory: true
+uid: 0a85b49b
 ---
 
 <style>

@@ -1,3 +1,6 @@
+---
+uid: 4c667be7
+---
 # Temptations Brand Cat Cigarettes 3D Model
 
 ### I got the urge to play around with UV mapping and this is what happened...

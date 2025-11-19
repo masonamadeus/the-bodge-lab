@@ -1,3 +1,6 @@
+---
+uid: 7cda1297
+---
 # Adeline's Errant Textbook
 
 The crew is en route to the workshop of Penelope Whiltinham.

@@ -1,5 +1,6 @@
 ---
-uri: 'the-blodge'
+uri: the-blodge
+uid: '31768653'
 ---
 
 # Welcome to The blodge

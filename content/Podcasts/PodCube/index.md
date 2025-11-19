@@ -1,6 +1,7 @@
 ---
-uri: 'podcube'
-title: "PodCube™"
+uri: podcube
+title: PodCube™
+uid: 0d76ca1f
 ---
 
 PodCube™ is the universal leader in Time-Agnostic Podcasting™. 

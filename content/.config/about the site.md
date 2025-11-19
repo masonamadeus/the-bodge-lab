@@ -1,3 +1,6 @@
+---
+uid: aa3b1e4f
+---
 # I Always Wanna Know How Stuff Works
 
 And I love seeing the inner workings of various design choices.

@@ -1,8 +1,9 @@
 ---
-title: "Bug & Moss"
+title: Bug & Moss
 download: false
 directory: true
-uri: "bug-and-moss-morning-telephone"
+uri: bug-and-moss-morning-telephone
+uid: d0ce4513
 ---
 
 <style>

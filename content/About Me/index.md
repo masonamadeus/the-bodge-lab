@@ -1,6 +1,7 @@
 ---
 uri: about-mason
-title: "About Mason"
+title: About Mason
+uid: 2dd1a7d6
 ---
 
 # Hi! My name is Mason Amadeus.

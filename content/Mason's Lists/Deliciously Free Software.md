@@ -1,5 +1,6 @@
 ---
-uri: "free-software-index"
+uri: free-software-index
+uid: 0f9835dd
 ---
 
 # So Many Cool Tools
