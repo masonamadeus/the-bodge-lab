@@ -210,6 +210,12 @@ if %errorlevel% neq 0 (
     goto MENU
 )
 
+:: Copy CNAME file to preserve custom domain
+if exist "CNAME" (
+    echo [CONFIG] Copying CNAME to build folder...
+    copy "CNAME" "_site\CNAME" >nul
+)
+
 :: --- STEP 3: SAVE SOURCE ---
 echo [4/5] Backing up Source Code to 'main'...
 git add .
@@ -230,7 +236,7 @@ git init >nul
 :: This allows folders starting with "." (like .config) to work
 echo. > .nojekyll
 git add . >nul
-git commit -m "Deploy" >nul
+git commit -m "Deploy via Control Panel" >nul
 :: Force push the _site folder contents to the gh-pages branch
 git push --force "https://github.com/masonamadeus/the-bodge-lab.git" master:gh-pages
 cd ..
@@ -253,7 +259,7 @@ if %errorlevel% neq 0 (
     goto MENU
 )
 
-:: SENIOR DEV FIX: Auto-install dependencies after pull
+:: Auto-install dependencies after pull
 echo [SYNC] Checking/Installing Dependencies...
 call npm install
 if %errorlevel% neq 0 (
