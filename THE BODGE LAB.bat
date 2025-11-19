@@ -2,52 +2,82 @@
 setlocal enabledelayedexpansion
 title THE BODGE LAB :: COMMAND CENTER
 
-:: Force script to run from its own directory, even if right-clicked/admin run
+:: Force script to run from its own directory
 cd /d "%~dp0"
 
 :: ========================================================
-:: 0. BOOTSTRAP & RECOVERY
+:: CONFIGURATION
+:: ========================================================
+set "SYS_DIR=_system"
+set "CONTENT_LINK=Content"
+set "ASSETS_LINK=Assets"
+
+:: ========================================================
+:: 0. BOOTSTRAP & STRUCTURE
 :: ========================================================
 :BOOTSTRAP
-:: Auto-create large_media folder so R2 scripts don't crash
-if not exist "large_media" mkdir "large_media"
-
-if not exist ".git" (
+:: 1. Check for System Directory (The Repo)
+if not exist "%SYS_DIR%" (
     color 0E
     cls
-    echo [!] NO REPOSITORY DETECTED
-    echo     I can download your site for you right now.
+    echo [!] SYSTEM FOLDER MISSING
+    echo     I will set up the clean environment for you now.
     echo.
     set /p repo_url="Enter GitHub Clone URL: "
-    echo [CLONING] Downloading source code...
-    git clone "!repo_url!" .
+    echo.
+    echo [SETUP] Cloning repository into %SYS_DIR%...
+    git clone "!repo_url!" "%SYS_DIR%"
     if %errorlevel% neq 0 (
         echo [ERROR] Clone failed. Check URL and internet.
         pause
         exit
     )
+    
+    :: Hide the system directory (Optional - remove if you want to see it)
+    attrib +h "%SYS_DIR%"
 )
 
-if not exist "node_modules" (
+:: 2. Ensure large_media exists inside system so we can link to it
+if not exist "%SYS_DIR%\large_media" mkdir "%SYS_DIR%\large_media"
+
+:: 3. Create Shortcuts (Junctions) in Root
+if not exist "%CONTENT_LINK%" (
+    echo [SETUP] Linking 'Content' folder...
+    mklink /J "%CONTENT_LINK%" "%SYS_DIR%\content" >nul
+)
+if not exist "%ASSETS_LINK%" (
+    echo [SETUP] Linking 'Assets' folder...
+    mklink /J "%ASSETS_LINK%" "%SYS_DIR%\large_media" >nul
+)
+
+:: 4. Install Dependencies if needed
+if not exist "%SYS_DIR%\node_modules" (
     echo [SETUP] Installing dependencies...
+    pushd "%SYS_DIR%"
     call npm install
-    echo [SETUP] Installing Ops Tools...
     call npm install gray-matter @aws-sdk/client-s3 mime-types --no-save
+    popd
 )
 
 :: ========================================================
 :: 1. IDENTITY CHECK
 :: ========================================================
 :IDENTITY_CHECK
-:: Check if name is set
+pushd "%SYS_DIR%"
 git config user.name >nul 2>&1
-if %errorlevel% neq 0 goto SETUP_IDENTITY
-:: Check if email is set
+if %errorlevel% neq 0 (
+    popd
+    goto SETUP_IDENTITY
+)
 git config user.email >nul 2>&1
-if %errorlevel% neq 0 goto SETUP_IDENTITY
+if %errorlevel% neq 0 (
+    popd
+    goto SETUP_IDENTITY
+)
 git config --global core.autocrlf true
 git config --global core.safecrlf false
 echo [CONFIG] Line endings configured (Auto-CRLF).
+popd
 goto DIAGNOSTICS
 
 :SETUP_IDENTITY
@@ -83,6 +113,7 @@ if %errorlevel% neq 0 (
     exit
 )
 
+pushd "%SYS_DIR%"
 git fetch origin main >nul 2>&1
 set "BEHIND=0"
 for /f %%i in ('git rev-list --count HEAD..origin/main') do set BEHIND=%%i
@@ -92,6 +123,7 @@ if exist ".env" (
 ) else (
     set "R2_STATUS=MISSING CONFIG"
 )
+popd
 
 :: ========================================================
 :: 3. MAIN MENU
@@ -116,8 +148,8 @@ echo  [1]  DEV SERVER       (Live Edit + Console Output)
 echo  [2]  DEPLOY SITE      (Stamp, Clean, Build, Push)
 echo  [3]  SYNC GIT         (Pull + Auto-Install Deps)
 echo --------------------------------------------------------
-echo  [4]  UPLOAD MEDIA     (Push large_media -^> R2)
-echo  [5]  DOWNLOAD MEDIA   (Pull R2 -^> large_media)
+echo  [4]  UPLOAD MEDIA     (Push Assets -^> R2)
+echo  [5]  DOWNLOAD MEDIA   (Pull R2 -^> Assets)
 echo  [6]  SETUP R2         (Enter Credentials)
 echo --------------------------------------------------------
 echo  [7]  EXIT
@@ -140,8 +172,8 @@ goto MENU
 :DEVSERVER
 cls
 echo [DEV] Launching Server in a new window...
-:: WRAP PATHS IN QUOTES TO ACCOMODATE SPACES
-start "BodgeLab Live Server" cmd /c "npx @11ty/eleventy --serve & echo. & echo [SERVER STOPPED] Press any key to close... & pause >nul"
+:: We add 'title Bodge_Unique_ID' INSIDE the command so we can hunt it down later by its command line signature
+start "BodgeLab Live Server" cmd /c "title Bodge_Unique_ID & cd /d "%~dp0%SYS_DIR%" & npx @11ty/eleventy --serve & echo. & echo [SERVER STOPPED] Press any key to close... & pause >nul"
 
 :DEVMENU
 cls
@@ -161,20 +193,30 @@ set /p dev_action="Command: "
 if /i "%dev_action%"=="R" (
     echo.
     echo [RESTARTING] Killing old process...
-    taskkill /F /FI "WINDOWTITLE eq BodgeLab Live Server*" >nul 2>&1
-    timeout /t 1 >nul
+    call :KILL_SERVER
+    timeout /t 2 >nul
     goto DEVSERVER
 )
 
 if /i "%dev_action%"=="K" (
     echo.
     echo [STOPPING] Closing server window...
-    taskkill /F /FI "WINDOWTITLE eq BodgeLab Live Server*" >nul 2>&1
+    call :KILL_SERVER
     goto MENU
 )
-
 goto DEVMENU
 
+:: --- Helper Function to Kill the Server Robustly ---
+:KILL_SERVER
+:: 1. Try standard Taskkill (Works for standard CMD windows)
+taskkill /F /FI "WINDOWTITLE eq BodgeLab Live Server*" >nul 2>&1
+
+:: 2. Try PowerShell Search (Works for Windows Terminal / Tabs)
+:: This hunts for the 'Bodge_Unique_ID' we planted in the start command
+for /f "tokens=*" %%i in ('powershell -NoProfile -Command "Get-WmiObject Win32_Process | Where-Object { $_.CommandLine -like '*Bodge_Unique_ID*' } | Select-Object -ExpandProperty ProcessId"') do (
+    taskkill /F /PID %%i /T >nul 2>&1
+)
+exit /b
 
 :DEPLOY
 cls
@@ -184,11 +226,20 @@ if !BEHIND! GTR 0 (
     goto MENU
 )
 
+:: Enter System Directory
+pushd "%SYS_DIR%"
+
+:: --- STEP 0: SELF-PRESERVATION ---
+echo [0/5] Syncing Control Panel to Repo...
+:: Copies the running batch file (from Root) into the current folder (_system)
+copy /Y "%~dp0%~nx0" . >nul
+
 :: --- STEP 1: PREP ---
 echo [1/5] Stamping Permanent IDs...
 call node "scripts/stamp-uuids.js"
 if %errorlevel% neq 0 (
     echo [ABORT] Stamping failed. Check console for errors.
+    popd
     pause
     goto MENU
 )
@@ -199,18 +250,16 @@ if exist "_site" rmdir /s /q "_site"
 :: --- STEP 2: BUILD ---
 echo [3/5] Building Site...
 call npm run build
-:: Circuit Breaker - Abort on Build Fail
 if %errorlevel% neq 0 (
     color 4F
     echo.
     echo [ABORT] BUILD FAILED.
     echo         A dirty deploy was prevented.
-    echo         Check the errors above, fix them, and try again.
+    popd
     pause
     goto MENU
 )
 
-:: Copy CNAME file to preserve custom domain
 if exist "CNAME" (
     echo [CONFIG] Copying CNAME to build folder...
     copy "CNAME" "_site\CNAME" >nul
@@ -221,9 +270,9 @@ echo [4/5] Backing up Source Code to 'main'...
 git add .
 git commit -m "Site Update via Control Panel %date% %time%"
 git push origin main
-:: Circuit Breaker - Abort on Git Fail
 if %errorlevel% neq 0 (
     echo [ABORT] Git Push failed. Check internet or credentials.
+    popd
     pause
     goto MENU
 )
@@ -232,40 +281,38 @@ if %errorlevel% neq 0 (
 echo [5/5] Publishing to GitHub Pages...
 cd "_site"
 git init >nul
-
-:: This allows folders starting with "." (like .config) to work
 echo. > .nojekyll
 git add . >nul
 git commit -m "Deploy via Control Panel" >nul
-:: Force push the _site folder contents to the gh-pages branch
 git push --force "https://github.com/masonamadeus/the-bodge-lab.git" master:gh-pages
 cd ..
-
-:: Cleanup the temporary git repo inside _site
 rmdir /s /q "_site\.git"
 
 echo.
 echo [SUCCESS] Site Deployed!
+popd
 pause
 goto MENU
 
 :SYNC
 cls
 echo [SYNC] Pulling latest changes...
+pushd "%SYS_DIR%"
 git pull origin main
 if %errorlevel% neq 0 (
     echo [ERROR] Pull failed.
+    popd
     pause
     goto MENU
 )
 
-:: Auto-install dependencies after pull
 echo [SYNC] Checking/Installing Dependencies...
 call npm install
 if %errorlevel% neq 0 (
     echo [WARNING] Dependency install had issues. Check console.
     pause
 )
+popd
 
 echo [DONE] System Updated.
 pause
@@ -275,7 +322,9 @@ goto DIAGNOSTICS
 cls
 if "!R2_STATUS!"=="MISSING CONFIG" goto CONFIG_ERR
 echo [R2] Uploading new files to Cloud...
+pushd "%SYS_DIR%"
 call node "scripts/r2-manager.js" push
+popd
 pause
 goto MENU
 
@@ -286,7 +335,9 @@ echo [WARNING] This will download ALL files from your R2 bucket.
 echo           This might take a while if you have big videos.
 pause
 echo [R2] Downloading files...
+pushd "%SYS_DIR%"
 call node "scripts/r2-manager.js" pull
+popd
 pause
 goto MENU
 
@@ -304,12 +355,15 @@ set /p r2_key="Enter Access Key ID: "
 set /p r2_sec="Enter Secret Access Key: "
 set /p r2_buk="Enter Bucket Name: "
 
+pushd "%SYS_DIR%"
 (
 echo R2_ACCOUNT_ID=!r2_acc!
 echo R2_ACCESS_KEY_ID=!r2_key!
 echo R2_SECRET_ACCESS_KEY=!r2_sec!
 echo R2_BUCKET_NAME=!r2_buk!
 ) > .env
+popd
+
 echo [SAVED] Credentials stored in .env
 timeout /t 2 >nul
 goto DIAGNOSTICS

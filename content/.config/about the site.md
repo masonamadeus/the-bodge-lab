@@ -1,5 +1,7 @@
 ---
 uid: aa3b1e4f
+contentHash: 6dfa1e96
+date: '2025-11-19T22:06:10.627Z'
 ---
 # I Always Wanna Know How Stuff Works
 

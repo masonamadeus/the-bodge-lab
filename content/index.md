@@ -1,6 +1,8 @@
 ---
 download: false
 uid: 94a02866
+contentHash: b4840f3c
+date: '2025-11-19T22:06:10.633Z'
 ---
 # Welcome to The Bodge Lab!
 

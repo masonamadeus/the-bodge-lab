@@ -46,7 +46,7 @@ download: false
           // 4. Check for match
           if (links[uid]) {
             // 5. Redirect!
-            window.location.replace(links[uid]);
+            window.location.href = links[uid];
             return;
           } else {
             statusElem.innerHTML = `<p><i>Shortlink "${uid}" not found. Searching...</i></p>`;

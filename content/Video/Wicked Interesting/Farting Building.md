@@ -1,6 +1,8 @@
 ---
-title: "The Farting Building"
-uid: "farting-building-video"
+title: The Farting Building
+uid: farting-building-video
+contentHash: 461eda51
+date: '2025-11-19T22:06:10.637Z'
 ---
 
 Testing YT Embeds...

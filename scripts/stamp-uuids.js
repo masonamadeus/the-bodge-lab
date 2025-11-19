@@ -3,13 +3,13 @@ const path = require('path');
 const matter = require('gray-matter');
 const crypto = require('crypto');
 
-// Helper to clean strings for URLs (e.g. "My Cool Post!" -> "my-cool-post")
+// Helper to clean strings for URLs
 function slugify(str) {
     return str
         .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '') // Remove invalid chars
-        .replace(/\s+/g, '-')         // Replace spaces with -
-        .replace(/-+/g, '-');         // Collapse multiple -
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
 }
 
 function getFiles(dir, ext) {
@@ -29,38 +29,73 @@ function getFiles(dir, ext) {
 }
 
 (async () => {
+    // TARGET: The system/content folder
     const contentDir = path.resolve(__dirname, '../content');
     const files = getFiles(contentDir, '.md');
-    let modifiedCount = 0;
+    
+    let updatedCount = 0;
+    let stampedCount = 0;
+    let migratedCount = 0;
 
     console.log(`[STAMPER] Scanning ${files.length} files...`);
 
     for (const filepath of files) {
         const fileContent = fs.readFileSync(filepath, 'utf8');
         const parsed = matter(fileContent);
+        let isModified = false;
 
-        // Only stamp if missing
+        // --- 0. MIGRATION: URI -> UID ---
+        // If we have a 'uri' but no 'uid', move it over.
+        if (parsed.data.uri && !parsed.data.uid) {
+            parsed.data.uid = parsed.data.uri;
+            delete parsed.data.uri; // Remove the old key
+            
+            console.log(`[MIGRATED] ${path.basename(filepath)} (uri -> uid)`);
+            isModified = true;
+            migratedCount++;
+        } 
+        // If we have both (rare), just delete the redundant uri
+        else if (parsed.data.uri && parsed.data.uid) {
+            delete parsed.data.uri;
+            isModified = true;
+        }
+
+        // --- 1. UID CHECK (New Files) ---
         if (!parsed.data.uid) {
-            // 1. Get Filename
             const filename = path.basename(filepath, path.extname(filepath));
-            
-            // 2. Make it URL safe
             const slug = slugify(filename);
-            
-            // 3. Generate short hash (5 chars is plenty for uniqueness per-file)
             const hash = crypto.randomUUID().split('-')[0].substring(0, 5);
-            
-            // 4. Combine
             parsed.data.uid = `${slug}-${hash}`;
             
+            console.log(`[NEW UID] ${path.basename(filepath)}`);
+            isModified = true;
+            stampedCount++;
+        }
+
+        // --- 2. DATE & HASH CHECK ---
+        const currentBody = (parsed.content || "").trim();
+        const currentHash = crypto.createHash('md5').update(currentBody).digest("hex").substring(0, 8);
+        const storedHash = parsed.data.contentHash || "";
+
+        if (currentHash !== storedHash) {
+            parsed.data.contentHash = currentHash;
+            parsed.data.date = new Date().toISOString();
+
+            if (!isModified) console.log(`[UPDATED] ${path.basename(filepath)}`);
+            isModified = true;
+            updatedCount++;
+        }
+
+        // --- 3. WRITE IF NEEDED ---
+        if (isModified) {
             const newContent = matter.stringify(parsed.content, parsed.data);
             fs.writeFileSync(filepath, newContent);
-            
-            console.log(`[STAMPED] ${parsed.data.uid} -> ${path.basename(filepath)}`);
-            modifiedCount++;
         }
     }
 
-    if (modifiedCount > 0) console.log(`[SUCCESS] Stamped ${modifiedCount} files.`);
-    else console.log("[OK] All files have IDs.");
+    if (stampedCount > 0 || updatedCount > 0 || migratedCount > 0) {
+        console.log(`[DONE] Migrated ${migratedCount}, Stamped ${stampedCount}, Updated ${updatedCount}.`);
+    } else {
+        console.log("[OK] No changes detected.");
+    }
 })();

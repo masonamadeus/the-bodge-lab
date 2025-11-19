@@ -1,6 +1,7 @@
 ---
-uri: free-software-index
 uid: 0f9835dd
+contentHash: 20d081cb
+date: '2025-11-19T22:06:10.634Z'
 ---
 
 # So Many Cool Tools

@@ -1,5 +1,7 @@
 ---
-uid: "mason-resume"
+uid: mason-resume
+contentHash: 2fb781c4
+date: '2025-11-19T22:06:10.631Z'
 ---
 
 # Mason Amadeus Washer 

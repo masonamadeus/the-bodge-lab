@@ -1,4 +1,3 @@
-// content/content.11tydata.js
 const path = require('path');
 
 /**
@@ -82,7 +81,7 @@ function extractExcerpt(content) {
     .replace(/[#*_`]/g, '') // Remove markdown formatting
     .replace(/\s+/g, ' ') // Consolidate whitespace
     .trim();
-  
+
   if (excerpt.length > 155) {
     excerpt = excerpt.substring(0, 155).trim() + '...';
   }
@@ -96,25 +95,25 @@ function extractImage(content, page) {
   if (!content) {
     return null;
   }
-  
+
   const imageRegex = /\{%\s*image\s*\"([^\"]+)\"/;
   const match = content.match(imageRegex);
 
   if (match && match[1]) {
     const imagePath = match[1];
-    
+
     try {
       const pageDir = path.dirname(page.inputPath);
-      
-      // __dirname is *already* the 'content' folder.
-      const contentDir = path.resolve(__dirname); 
-      
+
+
+      const contentDir = path.resolve(__dirname);
+
       // 2. Resolve the relative image path from the page's directory
       const physicalImagePath = path.resolve(pageDir, imagePath);
-      
+
       // 3. Get the relative path from /content/ to the image
       const webPath = path.relative(contentDir, physicalImagePath);
-      
+
       return '/' + webPath.replace(/\\/g, '/');
     } catch (e) {
       console.warn(`[SEO] Could not resolve image path: ${imagePath} in ${page.inputPath}`);
@@ -137,7 +136,7 @@ function extractH1(content) {
 
   // Look for the first markdown H1 in the *actual content*
   const match = markdownContent.match(/#\s+(.+)/m);
-  
+
   if (match && match[1]) {
     return match[1].trim();
   }
@@ -155,12 +154,12 @@ module.exports = {
     _pageData: data => {
       // Skip running on special pages that don't have markdown content to parse
       if (data.page.inputPath.endsWith("media.njk") ||
-          data.page.inputPath.endsWith("autoDirectory.njk") ||
-          !data.page.rawInput ||
-          !data.page.rawInput.trim()) {
+        data.page.inputPath.endsWith("autoDirectory.njk") ||
+        !data.page.rawInput ||
+        !data.page.rawInput.trim()) {
         return null;
       }
-      
+
       // The expensive operations, run once.
       return {
         h1: extractH1(data.page.rawInput),
@@ -174,13 +173,13 @@ module.exports = {
       if (data.uid) return data.uid;
 
       // 2. Ignore system files
-      if (data.page.url === "/" || 
-          (data.page.inputPath.endsWith("media.njk") && data.media) ||
-          data.page.inputPath.endsWith("autoDirectory.njk") ||
-          data.page.inputPath.includes("tags.njk") || 
-          data.page.inputPath.includes("share.njk") ||
-          data.page.inputPath.includes("search.json") ||
-          data.page.inputPath.includes("shortlinks.json")) { // Added shortlinks.json exclusion
+      if (data.page.url === "/" ||
+        (data.page.inputPath.endsWith("media.njk") && data.media) ||
+        data.page.inputPath.endsWith("autoDirectory.njk") ||
+        data.page.inputPath.includes("tags.njk") ||
+        data.page.inputPath.includes("share.njk") ||
+        data.page.inputPath.includes("search.json") ||
+        data.page.inputPath.includes("shortlinks.json")) { // Added shortlinks.json exclusion
         return null;
       }
 
@@ -188,9 +187,9 @@ module.exports = {
       // Example: "my-cool-post" + "a1b2c" = "my-cool-post-a1b2c"
       const filename = path.basename(data.page.inputPath, path.extname(data.page.inputPath));
       const slug = slugify(filename); // Ensure it's URL safe
-      
+
       // Generate hash from the input path to keep it stable for this file location
-      const hash = getSeed(data.page.inputPath).toString(36).slice(-5); 
+      const hash = getSeed(data.page.inputPath).toString(36).slice(-5);
 
       return `${slug}-${hash}`;
     },
@@ -225,11 +224,11 @@ module.exports = {
         }
         return "Directory"; // Fallback for dir
       }
-      
+
       // 4. Use the pre-calculated H1
       if (data._pageData && data._pageData.h1) {
         return data._pageData.h1;
-      } 
+      }
 
       // 5. As a last resort, use the site default.
       return "The Bodge Lab";
@@ -260,7 +259,7 @@ module.exports = {
       return my_url.substring(0, my_url.lastIndexOf('/')) + '/';
     },
 
-   directoryContents: data => {
+    directoryContents: data => {
       // Use the helper to find the correct directory node
       const dirNode = getDirectoryNode(data);
 
@@ -285,19 +284,19 @@ module.exports = {
         }
 
         // FOR TEMPLATE PAGES
-        else if (item.isTemplate) { 
+        else if (item.isTemplate) {
           const baseName = path.basename(item.name, item.ext);
-          
+
           // 1. Get the URL
           let itemUrl;
           if (item.isIndex) {
             // An index file's URL is its directory's canonical URL.
             itemUrl = dirNode.webPath;
-            
+
             // Apply the same trailing slash logic as template URL generation in filetree.js
             if (itemUrl === '') itemUrl = '/'; // Fix root path
             if (itemUrl !== '/' && !itemUrl.endsWith('/')) {
-                itemUrl += '/'; // Add trailing slash
+              itemUrl += '/'; // Add trailing slash
             }
           } else {
             // A regular template page
@@ -329,34 +328,34 @@ module.exports = {
 
     // set download filename
     download_filename: data => {
-      
+
       // 1. Media Page (Highest Priority)
       if (data.media && data.media.url) {
         return path.basename(data.media.url);
       }
-      
+
       // Only proceed if we have a templated content file
       if (data.page && data.page.inputPath) {
-        const ext = path.extname(data.page.inputPath); 
+        const ext = path.extname(data.page.inputPath);
         let baseName;
-        
+
         // 2. Front Matter Title (Highest priority for content filename)
         if (data.title) {
-            baseName = data.title;
+          baseName = data.title;
         }
         // 3. H1 Extraction Fallback (Uses pre-calculated _pageData)
         else if (data._pageData && data._pageData.h1) {
-            baseName = data._pageData.h1;
+          baseName = data._pageData.h1;
         }
         // 4. Filename Fallback (e.g., "my-post")
         else {
-            baseName = path.basename(data.page.inputPath, ext);
+          baseName = path.basename(data.page.inputPath, ext);
         }
-        
+
         // Clean the baseName (relying on browser to URL-encode) and append the original file extension
         return baseName.trim().replace(/[/\\]/g, '-') + ext;
       }
-      
+
       // Final fallback
       return "file";
     },
@@ -367,21 +366,21 @@ module.exports = {
       // data.page is the current page
       const meta = data.meta;
       const page = data.page;
-      
+
       // Get Description - Use the pre-calculated excerpt
       const seoDescription = data.description ||
-                             (data._pageData && data._pageData.excerpt) ||
-                             meta.defaultDescription;
-                             
+        (data._pageData && data._pageData.excerpt) ||
+        meta.defaultDescription;
+
       // Get Image - Use the pre-calculated image path
       let imagePath = data.image ||
-                      (data._pageData && data._pageData.image) ||
-                      meta.defaultImage;
-      
+        (data._pageData && data._pageData.image) ||
+        meta.defaultImage;
+
       // Build absolute URLs
       const seoImage = new URL(imagePath, meta.url).href;
       const seoUrl = new URL(page.url, meta.url).href;
-      
+
       return {
         description: seoDescription,
         image: seoImage,

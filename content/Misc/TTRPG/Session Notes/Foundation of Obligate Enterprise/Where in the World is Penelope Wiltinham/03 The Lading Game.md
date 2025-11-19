@@ -1,5 +1,7 @@
 ---
 uid: 7cda1297
+contentHash: f5afa005
+date: '2025-11-19T22:06:10.635Z'
 ---
 # Adeline's Errant Textbook
 

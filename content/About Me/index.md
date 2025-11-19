@@ -1,7 +1,8 @@
 ---
-uri: about-mason
 title: About Mason
 uid: 2dd1a7d6
+contentHash: 71e7a381
+date: '2025-11-19T22:06:10.630Z'
 ---
 
 # Hi! My name is Mason Amadeus.

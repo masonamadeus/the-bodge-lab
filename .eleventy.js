@@ -1,12 +1,10 @@
-// .eleventy.js
-
 // Node.js modules for file system and path handling
 const { DateTime } = require("luxon");
 const path = require('path');
 const { MEDIA_EXTENSIONS, TEMPLATE_EXTENSIONS, PASSTHROUGH_EXTENSIONS } = require('./_11ty/fileTypes.js');
 const { generateFileTreeData } = require('./_11ty/filetree.js');
-const gitCommitDate = require("eleventy-plugin-git-commit-date");
 const syntaxHighlight = require("@11ty/eleventy-plugin-syntaxhighlight");
+const fs = require('fs');
 
 // extensions
 const markdownIt = require("markdown-it");
@@ -124,11 +122,26 @@ let fileTreeCache = null;
 // #region ELEVENTY CONFIG
 module.exports = function (eleventyConfig) {
 
+  // --- GENERATOR TEMPLATES ---
+const generatorsDir = path.join(__dirname, '_generators');
+  if (fs.existsSync(generatorsDir)) {
+      const templateFiles = fs.readdirSync(generatorsDir);
+      templateFiles.forEach(file => {
+          if(file.endsWith('.njk')) {
+            const content = fs.readFileSync(path.join(generatorsDir, file), 'utf8');
+            eleventyConfig.addTemplate(file, content);
+          }
+      });
+  }
+  // Make sure we watch the generators for changes during dev
+eleventyConfig.addWatchTarget("./_generators/");
+
   // --- Markdown Configuration ---
+
   eleventyConfig.setLibrary("md", mdLib);
 
   // --- Plugins & Extensions ---
-  eleventyConfig.addPlugin(gitCommitDate);
+
   eleventyConfig.addPlugin(syntaxHighlight);
 
   eleventyConfig.addExtension("fountain", {

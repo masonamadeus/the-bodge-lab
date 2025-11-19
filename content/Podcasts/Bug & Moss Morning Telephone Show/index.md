@@ -2,8 +2,9 @@
 title: Bug & Moss
 download: false
 directory: true
-uri: bug-and-moss-morning-telephone
 uid: d0ce4513
+contentHash: a6579e4a
+date: '2025-11-19T22:06:10.635Z'
 ---
 
 <style>
