@@ -2,7 +2,6 @@
 setlocal enabledelayedexpansion
 title THE BODGE LAB :: COMMAND CENTER
 
-:: --- SENIOR DEV FIX 1: HANDLE SPACES IN PATHS ---
 :: Force script to run from its own directory, even if right-clicked/admin run
 cd /d "%~dp0"
 
@@ -37,7 +36,7 @@ if not exist "node_modules" (
 )
 
 :: ========================================================
-:: 1. IDENTITY CHECK (Fixes "Who am I?" errors)
+:: 1. IDENTITY CHECK
 :: ========================================================
 :IDENTITY_CHECK
 :: Check if name is set
@@ -46,6 +45,9 @@ if %errorlevel% neq 0 goto SETUP_IDENTITY
 :: Check if email is set
 git config user.email >nul 2>&1
 if %errorlevel% neq 0 goto SETUP_IDENTITY
+git config --global core.autocrlf true
+git config --global core.safecrlf false
+echo [CONFIG] Line endings configured (Auto-CRLF).
 goto DIAGNOSTICS
 
 :SETUP_IDENTITY
@@ -138,7 +140,7 @@ goto MENU
 :DEVSERVER
 cls
 echo [DEV] Launching Server in a new window...
-:: SENIOR DEV FIX: Quotes handles spaces in paths
+:: WRAP PATHS IN QUOTES TO ACCOMODATE SPACES
 start "BodgeLab Live Server" cmd /c "npx @11ty/eleventy --serve & echo. & echo [SERVER STOPPED] Press any key to close... & pause >nul"
 
 :DEVMENU
@@ -197,7 +199,7 @@ if exist "_site" rmdir /s /q "_site"
 :: --- STEP 2: BUILD ---
 echo [3/5] Building Site...
 call npm run build
-:: SENIOR DEV FIX: Circuit Breaker - Abort on Build Fail
+:: Circuit Breaker - Abort on Build Fail
 if %errorlevel% neq 0 (
     color 4F
     echo.
@@ -213,7 +215,7 @@ echo [4/5] Backing up Source Code to 'main'...
 git add .
 git commit -m "Site Update via Control Panel %date% %time%"
 git push origin main
-:: SENIOR DEV FIX: Circuit Breaker - Abort on Git Fail
+:: Circuit Breaker - Abort on Git Fail
 if %errorlevel% neq 0 (
     echo [ABORT] Git Push failed. Check internet or credentials.
     pause
@@ -224,6 +226,9 @@ if %errorlevel% neq 0 (
 echo [5/5] Publishing to GitHub Pages...
 cd "_site"
 git init >nul
+
+:: This allows folders starting with "." (like .config) to work
+echo. > .nojekyll
 git add . >nul
 git commit -m "Deploy" >nul
 :: Force push the _site folder contents to the gh-pages branch

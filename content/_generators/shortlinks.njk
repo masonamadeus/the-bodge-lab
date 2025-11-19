@@ -1,0 +1,12 @@
+---
+permalink: /shortlinks.json
+eleventyExcludeFromCollections: true
+layout: false
+---
+{
+{%- for page in collections.all %}
+  {%- if page.data.uid %}
+  "{{ page.data.uid }}": "{{ page.url | url }}"{% if not loop.last %},{% endif %}
+  {%- endif %}
+{%- endfor %}
+}

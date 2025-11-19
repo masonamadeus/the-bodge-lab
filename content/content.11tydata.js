@@ -151,7 +151,7 @@ module.exports = {
 
   eleventyComputed: {
 
-    // --- OPTIMIZATION: Parse content once ---
+    // --- Parse content once ---
     _pageData: data => {
       // Skip running on special pages that don't have markdown content to parse
       if (data.page.inputPath.endsWith("media.njk") ||
@@ -168,43 +168,31 @@ module.exports = {
         image: extractImage(data.page.rawInput, data.page)
       };
     },
-    // --- END OPTIMIZATION ---
 
     uid: data => {
       // 1. Use existing UID if present in front matter
-      if (data.uid) {
-        return data.uid;
-      }
+      if (data.uid) return data.uid;
 
-      // 2. Don't generate UIDs for system pages
+      // 2. Ignore system files
       if (data.page.url === "/" || 
           (data.page.inputPath.endsWith("media.njk") && data.media) ||
           data.page.inputPath.endsWith("autoDirectory.njk") ||
-          data.page.inputPath.includes("tags.njk") || // Stop pagination from getting UIDs
-          data.page.inputPath.includes("share.njk")) {
+          data.page.inputPath.includes("tags.njk") || 
+          data.page.inputPath.includes("share.njk") ||
+          data.page.inputPath.includes("search.json") ||
+          data.page.inputPath.includes("shortlinks.json")) { // Added shortlinks.json exclusion
         return null;
       }
 
-      // 3. Generate a dynamic UID from the file path.
-      const relativePath = path.relative(__dirname, data.page.inputPath);
-      const dir = path.dirname(relativePath);
-      const filename = path.basename(relativePath, path.extname(relativePath));
+      // 3. Generate Short UID: Filename + Hash
+      // Example: "my-cool-post" + "a1b2c" = "my-cool-post-a1b2c"
+      const filename = path.basename(data.page.inputPath, path.extname(data.page.inputPath));
+      const slug = slugify(filename); // Ensure it's URL safe
       
-      let parts = [];
-      if (dir !== '.' && dir !== '') {
-         parts = dir.split(path.sep);
-      }
-      parts.push(filename);
-      
-      const dynamicUid = parts
-        .map(part => slugify(part))
-        .filter(part => part !== 'index' && part !== '')
-        .join('-');
+      // Generate hash from the input path to keep it stable for this file location
+      const hash = getSeed(data.page.inputPath).toString(36).slice(-5); 
 
-      // 4. Add the hash back in to ensure uniqueness if you move files
-      const hash = getSeed(data.page.inputPath).toString(36).slice(-6);
-
-      return `${dynamicUid}-${hash}`;
+      return `${slug}-${hash}`;
     },
 
     permalink: data => {
