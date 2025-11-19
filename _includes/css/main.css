@@ -399,3 +399,121 @@ code {
 .text-justify {
   text-align: justify;
 }
+
+.notilt, 
+.notilt * {
+    /* Setting transform: none; is the explicit way to cancel inherited rotation. 
+       !important forces this rule to win over the JavaScript's inline style. */
+    transform: none;
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* --- FOUNTAIN SCREENPLAY STYLES (Full Fluid Responsivity) ----------------- */
+/* -------------------------------------------------------------------------- */
+
+.fountain-script-container {
+    /* 1. Set the fixed-pitch font for accurate 'ch' measurements */
+    font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+    font-size: 12pt;
+    line-height: 1.25; 
+    
+    /* Center the ENTIRE SCRIPT block. Cap the width at 80ch on desktop, 
+       but allow it to be 95% wide on mobile for full screen usage. */
+    max-width: clamp(35ch, 95%, 80ch); 
+    margin: 1em auto 1em; 
+    text-align: left; 
+    
+    /* Slight padding for tiny screens */
+    padding: 0 1ch;
+}
+
+/* 2. Core Blocks: ACTION, SCENE HEADINGS, GENERAL */
+.action, 
+.scene-heading,
+.general {
+    /* These blocks define the full script width, constrained by the container. */
+    margin-left: 0; 
+    margin-right: 0;
+    max-width: 100%; 
+    
+    margin-top: 0.8em; 
+    margin-bottom: 0.8em; 
+    text-transform: uppercase; 
+}
+
+/* Scene Headings: H2 used in the custom renderer */
+.scene-heading {
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-top: 2.5em; 
+    margin-bottom: 1em;
+}
+
+/* 3. Character: Fluid Indentation */
+.character {
+    /* Indent collapses on mobile, but grows up to 37ch on desktop. */
+    /* MIN: 5ch (readable mobile indent) | PREFERRED: 37ch | MAX: 25vw (prevents crazy wide margins) */
+    margin-left: clamp(5ch, 37ch, 25vw); 
+    margin-right: auto;
+    max-width: 38ch; 
+
+    margin-top: 1.5em;
+    margin-bottom: 0.1em;
+    text-align: left; 
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+/* 4. Parenthetical: Fluid Indentation */
+.parenthetical {
+    /* Indent collapses on mobile, but grows up to 31ch on desktop. */
+    margin-left: clamp(10ch, 31ch, 20vw); 
+    margin-right: auto;
+    max-width: 22ch; 
+
+    margin-top: 0.2em;
+    margin-bottom: 0.2em;
+    text-align: left;
+    font-style: italic;
+    text-transform: none;
+}
+
+/* 5. Dialogue: Fluid Indentation */
+.dialogue {
+    /* Indent collapses on mobile, but grows up to 15ch on desktop. */
+    margin-left: clamp(3ch, 15ch, 10vw); 
+    margin-right: auto;
+    max-width: 45ch; 
+
+    margin-top: 0.3em;
+    margin-bottom: 0.3em;
+    text-align: left;
+    text-transform: none;
+}
+
+/* 6. Transition: Right-aligned (always takes 100% width) */
+.transition {
+    margin-left: 0; 
+    margin-right: 0; 
+    max-width: 100%; 
+
+    margin-top: 2em;
+    text-align: right; 
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+/* Emphasis/Inline Styling (No Change) */
+.dialogue b, .action b { font-weight: bold; }
+.dialogue i, .action i { font-style: italic; }
+.dialogue u, .action u { text-decoration: underline; }
+
+/* Title Page (No Change) */
+.title-page {
+    font-family: var(--body-font);
+    text-align: center;
+    padding: 3em 1em;
+}
+.title-page h1 { font-size: 2.5em; margin-bottom: 1em; }
+.title-page p { margin: 0.5em 0; font-size: 1.1em; }

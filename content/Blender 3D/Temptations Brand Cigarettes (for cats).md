@@ -2,7 +2,7 @@
 
 ### I got the urge to play around with UV mapping and this is what happened...
 
-{%image "./files/TEMPTATIONS_LQ.webp", "Mason's 3D rendition of Temptations brand cat cigarettes on a small wooden table."%}
+{%image "files/TEMPTATIONS_LQ.webp", "Mason's 3D rendition of Temptations brand cat cigarettes on a small wooden table."%}
 
 {%grid%}
 

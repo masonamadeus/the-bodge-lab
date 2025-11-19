@@ -9,9 +9,13 @@ title: "About Mason"
 
 ### My pronouns are he/him.
 
-I don't really know how to describe myself succintly. I've had a weird non-traditional academic and career path.
+I don't really know how to describe myself succintly. I've had a weird, non-traditional academic and career path.
 
-The best one-line description of who I am and what I do came from my friend Aemyn. She described me as an 
+I am a Destination Imagination alum, and I carry the values and skills I learned from that program as the highest inspiration for what I do.
+
+My personal goal is to try and fill the world with as much harmless joy and inspiration as I can.
+
+The best one-line description of who I am and what I do came from my friend Aemyn. She described me as an...
 
 ### **All-Terrain Professional Bodge Technician.**
 
@@ -21,13 +25,14 @@ The best one-line description of who I am and what I do came from my friend Aemy
 
 {%endgrid%}
 
-___
+For work, I am the creative director at [8th Layer Media](https://8thlayermedia.com/).
 
-# Choose Your Own About Me!
+Formerly, I was an IT manager, audio/broadcast engineer, sound designer, junior RF engineer, producer, copywriter, and on-air talent.
 
-I'm still working on this. Eventually it'll be an interactive modular game that ties together my various "about" pages into some kind of chaotic mess.
+For fun, I am a 2D artist/animator, 3D artist/animator, podcast producer, musician, electronics-tinkerer, actor, and general uber-nerd.
 
-!! At the moment, most of these are just stubs. I'm still working on filling out this website. 
+I firmly believe in equality, social justice, and kindness. I don't like pretense, or taking myself too seriously.
 
-## ↓ For now, use the directory listing below to browse my resume/about pages. ↓
+Let's be friends and make something cool together!
 
+## Or maybe you're looking for my [Professional Resume](Professional%20Resume.md)?

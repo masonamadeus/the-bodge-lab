@@ -8,8 +8,10 @@ const { generateFileTreeData } = require('./_11ty/filetree.js');
 const gitCommitDate = require("eleventy-plugin-git-commit-date");
 const syntaxHighlight = require("@11ty/eleventy-plugin-syntaxhighlight");
 
+// extensions
 const markdownIt = require("markdown-it");
 const mdLinkAttributes = require("markdown-it-link-attributes");
+const { Fountain } = require("fountain-js");
 
 /**
  * A custom rule for markdown-it's renderer to add target="_blank" and rel="..." 
@@ -17,7 +19,7 @@ const mdLinkAttributes = require("markdown-it-link-attributes");
  */
 function markdownLinkExternal(md) {
   // Save the original link_open rule
-  const defaultRender = md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
+  const defaultRender = md.renderer.rules.link_open || function (tokens, idx, options, env, self) {
     return self.renderToken(tokens, idx, options);
   };
 
@@ -36,13 +38,13 @@ function markdownLinkExternal(md) {
         // Update the href attribute
         token.attrs[hrefIndex][1] = href;
       }
-      
+
       // Check if the link starts with http:// or https:// (is external)
       if (href.startsWith('http://') || href.startsWith('https://')) {
-        
+
         // Add target="_blank"
         token.attrPush(['target', '_blank']);
-        
+
         // Add rel="noopener noreferrer" for security
         token.attrPush(['rel', 'noopener noreferrer']);
       }
@@ -56,13 +58,67 @@ function markdownLinkExternal(md) {
 }
 
 const mdLib = markdownIt({
-    html: true, // Allow HTML in markdown
-    breaks: true, // Convert newlines to <br>
-    linkify: true // Automatically find links and make them clickable
-  })
+  html: true, // Allow HTML in markdown
+  breaks: true, // Convert newlines to <br>
+  linkify: true // Automatically find links and make them clickable
+})
   .use(markdownLinkExternal);
 
-  
+function renderFountainTokens(tokens) {
+  let html = '';
+  tokens.forEach(token => {
+
+    // 1. IGNORE Structural Tokens (which don't have text and are not for display)
+    if ([
+      'dialogue_begin',
+      'dialogue_end',
+      'dual_dialogue_begin', // Added this one for robustness
+      'dual_dialogue_end',
+      'section',
+      'synopsis',
+      'title_page',
+      'credit'
+    ].includes(token.type)) {
+      return; // Skip these tokens entirely
+    }
+
+    // 2. Handle specific structural tokens that should be visual
+    if (token.type === 'page_break') {
+      html += '<hr class="page-break">\n';
+      return;
+    }
+
+    // 3. Use textContent: ensure null/undefined text becomes an empty string
+    const textContent = token.text || '';
+
+    switch (token.type) {
+      case 'scene_heading':
+        html += `<h2 class="scene-heading">${textContent}</h2>\n`;
+        break;
+      case 'character':
+        html += `<p class="character">${textContent}</p>\n`;
+        break;
+      case 'parenthetical':
+        html += `<p class="parenthetical">${textContent}</p>\n`;
+        break;
+      case 'dialogue':
+        html += `<div class="dialogue">${textContent}</div>\n`;
+        break;
+      case 'transition':
+        html += `<p class="transition">${textContent}</h2>\n`; // Changed to p tag
+        break;
+      case 'action':
+      case 'general':
+      default:
+        // This covers all action lines and anything else that falls through.
+        // It uses a <p> tag with the action class for layout control.
+        html += `<p class="action">${textContent}</p>\n`;
+        break;
+    }
+  });
+  return html;
+}
+
 let fileTreeCache = null;
 
 // #region ELEVENTY CONFIG
@@ -71,9 +127,29 @@ module.exports = function (eleventyConfig) {
   // --- Markdown Configuration ---
   eleventyConfig.setLibrary("md", mdLib);
 
-  // --- Plugins ---
+  // --- Plugins & Extensions ---
   eleventyConfig.addPlugin(gitCommitDate);
   eleventyConfig.addPlugin(syntaxHighlight);
+
+  eleventyConfig.addExtension("fountain", {
+    isLiquid: true, // Use Liquid/Nunjucks for front matter and layout support
+    compile: async () => { 
+      return async (data) => {
+        const rawScriptText = data.page.rawInput;
+        
+        // 1. Parse the script, requesting the tokens with `true`
+        const fountain = new Fountain();
+        const output = fountain.parse(rawScriptText, true); 
+        
+        // 2. Render the tokens to custom HTML
+        const scriptHTML = renderFountainTokens(output.tokens);
+
+        // 3. Return the Title Page + Custom Rendered Script, wrapped in the container
+        return output.html.title_page + 
+               `<div class="fountain-script-container notilt">${scriptHTML}</div>`;
+      };
+    }
+  });
 
   // --- Global Data: Filetree ---
   eleventyConfig.addGlobalData("filetree", async () => {
@@ -113,13 +189,13 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addFilter("basename", p => path.basename(p));
 
   // #endregion
-  
+
   // #region EMBED SHORTCODES
 
- /**
-   * Helper function to resolve relative paths.
-   * "this" is the Eleventy shortcode context.
-   */
+  /**
+    * Helper function to resolve relative paths.
+    * "this" is the Eleventy shortcode context.
+    */
   const contentDir = path.join(__dirname, 'content');
   function resolveSrc(src) {
     if (src.startsWith('http') || src.startsWith('/')) {
@@ -129,10 +205,10 @@ module.exports = function (eleventyConfig) {
     // It's a relative path. Resolve it based on the current page's input path.
     const pagePath = path.dirname(this.page.inputPath);
     const resolvedPath = path.resolve(pagePath, src);
-    
+
     // Make it a root-relative web path
     const webPath = path.relative(contentDir, resolvedPath);
-    
+
     // Convert Windows backslashes to web forward slashes
     return '/' + webPath.replace(/\\/g, '/');
   }
@@ -186,10 +262,10 @@ module.exports = function (eleventyConfig) {
   });
 
   // 3D Model Shortcode
-    eleventyConfig.addShortcode("3d", function (src) {
-      const resolvedSrc = resolveSrc.call(this, src); // Resolve the path
-      const filename = path.basename(resolvedSrc);
-      return `<div class="media-embed-wrapper">
+  eleventyConfig.addShortcode("3d", function (src) {
+    const resolvedSrc = resolveSrc.call(this, src); // Resolve the path
+    const filename = path.basename(resolvedSrc);
+    return `<div class="media-embed-wrapper">
   <model-viewer 
     src="${resolvedSrc}" 
     camera-controls 
@@ -199,7 +275,7 @@ module.exports = function (eleventyConfig) {
   </model-viewer>
   <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p>
 </div>`;
-    });
+  });
 
   // YouTube Shortcode
   // Usage: {% yt "VIDEO_ID" %} or {% yt "https://www.youtube.com/watch?v=..." %}
@@ -288,9 +364,9 @@ module.exports = function (eleventyConfig) {
   });
 
   // Text alignment shortcode. {%align "center"} {% endalign %}
-  eleventyConfig.addPairedShortcode("align", function(content, alignment = 'left') {
+  eleventyConfig.addPairedShortcode("align", function (content, alignment = 'left') {
     const validAlignments = ['left', 'right', 'center', 'justify'];
-    
+
     // Use 'left' as a safe default if an invalid value is passed
     const safeAlignment = validAlignments.includes(alignment) ? alignment : 'left';
 
@@ -319,7 +395,7 @@ module.exports = function (eleventyConfig) {
 
   // Theme JS Script
   eleventyConfig.addPassthroughCopy({ "_includes/js": "js" });
-  
+
   //#endregion
 
   // #region COLLECTIONS
@@ -334,13 +410,13 @@ module.exports = function (eleventyConfig) {
   });
 
   // Collection of "permanent" pages (with page_id in front matter)
-  eleventyConfig.addCollection("permanent_pages", function(collectionApi) {
-    return collectionApi.getAll().filter(function(item) {
+  eleventyConfig.addCollection("permanent_pages", function (collectionApi) {
+    return collectionApi.getAll().filter(function (item) {
       // Return pages that have 'page_id' in their data
       return "uid" in item.data;
     });
   });
-// We need to remove the leading dot from each item.
+  // We need to remove the leading dot from each item.
   const cleanTemplateFormats = TEMPLATE_EXTENSIONS.map(ext => ext.substring(1));
   const cleanPassthroughFormats = PASSTHROUGH_EXTENSIONS.map(ext => ext.substring(1));
 
@@ -351,7 +427,7 @@ module.exports = function (eleventyConfig) {
       data: "../_data",
       output: "_site"
     },
-    
+
     // 2. Feed Eleventy the "clean" lists.
     templateFormats: [
       ...cleanTemplateFormats,

@@ -1,20 +1,57 @@
 // This script runs after all the HTML has loaded
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Set the maximum tilt (e.g., 0.5 means -0.5deg to +0.5deg)
-  const maxTilt = 0.5;
+  // RANDOM TILT
+  (function () {
 
-  // get all the main page containers
-  const elements = document.querySelectorAll('header, main, section, div, h1, h2, h3, h4, h5, h6, p');
+    // Set the maximum tilt (e.g., 0.5 means -0.5deg to +0.5deg)
+    const maxTilt = 0.5;
 
-  // 2. Loop through each one
-  elements.forEach(el => {
-    // 3. Generate a unique random tilt
-    const randomTilt = (Math.random() * (maxTilt * 2)) - maxTilt;
+    // get all the main page containers
+    const elements = document.querySelectorAll('header, main, section, div, h1, h2, h3, h4, h5, h6');
+    // Map to store the final, cumulative rotation (in degrees) for every element.
+    // This is the key to counteracting inherited rotation.
+    const rotationMap = new Map();
 
-    // 4. Apply the rotation
-    el.style.transform = `rotate(${randomTilt}deg)`;
-  });
+    // 2. Loop through each element
+    elements.forEach(el => {
+      const parent = el.parentElement;
+      let parentRotation = 0;
+
+      // 1. Get the parent's *total visual rotation* from the map
+      if (parent && rotationMap.has(parent)) {
+        parentRotation = rotationMap.get(parent);
+      }
+
+      // 2. Check for the exclusion class
+      if (el.closest('.notilt')) {
+        // --- ABSOLUTE CANCELLATION LOGIC ---
+
+        // If excluded, apply the exact inverse rotation of the parent's tilt.
+        // This results in a final visual rotation of 0 degrees relative to the viewport.
+        el.style.transform = `rotate(${-parentRotation}deg)`;
+
+        // Store 0 rotation for this element. Any children of this element 
+        // will now look up 0 and remain straight.
+        rotationMap.set(el, 0);
+        return;
+      }
+
+      // 3. If NOT excluded:
+
+      // Generate a new random tilt (e.g., 0.3 deg)
+      const randomTilt = (Math.random() * (maxTilt * 2)) - maxTilt;
+
+      // Calculate the required relative rotation: 
+      // (Parent's inverse tilt) + (New random tilt)
+      el.style.transform = `rotate(${-parentRotation + randomTilt}deg)`;
+
+      // Store the new total VISUAL rotation for its children to use.
+      const newVisualRotation = parentRotation + randomTilt;
+      rotationMap.set(el, newVisualRotation);
+    });
+  })();
+
 
   // LIGHT / DARK MODE TOGGLE
   (function () {
@@ -58,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   })();
 
-  
+
 
   // --- SHARE BUTTON: COPY TO CLIPBOARD ---
   (function () {
@@ -131,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   function decodeSearchString(str) {
     if (!str) return '';
-    
+
     // 1. Decode URL encoding (%20 -> space, %26 -> &, etc.)
     // We use try/catch in case the string is partially malformed.
     try {
@@ -139,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       // If it fails, proceed with the original string, letting the HTML decoder handle what it can.
     }
-    
+
     // 2. Decode ALL HTML entities using a temporary DOM element.
     // This is the most reliable way to handle &amp;, &quot;, etc.
     const textarea = document.createElement('textarea');
@@ -149,10 +186,10 @@ document.addEventListener('DOMContentLoaded', () => {
     return str;
   }
 
-/**
-   * Calculates the Levenshtein distance between two strings.
-   * (a.k.a. "edit distance")
-   */
+  /**
+     * Calculates the Levenshtein distance between two strings.
+     * (a.k.a. "edit distance")
+     */
   const getLevenshteinDistance = (a, b) => {
     if (a.length === 0) return b.length;
     if (b.length === 0) return a.length;
@@ -187,20 +224,20 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   // --- End Helper ---
 
-/**
-   * Runs a search query against a list of pages.
-   * @param {string} query - The user's search text.
-   * @param {Array} allPages - The full list of pages from filetree.
-   * @returns {Array} - A sorted array of matched pages.
-   */
+  /**
+     * Runs a search query against a list of pages.
+     * @param {string} query - The user's search text.
+     * @param {Array} allPages - The full list of pages from filetree.
+     * @returns {Array} - A sorted array of matched pages.
+     */
   window.BodgeLab.runSearch = (query, allPages) => {
-  
+
     // (NEW) These are your "preset range numbers", now as ratios.
     // 0.5 = 50% of the top score
     // 0.2 = 20% of the top score
     const STRICT_RATIO = 0.5;
-    const LOOSE_RATIO = 0.2; 
-    
+    const LOOSE_RATIO = 0.2;
+
     // 1. Decode and clean the user's query
     const decodedQuery = decodeSearchString(query);
     const keywords = [...new Set( // Use a Set to get unique keywords
@@ -214,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (keywords.length === 0) {
       return [];
     }
-    
+
     // 2. Calculate Inverse Document Frequency (IDF) Weights
     const totalPages = allPages.length;
     const keywordWeights = {};
@@ -228,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
           pagesWithKeyword++;
         }
       }
-      
+
       const frequency = pagesWithKeyword / totalPages;
       keywordWeights[keyword] = 1 - frequency; // 1.0 = very rare, 0.0 = very common
     });
@@ -237,12 +274,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const scoredResults = allPages.map(page => {
       let baseScore = 0;
       let keywordsFound = 0;
-      
+
       const decodedUrl = decodeSearchString(page.url);
       const decodedTitle = decodeSearchString(page.title || "");
       const cleanUrl = decodedUrl.toLowerCase().replace(/[\/\-]/g, ' ').replace(/[^a-z0-9\s]/g, '');
       const cleanTitle = decodedTitle.toLowerCase().replace(/[\/\-]/g, ' ').replace(/[^a-z0-9\s]/g, '');
-      
+
       const titleWords = cleanTitle.split(/\s+/);
       const urlWords = cleanUrl.split(/\s+/);
 
@@ -267,20 +304,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 2. Check URL (Low Score)
         if (cleanUrl.includes(keyword)) {
-          urlScore = 0.5 * weight; 
+          urlScore = 0.5 * weight;
           found = true;
         } else {
           const hasFuzzyUrlMatch = urlWords.some(w => getLevenshteinDistance(w, keyword) === 1);
           if (hasFuzzyUrlMatch) {
-            urlScore = 0.25 * weight; 
+            urlScore = 0.25 * weight;
             found = true;
           }
         }
-        
+
         if (found) {
           keywordsFound++;
         }
-        
+
         baseScore += (titleScore + urlScore);
       });
 
@@ -290,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
           baseScore += 10;
         }
         if (keywords.every(k => cleanTitle.includes(k))) {
-            baseScore += 5;
+          baseScore += 5;
         }
       }
 
@@ -304,31 +341,31 @@ document.addEventListener('DOMContentLoaded', () => {
     })
       .filter(page => page.score > 0); // Only keep pages that matched at all
 
-    
+
     // --- (NEW) 8. Apply Dynamic Threshold ---
-    
+
     if (scoredResults.length === 0) {
       return []; // No results, just quit
     }
-    
+
     // Sort *once* to find the best score
     scoredResults.sort((a, b) => b.score - a.score);
-    
+
     // Find the single best score
     const maxScore = scoredResults[0].score;
-    
+
     // Calculate our dynamic thresholds
     const highDynamicThreshold = maxScore * STRICT_RATIO;
     const lowDynamicThreshold = maxScore * LOOSE_RATIO;
 
     // First, try to get results with the HIGH threshold
     let finalResults = scoredResults.filter(page => page.score >= highDynamicThreshold);
-    
+
     // If that returned 0 results, fall back to the LOW threshold
     if (finalResults.length === 0) {
       finalResults = scoredResults.filter(page => page.score >= lowDynamicThreshold);
     }
-    
+
     // Return the (already sorted) results
     return finalResults;
   };
@@ -358,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   };
-  
+
   const event = new CustomEvent('bodgelab:searchready');
   document.dispatchEvent(event);
 });

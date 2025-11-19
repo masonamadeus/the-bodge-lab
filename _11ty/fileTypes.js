@@ -5,6 +5,7 @@ const TEMPLATE_EXTENSIONS = [
     '.md', 
     '.njk', 
     '.html',
+    '.fountain',
 ];
 
 // Define our media categories

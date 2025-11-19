@@ -106,10 +106,8 @@ function extractImage(content, page) {
     try {
       const pageDir = path.dirname(page.inputPath);
       
-      // --- THIS IS THE FIX ---
       // __dirname is *already* the 'content' folder.
       const contentDir = path.resolve(__dirname); 
-      // --- END FIX ---
       
       // 2. Resolve the relative image path from the page's directory
       const physicalImagePath = path.resolve(pageDir, imagePath);
@@ -131,14 +129,11 @@ function extractH1(content) {
   if (!content) {
     return null;
   }
-  // --- START FIX ---
   // Split the content by front matter dashes
   const parts = content.split('---');
 
   // Use the content *after* the front matter (if it exists)
-  // parts.length > 2 means there was front matter
   const markdownContent = parts.length > 2 ? parts.slice(2).join('---') : content;
-  // --- END FIX ---
 
   // Look for the first markdown H1 in the *actual content*
   const match = markdownContent.match(/#\s+(.+)/m);
@@ -156,6 +151,25 @@ module.exports = {
 
   eleventyComputed: {
 
+    // --- OPTIMIZATION: Parse content once ---
+    _pageData: data => {
+      // Skip running on special pages that don't have markdown content to parse
+      if (data.page.inputPath.endsWith("media.njk") ||
+          data.page.inputPath.endsWith("autoDirectory.njk") ||
+          !data.page.rawInput ||
+          !data.page.rawInput.trim()) {
+        return null;
+      }
+      
+      // The expensive operations, run once.
+      return {
+        h1: extractH1(data.page.rawInput),
+        excerpt: extractExcerpt(data.page.rawInput),
+        image: extractImage(data.page.rawInput, data.page)
+      };
+    },
+    // --- END OPTIMIZATION ---
+
     uid: data => {
       // 1. Use existing UID if present in front matter
       if (data.uid) {
@@ -172,7 +186,6 @@ module.exports = {
       }
 
       // 3. Generate a dynamic UID from the file path.
-      // This logic is independent of 'title' and breaks the circular dependency.
       const relativePath = path.relative(__dirname, data.page.inputPath);
       const dir = path.dirname(relativePath);
       const filename = path.basename(relativePath, path.extname(relativePath));
@@ -207,19 +220,16 @@ module.exports = {
 
     title: data => {
       // 1. Check for a hard-coded title in front matter.
-      // This is always highest priority.
       if (data.title) {
         return data.title;
       }
 
       // 2. Check if this is a MEDIA PAGE (from media.njk)
-      // If so, use the paginated media file's name.
       if (data.page.inputPath.endsWith("media.njk") && data.media) {
         return data.media.name;
       }
 
       // 3. Check if this is an AUTO-DIRECTORY PAGE (from autoDirectory.njk)
-      // If so, use the filetree node's title.
       if (data.page.inputPath.endsWith("autoDirectory.njk")) {
         const dirNode = getDirectoryNode(data);
         if (dirNode) {
@@ -228,10 +238,9 @@ module.exports = {
         return "Directory"; // Fallback for dir
       }
       
-      // 4. For any other page, try to find the first H1 in the RAW markdown.
-      const h1 = extractH1(data.page.rawInput);
-      if (h1) {
-        return h1;
+      // 4. Use the pre-calculated H1
+      if (data._pageData && data._pageData.h1) {
+        return data._pageData.h1;
       } 
 
       // 5. As a last resort, use the site default.
@@ -278,6 +287,9 @@ module.exports = {
       let files = [];
       let pages = [];
 
+      // Get the normalized URL of the current page for comparison
+      const mainPageUrl = normalizeLookupKey(data.page.url);
+
       for (const item of dirNode.children) {
         // FOR DIRECTORY PAGES
         if (item.isDirectory) {
@@ -285,21 +297,29 @@ module.exports = {
         }
 
         // FOR TEMPLATE PAGES
-        else if (item.isTemplate && !item.isIndex) {
+        else if (item.isTemplate) { 
           const baseName = path.basename(item.name, item.ext);
           
-          // --- THIS LOGIC NOW WORKS ---
-          // 'item' now has all front matter properties from filetree.js
-          
           // 1. Get the URL
-          const itemUrl = item.permalink || `${cleanUrl}${baseName}/`;
+          let itemUrl;
+          if (item.isIndex) {
+            // An index file's URL is its directory's canonical URL.
+            itemUrl = dirNode.webPath;
+            
+            // Apply the same trailing slash logic as template URL generation in filetree.js
+            if (itemUrl === '') itemUrl = '/'; // Fix root path
+            if (itemUrl !== '/' && !itemUrl.endsWith('/')) {
+                itemUrl += '/'; // Add trailing slash
+            }
+          } else {
+            // A regular template page
+            itemUrl = item.permalink || `${cleanUrl}${baseName}/`;
+          }
 
           // 2. Get the Name
           const itemName = item.title || baseName;
-          // --- END FIX ---
 
           // 3. Check if it's the current page
-          const mainPageUrl = normalizeLookupKey(data.page.url);
           const isCurrent = (normalizeLookupKey(itemUrl) === mainPageUrl);
 
           pages.push({
@@ -321,26 +341,35 @@ module.exports = {
 
     // set download filename
     download_filename: data => {
-
       
-      // This is a media page (from media.njk)
+      // 1. Media Page (Highest Priority)
       if (data.media && data.media.url) {
         return path.basename(data.media.url);
       }
-
-      // This is a post page (e.g., .md file)
+      
+      // Only proceed if we have a templated content file
       if (data.page && data.page.inputPath) {
-        if (data.page.inputPath.endsWith("index.md")) {
-            // try to return the title for the index
-            if (data.title) return data.title+".md";
-          const h1 = extractH1(data.page.rawInput);
-          if (h1) {
-            return h1+".md";
-          } 
-        } 
-        return path.basename(data.page.inputPath);
+        const ext = path.extname(data.page.inputPath); 
+        let baseName;
+        
+        // 2. Front Matter Title (Highest priority for content filename)
+        if (data.title) {
+            baseName = data.title;
+        }
+        // 3. H1 Extraction Fallback (Uses pre-calculated _pageData)
+        else if (data._pageData && data._pageData.h1) {
+            baseName = data._pageData.h1;
+        }
+        // 4. Filename Fallback (e.g., "my-post")
+        else {
+            baseName = path.basename(data.page.inputPath, ext);
+        }
+        
+        // Clean the baseName (relying on browser to URL-encode) and append the original file extension
+        return baseName.trim().replace(/[/\\]/g, '-') + ext;
       }
-      // Fallback
+      
+      // Final fallback
       return "file";
     },
 
@@ -348,20 +377,17 @@ module.exports = {
     seo: data => {
       // data.meta is from _data/meta.js
       // data.page is the current page
-      // data.content is the raw markdown content
       const meta = data.meta;
       const page = data.page;
       
-      // Get Description
-      //    Front Matter `description:` > Auto-excerpt > Default
+      // Get Description - Use the pre-calculated excerpt
       const seoDescription = data.description ||
-                             extractExcerpt(data.page.rawInput) ||
+                             (data._pageData && data._pageData.excerpt) ||
                              meta.defaultDescription;
                              
-      // Get Image
-      //    Front Matter `image:` > First `{% image %}` > Default
+      // Get Image - Use the pre-calculated image path
       let imagePath = data.image ||
-                      extractImage(data.page.rawInput, data.page) ||
+                      (data._pageData && data._pageData.image) ||
                       meta.defaultImage;
       
       // Build absolute URLs
