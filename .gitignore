@@ -9,6 +9,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Build tools
+large_media/
+.env
+
 # Operating System
 
 # macOS

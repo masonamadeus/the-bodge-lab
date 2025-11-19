@@ -13,7 +13,10 @@
   },
   "dependencies": {
     "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.2",
+    "@aws-sdk/client-s3": "^3.934.0",
     "fountain-js": "^1.2.4",
-    "luxon": "^3.7.2"
+    "gray-matter": "^4.0.3",
+    "luxon": "^3.7.2",
+    "mime-types": "^3.0.1"
   }
 }
