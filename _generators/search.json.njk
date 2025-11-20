@@ -6,6 +6,7 @@ layout: false
 [
   {%- for page in filetree.allPages %}
     {
+      "id": {{ page.url | dump | safe }},
       "title": {{ page.title | dump | safe }},
       "url": {{ page.url | dump | safe }}
     }

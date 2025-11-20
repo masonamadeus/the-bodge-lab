@@ -187,16 +187,54 @@ code {
 }
 
 /* --- 4. Main Content Blocks --- */
+/* --- 4. Main Content Blocks --- */
 .page-meta {
   margin-top: 0;
 }
 
 .main-content {
-  background-color: var(--bg-color-bright);
+  /* 1. Create a shared 3D environment for all children */
+  transform-style: preserve-3d;
+  
+  /* Keep layout padding */
   padding-top: var(--base-spacing);
   padding-bottom: var(--base-spacing);
   padding-left: var(--base-spacing);
   padding-right: var(--base-spacing);
+}
+
+/* 2. The Content Elements */
+.main-content > * {
+  /* Ensure they participate in the 3D space */
+  transform-style: preserve-3d;
+  position: relative;
+  
+  /* Remove the default background so we can supply our own backing */
+  background-color: transparent;
+}
+
+/* 3. The "Bodge" Background Layer */
+.main-content > *::before {
+  content: "";
+  display: block;
+  position: absolute;
+  
+  /* Create the bleed (larger than the content box) */
+  inset: -1em -0.5em; /* Negative values pull the edges outward */
+  
+  /* Style the box */
+  background-color: var(--bg-color-bright);
+  
+  /* THE TRICK: Push the background physically behind the text plane */
+  /* Since the parent has preserve-3d, this -1px is global! */
+  transform: translateZ(-1px);
+  
+  /* Prevent it from capturing mouse clicks (allows text selection underneath) */
+  pointer-events: none;
+}
+
+.main-content > pre::before {
+  display: none !important;
 }
 
 /* --- 5. Directory Listing Section --- */

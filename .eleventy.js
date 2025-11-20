@@ -1,14 +1,13 @@
 // Node.js modules for file system and path handling
 const { DateTime } = require("luxon");
 const path = require('path');
-const { MEDIA_EXTENSIONS, TEMPLATE_EXTENSIONS, PASSTHROUGH_EXTENSIONS } = require('./_11ty/fileTypes.js');
+const { TEMPLATE_EXTENSIONS, PASSTHROUGH_EXTENSIONS } = require('./_11ty/fileTypes.js');
 const { generateFileTreeData } = require('./_11ty/filetree.js');
 const syntaxHighlight = require("@11ty/eleventy-plugin-syntaxhighlight");
 const fs = require('fs');
 
 // extensions
 const markdownIt = require("markdown-it");
-const mdLinkAttributes = require("markdown-it-link-attributes");
 const { Fountain } = require("fountain-js");
 
 /**
@@ -123,18 +122,19 @@ let fileTreeCache = null;
 module.exports = function (eleventyConfig) {
 
   // --- GENERATOR TEMPLATES ---
-const generatorsDir = path.join(__dirname, '_generators');
+  const generatorsDir = path.join(__dirname, '_generators');
   if (fs.existsSync(generatorsDir)) {
-      const templateFiles = fs.readdirSync(generatorsDir);
-      templateFiles.forEach(file => {
-          if(file.endsWith('.njk')) {
-            const content = fs.readFileSync(path.join(generatorsDir, file), 'utf8');
-            eleventyConfig.addTemplate(file, content);
-          }
-      });
+    const templateFiles = fs.readdirSync(generatorsDir);
+    templateFiles.forEach(file => {
+      if (file.endsWith('.njk')) {
+        const content = fs.readFileSync(path.join(generatorsDir, file), 'utf8');
+        eleventyConfig.addTemplate(file, content);
+      }
+    });
   }
+
   // Make sure we watch the generators for changes during dev
-eleventyConfig.addWatchTarget("./_generators/");
+  eleventyConfig.addWatchTarget("./_generators/");
 
   // --- Markdown Configuration ---
 
@@ -146,20 +146,20 @@ eleventyConfig.addWatchTarget("./_generators/");
 
   eleventyConfig.addExtension("fountain", {
     isLiquid: true, // Use Liquid/Nunjucks for front matter and layout support
-    compile: async () => { 
+    compile: async () => {
       return async (data) => {
         const rawScriptText = data.page.rawInput;
-        
-        // 1. Parse the script, requesting the tokens with `true`
+
+        // Parse the script, requesting the tokens with `true`
         const fountain = new Fountain();
-        const output = fountain.parse(rawScriptText, true); 
-        
-        // 2. Render the tokens to custom HTML
+        const output = fountain.parse(rawScriptText, true);
+
+        // Render the tokens to custom HTML
         const scriptHTML = renderFountainTokens(output.tokens);
 
-        // 3. Return the Title Page + Custom Rendered Script, wrapped in the container
-        return output.html.title_page + 
-               `<div class="fountain-script-container notilt">${scriptHTML}</div>`;
+        // Return the Title Page + Custom Rendered Script, wrapped in the container
+        return output.html.title_page +
+          `<div class="fountain-script-container notilt">${scriptHTML}</div>`;
       };
     }
   });
@@ -351,14 +351,14 @@ eleventyConfig.addWatchTarget("./_generators/");
   //    Usage: {% grid "half, half" %} ...content... ...content... {% endgrid %}
   eleventyConfig.addPairedShortcode("grid", function (content, widths) {
 
-    // 1. Split the content at our '' separator
+    // Split the content at our '' separator
     const columns = content.split("``");
 
-    // 2. Split the widths string into an array
+    // Split the widths string into an array
     //    "half, half" -> ["half", "half"]
     const widthArray = (widths || "half, half").split(',').map(s => s.trim());
 
-    // 3. Build the HTML for each column
+    // Build the HTML for each column
     const columnHtml = columns.map((colContent, i) => {
       // Get the width for this column, or use the last one if undefined
       const width = widthArray[i] || widthArray[widthArray.length - 1] || '';
@@ -372,7 +372,7 @@ eleventyConfig.addWatchTarget("./_generators/");
       return `<div class="${className}">${colContent}</div>`;
     }).join('');
 
-    // 4. Wrap all columns in the "layout-row" container
+    // Wrap all columns in the "layout-row" container
     return `<div class="layout-row">${columnHtml}</div>`;
   });
 
@@ -400,14 +400,16 @@ eleventyConfig.addWatchTarget("./_generators/");
 
   // #region PASSTHROUGHS
 
-  // Entire content folder passthrough so that we can easily download any file
-  //eleventyConfig.addPassthroughCopy("content");
-
   // CSS file
   eleventyConfig.addPassthroughCopy({ "_includes/css": "css" });
 
   // Theme JS Script
   eleventyConfig.addPassthroughCopy({ "_includes/js": "js" });
+
+  // MiniSearch Library (This rename feels like it might bite me later.)
+  eleventyConfig.addPassthroughCopy({
+    "node_modules/minisearch/dist/umd/index.js": "js/lib/minisearch.js"
+  });
 
   //#endregion
 
@@ -441,7 +443,7 @@ eleventyConfig.addWatchTarget("./_generators/");
       output: "_site"
     },
 
-    // 2. Feed Eleventy the "clean" lists.
+    // Feed Eleventy the "clean" lists.
     templateFormats: [
       ...cleanTemplateFormats,
       ...cleanPassthroughFormats

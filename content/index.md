@@ -1,8 +1,8 @@
 ---
 download: false
 uid: 94a02866
-contentHash: b4840f3c
-date: '2025-11-19T22:06:10.633Z'
+contentHash: 25daba0f
+date: '2025-11-20T02:50:16.324Z'
 ---
 # Welcome to The Bodge Lab!
 
@@ -18,7 +18,7 @@ Explore! I hope you find joy and utility amongst my nonsense.
 
 ___
 
-<h3 id="random-page-container">RANDOM FILE</h3>
+<h3 id="random-page-container">SCRIPTS NOT RUNNING</h3>
 
 
 <script>
@@ -57,7 +57,7 @@ ___
     } catch (e) {
       console.error('Error loading random page widget:', e);
       if (container) {
-        container.innerHTML = '<p><i>Error loading widget.</i></p>';
+        container.innerHTML = `<p><i>${e}</i></p>`;
       }
     }
   });

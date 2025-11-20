@@ -4,6 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { 
     S3Client, 
     PutObjectCommand, 
@@ -46,28 +47,33 @@ function ensureDir(filePath) {
     fs.mkdirSync(dirname);
 }
 
+function getFileHash(filePath) {
+    const fileBuffer = fs.readFileSync(filePath);
+    const hashSum = crypto.createHash('md5');
+    hashSum.update(fileBuffer);
+    return hashSum.digest('hex');
+}
+
 // Fetches ALL objects from R2 and returns a Map: { "filename": size_in_bytes }
 // This costs 1 API call per 1000 files.
 async function getBucketInventory(s3, bucketName) {
     const inventory = new Map();
     let continuationToken;
-    
     try {
         do {
             const response = await s3.send(new ListObjectsV2Command({
                 Bucket: bucketName,
                 ContinuationToken: continuationToken
             }));
-            
             (response.Contents || []).forEach(obj => {
-                inventory.set(obj.Key, obj.Size);
+                // R2 ETags are wrapped in quotes like "5d41402abc4b2a76b9719d911017c592"
+                // We strip them for comparison.
+                const cleanETag = obj.ETag ? obj.ETag.replace(/"/g, '') : '';
+                inventory.set(obj.Key, { size: obj.Size, etag: cleanETag });
             });
-
             continuationToken = response.NextContinuationToken;
         } while (continuationToken);
-    } catch (e) {
-        // If bucket is empty or new, just return empty inventory
-    }
+    } catch (e) {}
     return inventory;
 }
 
@@ -95,34 +101,43 @@ async function getBucketInventory(s3, bucketName) {
     });
 
     // ============================================================
-    // PUSH: Local -> R2 (Inventory Optimized)
+    // PUSH: Local -> R2 (Size + ETag Optimized)
     // ============================================================
     if (mode === 'push') {
         console.log(` [R2] Fetching remote inventory...`);
         const remoteInventory = await getBucketInventory(S3, env.R2_BUCKET_NAME);
-        console.log(` [R2] Remote has ${remoteInventory.size} files. Comparing with local...`);
-
+        
         const files = getLocalFiles(LOCAL_ROOT);
-        if (files.length === 0) {
-            console.log(" [INFO] No local files to sync.");
-            return;
-        }
-
         let uploadCount = 0;
         let skipCount = 0;
 
         for (const file of files) {
-            // Normalize path to use forward slashes for R2 keys
             const relativePath = path.relative(LOCAL_ROOT, file).replace(/\\/g, '/');
             const localSize = fs.statSync(file).size;
-            const remoteSize = remoteInventory.get(relativePath);
+            const remoteFile = remoteInventory.get(relativePath);
 
-            // DECISION LOGIC:
-            // If remoteSize matches localSize, we skip.
-            // If remoteSize is undefined (new file) or different (changed file), we upload.
-            if (remoteSize === localSize) {
+            let shouldUpload = false;
+
+            if (!remoteFile) {
+                // File doesn't exist remote
+                shouldUpload = true;
+            } else if (remoteFile.size !== localSize) {
+                // Sizes differ (Fastest check)
+                shouldUpload = true;
+            } else {
+                // Sizes match, check ETag (Robustness check)
+                // Note: If ETag has a dash (multipart upload), we skip hash check and trust size
+                // to avoid re-uploading large videos unnecessarily.
+                if (!remoteFile.etag.includes('-')) {
+                    const localHash = getFileHash(file);
+                    if (localHash !== remoteFile.etag) {
+                        shouldUpload = true;
+                    }
+                }
+            }
+
+            if (!shouldUpload) {
                 skipCount++;
-                // process.stdout.write('.'); // Uncomment for dots
                 continue;
             }
 

@@ -1,7 +1,8 @@
 ---
-uid: aa3b1e4f
+uid: site-about
 contentHash: 6dfa1e96
 date: '2025-11-19T22:06:10.627Z'
+title: 'BodgeLab Website Design Info'
 ---
 # I Always Wanna Know How Stuff Works
 

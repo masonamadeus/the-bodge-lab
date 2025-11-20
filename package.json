@@ -17,6 +17,7 @@
     "fountain-js": "^1.2.4",
     "gray-matter": "^4.0.3",
     "luxon": "^3.7.2",
-    "mime-types": "^3.0.1"
+    "mime-types": "^3.0.1",
+    "minisearch": "^7.2.0"
   }
 }

@@ -173,7 +173,11 @@ goto MENU
 cls
 echo [DEV] Launching Server in a new window...
 :: We add 'title Bodge_Unique_ID' INSIDE the command so we can hunt it down later by its command line signature
-start "BodgeLab Live Server" cmd /c "title Bodge_Unique_ID & cd /d "%~dp0%SYS_DIR%" & npx @11ty/eleventy --serve & echo. & echo [SERVER STOPPED] Press any key to close... & pause >nul"
+start /min "BodgeLab Live Server" cmd /c "title Bodge_Unique_ID & cd /d "%~dp0%SYS_DIR%" & npx @11ty/eleventy --serve & echo. & echo [SERVER STOPPED] Press any key to close... & pause >nul"
+:: Wait a moment for the server to spin up
+timeout /t 2 /nobreak > nul
+:: Open the server URL in the default browser
+start "" "http://localhost:8080"
 
 :DEVMENU
 cls
@@ -229,6 +233,12 @@ if !BEHIND! GTR 0 (
 :: Enter System Directory
 pushd "%SYS_DIR%"
 
+:: Prompt for commit message
+echo.
+set "commit_msg=Site Update via Control Panel %date% %time%"
+set /p user_msg="Enter Commit MSG (Press Enter for default): "
+if not "%user_msg%"=="" set "commit_msg=%user_msg%"
+
 :: --- STEP 0: SELF-PRESERVATION ---
 echo [0/5] Syncing Control Panel to Repo...
 :: Copies the running batch file (from Root) into the current folder (_system)
@@ -268,7 +278,7 @@ if exist "CNAME" (
 :: --- STEP 3: SAVE SOURCE ---
 echo [4/5] Backing up Source Code to 'main'...
 git add .
-git commit -m "Site Update via Control Panel %date% %time%"
+git commit -m "!commit_msg!"
 git push origin main
 if %errorlevel% neq 0 (
     echo [ABORT] Git Push failed. Check internet or credentials.
@@ -283,7 +293,7 @@ cd "_site"
 git init >nul
 echo. > .nojekyll
 git add . >nul
-git commit -m "Deploy via Control Panel" >nul
+git commit -m "!commit_msg!" >nul
 git push --force "https://github.com/masonamadeus/the-bodge-lab.git" master:gh-pages
 cd ..
 rmdir /s /q "_site\.git"

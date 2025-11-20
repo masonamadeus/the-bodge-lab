@@ -5,11 +5,12 @@ const crypto = require('crypto');
 
 // Helper to clean strings for URLs
 function slugify(str) {
+    if (!str) return '';
     return str
         .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-');
+        .replace(/[^a-z0-9\s-]/g, '') // Remove invalid chars
+        .replace(/\s+/g, '-')         // Replace spaces with -
+        .replace(/-+/g, '-');         // Collapse multiple -
 }
 
 function getFiles(dir, ext) {
@@ -29,13 +30,13 @@ function getFiles(dir, ext) {
 }
 
 (async () => {
-    // TARGET: The system/content folder
     const contentDir = path.resolve(__dirname, '../content');
     const files = getFiles(contentDir, '.md');
     
     let updatedCount = 0;
     let stampedCount = 0;
     let migratedCount = 0;
+    let sanitizedCount = 0;
 
     console.log(`[STAMPER] Scanning ${files.length} files...`);
 
@@ -45,19 +46,29 @@ function getFiles(dir, ext) {
         let isModified = false;
 
         // --- 0. MIGRATION: URI -> UID ---
-        // If we have a 'uri' but no 'uid', move it over.
         if (parsed.data.uri && !parsed.data.uid) {
-            parsed.data.uid = parsed.data.uri;
-            delete parsed.data.uri; // Remove the old key
+            parsed.data.uid = parsed.data.uri; // Move raw value first
+            delete parsed.data.uri;
             
-            console.log(`[MIGRATED] ${path.basename(filepath)} (uri -> uid)`);
+            console.log(`[MIGRATED] ${path.basename(filepath)}`);
             isModified = true;
             migratedCount++;
         } 
-        // If we have both (rare), just delete the redundant uri
         else if (parsed.data.uri && parsed.data.uid) {
             delete parsed.data.uri;
             isModified = true;
+        }
+
+        // --- 0.5. SANITIZE UID ---
+        // Ensure any UID (newly migrated or existing) is a valid URL slug
+        if (parsed.data.uid) {
+            const cleanUid = slugify(parsed.data.uid);
+            if (parsed.data.uid !== cleanUid) {
+                console.log(`[SANITIZED] "${parsed.data.uid}" -> "${cleanUid}"`);
+                parsed.data.uid = cleanUid;
+                isModified = true;
+                sanitizedCount++;
+            }
         }
 
         // --- 1. UID CHECK (New Files) ---
@@ -93,9 +104,5 @@ function getFiles(dir, ext) {
         }
     }
 
-    if (stampedCount > 0 || updatedCount > 0 || migratedCount > 0) {
-        console.log(`[DONE] Migrated ${migratedCount}, Stamped ${stampedCount}, Updated ${updatedCount}.`);
-    } else {
-        console.log("[OK] No changes detected.");
-    }
+    console.log(`[DONE] Stamped: ${stampedCount} | Updated: ${updatedCount} | Migrated: ${migratedCount} | Sanitized: ${sanitizedCount}`);
 })();

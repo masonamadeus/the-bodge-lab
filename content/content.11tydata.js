@@ -1,4 +1,7 @@
 const path = require('path');
+const MarkdownIt = require('markdown-it');
+
+const md = new MarkdownIt;
 
 /**
  * Normalizes a web path from data.page.url to be used as a consistent lookup key.
@@ -68,79 +71,67 @@ function getDirectoryNode(data) {
 }
 
 /**
- * Extracts a 155-character excerpt from raw markdown content.
+ *  Extracts H1, Excerpt and Image using Markdown Tokens
  */
-function extractExcerpt(content) {
-  if (!content) {
-    return null;
-  }
-  // Remove Nunjucks shortcodes, markdown links, and formatting
-  let excerpt = content
-    .replace(/\{%[^%]*%\}/g, '') // Remove shortcodes
-    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Remove markdown links
-    .replace(/[#*_`]/g, '') // Remove markdown formatting
-    .replace(/\s+/g, ' ') // Consolidate whitespace
-    .trim();
+function parseMarkdownData(content, page) {
+  if (!content) return { h1: null, image: null, excerpt: null };
 
-  if (excerpt.length > 155) {
-    excerpt = excerpt.substring(0, 155).trim() + '...';
-  }
-  return excerpt;
-}
+  // 1. Parse tokens
+  const tokens = md.parse(content, {});
+  
+  let h1 = null;
+  let imagePath = null;
+  let textContent = ""; // For excerpt
 
-/**
- * Finds the first `{% image ... %}` shortcode and resolves its path.
- */
-function extractImage(content, page) {
-  if (!content) {
-    return null;
-  }
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
 
-  const imageRegex = /\{%\s*image\s*\"([^\"]+)\"/;
-  const match = content.match(imageRegex);
+    // FIND H1
+    // Look for heading_open with tag 'h1'
+    if (!h1 && t.type === 'heading_open' && t.tag === 'h1') {
+      // The next token contains the inline text content
+      if (tokens[i+1] && tokens[i+1].type === 'inline') {
+        h1 = tokens[i+1].content;
+      }
+    }
 
-  if (match && match[1]) {
-    const imagePath = match[1];
-
-    try {
-      const pageDir = path.dirname(page.inputPath);
-
-
-      const contentDir = path.resolve(__dirname);
-
-      // 2. Resolve the relative image path from the page's directory
-      const physicalImagePath = path.resolve(pageDir, imagePath);
-
-      // 3. Get the relative path from /content/ to the image
-      const webPath = path.relative(contentDir, physicalImagePath);
-
-      return '/' + webPath.replace(/\\/g, '/');
-    } catch (e) {
-      console.warn(`[SEO] Could not resolve image path: ${imagePath} in ${page.inputPath}`);
-      return null;
+    // FIND IMAGE
+    // Look for 'image' token (standard markdown) OR the shortcode structure
+    // Since shortcodes {% image %} aren't parsed by markdown-it, we might still need regex for shortcodes specifically.
+    // BUT, if you use standard markdown images ![alt](src), this captures them.
+    if (!imagePath && t.type === 'image') {
+      imagePath = t.attrGet('src');
+    }
+    
+    // BUILD EXCERPT (Accumulate text from paragraphs)
+    if (t.type === 'inline' && tokens[i-1] && tokens[i-1].type === 'paragraph_open') {
+        textContent += t.content + " ";
     }
   }
-  return null;
-}
 
-// this is supposed to extract the first h1 from markdown content
-function extractH1(content) {
-  if (!content) {
-    return null;
+  // FALLBACK: Shortcode Regex for Images
+  // Markdown-it ignores Nunjucks shortcodes, so we keep this ONLY for {% image %} tags
+  if (!imagePath) {
+    const match = content.match(/\{%\s*image\s*\"([^\"]+)\"/);
+    if (match) imagePath = match[1];
   }
-  // Split the content by front matter dashes
-  const parts = content.split('---');
 
-  // Use the content *after* the front matter (if it exists)
-  const markdownContent = parts.length > 2 ? parts.slice(2).join('---') : content;
-
-  // Look for the first markdown H1 in the *actual content*
-  const match = markdownContent.match(/#\s+(.+)/m);
-
-  if (match && match[1]) {
-    return match[1].trim();
+  // Process Image Path (Resolve relative to absolute)
+  if (imagePath) {
+    try {
+      const pageDir = path.dirname(page.inputPath);
+      const contentDir = path.resolve(__dirname); 
+      const physicalImagePath = path.resolve(pageDir, imagePath);
+      imagePath = '/' + path.relative(contentDir, physicalImagePath).replace(/\\/g, '/');
+    } catch (e) {
+      imagePath = null;
+    }
   }
-  return null;
+  
+  // Process Excerpt
+  const excerpt = textContent.slice(0, 155).trim() + (textContent.length > 155 ? "..." : "");
+
+  return { h1, image: imagePath, excerpt };
 }
 
 module.exports = {
@@ -160,17 +151,13 @@ module.exports = {
         return null;
       }
 
-      // The expensive operations, run once.
-      return {
-        h1: extractH1(data.page.rawInput),
-        excerpt: extractExcerpt(data.page.rawInput),
-        image: extractImage(data.page.rawInput, data.page)
-      };
+      // Run the expensive parsing once
+      return parseMarkdownData(data.page.rawInput, data.page);
     },
 
     uid: data => {
       // 1. Use existing UID if present in front matter
-      if (data.uid) return data.uid;
+      if (data.uid) return slugify(data.uid);
 
       // 2. Ignore system files
       if (data.page.url === "/" ||

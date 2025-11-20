@@ -6,3 +6,7 @@
 
 - figure out organizational hierarchy
 - is build time gonna be a problem as this grows?? optimize?? maybe build local, push _site?
+
+- optimize font pop-in a little bit more
+- add custom commit message via control panel
+- double check env shit && r2

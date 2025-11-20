@@ -41,30 +41,21 @@ download: false
 </div>
 
 <script>
-  // --- ADD THIS LISTENER WRAPPER ---
   document.addEventListener('bodgelab:searchready', () => {
-
-    // 1. Get the elements
     const searchInput = document.getElementById('search-box');
     const resultsContainer = document.getElementById('search-results');
     
-    let allPages = null; // We'll lazy-load this
+    // Use the global debounce
+    const handleInput = window.BodgeLab.debounce(async (e) => {
+        const query = e.target.value;
+        
+        // 1. Get Data
+        const results = await window.BodgeLab.getResults(query);
+        
+        // 2. Render Data
+        window.BodgeLab.render(results, resultsContainer, query);
+    }, 300);
 
-    // 2. Add the event listener
-    searchInput.addEventListener('input', async () => {
-      
-      // 3. (NEW) Fetch data on first input, if we haven't already
-      if (!allPages) {
-        resultsContainer.innerHTML = '<p><i>Loading search data...</i></p>';
-        allPages = await window.BodgeLab.getSearchData();
-      }
-
-      // 4. Run the search and render
-      const query = searchInput.value;
-      const results = window.BodgeLab.runSearch(query, allPages);
-      window.BodgeLab.renderResults(results, resultsContainer, query);
-    });
-
-  // --- AND CLOSE IT HERE ---
+    searchInput.addEventListener('input', handleInput);
   });
 </script>

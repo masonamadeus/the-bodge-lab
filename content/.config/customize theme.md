@@ -1,10 +1,10 @@
 ---
-title: customize theme
+title: Customize Theme
 download: false
 directory: true
 uid: 0a85b49b
-contentHash: 2398c570
-date: '2025-11-19T22:06:10.629Z'
+contentHash: c3bc5289
+date: '2025-11-20T02:50:16.320Z'
 ---
 
 <style>
@@ -85,7 +85,7 @@ date: '2025-11-19T22:06:10.629Z'
   }
 </style>
 
-## Customize Your Theme
+# Customize Your Theme
 
 When you first visit The Bodge Lab, it creates a unique custom theme for you based on your device data!
 
@@ -93,7 +93,16 @@ You can learn more about that [here](<../about the site/>).
 
 If you don't like it, you can customize it here. **All changes save automatically.**
 
-<hr>
+<div class="theme-actions">
+  <button id="theme-reroll" class="theme-button random">Randomize</button>
+  <button id="reset-custom-theme" class="theme-button reset">Reset to Bodge Theme</button>
+</div>
+
+
+<br>
+<br>
+
+## Font Selection
 
 <div class="form-row">
   <label for="body-font-name">Body Font Name:</label>
@@ -106,7 +115,9 @@ If you don't like it, you can customize it here. **All changes save automaticall
 
 You can use any font from [Google Fonts](https://fonts.google.com/). Just enter the name exactly as it appears on the site.
 
-<hr>
+<br>
+
+## Color Changing Magic
 
 <div class="theme-editor-grid">
   <fieldset id="editor-light">
@@ -158,16 +169,12 @@ You can use any font from [Google Fonts](https://fonts.google.com/). Just enter 
   </fieldset>
 </div>
 
-The Bodge Theme Engine™ will attempt to adjust your color choices for proper contrast and accessibility, so they may change slightly when you save.
+**The Bodge Theme Engine™ will attempt to adjust your color choices for proper contrast and accessibility, so they may change slightly while editing.**
 
-Now... this adjustment might also fail, and you can definitely make the site unreadable if you try. 
+This adjustment might also fail, and you can definitely make the site unreadable if you try. 
 
-Up to you, do what you want!
+Good Luck!
 
-<div class="theme-actions">
-  <button id="theme-reroll" class="theme-button random">🎲 Randomize</button>
-  <button id="reset-custom-theme" class="theme-button reset">Reset to Bodge Theme</button>
-</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {

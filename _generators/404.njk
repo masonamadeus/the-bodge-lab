@@ -8,106 +8,92 @@ download: false
 ---
 
 <h1>Oops! Page Not Found (404)</h1>
-<p>I couldn't find the page you were looking for.
-</p>
-<p>This is The
-  <em>Bodge</em>
-  Lab, so things get moved around!</p>
+<p>I couldn't find the page you were looking for.</p>
+<p>This is The <em>Bodge</em> Lab, so things get moved around!</p>
+
 <h3>Based on the URL you tried, were you looking for one of these?</h3>
+
 <div id="smart-search-results">
-  <p>
-    <i>Searching for matches...</i>
-  </p>
+  <p><i>Initializing...</i></p>
 </div>
+
 <div>
   <p>Keywords: "<i id="search-keywords"></i>"</p>
 </div>
+
 <hr>
-  <p>Or, you can try heading back to the
-    <a href="/">homepage</a>.</p>
+<p>Or, you can try heading back to the <a href="/">homepage</a>.</p>
 
+<script>
+  // Unified 404 Logic: Shortlinks FIRST, then Search
+  document.addEventListener('bodgelab:searchready', async () => {
+    
+    // --- Helpers ---
+    function decodeSearchString(str) {
+      if (!str) return '';
+      try {
+        str = decodeURIComponent(str);
+      } catch (e) {}
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = str;
+      return textarea.value;
+    }
 
-  <script>
-    // --- BODGE LAB: DYNAMIC SHORTLINK ROUTER ---
-    (async function () {
-      const path = window.location.pathname;
-      // 1. Check if this is a Shortlink (starts with /s/)
-      //    Example: https://bodgelab.com/s/my-post-a1b2c
-      if (path.startsWith('/s/')) {
-        // 2. Extract the UID (everything after /s/)
-        //    Remove trailing slashes if present
-        const uid = path.replace('/s/', '').replace(/\/$/, '');
-        const statusElem = document.getElementById('smart-search-results') || document.body;
-        statusElem.innerHTML = '<p><i>Resolving shortlink...</i></p>';
-        try {
-          // 3. Fetch the Link Map
-          const response = await fetch('/shortlinks.json');
+    const resultsContainer = document.getElementById('smart-search-results');
+    const keywordsContainer = document.getElementById('search-keywords');
+    const path = window.location.pathname;
+
+    // --- Shortlink Check ---
+    // If the URL starts with /s/, we try to resolve it first.
+    if (path.startsWith('/s/')) {
+      const uid = path.replace('/s/', '').replace(/\/$/, '');
+      
+      resultsContainer.innerHTML = '<p><i>Checking shortlinks...</i></p>';
+      keywordsContainer.textContent = `Shortlink ID: ${uid}`;
+
+      try {
+        const response = await fetch('/shortlinks.json');
+        if (response.ok) {
           const links = await response.json();
-          // 4. Check for match
           if (links[uid]) {
-            // 5. Redirect!
-            window.location.href = links[uid];
-            return;
-          } else {
-            statusElem.innerHTML = `<p><i>Shortlink "${uid}" not found. Searching...</i></p>`;
-            // Fall through to the normal 404 search logic below...
+            // SUCCESS: Redirect
+            resultsContainer.innerHTML = `<p><i>Shortlink found! Redirecting...</i></p>`;
+            window.location.replace(links[uid]);
+            return; // Stop execution here
           }
-        } catch (e) {
-          console.error("Shortlink Error:", e);
         }
+      } catch (e) {
+        console.error("Shortlink lookup failed", e);
       }
-    })();
+      
+      // If we are here, the shortlink failed.
+      // We let the code fall through to the Search Logic, 
+      // but we interpret the UID as the search term.
+    }
 
+    // --- STEP 2: Smart-ish Search Logic ---
+    // We process the path to make it a readable search query
+    const query = decodeSearchString(path)
+        .replace(/^\/s\//, '') // Remove leading /s/ if it was a failed shortlink
+        .replace(/[\/\-]/g, ' ') // Turn slashes/dashes to spaces
+        .toLowerCase() // Prevent capital letters from getting cut off
+        .replace(/[^a-z0-9\s]/g, ' ') // NOW this is safe (everything is lowercase)
+        .trim();
 
-    // FALLBACK TO SMARTISH SEARCH
-    document.addEventListener('bodgelab:searchready', async () => {
-      /**
-   * decodes HTML and shit
-   */
-      function decodeSearchString(str) {
-        if (! str) 
-          return '';
-        
-        // 1. Decode URL encoding (%20 -> space, %26 -> &, etc.) We use try/catch in case the string is partially malformed.
-        try {
-          str = decodeURIComponent(str);
-        } catch (e) {
-          // If it fails, proceed with the original string, letting the HTML decoder handle what it can.
-        }
-        // 2. Decode ALL HTML entities using a temporary DOM element. This is the most reliable way to handle &amp;, &quot;,
-        // etc.
-        const textarea = document.createElement('textarea');
-        textarea.innerHTML = str;
-        str = textarea.value;
-        return str;
-      }
-      // 2. Get the data and elements
-      const resultsContainer = document.getElementById('smart-search-results');
-      const keywordsContainer = document.getElementById('search-keywords')
-      // 3. Fetch the search data (or get from cache)
-      resultsContainer.innerHTML = '<p><i>Loading search data...</i></p>';
-      const allPages = await window.BodgeLab.getSearchData();
-      // 4. Get the query from the bad URL
-      const badPath = window
-        .location
-        .pathname
-        .toLowerCase();
-      const keywords = decodeSearchString(badPath)
-        .replace(/[\/\-]/g, ' ') // Treat slashes and hyphens as spaces
-        .replace(/[^a-z0-9\s]/g, ' ') // Remove all other punctuation (which is now just spaces)
-        .split(/\s+/)
-        .filter(k => k.length > 0 && k !== 'index');
-      keywordsContainer.innerHTML = keywords;
-      // 5. Run the search
-      const results = window.BodgeLab.runSearch(badPath, allPages);
-      // 6. Check for single result and redirect
-      if (results.length === 1) {
-        const redirectUrl = results[0].url;
-        resultsContainer.innerHTML = `<p><i>One match found! Redirecting you to: <a href="${redirectUrl}">${redirectUrl}</a>...</i></p>`;
-        window.location.href = redirectUrl;
-      } else {
-        // 7. Render list
-        window.BodgeLab.renderResults(results, resultsContainer, keywords);
-      }
-    });
-  </script>
+    keywordsContainer.textContent = query;
+    resultsContainer.innerHTML = '<p><i>Searching...</i></p>';
+
+    // 1. Get Results
+    const results = await window.BodgeLab.getResults(query);
+
+    // 2. Smart Redirect (High Confidence Match)
+    if (results.length === 1 && results[0].score > 5) { 
+      const match = results[0];
+      resultsContainer.innerHTML = `<p><i>Found a perfect match! Redirecting to: <a href="${match.url}">${match.title}</a></i></p>`;
+      window.location.replace(match.url);
+    } else {
+      // 3. Render List
+      window.BodgeLab.render(results, resultsContainer, query);
+    }
+  });
+</script>
