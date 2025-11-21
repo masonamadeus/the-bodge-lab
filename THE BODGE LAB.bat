@@ -40,13 +40,18 @@ if not exist "%SYS_DIR%" (
 :: 2. Ensure large_media exists inside system so we can link to it
 if not exist "%SYS_DIR%\large_media" mkdir "%SYS_DIR%\large_media"
 
-:: 3. Create Shortcuts (Junctions) in Root
+:: 3. SELF-HEALING LINKS
+echo [SETUP] Verifying Links...
+
+:: Content Link
+if exist "%CONTENT_LINK%" rmdir "%CONTENT_LINK%" >nul 2>&1
 if not exist "%CONTENT_LINK%" (
-    echo [SETUP] Linking 'Content' folder...
     mklink /J "%CONTENT_LINK%" "%SYS_DIR%\content" >nul
 )
+
+:: Assets Link
+if exist "%ASSETS_LINK%" rmdir "%ASSETS_LINK%" >nul 2>&1
 if not exist "%ASSETS_LINK%" (
-    echo [SETUP] Linking 'Assets' folder...
     mklink /J "%ASSETS_LINK%" "%SYS_DIR%\large_media" >nul
 )
 

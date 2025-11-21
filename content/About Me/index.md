@@ -1,8 +1,8 @@
 ---
 title: About Mason
 uid: 2dd1a7d6
-contentHash: 71e7a381
-date: '2025-11-19T22:06:10.630Z'
+contentHash: 2b43d785
+date: '2025-11-21T18:44:19.200Z'
 ---
 
 # Hi! My name is Mason Amadeus.
@@ -23,11 +23,17 @@ The best one-line description of who I am and what I do came from my friend Aemy
 
 ``
 
-{% image "aemyn-tweet.webp", "Screenshot of a tweet from February 2022. Mason Amadeus says: Hey I have a really hard time with self-perception so if you're reading this and you know me (or my work) what's my brand/vibe??. The highlighted reply from Aemyn reads: organic homegrown diy anti-corporate Vox Media ADHD overachieving susbstitute teacher abstract public domain retrofuture all terrain professional bodge technician." %}
+{% image "aemyn-tweet.webp", "Screenshot of a tweet from February 2022. Mason Amadeus says: Hey I have a really hard time with self-perception so if you're reading this and you know me (or my work) what's my brand/vibe??. The highlighted reply from Aemyn reads: organic homegrown diy anti-corporate Vox Media ADHD overachieving substitute teacher abstract public domain retrofuture all terrain professional bodge technician." %}
 
 {%endgrid%}
 
-For work, I am the creative director at [8th Layer Media](https://8thlayermedia.com/).
+I am the creative director at [8th Layer Media](https://8thlayermedia.com/), where Perry Carpenter and I create various shows about the intersections of humanity and technology!
+
+So far, we've made:
+
+- [Digital Folklore](/s/digital-folklore) - an interview/audiodrama hybrid podcast all about academic folklore in the digital age!
+- [The FAIK Files](/s/the-faik-files) - the podcast about A.I. for sane people.
+- [Wicked Interesting](/s/wicked-interesting) - a chaotic science YouTube channel.
 
 Formerly, I was an IT manager, audio/broadcast engineer, sound designer, junior RF engineer, producer, copywriter, and on-air talent.
 
