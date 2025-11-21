@@ -1,6 +1,6 @@
 ---
 title: About Mason
-uid: 2dd1a7d6
+uid: about-mason
 contentHash: 2b43d785
 date: '2025-11-21T18:44:19.200Z'
 ---
