@@ -37,11 +37,13 @@ export class ScreenManager {
         PodCube.MSG.subscribe("Ready-Animate", () => {
             this.init();
             this.mapHintSymbols();
-            this.homeHint.text = "Home";
+            // BODGE: REMOVE HOME SCREEN
+            this.homeHint.text = "ERROR";
             this.transHint.text = "Transmissions";
 
+            // BODGE: FORCE HOME BUTTON TO JUST GO TO TRANSMISSIONS
             PodCube.MSG.subscribe("Pressed-BTN_MAIN", () => {
-                PodCube.ScreenManager.loadScreen("SC_MAIN");
+                PodCube.ScreenManager.loadScreen("SC_TRANSMISSIONS");
             });
             PodCube.MSG.subscribe("Pressed-BTN_TRANSMISSIONS", () => {
                 PodCube.ScreenManager.loadScreen("SC_TRANSMISSIONS");

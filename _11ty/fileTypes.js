@@ -4,7 +4,6 @@
 const TEMPLATE_EXTENSIONS = [
     '.md', 
     '.njk', 
-    '.html',
     '.fountain',
 ];
 
@@ -30,7 +29,7 @@ const DATA_EXTENSIONS = [
 
 const DOCUMENT_EXTENSIONS = [
     '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-    '.txt', '.rtf', 
+    '.txt', '.rtf', '.html'
 ];
 
 const MISC_EXTENSIONS = [ 

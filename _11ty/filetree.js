@@ -31,6 +31,13 @@ function normalizeMapKey(webPath) {
 }
 
 function scanDir(dirPath, webPath, collector) {
+    // 1. CHECK FOR STANDALONE APP
+    // If found, return NULL. This tells the parent: "Pretend I don't exist."
+    // This prevents AutoDirectory from seeing it AND prevents Media pages from being built.
+    if (fs.existsSync(path.join(dirPath, ".standalone"))) {
+        return null; 
+    }
+
     let node = {
         name: path.basename(dirPath) || 'content',
         physicalPath: dirPath,
@@ -54,38 +61,33 @@ function scanDir(dirPath, webPath, collector) {
         if (SYSTEM_FILES.includes(item.name)) {
             continue;
         }
-
         
         const itemPhysicalPath = path.join(dirPath, item.name);
         const itemWebPath = (webPath === '/' ? '' : webPath) + '/' + item.name;
         const ext = path.extname(item.name).toLowerCase();
        
-
         if (item.isDirectory()) {
-            // Recurse and add the child directory node
+            // Recurse
             const childNode = scanDir(itemPhysicalPath, itemWebPath, collector);
-            node.children.push(childNode);
+            
+            // 2. NULL CHECK (The Fix)
+            // Only add the child if it actually exists (wasn't a standalone app)
+            if (childNode) {
+                node.children.push(childNode);
 
-            if (!childNode.hasIndex) {
-                collector.directories.push({ webPath: childNode.webPath });
-
-                // Also add it to the pages list because we'll autogenerate an index
-                /*  Commented out for now, I'll see if I change my mind later.
-                collector.allPages.push({
-                    url: childNode.webPath + '/', // Add trailing slash
-                    title: childNode.title // This is set to node.name by default
-                });
-                //*/
+                if (!childNode.hasIndex) {
+                    collector.directories.push({ webPath: childNode.webPath });
+                }
             }
 
-            
-        } else { // This is the file-handling logic
+        } else { 
+            // ... (File handling logic remains the same) ...
             
             const isTemplate = TEMPLATE_EXTENSIONS.includes(ext);
             const isMedia = !isTemplate;
-            const isIndex = INDEX_FILES.includes(item.name);
+            const isIndex = (item.name === 'index.md' || item.name === 'index.njk' || item.name === 'index.html'); // Simple check or use your INDEX_FILES array
             
-            let frontMatterData = {}; // Initialize an empty object
+            let frontMatterData = {}; 
 
             if (isTemplate) {
                 try {
@@ -106,8 +108,6 @@ function scanDir(dirPath, webPath, collector) {
 
             const fileNode = {
                 ...frontMatterData, 
-                
-                // Our calculated properties (will override any conflicts)
                 name: item.name,
                 physicalPath: itemPhysicalPath,
                 webPath: itemWebPath.replace(/\\/g, '/'),
@@ -138,23 +138,16 @@ function scanDir(dirPath, webPath, collector) {
                 let pageTitle;
 
                 if (isIndex) {
-                    // An index file's URL is its parent directory's webPath
-                    pageUrl = webPath; // e.g., "/" or "/Bug & Moss"
-                    
-                    // Use front matter title, fallback to directory name
+                    pageUrl = webPath; 
                     pageTitle = frontMatterData.title || node.name;
-                    
-                    // Handle the root "content" name
                     if (pageTitle === 'content') pageTitle = 'The Bodge Lab'; 
                 } else {
-                    // A regular page's URL
                     pageUrl = fileNode.webPath.replace(new RegExp(ext + '$'), '/');
                     pageTitle = frontMatterData.title || path.basename(fileNode.name, ext);
                 }
                 
-                if (pageUrl === '') pageUrl = '/'; // Fix root path
+                if (pageUrl === '') pageUrl = '/'; 
                 
-                // Add trailing slash consistently
                 if (pageUrl !== '/' && !pageUrl.endsWith('/')) {
                     pageUrl += '/';
                 }
@@ -171,6 +164,7 @@ function scanDir(dirPath, webPath, collector) {
         node.title = node.name === 'content' ? 'The Bodge Lab' : node.name;
     }
 
+    // Sort children: Directories first, then A-Z
     node.children.sort((a, b) => {
         if (a.isDirectory !== b.isDirectory) {
             return a.isDirectory ? -1 : 1;

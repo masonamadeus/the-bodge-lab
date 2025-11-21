@@ -1,8 +1,8 @@
 ---
 title: PodCube™
 uid: 0d76ca1f
-contentHash: 2847997c
-date: '2025-11-21T22:13:31.358Z'
+contentHash: 8be5b21d
+date: '2025-11-21T23:12:49.953Z'
 ---
 
 # PodCube™
@@ -23,6 +23,8 @@ The wide **variety of PodCube models** available for purchase means that you can
 
 {%endgrid%}
 
-{%embed "PocketPal/index.html"%}
+{%embed "PocketPal/index.html", "pocketpal-embed"%}
+
+<hr>
 
 {%rss "https://pinecast.com/feed/pc" %}

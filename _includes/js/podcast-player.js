@@ -3,6 +3,15 @@
     if (window.BodgeRSSLoaded) return;
     window.BodgeRSSLoaded = true;
 
+    const icons = {
+        play: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
+        pause: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
+        back7: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/><text x="12" y="18" font-size="8" text-anchor="middle" font-family="sans-serif" font-weight="bold">7</text></svg>`,
+        fwd15: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16a8.002 8.002 0 0 1 7.6-5.5c1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/><text x="12" y="18" font-size="8" text-anchor="middle" font-family="sans-serif" font-weight="bold">15</text></svg>`
+        ,
+        download: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M5 20h14v-2H5v2zM11 4h2v8h3l-4 4-4-4h3V4z"/></svg>`
+    };
+
     document.addEventListener('DOMContentLoaded', initPlayers);
 
     function initPlayers() {
@@ -65,22 +74,20 @@
                     <div class="rss-now-playing" id="np-${container.id}">Select an episode...</div>
                 </div>
             </div>
-
-            
-           
             
             <div class="rss-controls-area">
-                 <div class="rss-time-display">
-                    <span class="curr-time">00:00</span> / <span class="total-time">00:00</span>
-                </div>
                 <input type="range" class="rss-seek" value="0" min="0" max="100" disabled>
                 
                 <div class="rss-buttons">
-                    <button class="rss-btn" data-action="back7">↺ 7s</button>
-                    <button class="rss-btn rss-play-btn" data-action="play">▶</button>
-                    <button class="rss-btn" data-action="fwd15">15s ↻</button>
+                    <button class="rss-btn" data-action="back7" title="Back 7s">${icons.back7}</button>
+                    <button class="rss-btn rss-play-btn" data-action="play" title="Play/Pause">${icons.play}</button>
+                    <button class="rss-btn" data-action="fwd15" title="Forward 15s">${icons.fwd15}</button>
+                    <a class="rss-btn rss-download-btn" data-action="download" title="Download" href="#" download>${icons.download}</a>
                 </div>
                 
+                <div class="rss-time-display">
+                    <span class="curr-time">00:00</span> / <span class="total-time">00:00</span>
+                </div>
             </div>
 
             <div class="rss-playlist-controls">
@@ -90,9 +97,7 @@
                 </button>
             </div>
 
-            <div class="rss-playlist">
-                <!-- Episodes go here -->
-            </div>
+            <div class="rss-playlist"></div>
         `;
 
         // References
@@ -101,6 +106,7 @@
         const seekSlider = container.querySelector('.rss-seek');
         const npText = container.querySelector('.rss-now-playing');
         const sortBtn = container.querySelector('.rss-sort-btn');
+        const dlEl = container.querySelector('.rss-download-btn');
         const currTimeEl = container.querySelector('.curr-time');
         const totalTimeEl = container.querySelector('.total-time');
 
@@ -141,6 +147,21 @@
             state.audio.src = audioSrc;
             npText.textContent = title;
             state.audio.load();
+
+            // Update download button href and filename (if present)
+            const dlEl = container.querySelector('.rss-download-btn');
+            if (dlEl) {
+                try {
+                    const resolved = new URL(audioSrc, window.location.href).href;
+                    dlEl.href = resolved;
+                    const pathname = new URL(resolved).pathname || '';
+                    const fname = pathname.split('/').pop().split('?')[0] || 'episode';
+                    dlEl.setAttribute('download', fname);
+                } catch (e) {
+                    dlEl.href = audioSrc;
+                    dlEl.removeAttribute('download');
+                }
+            }
             
             // Auto play
             togglePlay(true);
@@ -176,6 +197,31 @@
                 if (action === 'fwd15') state.audio.currentTime += 15;
             };
         });
+
+        // 2b. Download handler: try fetch+blob to force download, fallback to opening the file
+        if (dlEl) {
+            dlEl.addEventListener('click', async (e) => {
+                e.preventDefault();
+                const url = dlEl.href || dlEl.dataset.src;
+                if (!url) return;
+                try {
+                    const resp = await fetch(url, { mode: 'cors' });
+                    if (!resp.ok) throw new Error('Network response was not ok');
+                    const blob = await resp.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = dlEl.getAttribute('download') || 'episode';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+                } catch (err) {
+                    // If fetch fails (likely CORS), open in new tab as fallback
+                    window.open(url, '_blank', 'noopener');
+                }
+            });
+        }
 
         // 3. Seek Bar
         seekSlider.oninput = (e) => {

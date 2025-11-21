@@ -13,6 +13,34 @@ const contentDir = path.join(__dirname, 'content');
 const cleanTemplateFormats = TEMPLATE_EXTENSIONS.map(ext => ext.substring(1)); // Removing the . from the filetype (eleventy quirk)
 const cleanPassthroughFormats = PASSTHROUGH_EXTENSIONS.map(ext => ext.substring(1));
 
+//#region UTILITIES
+
+// --- STANDALONE APP SCANNER ---
+// Helper to find folders containing a ".standalone" file
+function findStandaloneApps(dir) {
+  let results = [];
+  if (!fs.existsSync(dir)) return results;
+
+  const list = fs.readdirSync(dir);
+  list.forEach(file => {
+    const fullPath = path.join(dir, file);
+    const stat = fs.statSync(fullPath);
+    if (stat.isDirectory()) {
+      if (fs.existsSync(path.join(fullPath, ".standalone"))) {
+        
+        // FIX: Convert to Relative Path (e.g., "content/PodCube/PocketPal")
+        // This prevents the "P:\" drive letter crash
+        const relativePath = path.relative(__dirname, fullPath).replace(/\\/g, '/');
+        results.push(relativePath); 
+        
+      } else {
+        results = results.concat(findStandaloneApps(fullPath));
+      }
+    }
+  });
+  return results;
+}
+
 /**
  * MARKDOWN IMAGE RENDERER
  * This forces standard markdown images ![alt](src) to look exactly like
@@ -159,6 +187,8 @@ function renderFountainTokens(tokens) {
 
 let fileTreeCache = null;
 
+// #endregion
+
 
 module.exports = function (eleventyConfig) {
 
@@ -183,6 +213,26 @@ module.exports = function (eleventyConfig) {
   // MiniSearch Library (This rename feels like it might bite me later.)
   eleventyConfig.addPassthroughCopy({
     "node_modules/minisearch/dist/umd/index.js": "js/lib/minisearch.js"
+  });
+
+  // STANDALONE APPS
+  // Scans content for folders with a ".standalone" file.
+  // Automatically adds them to Passthrough AND Ignores.
+  const standaloneApps = findStandaloneApps(contentDir);
+  
+  standaloneApps.forEach(appPath => {
+    // Calculate Destination (Strip "content/" prefix)
+    // Source: "content/PodCube/PocketPal" -> Dest: "PodCube/PocketPal"
+    const destPath = appPath.replace(/^content\//, '');
+
+    // Copy with Mapping
+    // { "source": "destination" }
+    eleventyConfig.addPassthroughCopy({ [appPath]: destPath });
+    
+    // Ignore files inside so Eleventy doesn't process them
+    eleventyConfig.ignores.add(appPath + "/**");
+    
+    console.log(`[BodgeLab] 🕹️  Linked Standalone App: ${appPath} -> ${destPath}`);
   });
 
   //#endregion
@@ -321,13 +371,31 @@ module.exports = function (eleventyConfig) {
   <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p></div>`;
   });
 
-  // Embed Shortcode
-  eleventyConfig.addShortcode("embed", function (src) {
-    const resolvedSrc = resolveSrc.call(this, src); // Resolve the path
-    const filename = path.basename(resolvedSrc);
+  // Embed Shortcode (Smart: Supports "16/9" OR "my-custom-class")
+  eleventyConfig.addShortcode("embed", function (src, ratioOrClass) {
+    const resolvedSrc = resolveSrc.call(this, src);
+    const filename = decodeURIComponent(path.basename(resolvedSrc));
+    
+    let customStyle = "";
+    let customClass = "";
+    
+    if (ratioOrClass) {
+      // Detection: Does it look like a ratio (numbers/numbers)?
+      if (/^\d+(\.\d+)?\/\d+(\.\d+)?$/.test(ratioOrClass)) {
+        // It's a direct ratio (e.g. "16/9"). Lock it in style.
+        customStyle = `aspect-ratio: ${ratioOrClass}; height: auto;`;
+      } else {
+        // It's a class name (e.g. "pocketpal-mode"). Add it to class list.
+        customClass = ratioOrClass;
+      }
+    } else {
+        // Default fallback if nothing provided
+        customStyle = `background-color:light-dark(#FFFFFF,#000000);`;
+    }
+
     return `<div class="media-embed-wrapper">
   <p>
-    <iframe class="embed-container" style="background-color:light-dark(#FFFFFF,#000000);" src="${resolvedSrc}">
+    <iframe class="embed-container ${customClass}" style="${customStyle}" src="${resolvedSrc}" onload="if(window.BodgeLab && window.BodgeLab.resizeIframe) window.BodgeLab.resizeIframe(this)">
       <p>Your browser does not support embedded frames. <a href="${resolvedSrc}">Download the file</a> to view it.</p>
     </iframe>
   </p>

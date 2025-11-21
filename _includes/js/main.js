@@ -256,4 +256,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Ready signal
   document.dispatchEvent(new CustomEvent('bodgelab:searchready'));
+
+
+
+  // IFRAME RESIZER (Smart Height)
+  window.BodgeLab.resizeIframe = (iframe) => {
+    try {
+      // Only works for same-origin files (which your passthrough apps are!)
+      const doc = iframe.contentWindow.document;
+      const body = doc.body;
+      const html = doc.documentElement;
+
+      // Calculate the max height of the content
+      const height = Math.max(
+        body.scrollHeight, body.offsetHeight,
+        html.clientHeight, html.scrollHeight, html.offsetHeight
+      );
+
+      // Safety Check:
+      // If the app is trying to be 100% height (like PocketPal), scrollHeight might equal clientHeight.
+      // In that case, we DON'T auto-resize because it would create a loop or collapse.
+      // We only resize if the content is LARGER than the frame, or if it's clearly a text document.
+
+      // Heuristic: If it has a scrollbar, expand it.
+      if (doc.body.scrollHeight > doc.body.clientHeight) {
+        iframe.style.height = height + 'px';
+      }
+    } catch (e) {
+      // Cross-origin or error: do nothing, fall back to CSS default
+      console.log("Cannot auto-resize iframe:", e);
+    }
+  };
 });
