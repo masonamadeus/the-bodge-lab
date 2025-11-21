@@ -1,14 +1,54 @@
-// Node.js modules for file system and path handling
+// MODULES AND PLUGINS
 const { DateTime } = require("luxon");
 const path = require('path');
 const { TEMPLATE_EXTENSIONS, PASSTHROUGH_EXTENSIONS } = require('./_11ty/fileTypes.js');
 const { generateFileTreeData } = require('./_11ty/filetree.js');
 const syntaxHighlight = require("@11ty/eleventy-plugin-syntaxhighlight");
 const fs = require('fs');
-
-// extensions
 const markdownIt = require("markdown-it");
 const { Fountain } = require("fountain-js");
+
+// CONSTANTS
+const contentDir = path.join(__dirname, 'content');
+const cleanTemplateFormats = TEMPLATE_EXTENSIONS.map(ext => ext.substring(1)); // Removing the . from the filetype (eleventy quirk)
+const cleanPassthroughFormats = PASSTHROUGH_EXTENSIONS.map(ext => ext.substring(1));
+
+/**
+ * MARKDOWN IMAGE RENDERER
+ * This forces standard markdown images ![alt](src) to look exactly like
+ * {% image %} shortcodes (Wrappers, Download Link, Styling).
+ */
+function bodgeMarkdownImage(tokens, idx, options, env, self) {
+  const token = tokens[idx];
+  const srcIndex = token.attrIndex('src');
+  let src = token.attrs[srcIndex][1];
+  const alt = token.content || ""; // Use the alt text as caption/alt
+
+  // Resolve Relative Paths (Logic borrowed from Shortcode)
+  //    If it's not a URL or root path, resolve it relative to the current file.
+  if (!src.startsWith('http') && !src.startsWith('/') && env.page && env.page.inputPath) {
+    try {
+      const pagePath = path.dirname(env.page.inputPath);
+      const resolvedPath = path.resolve(pagePath, src);
+      const webPath = path.relative(contentDir, resolvedPath);
+      src = '/' + webPath.replace(/\\/g, '/');
+    } catch(e) {
+      console.warn("Failed to resolve markdown image path:", src);
+    }
+  }
+
+  const filename = decodeURI(path.basename(src));
+  // Return the "Bodge Card" HTML
+  // Use a <span> wrapper with display:block to be (mostly) valid inside <p> tags
+  return `<span class="media-embed-wrapper" style="display: block;">
+    <span class="image-container" style="display: block;">
+      <img src="${src}" alt="${alt}">
+    </span>
+    <span class="download-btn-container" style="display: flex;">
+      <a href="${src}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a>
+    </span>
+  </span>`;
+}
 
 /**
  * A custom rule for markdown-it's renderer to add target="_blank" and rel="..." 
@@ -60,6 +100,7 @@ const mdLib = markdownIt({
   linkify: true // Automatically find links and make them clickable
 })
   .use(markdownLinkExternal);
+  mdLib.renderer.rules.image = bodgeMarkdownImage; // Make .md Images look like shortcode ones
 
 function renderFountainTokens(tokens) {
   let html = '';
@@ -118,8 +159,35 @@ function renderFountainTokens(tokens) {
 
 let fileTreeCache = null;
 
-// #region ELEVENTY CONFIG
+
 module.exports = function (eleventyConfig) {
+
+  // #region PASSTHROUGHS
+
+
+  // Convert ['.jpg', '.png'] -> "jpg,png"
+  const passthroughGlob = cleanPassthroughFormats.join(',');
+  
+  // Create a glob pattern: "content/**/*.{jpg,png,webp,...}"
+  const passthroughPath = `content/**/*.{${passthroughGlob}}`;
+  
+  // Tell Eleventy to copy them!
+  eleventyConfig.addPassthroughCopy(passthroughPath);
+
+  // CSS file
+  eleventyConfig.addPassthroughCopy({ "_includes/css": "css" });
+
+  // Theme JS Script
+  eleventyConfig.addPassthroughCopy({ "_includes/js": "js" });
+
+  // MiniSearch Library (This rename feels like it might bite me later.)
+  eleventyConfig.addPassthroughCopy({
+    "node_modules/minisearch/dist/umd/index.js": "js/lib/minisearch.js"
+  });
+
+  //#endregion
+  
+  // #region ELEVENTY CONFIG
 
   // --- GENERATOR TEMPLATES ---
   const generatorsDir = path.join(__dirname, '_generators');
@@ -166,13 +234,6 @@ module.exports = function (eleventyConfig) {
 
   // --- Global Data: Filetree ---
   eleventyConfig.addGlobalData("filetree", async () => {
-    if (fileTreeCache) {
-      // Return cached data on subsequent builds (e.g., in watch mode)
-      return fileTreeCache;
-    }
-
-
-    const contentDir = path.join(__dirname, 'content');
     fileTreeCache = generateFileTreeData(contentDir);
     return fileTreeCache;
   });
@@ -209,7 +270,6 @@ module.exports = function (eleventyConfig) {
     * Helper function to resolve relative paths.
     * "this" is the Eleventy shortcode context.
     */
-  const contentDir = path.join(__dirname, 'content');
   function resolveSrc(src) {
     if (src.startsWith('http') || src.startsWith('/')) {
       return src; // It's already an absolute URL or root-relative path
@@ -325,6 +385,25 @@ module.exports = function (eleventyConfig) {
 </div>`;
   });
 
+  // PODCAST WIDGET
+  // Usage: {% rss "https://feed.url" %} OR {% rss "https://feed.url", "asc" %}
+  eleventyConfig.addShortcode("rss", function(url, sortOrder = "desc") {
+    const uid = "rss-" + Math.random().toString(36).substr(2, 9);
+    // We verify if the user explicitly asked for 'asc' (Oldest First)
+    // Default is 'desc' (Newest First)
+    const orderAttr = (sortOrder && sortOrder.toLowerCase() === 'asc') ? 'asc' : 'desc';
+    
+    return `
+      <div id="${uid}" class="bodge-rss-player" data-rss-url="${url}" data-sort-order="${orderAttr}">
+        <div class="rss-loading">
+             <img src="/content/.config/3dloading.svg" alt="Loading..." style="width: 50px; height: 50px;">
+             <p>Tuning in...</p>
+        </div>
+      </div>
+      <script src="/js/podcast-player.js" defer></script>
+    `;
+  });
+
   //#endregion
 
   // #region LAYOUT SHORTCODES
@@ -395,37 +474,12 @@ module.exports = function (eleventyConfig) {
     return `<div class="text-${safeAlignment}">\n${trimmedContent}\n</div>`;
   });
 
-  eleventyConfig.addShortcode("rss", function(url) {
-    // We generate a unique ID just in case you have multiple players
-    const uid = "rss-" + Math.random().toString(36).substr(2, 9);
-    return `
-      <div id="${uid}" class="bodge-rss-player" data-rss-url="${url}">
-        <div class="rss-loading">
-             <img src="/content/.config/3dloading.svg" alt="Loading..." style="width: 50px; height: 50px;">
-             <p>Tuning in...</p>
-        </div>
-      </div>
-      <script src="/js/player.js" defer></script>
-    `;
-  });
+ 
 
 
   //#endregion
 
-  // #region PASSTHROUGHS
 
-  // CSS file
-  eleventyConfig.addPassthroughCopy({ "_includes/css": "css" });
-
-  // Theme JS Script
-  eleventyConfig.addPassthroughCopy({ "_includes/js": "js" });
-
-  // MiniSearch Library (This rename feels like it might bite me later.)
-  eleventyConfig.addPassthroughCopy({
-    "node_modules/minisearch/dist/umd/index.js": "js/lib/minisearch.js"
-  });
-
-  //#endregion
 
   // #region COLLECTIONS
 
@@ -445,9 +499,6 @@ module.exports = function (eleventyConfig) {
       return "uid" in item.data;
     });
   });
-  // We need to remove the leading dot from each item.
-  const cleanTemplateFormats = TEMPLATE_EXTENSIONS.map(ext => ext.substring(1));
-  const cleanPassthroughFormats = PASSTHROUGH_EXTENSIONS.map(ext => ext.substring(1));
 
   return {
     dir: {

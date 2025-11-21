@@ -12,6 +12,7 @@
 
     async function setupPlayer(container) {
         const url = container.dataset.rssUrl;
+        const sort = container.dataset.sortOrder || "desc";
         
         try {
             const response = await fetch(url);
@@ -39,7 +40,7 @@
                 currentIdx: 0,
                 isPlaying: false,
                 audio: new Audio(),
-                sortAsc: false // Default to Newest First
+                sortAsc: (sort === "asc")
             };
 
             // Build UI
@@ -64,8 +65,14 @@
                     <div class="rss-now-playing" id="np-${container.id}">Select an episode...</div>
                 </div>
             </div>
+
+            
+           
             
             <div class="rss-controls-area">
+                 <div class="rss-time-display">
+                    <span class="curr-time">00:00</span> / <span class="total-time">00:00</span>
+                </div>
                 <input type="range" class="rss-seek" value="0" min="0" max="100" disabled>
                 
                 <div class="rss-buttons">
@@ -74,9 +81,6 @@
                     <button class="rss-btn" data-action="fwd15">15s ↻</button>
                 </div>
                 
-                <div class="rss-time-display">
-                    <span class="curr-time">00:00</span> / <span class="total-time">00:00</span>
-                </div>
             </div>
 
             <div class="rss-playlist-controls">

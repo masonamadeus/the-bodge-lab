@@ -144,11 +144,11 @@
                 </div>
             {% endif %}
         {% endif %}
-        <!-- {% if uid %}
+        {% if uid %}
             <script>
                 // REPLACE URL IN BAR WITH SHARELINK
                 (function () { // 1. This is the "permanent" URL
-                    const permanentUrl = "/share/{{ uid }}/";
+                    const permanentUrl = "/s/{{ uid }}/";
                     // 2. This is the URL we are currently at
                     const currentPath = window.location.pathname;
                     // 3. If we're not already on the permanent URL...
@@ -159,7 +159,7 @@
                     }
                 })();
             </script>
-        {% endif %} -->
+        {% endif %}
         <script src="/js/main.js"></script>
     </body>
 </html></body></html>

@@ -1,14 +1,15 @@
-/* --- 1. Root Variables & Theme --- */
+/* =========================================
+   1. CORE VARIABLES & THEME
+   ========================================= */
 :root {
-  /* These are the "default" fallbacks. 
-    Our client-side JS will override these.
-  */
+  /* --- Typography --- */
   --body-font: system-ui, -apple-system, sans-serif;
   --mono-font: monospace;
-  
 
-  /* Colors (Calculated from a base hue) */
-  --accent-hue: 210; /* Default blue */
+  /* --- Colors (HSL Theme System) --- */
+  --accent-hue: 210; /* Default: Blue */
+  
+  /* Generated Palette */
   --bg-color: hsl(var(--accent-hue), 10%, 99%);
   --bg-color-bright: hsl(var(--accent-hue), 15%, 100%);
   --text-color: hsl(var(--accent-hue), 20%, 15%);
@@ -16,16 +17,18 @@
   --border-color: hsl(var(--accent-hue), 20%, 90%);
   --bg-muted: hsl(var(--accent-hue), 20%, 95%);
   --accent-color: hsl(var(--accent-hue), 70%, 45%);
-  
-  /* Sizing */
+
+  /* --- Dimensions --- */
   --max-width: 1000px;
   --line-height: 1.3;
   --base-spacing: 1.1em;
 
-  font-size:1em;
+  font-size: 1em;
 }
 
-/* --- 2. General Page Setup --- */
+/* =========================================
+   2. GLOBAL RESET & TYPOGRAPHY
+   ========================================= */
 body {
   font-family: var(--body-font);
   color: var(--text-color);
@@ -34,109 +37,100 @@ body {
   margin: calc(var(--base-spacing) * 2) auto;
   padding: 0 var(--base-spacing);
   line-height: var(--line-height);
+  
+  /* Background Pattern */
   background-image: url(/.config/sitebg3.svg);
   background-attachment: fixed;
-  background-size:cover;
-  background-repeat:repeat-y;
+  background-size: cover;
+  background-repeat: repeat-y;
   background-position-x: center;
 }
+
+h1 { margin-top: 0.5em; }
+li { margin-bottom: 0.5em; }
 
 a {
   color: var(--accent-color);
   text-decoration: none;
 }
-a:hover {
-  text-decoration: underline;
-}
+a:hover { text-decoration: underline; }
+
 hr {
   border: 0;
   border-bottom: 2px solid var(--border-color);
 }
 
-
-
-
-h1 {
-  margin-top: 0.5em;
-}
-li {
-  margin-bottom: 0.5em;
-}
-
-pre {
-    background-color: var(--bg-muted);
-    border: 1px solid var(--border-color);
-    padding: 10px;
-    margin: 1em;
-    border-radius: 0px;
-    padding-top: 2.5em;
-}
-
-code {
-  line-height: 1.4;
-}
-
-.code-copy-btn {
-  position: absolute;
-  top: 0.5em;
-  right: 0.5em;
-  
-  background: var(--bg-muted);
-  color: var(--text-muted);
-  border: 1px solid var(--border-color);
-  padding: 0.3em 0.6em;
-  font-size: 0.8em;
-  font-family: var(--body-font);
-  cursor: pointer;
-  
-  /* Start slightly transparent */
-  opacity: 0.7;
-  transition: all 0.2s ease;
-}
-
-/* On hover, become fully opaque and use accent color */
-.code-copy-btn:hover {
-  opacity: 1;
-  background: var(--accent-color);
-  color: var(--bg-color-bright);
-  border-color: var(--accent-color);
-}
-
-/* Style for when the button is clicked */
-.code-copy-btn.copied {
-  background: var(--accent-color);
-  color: var(--bg-color-bright);
-  opacity: 1;
-}
-
 .break {
   background-color: var(--bg-color);
-  width:100%;
+  width: 100%;
 }
 
-/* --- 3. Header & Navigation --- */
+/* =========================================
+   3. THE BODGE LAYOUT ENGINE (3D & Bleed)
+   ========================================= */
+.main-content {
+  /* Create shared 3D environment */
+  transform-style: preserve-3d;
+  
+  padding-top: var(--base-spacing);
+  padding-bottom: var(--base-spacing);
+  padding-left: var(--base-spacing);
+  padding-right: var(--base-spacing);
+}
+
+/* The Content Elements */
+.main-content > * {
+  transform-style: preserve-3d;
+  position: relative;
+  background-color: transparent;
+}
+
+/* The "Bodge" Background Layer (Bleeding Box) */
+.main-content > *::before {
+  content: "";
+  display: block;
+  position: absolute;
+  
+  /* Bleed dimensions */
+  inset: -1.5em -0.5em; 
+  
+  background-color: var(--bg-color-bright);
+  
+  /* Push physically behind text (Z -1) */
+  transform: translateZ(-1px);
+  pointer-events: none;
+}
+
+/* Specific Overrides */
+.main-content > pre::before {
+  display: none !important; /* Prism handles its own background */
+}
+
+/* =========================================
+   4. NAVIGATION
+   ========================================= */
 .nav-container {
   margin-bottom: calc(var(--base-spacing) * 2);
 }
+
+/* Breadcrumbs */
 .breadcrumb-nav {
   font-size: 1.1em;
   border-bottom: 1px solid var(--border-color);
   padding-bottom: calc(var(--base-spacing)*0.5);
   padding-top: calc(var(--base-spacing)*0.5);
   color: var(--text-muted);
-  line-height:normal;
+  line-height: normal;
   background-color: var(--bg-muted);
 }
 .breadcrumb {
   color: var(--accent-color);
   font-family: var(--mono-font);
 }
-.current {
-  color: var(--text-muted);
-}
-.separator {
-  margin: 0 0.2em;
-}
+.separator { margin: 0 0.2em; }
+.current { color: var(--text-muted); }
+
+/* Page Meta / Bottom Nav */
 .page-nav {
   display: flex;
   justify-content: space-between;
@@ -148,145 +142,77 @@ code {
   font-family: var(--mono-font);
 }
 
-/* This styles the new date location */
+.page-meta { margin-top: 0; }
+
 .page-meta-date em {
   color: var(--border-color);
   font-style: italic;
 }
 
-.download-btn-container{
+.download-btn-container {
   display: flex;
   justify-content: space-between;
-  margin:0;
-  line-height:1;
-  white-space: nowrap;  /* Prevents the text from wrapping */
-  overflow: hidden;     /* Hides the text that overflows */
-  text-overflow: ellipsis; /* Adds the '...' */
+  margin: 0;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 0.8em;
 }
 
-
-.nav-link {
-  font-weight: bold;
-  font-size: 1em;
-  color: var(--accent-color);
-}
-.nav-link:hover {
-  color: var(--accent-color);
-}
-
+.nav-link, 
 .nav-link-small.up {
   font-weight: bold;
   color: var(--accent-color);
-  font-size: 1em; /* Match the title size */
+  font-size: 1em;
   text-decoration: none;
-  line-height: 1; /* Helps with alignment */
-}
-.nav-link-small.up:hover {
-  text-decoration: none;
-}
-
-/* --- 4. Main Content Blocks --- */
-/* --- 4. Main Content Blocks --- */
-.page-meta {
-  margin-top: 0;
-}
-
-.main-content {
-  /* 1. Create a shared 3D environment for all children */
-  transform-style: preserve-3d;
-  
-  /* Keep layout padding */
-  padding-top: var(--base-spacing);
-  padding-bottom: var(--base-spacing);
-  padding-left: var(--base-spacing);
-  padding-right: var(--base-spacing);
-}
-
-/* 2. The Content Elements */
-.main-content > * {
-  /* Ensure they participate in the 3D space */
-  transform-style: preserve-3d;
-  position: relative;
-  
-  /* Remove the default background so we can supply our own backing */
-  background-color: transparent;
-}
-
-/* 3. The "Bodge" Background Layer */
-.main-content > *::before {
-  content: "";
-  display: block;
-  position: absolute;
-  
-  /* Create the bleed (larger than the content box) */
-  inset: -1em -0.5em; /* Negative values pull the edges outward */
-  
-  /* Style the box */
-  background-color: var(--bg-color-bright);
-  
-  /* THE TRICK: Push the background physically behind the text plane */
-  /* Since the parent has preserve-3d, this -1px is global! */
-  transform: translateZ(-1px);
-  
-  /* Prevent it from capturing mouse clicks (allows text selection underneath) */
-  pointer-events: none;
-}
-
-.main-content > pre::before {
-  display: none !important;
-}
-
-/* --- 5. Directory Listing Section --- */
-.directory-container {
-  background-color: var(--bg-muted);
-  padding: calc(var(--base-spacing)*0.5);
-}
-.directory-header {
-  display: flex;
-  justify-content: left;
-  align-items: center;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 0.5em;
-}
-
-.directory-title {
-  font-size: 1.2em;
-  color: var(--accent-color);
-  margin: 0.2em;
-  font-family: var(--mono-font);
-}
-
-.dir-listing {
-  list-style: none;
-  margin: 0;
   line-height: 1;
-  padding-left:0.5em;
 }
-.dir-listing li {
-  font-family: var(--mono-font);
-  font-size: 1.1em;
-  margin-bottom: 0.5em;
+
+/* =========================================
+   5. GRID & COLUMNS
+   ========================================= */
+.layout-row {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5em;
+  margin: 1.5em 0;
 }
-.dir-listing .icon {
-  width: 1.2em;
-  height: 1.2em;
-  margin-right: 0.75em;
-  flex-shrink: 0;
+
+.layout-col {
+  flex-basis: 100%; /* Mobile First */
+}
+
+/* Desktop Breakpoint */
+@media (min-width: 768px) {
+  .layout-col {
+    flex: 1;
+    flex-basis: auto;
+  }
   
-  /* 1. Set the background color to your theme variable */
-  background-color: var(--text-color);
+  .layout-col-half {
+    flex-basis: calc(50% - 0.75em);
+    flex-grow: 0;
+  }
 
-  /* 2. Use the SVG as a mask (a "cookie-cutter") */
-  mask-size: contain;
-  mask-repeat: no-repeat;
-  mask-position: center;
+  .layout-col-one-third {
+    flex-basis: calc(33.333% - 1em);
+    flex-grow: 0;
+  }
 
+  .layout-col-two-thirds {
+    flex-basis: calc(66.666% - 0.5em);
+    flex-grow: 0;
+  }
+
+  .layout-col > :first-child {
+    margin-top: 0;
+  }
 }
 
-/* --- 6. Shortcode & Media Styles --- */
+/* =========================================
+   6. MEDIA & EMBEDS
+   ========================================= */
 .image-container {
   position: relative;
   display: inline-block;
@@ -303,6 +229,129 @@ code {
   width: 100%;
   height: 80vh;
 }
+
+.video-embed-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 Aspect Ratio */
+  background: var(--bg-muted);
+}
+.video-embed-container iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border: 0;
+}
+
+/* =========================================
+   7. CODE BLOCKS (Prism)
+   ========================================= */
+pre {
+  background-color: var(--bg-muted);
+  border: 1px solid var(--border-color);
+  padding: 10px;
+  margin: 1em;
+  border-radius: 0px;
+  padding-top: 2.5em;
+}
+
+code { line-height: 1.4; }
+
+.code-copy-btn {
+  position: absolute;
+  top: 0.5em; right: 0.5em;
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  padding: 0.3em 0.6em;
+  font-size: 0.8em;
+  font-family: var(--body-font);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.code-copy-btn:hover {
+  opacity: 1;
+  background: var(--accent-color);
+  color: var(--bg-color-bright);
+  border-color: var(--accent-color);
+}
+
+.code-copy-btn.copied {
+  background: var(--accent-color);
+  color: var(--bg-color-bright);
+  opacity: 1;
+}
+
+/* =========================================
+   8. COMPONENTS
+   ========================================= */
+
+/* --- Directory Listing --- */
+.directory-container {
+  background-color: var(--bg-muted);
+  padding: calc(var(--base-spacing)*0.5);
+}
+.directory-header {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0.5em;
+}
+.directory-title {
+  font-size: 1.2em;
+  color: var(--accent-color);
+  margin: 0.2em;
+  font-family: var(--mono-font);
+}
+.dir-listing {
+  list-style: none;
+  margin: 0;
+  line-height: 1;
+  padding-left: 0.5em;
+}
+.dir-listing li {
+  font-family: var(--mono-font);
+  font-size: 1.1em;
+  margin-bottom: 0.5em;
+  display: flex;
+  align-items: center;
+}
+.dir-listing .icon {
+  width: 1.2em; height: 1.2em;
+  margin-right: 0.75em;
+  flex-shrink: 0;
+  background-color: var(--text-color);
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+/* --- UI Options / Theme Toggle --- */
+.site-options-row {
+  display: flex;
+  justify-content: flex-end; 
+  gap: 0.5em;
+  margin-top: -0.5em;
+}
+.theme-toggle {
+  background: var(--bg-muted);
+  border: 1px solid var(--border-color);
+  border-top: none; border-right: none;
+  color: var(--text-muted);
+  padding: 0.4em 0.8em;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+.theme-toggle:hover {
+  color: var(--text-color);
+  border-color: var(--accent-color);
+}
+
+/* --- Tags --- */
 .tag-list {
   display: inline-flex;
   gap: 0.5em;
@@ -315,255 +364,88 @@ code {
   font-size: 0.85em;
   color: var(--text-muted);
 }
-.tag:hover {
-  background: var(--border-color);
-}
+.tag:hover { background: var(--border-color); }
 
-.site-options-row {
-  /* 1. Use Flexbox to manage items inside */
-  display: flex;
-
-  /* 2. Push all items to the right */
-  justify-content: flex-end; 
-  
-  /* 3. Add space *between* buttons (for when you add more) */
-  gap: 0.5em;
-
-  /* 4. Keep your original top margin */
-  margin-top: -0.5em;
-  
-  /* Remove all other styles (text-align, translate, etc.) */
-}
-
-.theme-toggle {
-  /* --- Your original styles --- */
-  background: var(--bg-muted);
-  border: 1px solid var(--border-color);
-  border-top: none;
-  border-right: none;
-  color: var(--text-muted);
-
-  /* --- Styles moved from .site-options-row --- */
-  padding: 0.4em 0.8em;
-  cursor: pointer;
-  font-size: 0.9em;
-}
-
-.theme-toggle:hover {
-  color: var(--text-color);
-  border-color: var(--accent-color);
-}
-
-/* This div is the wrapper from the shortcode */
-.video-embed-container {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  padding-top: 56.25%; /* 16:9 Aspect Ratio (9 / 16 = 0.5625) */
-  background: var(--bg-muted); /* Shows a bg color while loading */
-}
-
-/* This is the iframe inside */
-.video-embed-container iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
-}
-
-/* --- 8. Layout Shortcodes --- */
-.layout-row {
-  display: flex;
-  flex-wrap: wrap; /* Allows columns to stack on mobile */
-  gap: 1.5em;      /* This is the "gutter" between columns */
-  margin: 1.5em 0; /* Adds space above/below the row */
-}
-
-.layout-col {
-  /* Mobile-first: 100% width */
-  flex-basis: 100%;
-}
-
-/* On screens 768px and wider (tablets/desktops) */
-@media (min-width: 768px) {
-  .layout-col {
-    /* Default column: grows to fill space */
-    flex: 1;
-    /* Reset basis to auto */
-    flex-basis: auto;
-  }
-  
-  .layout-col-half {
-    /* 50% minus half the gap */
-    flex-basis: calc(50% - 0.75em);
-    flex-grow: 0; /* Don't grow or shrink */
-  }
-
-  .layout-col-one-third {
-    flex-basis: calc(33.333% - 1em);
-    flex-grow: 0;
-  }
-
-  .layout-col-two-thirds {
-    flex-basis: calc(66.666% - 0.5em);
-    flex-grow: 0;
-  }
-
-  .layout-col > :first-child {
-  margin-top: 0;
-}
-}
-
-.nowrap {
-  white-space: nowrap;  /* Prevents the text from wrapping */
-  overflow: hidden;     /* Hides the text that overflows */
-  text-overflow: ellipsis; /* Adds the '...' */
-}
-
-.text-left {
-  text-align: left;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.text-justify {
-  text-align: justify;
-}
-
-.notilt, 
-.notilt * {
-    /* Setting transform: none; is the explicit way to cancel inherited rotation. 
-       !important forces this rule to win over the JavaScript's inline style. */
-    transform: none;
-}
-
-
-/* -------------------------------------------------------------------------- */
-/* --- FOUNTAIN SCREENPLAY STYLES (Full Fluid Responsivity) ----------------- */
-/* -------------------------------------------------------------------------- */
-
+/* =========================================
+   9. SCREENPLAY (Fountain)
+   ========================================= */
 .fountain-script-container {
-    /* 1. Set the fixed-pitch font for accurate 'ch' measurements */
-    font-family: 'Courier Prime', 'Courier New', Courier, monospace;
-    font-size: 12pt;
-    line-height: 1.25; 
-    
-    /* Center the ENTIRE SCRIPT block. Cap the width at 80ch on desktop, 
-       but allow it to be 95% wide on mobile for full screen usage. */
-    max-width: clamp(35ch, 95%, 80ch); 
-    margin: 1em auto 1em; 
-    text-align: left; 
-    
-    /* Slight padding for tiny screens */
-    padding: 0 1ch;
+  font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+  font-size: 12pt;
+  line-height: 1.25; 
+  max-width: clamp(35ch, 95%, 80ch); 
+  margin: 1em auto 1em; 
+  text-align: left; 
+  padding: 0 1ch;
 }
 
-/* 2. Core Blocks: ACTION, SCENE HEADINGS, GENERAL */
-.action, 
-.scene-heading,
-.general {
-    /* These blocks define the full script width, constrained by the container. */
-    margin-left: 0; 
-    margin-right: 0;
-    max-width: 100%; 
-    
-    margin-top: 0.8em; 
-    margin-bottom: 0.8em; 
-    text-transform: uppercase; 
+.action, .scene-heading, .general {
+  margin-left: 0; margin-right: 0;
+  max-width: 100%; 
+  margin-top: 0.8em; margin-bottom: 0.8em; 
+  text-transform: uppercase; 
 }
 
-/* Scene Headings: H2 used in the custom renderer */
 .scene-heading {
-    text-transform: uppercase;
-    font-weight: bold;
-    margin-top: 2.5em; 
-    margin-bottom: 1em;
+  font-weight: bold;
+  margin-top: 2.5em; margin-bottom: 1em;
 }
 
-/* 3. Character: Fluid Indentation */
 .character {
-    /* Indent collapses on mobile, but grows up to 37ch on desktop. */
-    /* MIN: 5ch (readable mobile indent) | PREFERRED: 37ch | MAX: 25vw (prevents crazy wide margins) */
-    margin-left: clamp(5ch, 37ch, 25vw); 
-    margin-right: auto;
-    max-width: 38ch; 
-
-    margin-top: 1.5em;
-    margin-bottom: 0.1em;
-    text-align: left; 
-    text-transform: uppercase;
-    font-weight: bold;
+  margin-left: clamp(5ch, 37ch, 25vw); 
+  margin-right: auto;
+  max-width: 38ch; 
+  margin-top: 1.5em; margin-bottom: 0.1em;
+  text-align: left; 
+  text-transform: uppercase;
+  font-weight: bold;
 }
 
-/* 4. Parenthetical: Fluid Indentation */
 .parenthetical {
-    /* Indent collapses on mobile, but grows up to 31ch on desktop. */
-    margin-left: clamp(10ch, 31ch, 20vw); 
-    margin-right: auto;
-    max-width: 22ch; 
-
-    margin-top: 0.2em;
-    margin-bottom: 0.2em;
-    text-align: left;
-    font-style: italic;
-    text-transform: none;
+  margin-left: clamp(10ch, 31ch, 20vw); 
+  margin-right: auto;
+  max-width: 22ch; 
+  margin-top: 0.2em; margin-bottom: 0.2em;
+  text-align: left;
+  font-style: italic;
+  text-transform: none;
 }
 
-/* 5. Dialogue: Fluid Indentation */
 .dialogue {
-    /* Indent collapses on mobile, but grows up to 15ch on desktop. */
-    margin-left: clamp(3ch, 15ch, 10vw); 
-    margin-right: auto;
-    max-width: 45ch; 
-
-    margin-top: 0.3em;
-    margin-bottom: 0.3em;
-    text-align: left;
-    text-transform: none;
+  margin-left: clamp(3ch, 15ch, 10vw); 
+  margin-right: auto;
+  max-width: 45ch; 
+  margin-top: 0.3em; margin-bottom: 0.3em;
+  text-align: left;
+  text-transform: none;
 }
 
-/* 6. Transition: Right-aligned (always takes 100% width) */
 .transition {
-    margin-left: 0; 
-    margin-right: 0; 
-    max-width: 100%; 
-
-    margin-top: 2em;
-    text-align: right; 
-    text-transform: uppercase;
-    font-weight: bold;
+  margin-left: 0; margin-right: 0; max-width: 100%; 
+  margin-top: 2em;
+  text-align: right; 
+  text-transform: uppercase;
+  font-weight: bold;
 }
 
-/* Emphasis/Inline Styling (No Change) */
 .dialogue b, .action b { font-weight: bold; }
 .dialogue i, .action i { font-style: italic; }
 .dialogue u, .action u { text-decoration: underline; }
 
-/* Title Page (No Change) */
 .title-page {
-    font-family: var(--body-font);
-    text-align: center;
-    padding: 3em 1em;
+  font-family: var(--body-font);
+  text-align: center;
+  padding: 3em 1em;
 }
 .title-page h1 { font-size: 2.5em; margin-bottom: 1em; }
 .title-page p { margin: 0.5em 0; font-size: 1.1em; }
 
-
-/* --- RSS PLAYER WIDGET --- */
+/* =========================================
+   10. RSS PLAYER WIDGET
+   ========================================= */
 .bodge-rss-player {
-  /* Card Look */
   background: transparent;
   padding: 1em;
-  
-  /* Layout */
   display: flex;
   flex-direction: column;
   gap: 1em;
@@ -573,34 +455,42 @@ code {
   display: flex;
   align-items: center;
   gap: 1em;
+  max-width: 100%;
 }
 
 .rss-art {
-  width: 80px;
-  height: 80px;
+  width: 80px; height: 80px;
+  flex-shrink: 0; 
   border-radius: 0px;
   object-fit: cover;
   background: #000;
   border: 2px solid var(--text-color);
 }
 
+.rss-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .rss-meta h3 {
   margin: 0 0 0.25em 0;
   font-size: 1.1em;
   line-height: 1.2;
+  white-space: normal; 
 }
 
 .rss-now-playing {
   font-size: 0.85em;
   font-family: monospace;
   color: var(--accent-color);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 250px;
+  white-space: normal;
+  word-wrap: break-word;
+  max-width: 100%;
 }
 
-/* Controls */
 .rss-controls-area {
   background: rgba(0,0,0,0.05);
   padding: 0.5em;
@@ -628,13 +518,8 @@ code {
   font-family: monospace;
   border-radius: 0px;
 }
-.rss-btn:hover {
-  background: var(--bg-color-bright);
-}
-.rss-play-btn {
-  min-width: 40px;
-  font-weight: bold;
-}
+.rss-btn:hover { background: var(--bg-color-bright); }
+.rss-play-btn { min-width: 40px; font-weight: bold; }
 
 .rss-time-display {
   text-align: center;
@@ -643,7 +528,6 @@ code {
   color: var(--text-muted);
 }
 
-/* Playlist */
 .rss-playlist-controls {
   display: flex;
   justify-content: space-between;
@@ -663,7 +547,7 @@ code {
 }
 
 .rss-playlist {
-  max-height: 150px; /* Show approx 3 items */
+  max-height: 150px;
   overflow-y: auto;
   background: rgba(255,255,255,0.3);
   border-radius: 0px;
@@ -678,11 +562,59 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.rss-row:hover {
-  background: rgba(0,0,0,0.05);
-}
+.rss-row:hover { background: rgba(0,0,0,0.05); }
 .rss-row.active {
   background: var(--accent-color);
   color: white;
   font-weight: bold;
+}
+
+/* =========================================
+   11. UTILITIES
+   ========================================= */
+.nowrap {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.text-justify { text-align: justify; }
+
+.notilt, .notilt * {
+  transform: none;
+}
+
+/* =========================================
+   12. SCROLLBARS
+   ========================================= */
+html {
+  scrollbar-color: var(--accent-color) var(--bg-muted);
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 12px; height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-muted);
+  border-left: 1px solid var(--border-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--accent-color);
+  border: 3px solid var(--bg-muted);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  filter: brightness(0.8);
+}
+
+.rss-playlist::-webkit-scrollbar { width: 8px; }
+.rss-playlist::-webkit-scrollbar-thumb {
+  border: 2px solid var(--bg-muted);
 }

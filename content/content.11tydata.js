@@ -166,7 +166,8 @@ module.exports = {
         data.page.inputPath.includes("tags.njk") ||
         data.page.inputPath.includes("share.njk") ||
         data.page.inputPath.includes("search.json") ||
-        data.page.inputPath.includes("shortlinks.json")) { // Added shortlinks.json exclusion
+        data.page.inputPath.includes("shortlinks.json") ||
+        data.page.inputPath.includes("404")) { // Added shortlinks.json exclusion
         return null;
       }
 
