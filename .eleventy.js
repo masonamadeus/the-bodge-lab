@@ -395,6 +395,20 @@ module.exports = function (eleventyConfig) {
     return `<div class="text-${safeAlignment}">\n${trimmedContent}\n</div>`;
   });
 
+  eleventyConfig.addShortcode("rss", function(url) {
+    // We generate a unique ID just in case you have multiple players
+    const uid = "rss-" + Math.random().toString(36).substr(2, 9);
+    return `
+      <div id="${uid}" class="bodge-rss-player" data-rss-url="${url}">
+        <div class="rss-loading">
+             <img src="/content/.config/3dloading.svg" alt="Loading..." style="width: 50px; height: 50px;">
+             <p>Tuning in...</p>
+        </div>
+      </div>
+      <script src="/js/player.js" defer></script>
+    `;
+  });
+
 
   //#endregion
 
