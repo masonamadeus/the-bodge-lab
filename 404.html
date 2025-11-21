@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="stylesheet" href="/css/main.css">
+        <link href="/css/prism.css" rel="stylesheet"/>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin
+        
+        <meta charset="UTF-8">
+        <title>BodgeLab: Page Not Found (404)</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="&lt;h1&gt;Oops! Page Not Found (404)&lt;/h1&gt;
+&lt;p&gt;I couldn&#39;t find the page you were looking for.&lt;/p&gt;
+&lt;p&gt;This is The &lt;em&gt;Bodge&lt;/em&gt; Lab, so things get moved around!&lt;/p...">
+        <meta property="og:title" content="BodgeLab: Page Not Found (404)">
+        <meta property="og:description" content="&lt;h1&gt;Oops! Page Not Found (404)&lt;/h1&gt;
+&lt;p&gt;I couldn&#39;t find the page you were looking for.&lt;/p&gt;
+&lt;p&gt;This is The &lt;em&gt;Bodge&lt;/em&gt; Lab, so things get moved around!&lt;/p...">
+        <meta property="og:image" content="https://bodgelab.com/config/sitebg2.webp">
+        <meta property="og:url" content="https://bodgelab.com/404.html">
+        <meta property="og:type" content="website">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="BodgeLab: Page Not Found (404)">
+        <meta name="twitter:description" content="&lt;h1&gt;Oops! Page Not Found (404)&lt;/h1&gt;
+&lt;p&gt;I couldn&#39;t find the page you were looking for.&lt;/p&gt;
+&lt;p&gt;This is The &lt;em&gt;Bodge&lt;/em&gt; Lab, so things get moved around!&lt;/p...">
+        <meta name="twitter:image" content="https://bodgelab.com/config/sitebg2.webp">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+    </head>
+    <body>
+        <header>
+            <nav class="nav-container">
+                <div class="breadcrumb-nav">
+                    <span class="separator">\\</span>
+                    <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                    
+                    
+                    
+                        
+                    
+                        
+                            
+                            <span class="separator">\</span>
+                            
+                                <span class="current">Page Not Found (404)</span>
+                            
+                        
+                    
+                </div>
+                <div class="page-nav">
+                    
+                    
+                        <div>
+                            <a href="/" class="nav-link up">⇱ Go Up</a>
+                        </div>
+                    
+                    
+                    
+                        <div class="page-meta-date">
+                            <i>
+                                <em>Modified: November 21, 2025</em>
+                            </i>
+                        </div>
+                    
+                </div>
+            </nav>
+        </header>
+        
+            <main class="main-content">
+                
+                    
+<h1>Oops! Page Not Found (404)</h1>
+<p>I couldn't find the page you were looking for.</p>
+<p>This is The <em>Bodge</em> Lab, so things get moved around!</p>
+
+<h3>Based on the URL you tried, were you looking for one of these?</h3>
+
+<div id="smart-search-results">
+  <p><i>Initializing...</i></p>
+</div>
+
+<div>
+  <p>Keywords: "<i id="search-keywords"></i>"</p>
+</div>
+
+<hr>
+<p>Or, you can try heading back to the <a href="/">homepage</a>.</p>
+
+<script>
+  // Unified 404 Logic: Shortlinks FIRST, then Search
+  document.addEventListener('bodgelab:searchready', async () => {
+    
+    // --- Helpers ---
+    function decodeSearchString(str) {
+      if (!str) return '';
+      try {
+        str = decodeURIComponent(str);
+      } catch (e) {}
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = str;
+      return textarea.value;
+    }
+
+    const resultsContainer = document.getElementById('smart-search-results');
+    const keywordsContainer = document.getElementById('search-keywords');
+    const path = window.location.pathname;
+
+    // --- Shortlink Check ---
+    // If the URL starts with /s/, we try to resolve it first.
+    if (path.startsWith('/s/')) {
+      const uid = path.replace('/s/', '').replace(/\/$/, '');
+      
+      resultsContainer.innerHTML = '<p><i>Checking shortlinks...</i></p>';
+      keywordsContainer.textContent = `Shortlink ID: ${uid}`;
+
+      try {
+        const response = await fetch('/shortlinks.json');
+        if (response.ok) {
+          const links = await response.json();
+          if (links[uid]) {
+            // SUCCESS: Redirect
+            resultsContainer.innerHTML = `<p><i>Shortlink found! Redirecting...</i></p>`;
+            window.location.replace(links[uid]);
+            return; // Stop execution here
+          }
+        }
+      } catch (e) {
+        console.error("Shortlink lookup failed", e);
+      }
+      
+      // If we are here, the shortlink failed.
+      // We let the code fall through to the Search Logic, 
+      // but we interpret the UID as the search term.
+    }
+
+    // --- STEP 2: Smart-ish Search Logic ---
+    // We process the path to make it a readable search query
+    const query = decodeSearchString(path)
+        .replace(/^\/s\//, '') // Remove leading /s/ if it was a failed shortlink
+        .replace(/[\/\-]/g, ' ') // Turn slashes/dashes to spaces
+        .toLowerCase() // Prevent capital letters from getting cut off
+        .replace(/[^a-z0-9\s]/g, ' ') // NOW this is safe (everything is lowercase)
+        .trim();
+
+    keywordsContainer.textContent = query;
+    resultsContainer.innerHTML = '<p><i>Searching...</i></p>';
+
+    // 1. Get Results
+    const results = await window.BodgeLab.getResults(query);
+
+    // 2. Smart Redirect (High Confidence Match)
+    if (results.length === 1 && results[0].score > 5) { 
+      const match = results[0];
+      resultsContainer.innerHTML = `<p><i>Found a perfect match! Redirecting to: <a href="${match.url}">${match.title}</a></i></p>`;
+      window.location.replace(match.url);
+    } else {
+      // 3. Render List
+      window.BodgeLab.render(results, resultsContainer, query);
+    }
+  });
+</script>
+                
+                
+            </main>
+            <br>
+        
+        
+        
+        
+        <script src="/js/main.js"></script>
+    </body>
+</html></body></html>

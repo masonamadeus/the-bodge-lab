@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="stylesheet" href="/css/main.css">
+        <link href="/css/prism.css" rel="stylesheet"/>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin
+        
+        <meta charset="UTF-8">
+        <title>BodgeLab: Welcome to The Bodge Lab!</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="This is my folder on the internet. You&#39;re free to poke around here and take anything you&#39;d like with you. If you want to get in touch, you should listen to...">
+        <meta property="og:title" content="BodgeLab: Welcome to The Bodge Lab!">
+        <meta property="og:description" content="This is my folder on the internet. You&#39;re free to poke around here and take anything you&#39;d like with you. If you want to get in touch, you should listen to...">
+        <meta property="og:image" content="https://bodgelab.com/config/sitebg2.webp">
+        <meta property="og:url" content="https://bodgelab.com/">
+        <meta property="og:type" content="website">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="BodgeLab: Welcome to The Bodge Lab!">
+        <meta name="twitter:description" content="This is my folder on the internet. You&#39;re free to poke around here and take anything you&#39;d like with you. If you want to get in touch, you should listen to...">
+        <meta name="twitter:image" content="https://bodgelab.com/config/sitebg2.webp">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+    </head>
+    <body>
+        <header>
+            <nav class="nav-container">
+                <div class="breadcrumb-nav">
+                    <span class="separator">\\</span>
+                    <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                    
+                    
+                    
+                        
+                    
+                        
+                    
+                </div>
+                <div class="page-nav">
+                    
+                    
+                    
+                    
+                </div>
+            </nav>
+        </header>
+        
+            <main class="main-content">
+                
+                    <h1>Welcome to The Bodge Lab!</h1>
+<h3>My name is Mason Amadeus (he/him)!</h3>
+<p>This is my folder on the internet. You're free to poke around here and take anything you'd like with you.</p>
+<p>If you want to get in touch, you should listen to the <a href="/s/bug-and-moss-morning-telephone">Bug &amp; Moss Morning Telephone Show</a>.</p>
+<p>Explore! I hope you find joy and utility amongst my nonsense.</p>
+<h5>NOTE: There's a lot of placeholder content up here right now as I build out the site. Make sure you come back later!</h5>
+<hr>
+<h3 id="random-page-container">SCRIPTS NOT RUNNING</h3>
+<script>
+  // 1. Listen for the 'bodgelab:searchready' event.
+  // This is dispatched by main.js when all helper functions are loaded.
+  document.addEventListener('bodgelab:searchready', async () => {
+    const container = document.getElementById('random-page-container');
+    
+    try {
+      // 2. Fetch the search data (or get it from the cache)
+      const allPages = await window.BodgeLab.getSearchData();
+
+      // 3. Filter out the homepage itself
+      const pagesWithoutHome = allPages.filter(page => page.url !== '/');
+
+      if (pagesWithoutHome.length > 0) {
+        // 4. Pick a random page from the list
+        const randomIndex = Math.floor(Math.random() * pagesWithoutHome.length);
+        const randomPage = pagesWithoutHome[randomIndex];
+
+        // 5. Create the link using the data from search.json
+        const link = document.createElement('a');
+        link.href = randomPage.url;
+        link.textContent = randomPage.title;
+        
+        const content = document.createElement('p');
+        content.appendChild(link);
+
+        // 6. Clear the "loading" text and add the new link
+        container.innerHTML = 'FOR YOU: ';
+        container.appendChild(link);
+
+      } else {
+        container.innerHTML = '<p><i>Could not find a random page.</i></p>';
+      }
+    } catch (e) {
+      console.error('Error loading random page widget:', e);
+      if (container) {
+        container.innerHTML = `<p><i>${e}</i></p>`;
+      }
+    }
+  });
+</script>
+
+                
+                
+            </main>
+            <br>
+        
+        
+        
+            
+            
+            
+            
+            
+                <section class="directory-container">
+                    <div class="directory-header">
+                        
+                        <h3 class="directory-title">The Bodge Lab</h3>
+                    </div>
+                    
+                    
+                        <ul class="dir-listing">
+                            
+                                <li>
+                                    <span
+                                        class="icon"
+                                        style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                    <a href="/.config/">.config\</a>
+                                </li>
+                            
+                                <li>
+                                    <span
+                                        class="icon"
+                                        style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                    <a href="/About Me/">About Me\</a>
+                                </li>
+                            
+                                <li>
+                                    <span
+                                        class="icon"
+                                        style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                    <a href="/Blender 3D/">Blender 3D\</a>
+                                </li>
+                            
+                                <li>
+                                    <span
+                                        class="icon"
+                                        style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                    <a href="/Mason&#39;s Lists/">Mason&#39;s Lists\</a>
+                                </li>
+                            
+                                <li>
+                                    <span
+                                        class="icon"
+                                        style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                    <a href="/Podcasts/">Podcasts\</a>
+                                </li>
+                            
+                                <li>
+                                    <span
+                                        class="icon"
+                                        style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                    <a href="/Software &amp; Tools/">Software &amp; Tools\</a>
+                                </li>
+                            
+                                <li>
+                                    <span
+                                        class="icon"
+                                        style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                    <a href="/The Blodge/">The Blodge\</a>
+                                </li>
+                            
+                                <li>
+                                    <span
+                                        class="icon"
+                                        style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                    <a href="/Video/">Video\</a>
+                                </li>
+                            
+                                <li>
+                                    <span
+                                        class="icon"
+                                        style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                    <a href="/Writing/">Writing\</a>
+                                </li>
+                            
+                            
+                                <li>
+                                    <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                    
+                                        
+                                        <a href="/tags/">» Browse By Tags</a>
+                                    
+                                </li>
+                            
+                                <li>
+                                    <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                    
+                                        
+                                        <strong>» index</strong>
+                                    
+                                </li>
+                            
+                                <li>
+                                    <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                    
+                                        
+                                        <a href="/Search/">» Search The Bodgelab</a>
+                                    
+                                </li>
+                            
+                            
+                                <li>
+                                    <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                    <a style="nowrap" href="/test.txt.html">test.txt</a>
+                                </li>
+                            
+                        </ul>
+                    
+                </section>
+                <div class="site-options-row">
+                    <button id="theme-toggle" class="theme-toggle">Dark Mode</button>
+                </div>
+            
+        
+        
+            <script>
+                // REPLACE URL IN BAR WITH SHARELINK
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/s/94a02866/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+            </script>
+        
+        <script src="/js/main.js"></script>
+    </body>
+</html></body></html>
