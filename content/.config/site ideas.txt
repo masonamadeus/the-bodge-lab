@@ -10,3 +10,7 @@
 - optimize font pop-in a little bit more
 - add custom commit message via control panel
 - double check env shit && r2
+
+- input elements need pseudo ::before to style properly
+- remove 'main' from tilt filter
+
