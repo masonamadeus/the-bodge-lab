@@ -322,7 +322,7 @@ module.exports = function (eleventyConfig) {
     */
   function resolveSrc(src) {
     if (src.startsWith('http') || src.startsWith('/')) {
-      return src; // It's already an absolute URL or root-relative path
+      return src.replace(/ /g, '%20'); // It's already an absolute URL or root-relative path + encode spaces
     }
 
     // It's a relative path. Resolve it based on the current page's input path.
@@ -340,24 +340,33 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addShortcode("video", function (src) {
     const resolvedSrc = resolveSrc.call(this, src); // Resolve the path
     const filename = path.basename(resolvedSrc);
+    const srcWithHash = resolvedSrc + "#t=0.001";
+
     return `<div class="media-embed-wrapper">
-  <video controls style="width: 100%;">
-    <source src="${resolvedSrc}">
-    Your browser does not support the video tag.
-  </video>
-  <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p></div>`;
+      <video controls preload="metadata" playsinline style="width: 100%; height: auto;">
+        <source src="${srcWithHash}">
+        Your browser does not support the video tag.
+      </video>
+      <p class="download-btn-container">
+        <a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a>
+      </p>
+    </div>`;
   });
 
-  // Audio Shortcode
-  eleventyConfig.addShortcode("audio", function (src) {
-    const resolvedSrc = resolveSrc.call(this, src); // Resolve the path
-    const filename = path.basename(resolvedSrc);
-    return `<div class="media-embed-wrapper">
-  <audio controls style="width: 100%;">
-    <source src="${resolvedSrc}">
-    Your browser does not support the audio tag.
-  </audio>
-  <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p></div>`;
+  // Audio Shortcode (Refactored for Unified Player)
+  eleventyConfig.addShortcode("audio", function (src, title) {
+    const resolvedSrc = resolveSrc.call(this, src); 
+    // Allow manual title, or fallback to filename
+    const displayTitle = title || path.basename(resolvedSrc);
+    
+    // We reuse 'bodge-rss-player' class to trigger the JS
+    // We add 'single-track' to help CSS hide the playlist
+    return `<div class="bodge-rss-player single-track" data-src="${resolvedSrc}" data-title="${displayTitle}">
+        <div class="rss-loading">
+             <img src="/content/.config/3dloading.svg" alt="Loading..." style="width: 50px; height: 50px;">
+             <p>Loading Audio...</p>
+        </div>
+    </div><script src="/js/podcast-player.js" defer></script>`; 
   });
 
   // Image Shortcode
@@ -461,15 +470,12 @@ module.exports = function (eleventyConfig) {
     // Default is 'desc' (Newest First)
     const orderAttr = (sortOrder && sortOrder.toLowerCase() === 'asc') ? 'asc' : 'desc';
     
-    return `
-      <div id="${uid}" class="bodge-rss-player" data-rss-url="${url}" data-sort-order="${orderAttr}">
+    return `<div id="${uid}" class="bodge-rss-player" data-rss-url="${url}" data-sort-order="${orderAttr}">
         <div class="rss-loading">
              <img src="/content/.config/3dloading.svg" alt="Loading..." style="width: 50px; height: 50px;">
              <p>Tuning in...</p>
         </div>
-      </div>
-      <script src="/js/podcast-player.js" defer></script>
-    `;
+      </div><script src="/js/podcast-player.js" defer></script>`;
   });
 
   //#endregion

@@ -9,7 +9,7 @@ date: '2025-11-21T22:13:31.356Z'
 
 
 
-{%grid%}
+{%grid "one-third, two-thirds"%}
 
 ![DF+Final+01+(1)](./DF+Final+01+(1).webp)
 
@@ -27,7 +27,7 @@ With topics ranging from the absurd to the unsettling, the Digital Folklore podc
 
 ### [Check out the Digital Folklore website to listen and subscribe!](https://digitalfolklore.fm/)
 
-{%rss "https://feeds.megaphone.fm/SBP6594262576", "Asc" %}
+{%rss "https://feeds.megaphone.fm/SBP6594262576", "asc" %}
 
 ![Digital Folklore 2 Illo 1920x1080LQ ](Digital%20Folklore%202%20Illo%201920x1080LQ%20.jpg)
 

@@ -27,7 +27,7 @@ downloadURL: "{{ media.url | safe }}"
   
   {% elif media.type == 'audio' %}
   
-    {% audio media.url %}
+    {% audio media.url, media.name %}
   
   {# We must check for .glb *before* 'other' #}
   {% elif media.ext == '.glb' %}

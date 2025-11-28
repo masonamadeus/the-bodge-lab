@@ -1,0 +1,37 @@
+---
+pagination:
+  data: collections.permanent_pages
+  size: 1
+  alias: p
+permalink: "/s/{{ p.data.uid }}/"
+eleventyExcludeFromCollections: true
+layout: false
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex">
+    
+    {# --- OPEN GRAPH (For the Bots) --- #}
+    {# Bots read these tags to build the preview card #}
+    <title>{{ p.data.title }}</title>
+    <meta name="description" content="{{ p.data.seo.description }}">
+    <meta property="og:title" content="{{ p.data.title }}">
+    <meta property="og:description" content="{{ p.data.seo.description }}">
+    <meta property="og:image" content="{{ p.data.seo.image }}">
+    <meta property="og:url" content="{{ p.data.seo.url }}">
+    <meta name="twitter:card" content="summary_large_image">
+
+    {# --- REDIRECT (For the Humans) --- #}
+    {# Canonical tells Google this page is just a shadow of the real one #}
+    <link rel="canonical" href="{{ p.url }}">
+    {# Instant refresh #}
+    <meta http-equiv="refresh" content="0; url={{ p.url }}">
+</head>
+<body>
+    {# Fallback link if the refresh fails #}
+    <script>window.location.replace("{{ p.url }}");</script>
+    <p>Redirecting to <a href="{{ p.url }}">{{ p.data.title }}</a>...</p>
+</body>
+</html>

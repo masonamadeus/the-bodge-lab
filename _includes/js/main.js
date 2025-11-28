@@ -5,10 +5,10 @@ document.addEventListener('DOMContentLoaded', () => {
   (function () {
 
     // Set the maximum tilt (e.g., 0.5 means -0.5deg to +0.5deg)
-    const maxTilt = 0.4;
+    const maxTilt = 0.5;
 
     // get all the main page containers
-    const elements = document.querySelectorAll('header, p, button, main, section, div, h1, h2, h3, h4, h5, h6');
+    const elements = document.querySelectorAll('header, p, button, section, div, h1, h2, h3, h4, h5, h6');
     // Map to store the final, cumulative rotation (in degrees) for every element.
     // This is the key to counteracting inherited rotation.
     const rotationMap = new Map();

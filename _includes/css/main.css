@@ -23,7 +23,7 @@
   --line-height: 1.3;
   --base-spacing: 1.1em;
 
-  font-size: 1em;
+  font-size: 1.1em;
 }
 
 /* =========================================
@@ -65,13 +65,17 @@ hr {
   width: 100%;
 }
 
+iframe {
+  border: none;
+}
+
 /* =========================================
    3. THE BODGE LAYOUT ENGINE (3D & Bleed)
    ========================================= */
 .main-content {
   /* Create shared 3D environment */
   transform-style: preserve-3d;
-  
+  container-type: inline-size;
   padding-top: var(--base-spacing);
   padding-bottom: var(--base-spacing);
   padding-left: var(--base-spacing);
@@ -91,13 +95,22 @@ hr {
   display: block;
   position: absolute;
   
-  /* Bleed dimensions */
-  inset: -1.5em -0.5em; 
+  /* Vertical Bleed: Keep this rigid (Top/Bottom) */
+  top: -1.5em;
+  bottom: -2em;
   
+  left: 50%;
+
+  width: 105cqw;
+
+  max-width: 105cqw;
+
+
   background-color: var(--bg-color-bright);
   
-  /* Push physically behind text (Z -1) */
-  transform: translateZ(-1px);
+  /* 4. Combine the 3D Layering (Z -1) with the Centering (X -50%) */
+  transform: translateZ(-1px) translateX(-50%);
+  
   pointer-events: none;
 }
 
@@ -223,11 +236,9 @@ hr {
   max-width: 100%;
 }
 
-.embed-container {
-  border: 1px solid var(--border-color);
-  background: var(--bg-muted);
+.media-embed-wrapper {
+  border: 1px dashed var(--border-color);
   width: 100%;
-  height: 80vh;
 }
 
 .video-embed-container {
@@ -241,7 +252,7 @@ hr {
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  border: 0;
+  border: none!important;
 }
 
 /* =========================================
@@ -441,150 +452,240 @@ code { line-height: 1.4; }
 .title-page p { margin: 0.5em 0; font-size: 1.1em; }
 
 /* =========================================
-   10. RSS PLAYER WIDGET
+   10. BODGE PLAYER v3.0 (Clean Deck)
    ========================================= */
 .bodge-rss-player {
-  background: transparent;
-  padding: 1em;
-  display: flex;
-  flex-direction: column;
-  gap: 1em;
+  margin: 2em 0;
+  font-family: var(--mono-font), monospace;
+  background: var(--bg-muted); /* Solid background for the whole unit */
+  border: 1px dashed var(--border-color);
+
 }
 
+/* --- HEADER (Clean) --- */
 .rss-header {
   display: flex;
+  padding: 1em;
+  gap: 1.5em; /* Use space, not lines, to separate art from text */
   align-items: center;
-  gap: 1em;
-  max-width: 100%;
 }
 
 .rss-art {
-  width: 80px; height: 80px;
-  flex-shrink: 0; 
-  border-radius: 0px;
+  width: 80px;
+  height: 80px;
   object-fit: cover;
-  background: #000;
-  border: 2px solid var(--text-color);
+  flex-shrink: 0;
+  background: var(--bg-color);
+  /* No border */
 }
 
 .rss-meta {
   flex: 1;
-  min-width: 0;
+  min-width: 0; /* Allows text truncation */
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
 .rss-meta h3 {
-  margin: 0 0 0.25em 0;
+  margin: 0 0 0.4em 0;
   font-size: 1.1em;
-  line-height: 1.2;
-  white-space: normal; 
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rss-now-playing {
-  font-size: 1em;
-  font-family: monospace;
+  font-size: 0.85em;
   color: var(--accent-color);
-  white-space: normal;
-  word-wrap: break-word;
-  max-width: 100%;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
+/* --- CONTROLS DECK (Clean) --- */
 .rss-controls-area {
-  background: rgba(0,0,0,0.05);
-  padding: 0.5em;
-  border-radius: 0px;
-}
-
-.rss-seek {
-  width: 100%;
-  cursor: pointer;
-  margin-bottom: 0.5em;
-}
-
-.rss-buttons {
+  padding: 0 1em 1em 1em;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   gap: 0.5em;
-  margin-bottom: 0.25em;
 }
 
-.rss-btn {
-  background: var(--bg-color);
-  border: 1px solid var(--border-color);
+/* 1. Progress Bar */
+.rss-seek-container {
+  height: 12px;
+  background: var(--bg-color); /* White/Page track */
+  position: relative;
   cursor: pointer;
-  padding: 0.25em 0.75em;
-  font-family: monospace;
-  border-radius: 0px;
-  display: inline-flex; /* Centers SVG */
+  width: 100%;
+}
+
+.rss-seek-fill {
+  height: 100%;
+  background: var(--accent-color);
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+.rss-seek-input {
+  position: absolute;
+  top: -5px; bottom: -5px; left: 0; right: 0; /* Larger hit area */
+  width: 100%; height: auto;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* 2. Toolbar (Flexbox, No Grid, No Borders) */
+.rss-toolbar {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0.25em 0.5em; /* Adjusted padding for icons */
+  justify-content: space-between; /* Spacing does the work */
+  height: 40px;
+  margin-top: 0.5em;
 }
-
-/* Make the SVG inherit the text color so it matches the theme */
-.rss-btn svg {
-  fill: currentColor;
-  width: 1.2em;
-  height: 1.2em;
-  display: block;
-}
-
-/* Make the Play button slightly larger */
-.rss-play-btn svg {
-  width: 1.5em;
-  height: 1.5em;
-}
-.rss-btn:hover { background: var(--bg-color-bright); }
-.rss-play-btn { min-width: 40px; font-weight: bold; }
 
 .rss-time-display {
-  text-align: center;
-  font-size: 0.75em;
-  font-family: monospace;
+  font-size: 0.8em;
+  font-weight: bold;
   color: var(--text-muted);
+  width: 80px; /* Fixed width to prevent jumping */
 }
 
+/* The Transport Group sits in the center */
+.rss-transport {
+  display: flex;
+  align-items: center;
+  gap: 1em; /* Space between buttons */
+}
+
+/* Right Side Controls */
+.rss-extras {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  width: 80px; /* Matches time display width for centering */
+  justify-content: flex-end;
+}
+
+/* --- BUTTONS (Floating) --- */
+.rss-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em; /* Space between Icon and Text */
+  transition: opacity 0.2s;
+}
+
+.rss-btn:hover {
+  opacity: 0.7;
+}
+
+/* The small numbers (7s, 30s) inside the buttons */
+.rss-btn-txt {
+  font-size: 0.75em;
+  font-weight: bold;
+  color: var(--text-muted);
+  font-family: var(--mono-font), monospace;
+  line-height: 1;
+}
+
+/* Ensure the Play button mask is colored correctly */
+.rss-play-btn .rss-icon {
+  background-color: var(--accent-color);
+  width: 32px; height: 32px;
+}
+
+.rss-speed-btn {
+  font-size: 0.85em;
+  font-weight: bold;
+  color: var(--text-muted);
+  width: 3em;
+  text-align: right;
+}
+
+/* --- ICONS (The Bodge Mask System) --- */
+.rss-icon {
+  display: block;
+  width: 24px; height: 24px;
+  background-color: var(--text-muted);
+  -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+}
+
+/* Play button is slightly larger and accent colored */
+.rss-play-btn .rss-icon {
+  width: 32px; height: 32px;
+  background-color: var(--accent-color); 
+}
+
+/* --- PLAYLIST (The Only Borders) --- */
 .rss-playlist-controls {
+  padding: 0.8em 1em;
+  border-top: 1px solid var(--border-color); /* The Divider */
+  background: var(--bg-color);
   display: flex;
   justify-content: space-between;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  font-weight: bold;
+  color: var(--text-muted);
   align-items: center;
-  font-size: 0.85em;
-  border-bottom: 2px solid var(--border-color);
-  padding-bottom: 0.25em;
 }
 
 .rss-sort-btn {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 0.9em;
-  text-decoration: underline;
-  color: var(--text-muted);
+  font-family: inherit;
+  font-weight: bold;
+  color: var(--accent-color);
 }
 
 .rss-playlist {
-  max-height: 150px;
+  max-height: 250px;
   overflow-y: auto;
-  background: rgba(255,255,255,0.3);
-  border-radius: 0px;
+  background: var(--bg-color);
+  border-top: 1px solid var(--border-color); /* Separates controls from list */
 }
 
 .rss-row {
-  padding: 0.5em;
-  font-size: 0.85em;
-  border-bottom: 1px dashed var(--border-color);
+  padding: 0.8em 1em;
+  font-size: 0.9em;
+  border-bottom: 1px dotted var(--border-color); /* The List Borders */
   cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
 }
-.rss-row:hover { background: rgba(0,0,0,0.05); }
+
+.rss-row:hover {
+  background: var(--bg-muted);
+}
+
 .rss-row.active {
-  background: var(--accent-color);
-  color: white;
+  background: var(--bg-muted);
+  color: var(--accent-color);
   font-weight: bold;
+  box-shadow: inset 4px 0 0 var(--accent-color); /* Left indicator strip */
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 500px) {
+  .rss-time-display { display: none; }
+  .rss-extras { width: auto; } /* Let it collapse */
+  .rss-toolbar { justify-content: center; gap: 2em; }
+}
+
+/* --- SINGLE TRACK ADAPTATIONS --- */
+.bodge-rss-player.single-track .rss-playlist-controls,
+.bodge-rss-player.single-track .rss-playlist {
+  display: none !important;
 }
 
 /* =========================================
@@ -606,11 +707,12 @@ code { line-height: 1.4; }
 }
 
 /* =========================================
-   12. SCROLLBARS
+   12. SCROLLBARS & TOUCH
    ========================================= */
 html {
   scrollbar-color: var(--accent-color) var(--bg-muted);
   scrollbar-width: thin;
+  touch-action: manipulation;
 }
 
 ::-webkit-scrollbar {

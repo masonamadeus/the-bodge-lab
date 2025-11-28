@@ -5,9 +5,16 @@ contentHash: 2b43d785
 date: '2025-11-21T18:44:19.200Z'
 ---
 
+
 # Hi! My name is Mason Amadeus.
 
+
 {% grid %}
+
+{%video "Everything Reel.mp4"%}
+
+
+``
 
 ### My pronouns are he/him.
 
@@ -19,15 +26,12 @@ My personal goal is to try and fill the world with as much harmless joy and insp
 
 The best one-line description of who I am and what I do came from my friend Aemyn. She described me as an...
 
-### **All-Terrain Professional Bodge Technician.**
-
-``
-
-{% image "aemyn-tweet.webp", "Screenshot of a tweet from February 2022. Mason Amadeus says: Hey I have a really hard time with self-perception so if you're reading this and you know me (or my work) what's my brand/vibe??. The highlighted reply from Aemyn reads: organic homegrown diy anti-corporate Vox Media ADHD overachieving substitute teacher abstract public domain retrofuture all terrain professional bodge technician." %}
+## **All-Terrain Professional Bodge Technician.**
 
 {%endgrid%}
 
-I am the creative director at [8th Layer Media](https://8thlayermedia.com/), where Perry Carpenter and I create various shows about the intersections of humanity and technology!
+
+### I am the creative director at [8th Layer Media](https://8thlayermedia.com/), where [Perry Carpenter](https://www.linkedin.com/in/perrycarpenter/) and I create various shows about the intersections of humanity and technology!
 
 So far, we've made:
 
@@ -42,5 +46,9 @@ For fun, I am a 2D artist/animator, 3D artist/animator, podcast producer, musici
 I firmly believe in equality, social justice, and kindness. I don't like pretense, or taking myself too seriously.
 
 Let's be friends and make something cool together!
+
+## Here's a demo reel I produced for my friend Josiah O'Knight!
+
+{%audio "Josiah O'Knight Demo (Prod. by Mason).mp3"%}
 
 ## Or maybe you're looking for my [Professional Resume](Professional%20Resume.md)?

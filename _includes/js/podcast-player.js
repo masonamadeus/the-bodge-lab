@@ -1,262 +1,247 @@
 (function() {
-    // Prevent double-loading if used multiple times on a page
     if (window.BodgeRSSLoaded) return;
     window.BodgeRSSLoaded = true;
 
-    const icons = {
-        play: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
-        pause: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
-        back7: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/><text x="12" y="18" font-size="8" text-anchor="middle" font-family="sans-serif" font-weight="bold">7</text></svg>`,
-        fwd15: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16a8.002 8.002 0 0 1 7.6-5.5c1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/><text x="12" y="18" font-size="8" text-anchor="middle" font-family="sans-serif" font-weight="bold">15</text></svg>`
-        ,
-        download: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M5 20h14v-2H5v2zM11 4h2v8h3l-4 4-4-4h3V4z"/></svg>`
+    // 1. Define the Shapes (Paths only)
+    const paths = {
+        play: "M8 5v14l11-7z",
+        pause: "M6 19h4V5H6v14zm8-14v14h4V5h-4z",
+        back: "M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z",
+        fwd: "M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z",
+        download: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"
     };
 
-    document.addEventListener('DOMContentLoaded', initPlayers);
-
-    function initPlayers() {
-        const players = document.querySelectorAll('.bodge-rss-player');
-        players.forEach(setupPlayer);
+    // 2. Helper to generate the "Masked Icon" HTML
+    function mkIcon(path) {
+        // Create a minimal SVG Data URI
+        const svg = `data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='${path}'/%3E%3C/svg%3E`;
+        // Return the span that CSS turns into an icon
+        return `<span class="rss-icon" style="-webkit-mask-image: url(&quot;${svg}&quot;); mask-image: url(&quot;${svg}&quot;);"></span>`;
     }
+
+    // 3. Build the Icons Object (Icon + Text combo)
+    const icons = {
+        play: mkIcon(paths.play),
+        pause: mkIcon(paths.pause),
+        // Layout: [Icon] [7]
+        back: `${mkIcon(paths.back)}<span class="rss-btn-txt">7</span>`, 
+        // Layout: [30] [Icon]
+        fwd: `<span class="rss-btn-txt">30</span>${mkIcon(paths.fwd)}`, 
+        download: mkIcon(paths.download)
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.bodge-rss-player').forEach(setupPlayer);
+    });
 
     async function setupPlayer(container) {
-        const url = container.dataset.rssUrl;
-        const sort = container.dataset.sortOrder || "desc";
-        
-        try {
-            const response = await fetch(url);
-            const text = await response.text();
-            
-            // NATIVE XML PARSING (No Library!)
-            const parser = new DOMParser();
-            const xml = parser.parseFromString(text, "text/xml");
-            
-            const channel = xml.querySelector('channel');
-            const title = channel.querySelector('title').textContent;
-            
-            // Try to find artwork (itunes or standard)
-            let art = '/content/.config/sitebg.svg'; // Fallback
-            const imgNode = channel.querySelector('image > url') || 
-                            channel.getElementsByTagNameNS('*', 'image')[0]; 
-            if (imgNode) art = imgNode.textContent || imgNode.getAttribute('href');
+        let items = [];
+        let showTitle = "";
+        let showArt = null; 
+        const isSingle = container.classList.contains('single-track');
+        const initialSort = container.dataset.sortOrder || "desc";
 
-            // Get Episodes
-            const items = Array.from(channel.querySelectorAll('item'));
-            
-            // Store state
-            const state = {
-                items: items,
-                currentIdx: 0,
-                isPlaying: false,
-                audio: new Audio(),
-                sortAsc: (sort === "asc")
-            };
+        if (container.dataset.rssUrl) {
+            try {
+                const res = await fetch(container.dataset.rssUrl);
+                const str = await res.text();
+                const xml = new DOMParser().parseFromString(str, "text/xml");
+                
+                const channel = xml.querySelector('channel');
+                showTitle = channel.querySelector('title').textContent;
+                
+                const imgNode = channel.querySelector('image > url') || channel.getElementsByTagName('image')[0];
+                if (imgNode) showArt = imgNode.textContent || imgNode.getAttribute('href');
 
-            // Build UI
-            renderPlayer(container, title, art, state);
+                items = Array.from(channel.querySelectorAll('item')).map(item => ({
+                    title: item.querySelector('title').textContent,
+                    src: item.querySelector('enclosure')?.getAttribute('url')
+                })).filter(i => i.src);
 
-        } catch (e) {
-            console.error("RSS Error:", e);
-            container.innerHTML = `<p style="color:red; padding:1em; border:1px dashed red;">
-                <strong>Signal Lost:</strong> Unable to fetch RSS feed.<br>
-                <small>Note: If this is an external feed, you might be hitting CORS protections. 
-                Try using a CORS proxy like 'https://corsproxy.io/?' before the URL.</small>
-            </p>`;
+            } catch (e) {
+                container.innerHTML = `<div style="padding:1em; border:2px solid red; font-family:monospace; color:red;">ERR: FEED_LOAD_FAIL</div>`;
+                return;
+            }
+        } else if (container.dataset.src) {
+            showTitle = container.dataset.title || "Audio File";
+            items = [{ title: showTitle, src: container.dataset.src }];
         }
-    }
 
-    function renderPlayer(container, showTitle, showArt, state) {
+        if (items.length === 0) return;
+
+        const artStyle = showArt ? '' : 'display:none;';
+        
         container.innerHTML = `
             <div class="rss-header">
-                <img src="${showArt}" class="rss-art" alt="Cover Art">
+                <img src="${showArt || ''}" class="rss-art" alt="Art" style="${artStyle}" onerror="this.style.display='none'">
                 <div class="rss-meta">
                     <h3>${showTitle}</h3>
-                    <div class="rss-now-playing" id="np-${container.id}">Select an episode...</div>
+                    <div class="rss-now-playing">STOPPED</div>
                 </div>
             </div>
-            
+
             <div class="rss-controls-area">
-                <input type="range" class="rss-seek" value="0" min="0" max="100" disabled>
-                
-                <div class="rss-buttons">
-                    <button class="rss-btn" data-action="back7" title="Back 7s">${icons.back7}</button>
-                    <button class="rss-btn rss-play-btn" data-action="play" title="Play/Pause">${icons.play}</button>
-                    <button class="rss-btn" data-action="fwd15" title="Forward 15s">${icons.fwd15}</button>
-                    <a class="rss-btn rss-download-btn" data-action="download" title="Download" href="#" download>${icons.download}</a>
+                <div class="rss-seek-container">
+                    <div class="rss-seek-fill"></div>
+                    <input type="range" class="rss-seek-input" value="0" min="0" max="100" step="0.1" disabled>
                 </div>
-                
-                <div class="rss-time-display">
-                    <span class="curr-time">00:00</span> / <span class="total-time">00:00</span>
+
+                <div class="rss-toolbar">
+                    <div class="rss-time-display">
+                        <span class="curr">00:00:00</span><br><span class="total">00:00:00</span>
+                    </div>
+
+                    <div class="rss-transport">
+                        <button class="rss-btn" data-act="back" title="-7s">${icons.back}</button>
+                        <button class="rss-btn rss-play-btn" data-act="play" title="Play">${icons.play}</button>
+                        <button class="rss-btn" data-act="fwd" title="+30s">${icons.fwd}</button>
+                    </div>
+
+                    <div class="rss-extras">
+                        <button class="rss-btn rss-speed-btn" data-act="speed" title="Speed">1.0x</button>
+                        <a class="rss-btn" data-act="download" href="#" target="_blank" title="Save">${icons.download}</a>
+                    </div>
                 </div>
             </div>
 
             <div class="rss-playlist-controls">
-                <strong>Episodes</strong>
-                <button class="rss-sort-btn" title="Toggle Sort Order">
-                    ${state.sortAsc ? 'Oldest First ▲' : 'Newest First ▼'}
-                </button>
+                <span>Index // ${items.length} FILES</span>
+                <button class="rss-sort-btn">▼ Newest</button>
             </div>
+            <div class="rss-playlist"></div>`;
 
-            <div class="rss-playlist"></div>
-        `;
+        const audio = new Audio();
+        
+        const state = { 
+            idx: 0, 
+            playing: false, 
+            items: items, 
+            originalItems: [...items], 
+            sortAsc: (initialSort === 'asc') 
+        };
 
-        // References
-        const playlistEl = container.querySelector('.rss-playlist');
-        const playBtn = container.querySelector('.rss-play-btn');
-        const seekSlider = container.querySelector('.rss-seek');
-        const npText = container.querySelector('.rss-now-playing');
-        const sortBtn = container.querySelector('.rss-sort-btn');
-        const dlEl = container.querySelector('.rss-download-btn');
-        const currTimeEl = container.querySelector('.curr-time');
-        const totalTimeEl = container.querySelector('.total-time');
+        const els = {
+            np: container.querySelector('.rss-now-playing'),
+            fill: container.querySelector('.rss-seek-fill'),
+            seek: container.querySelector('.rss-seek-input'),
+            playBtn: container.querySelector('[data-act="play"]'),
+            speedBtn: container.querySelector('[data-act="speed"]'),
+            dlBtn: container.querySelector('[data-act="download"]'),
+            curr: container.querySelector('.curr'),
+            total: container.querySelector('.total'),
+            list: container.querySelector('.rss-playlist'),
+            sort: container.querySelector('.rss-sort-btn')
+        };
 
-        // --- RENDER LIST ---
-        function refreshList() {
-            playlistEl.innerHTML = '';
-            const displayItems = state.sortAsc ? [...state.items].reverse() : state.items;
+        function renderList() {
+            if (isSingle) return;
+            els.list.innerHTML = '';
+            
+            state.items = state.sortAsc ? [...state.originalItems].reverse() : [...state.originalItems];
+            els.sort.textContent = state.sortAsc ? "▲ Oldest" : "▼ Newest";
 
-            displayItems.forEach((item, index) => {
-                // Find original index in the main array (for playback logic)
-                const originalIndex = state.items.indexOf(item);
-                
-                const title = item.querySelector('title').textContent;
-                const row = document.createElement('div');
-                row.className = `rss-row ${state.currentIdx === originalIndex ? 'active' : ''}`;
-                row.textContent = title;
-                row.onclick = () => loadEpisode(originalIndex);
-                playlistEl.appendChild(row);
+            state.items.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.className = 'rss-row';
+                div.textContent = item.title;
+                div.onclick = () => loadTrack(item); 
+                if (audio.src === item.src || (audio.src && audio.src.endsWith(item.src))) {
+                    div.classList.add('active');
+                }
+                els.list.appendChild(div);
             });
         }
 
-        // --- AUDIO LOGIC ---
-        function loadEpisode(index) {
-            // Update UI Selection
-            const rows = playlistEl.querySelectorAll('.rss-row');
-            // Reset active classes (rough, better to re-render list but this is cheaper)
-            refreshList(); 
-
-            state.currentIdx = index;
-            const item = state.items[index];
-            const title = item.querySelector('title').textContent;
-            const enclosure = item.querySelector('enclosure');
-            
-            if (!enclosure) return alert("No audio file found for this episode.");
-            
-            const audioSrc = enclosure.getAttribute('url');
-            
-            state.audio.src = audioSrc;
-            npText.textContent = title;
-            state.audio.load();
-
-            // Update download button href and filename (if present)
-            const dlEl = container.querySelector('.rss-download-btn');
-            if (dlEl) {
-                try {
-                    const resolved = new URL(audioSrc, window.location.href).href;
-                    dlEl.href = resolved;
-                    const pathname = new URL(resolved).pathname || '';
-                    const fname = pathname.split('/').pop().split('?')[0] || 'episode';
-                    dlEl.setAttribute('download', fname);
-                } catch (e) {
-                    dlEl.href = audioSrc;
-                    dlEl.removeAttribute('download');
-                }
-            }
-            
-            // Auto play
-            togglePlay(true);
-        }
-
-        function togglePlay(forcePlay) {
-            if (forcePlay === true || state.audio.paused) {
-                state.audio.play().then(() => {
-                    playBtn.textContent = '⏸';
-                    seekSlider.disabled = false;
-                }).catch(e => console.error(e));
-            } else {
-                state.audio.pause();
-                playBtn.textContent = '▶';
-            }
-        }
-
-        // --- EVENT LISTENERS ---
-
-        // 1. Sort Toggle
-        sortBtn.onclick = () => {
-            state.sortAsc = !state.sortAsc;
-            sortBtn.textContent = state.sortAsc ? 'Oldest First ▲' : 'Newest First ▼';
-            refreshList();
-        };
-
-        // 2. Transport Controls
-        container.querySelectorAll('[data-action]').forEach(btn => {
-            btn.onclick = () => {
-                const action = btn.dataset.action;
-                if (action === 'play') togglePlay();
-                if (action === 'back7') state.audio.currentTime -= 7;
-                if (action === 'fwd15') state.audio.currentTime += 15;
-            };
-        });
-
-        // 2b. Download handler: try fetch+blob to force download, fallback to opening the file
-        if (dlEl) {
-            dlEl.addEventListener('click', async (e) => {
-                e.preventDefault();
-                const url = dlEl.href || dlEl.dataset.src;
-                if (!url) return;
-                try {
-                    const resp = await fetch(url, { mode: 'cors' });
-                    if (!resp.ok) throw new Error('Network response was not ok');
-                    const blob = await resp.blob();
-                    const blobUrl = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = blobUrl;
-                    a.download = dlEl.getAttribute('download') || 'episode';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-                } catch (err) {
-                    // If fetch fails (likely CORS), open in new tab as fallback
-                    window.open(url, '_blank', 'noopener');
-                }
+        function loadTrack(item) {
+            const rows = els.list.querySelectorAll('.rss-row');
+            state.items.forEach((it, i) => {
+                if (it === item) rows[i]?.classList.add('active');
+                else rows[i]?.classList.remove('active');
             });
+
+            audio.src = item.src;
+            if (!isSingle) els.np.textContent = "BUFFERING...";
+            els.dlBtn.href = item.src;
+
+            audio.load();
+            audio.play()
+                .then(() => updatePlayBtn(true))
+                .catch(e => console.log("Auto-play prevented", e));
         }
 
-        // 3. Seek Bar
-        seekSlider.oninput = (e) => {
-            const pct = e.target.value;
-            const time = (pct / 100) * state.audio.duration;
-            state.audio.currentTime = time;
+        function updatePlayBtn(isPlaying) {
+            state.playing = isPlaying;
+            // SWAP THE HTML TO USE THE MASKED ICON
+            els.playBtn.innerHTML = isPlaying ? icons.pause : icons.play;
+            els.seek.disabled = false;
+        }
+
+        container.onclick = (e) => {
+            const act = e.target.closest('[data-act]')?.dataset.act;
+            if (!act) return;
+
+            if (act === 'play') {
+                if (audio.paused) {
+                    if (!audio.src) loadTrack(state.items[0]);
+                    else audio.play();
+                } else {
+                    audio.pause();
+                }
+            }
+            if (act === 'back') audio.currentTime -= 7;
+            if (act === 'fwd') audio.currentTime += 30;
+            
+            if (act === 'speed') {
+                const rates = [1.0, 1.25, 1.5, 2.0];
+                let cur = rates.indexOf(audio.playbackRate);
+                let next = rates[(cur + 1) % rates.length];
+                audio.playbackRate = next;
+                els.speedBtn.textContent = next + "x";
+            }
         };
 
-        // 4. Audio Events
-        state.audio.ontimeupdate = () => {
-            if (state.audio.duration) {
-                const pct = (state.audio.currentTime / state.audio.duration) * 100;
-                seekSlider.value = pct;
-                currTimeEl.textContent = formatTime(state.audio.currentTime);
-                totalTimeEl.textContent = formatTime(state.audio.duration);
-            }
+        audio.onplay = () => updatePlayBtn(true);
+        audio.onpause = () => updatePlayBtn(false);
+        audio.onloadedmetadata = () => {
+             els.total.textContent = fmt(audio.duration);
+             if(!isSingle) els.np.textContent = state.items.find(i => i.src === audio.getAttribute('src'))?.title || "Playing";
         };
         
-        state.audio.onended = () => {
-            playBtn.textContent = '▶';
+        audio.ontimeupdate = () => {
+            if (!audio.duration) return;
+            const pct = (audio.currentTime / audio.duration) * 100;
+            els.fill.style.width = pct + '%';
+            els.seek.value = pct;
+            els.curr.textContent = fmt(audio.currentTime);
+        };
+        
+        audio.onended = () => updatePlayBtn(false);
+
+        els.seek.oninput = (e) => {
+            const time = (e.target.value / 100) * audio.duration;
+            audio.currentTime = time;
         };
 
-        // Initial List Render
-        refreshList();
-        // Load first ep (paused)
-        loadEpisode(0);
-        togglePlay(false); // Stop it from auto playing on page load
-        state.audio.currentTime = 0;
+        els.sort.onclick = () => {
+            state.sortAsc = !state.sortAsc;
+            renderList();
+        };
+
+        renderList();
+        
+        if (isSingle) {
+            loadTrack(state.items[0]); 
+            audio.pause(); 
+            audio.currentTime = 0;
+            els.np.textContent = "READY";
+        }
     }
 
-    // Helper: Seconds -> MM:SS
-    function formatTime(s) {
-        const mins = Math.floor(s / 60);
-        const secs = Math.floor(s % 60);
-        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    function fmt(s) {
+        if (!s || isNaN(s)) return "00:00";
+        const m = Math.floor((s / 60)%60);
+        const h = Math.floor(m / 60);
+        const sec = Math.floor(s % 60);
+        return `${h<10? '0':''}${h}:${m<10? '0':''}${m}:${sec < 10 ? '0' : ''}${sec}`;
     }
-
 })();
