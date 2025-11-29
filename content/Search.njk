@@ -4,6 +4,7 @@ layout: layout.njk
 title: "Search The Bodgelab"
 eleventyExcludeFromCollections: true
 directory: true 
+uid: search
 download: false 
 ---
 
@@ -33,9 +34,9 @@ download: false
     color: var(--text-muted);
   }
 </style>
-
+<div>
 <input type="search" id="search-box" placeholder="Start typing to search..." autofocus>
-
+</div>
 <div id="search-results">
   <p><i>Waiting you to start typing...</i></p>
 </div>

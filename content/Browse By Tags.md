@@ -5,15 +5,15 @@ title: Browse By Tags
 directory: true
 download: false
 uid: 8d9044b3
-contentHash: 9833d6bb
-date: '2025-11-19T22:06:10.632Z'
+contentHash: 468db015
+date: '2025-11-29T20:50:41.806Z'
 ---
 
 ## Browse By Tags
 
 Click a tag to see all posts associated with it.
 
-<ul class="tag-list">
+<ul>
 {% for tag in collections.tagList %}
   <li><a href="/tags/{{ tag | slugify }}/">{{ tag }}</a></li>
 {% endfor %}

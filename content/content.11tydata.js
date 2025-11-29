@@ -246,6 +246,28 @@ module.exports = {
       // Find the last slash and get everything before it
       return my_url.substring(0, my_url.lastIndexOf('/')) + '/';
     },
+    
+    directoryParentUrl: data => {
+      // 1. Get the directory node we are currently listing
+      const dirNode = getDirectoryNode(data);
+      
+      // If we are at root or can't find the node, no parent exists
+      if (!dirNode || dirNode.webPath === '/' || dirNode.webPath === '') {
+        return null;
+      }
+
+      // 2. Calculate the parent of the LISTED directory
+      // (Not necessarily the parent of the current page)
+      let my_url = dirNode.webPath;
+      
+      // Ensure we treat it as a directory path
+      if (my_url.length > 1 && my_url.endsWith('/')) {
+        my_url = my_url.slice(0, -1);
+      }
+      
+      // Return the path up to the last slash
+      return my_url.substring(0, my_url.lastIndexOf('/')) + '/';
+    },
 
     directoryContents: data => {
       // Use the helper to find the correct directory node
@@ -307,7 +329,11 @@ module.exports = {
         // FOR MEDIA FILES
         else if (item.isMedia) {
           // Link to the media *page*, not the raw file
-          files.push({ name: item.name, url: `${cleanUrl}${item.name}.html` });
+          files.push({ 
+            name: item.name, 
+            url: `${cleanUrl}${item.name}.html`,
+            downloadUrl: `${cleanUrl}${item.name}`,
+         });
         }
       }
 

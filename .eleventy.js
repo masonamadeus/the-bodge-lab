@@ -359,14 +359,57 @@ module.exports = function (eleventyConfig) {
     // Allow manual title, or fallback to filename
     const displayTitle = title || path.basename(resolvedSrc);
     
-    // We reuse 'bodge-rss-player' class to trigger the JS
-    // We add 'single-track' to help CSS hide the playlist
+    // We add 'Single-track' to help CSS hide the playlist
     return `<div class="bodge-rss-player single-track" data-src="${resolvedSrc}" data-title="${displayTitle}">
         <div class="rss-loading">
              <img src="/content/.config/3dloading.svg" alt="Loading..." style="width: 50px; height: 50px;">
              <p>Loading Audio...</p>
         </div>
-    </div><script src="/js/podcast-player.js" defer></script>`; 
+    </div><script src="/js/bodge-player.js" defer></script>`; 
+  });
+
+  // AUDIO PLAYLIST FROM ADJACENT FILES
+  eleventyConfig.addShortcode("playlist", function (title) {
+    const validExtensions = ['.mp3', '.m4a', '.wav', '.ogg', '.aac'];
+    
+    // Identify the folder where this page lives
+    const pageDir = path.dirname(this.page.inputPath);
+    
+    // Scan that specific folder
+    let allFiles = [];
+    if (fs.existsSync(pageDir)) {
+        const files = fs.readdirSync(pageDir);
+        files.forEach(file => {
+           if (validExtensions.includes(path.extname(file).toLowerCase())) {
+             allFiles.push(file); // Store just the filename
+           }
+        });
+    }
+
+    // Sort Naturally (e.g. "Track 1", "Track 2", "Track 10")
+    allFiles.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+    if (allFiles.length === 0) return "";
+
+    // Build JSON Data
+    const playlistData = allFiles.map(filename => {
+        // We reuse your existing resolveSrc function to generate the correct URL
+        // (This ensures consistency with how single audio files are handled)
+        const src = resolveSrc.call(this, filename);
+        
+        return {
+            title: filename.replace(path.extname(filename), ""), // Title = Filename without ext
+            src: src
+        };
+    });
+
+    const jsonString = JSON.stringify(playlistData).replace(/"/g, '&quot;');
+    const displayTitle = title || "Folder Index";
+    
+    // If only 1 file is found, mark it single-track to hide the list UI
+    const modeClass = playlistData.length === 1 ? 'single-track' : '';
+
+    return `<div class="bodge-rss-player ${modeClass}" data-playlist="${jsonString}" data-title="${displayTitle}"><div class="rss-loading"><img src="/content/.config/3dloading.svg" alt="Loading..." style="width: 50px; height: 50px;"><p>Indexing...</p></div></div><script src="/js/bodge-player.js" defer></script>`;
   });
 
   // Image Shortcode
@@ -475,7 +518,7 @@ module.exports = function (eleventyConfig) {
              <img src="/content/.config/3dloading.svg" alt="Loading..." style="width: 50px; height: 50px;">
              <p>Tuning in...</p>
         </div>
-      </div><script src="/js/podcast-player.js" defer></script>`;
+      </div><script src="/js/bodge-player.js" defer></script>`;
   });
 
   //#endregion

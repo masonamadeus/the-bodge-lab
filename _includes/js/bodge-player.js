@@ -41,6 +41,19 @@
         const isSingle = container.classList.contains('single-track');
         const initialSort = container.dataset.sortOrder || "desc";
 
+        if (container.dataset.playlist) {
+            try {
+                items = JSON.parse(container.dataset.playlist);
+                // If title is missing, try to use the one passed in, or a generic one
+                showTitle = container.dataset.title || "Audio Collection";
+                
+                // Optional: Check if there's a cover.jpg in the playlist folder?
+                // For now, we leave showArt null so it hides gracefully.
+            } catch (e) {
+                console.error("Playlist Parse Error", e);
+            }
+        }
+        
         if (container.dataset.rssUrl) {
             try {
                 const res = await fetch(container.dataset.rssUrl);
@@ -99,7 +112,7 @@
 
                     <div class="rss-extras">
                         <button class="rss-btn rss-speed-btn" data-act="speed" title="Speed">1.0x</button>
-                        <a class="rss-btn" data-act="download" href="#" target="_blank" title="Save">${icons.download}</a>
+                        <a class="rss-btn" data-act="download" href="#" title="Save" download>${icons.download}</a>
                     </div>
                 </div>
             </div>

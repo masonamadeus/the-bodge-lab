@@ -84,7 +84,7 @@
                             </a>
                             
                             <a class="page-download-btn nowrap" href="{{ download_href | safe }}" download="{{ download_filename | safe }}" title='Download "{{ download_filename | safe }}"'>
-                                DOWNLOAD ⤓
+                                DOWNLOAD POST ⤓
                             </a>
                         </p>
                     </div>
@@ -101,8 +101,8 @@
             {% if hasContent %}
                 <section class="directory-container">
                     <div class="directory-header">
-                        {% if parentUrl %}
-                            <a href="{{ parentUrl }}" class="nav-link-small up">..\
+                        {% if directoryParentUrl %}
+                            <a href="{{ directoryParentUrl }}" class="nav-link-small up">..\
                             </a>
                         {% endif %}
                         <h3 class="directory-title">{{ directoryTitle | safe }}</h3>
@@ -133,7 +133,8 @@
                             {% for file in directoryContents.files %}
                                 <li>
                                     <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
-                                    <a style="nowrap" href="{{ file.url }}">{{ file.name }}</a>
+                                    <a class="nowrap" href="{{ file.url }}">{{ file.name }}</a>
+                                    <a href="{{ file.downloadUrl }}" download class="dir-download-icon" title="Download {{ file.name }}"></a>
                                 </li>
                             {% endfor %}
                         </ul>
@@ -146,6 +147,7 @@
         {% endif %}
         {% if uid %}
             <script>
+                /*
                 // REPLACE URL IN BAR WITH SHARELINK
                 (function () { // 1. This is the "permanent" URL
                     const permanentUrl = "/s/{{ uid }}/";
@@ -158,6 +160,7 @@
                         history.replaceState(null, "", permanentUrl);
                     }
                 })();
+                //*/
             </script>
         {% endif %}
         <script src="/js/main.js"></script>
