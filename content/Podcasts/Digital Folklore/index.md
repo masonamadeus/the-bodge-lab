@@ -1,8 +1,8 @@
 ---
 title: Digital Folklore Index
 uid: digital-folklore
-contentHash: 2597554e
-date: '2025-11-21T22:13:31.356Z'
+contentHash: ed1d4c46
+date: '2025-11-29T01:23:12.997Z'
 ---
 
 # Digital Folklore

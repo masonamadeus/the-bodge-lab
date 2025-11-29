@@ -1,6 +1,8 @@
 ---
-title: "Alabaster's Haberdashery"
-uid: 'allyhab'
+title: Alabaster's Haberdashery
+uid: allyhab
+contentHash: 737ad29e
+date: '2025-11-29T01:23:12.987Z'
 ---
 
 # Alabaster's Haberdashery

@@ -1,6 +1,8 @@
 ---
-title: "109.1 WIDK - iDunnoRadio"
+title: 109.1 WIDK - iDunnoRadio
 uid: idunnoradio
+contentHash: 974d2cce
+date: '2025-11-29T01:23:12.993Z'
 ---
 
 # 109.1 WIDK - iDunnoRadio
