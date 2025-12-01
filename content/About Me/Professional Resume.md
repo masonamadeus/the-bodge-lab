@@ -1,7 +1,7 @@
 ---
 uid: mason-resume
-contentHash: 2fb781c4
-date: '2025-11-19T22:06:10.631Z'
+contentHash: 353c91c0
+date: '2025-12-01T23:37:00.725Z'
 ---
 
 # Mason Amadeus Washer 
@@ -18,8 +18,7 @@ ___
 
 * Co-Creator of *Digital Folklore*, winner of multiple Signal Awards for production quality and hosting.
 * Creative Director @ 8th Layer Media since 2022.
-* 8 years in terrestrial radio broadcasting.
-* 3 years as sole assistant to the Chief Engineer. 
+* 8 years in terrestrial radio broadcasting, 3 years as sole assistant to Chief Engineer.
 * Expert in audio post production; highly proficient in other creative software including video editing and 3D. 
 * 1 Year as Regional IT Manager for six separate clusters throughout New England; sysadmin, inventory/logistics, helpdesk, scripting, etc. 
 
@@ -36,9 +35,9 @@ ___
 
 ___
 
-## Professional History 
+# Professional History 
 
-### 8th Layer Media - Remote (July 2022 - Present)
+## 8th Layer Media - Remote (July 2022 - Present)
 
 #### Co-Creator / Executive Producer / Sound Designer for [Digital Folklore](https://digitalfolklore.fm) Podcast
 * Achieved critical acclaim for [Digital Folklore](https://digitalfolklore.fm) with multiple Signal Awards, winning Gold for *Best Co-Host Team* and *Best Trailer*, Silver for *Best Indie Podcast*, and Bronze for *Most Innovative Audio Experience*.
@@ -51,7 +50,9 @@ ___
 * Co-host and executive producer for The FAIK Files (on the [Cyberwire Network](https://thecyberwire.com/podcasts/the-faik-files)).
 * Creator, editor, and host of [Wicked Interesting](/Video/Wicked%20Interesting/).
 
-### Monadnock Broadcasting Group - Keene, NH (April 2014 - July 2022) 
+<br>
+
+## Monadnock Broadcasting Group - Keene, NH (April 2014 - July 2022) 
 
 #### Regional IT Manager (Promoted in June 2021) 
 * Managed all IT requirements for six separate clusters in NH, MA, and VT. 
@@ -72,10 +73,14 @@ ___
 * Filled in when necessary for other staff, including Production Director and morning show hosts. 
 * Wrote and produced radio commercials which won 3 NHAB awards for “Best Individual Radio Commercial” in 2016, 2017, and 2020.
 
-### DeMoulas Market Basket - Swanzey, NH (February 2011 - April 2014) 
+<br>
+
+## DeMoulas Market Basket - Swanzey, NH (February 2011 - April 2014) 
 
 #### Full-Time Grocery Associate 
 * Tracked/Ordered a single aisle of a mid-sized grocery store. (Peanut butter and candy; the best aisle.)
+
+<br>
 
 ___
 

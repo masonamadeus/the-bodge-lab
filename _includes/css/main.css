@@ -33,6 +33,10 @@
 /* =========================================
    2. GLOBAL RESET & TYPOGRAPHY
    ========================================= */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
 body {
   font-family: var(--body-font);
   color: var(--text-color);
@@ -198,6 +202,7 @@ iframe {
 
 .layout-col {
   flex-basis: 100%; /* Mobile First */
+  min-width:0;
 }
 
 /* Desktop Breakpoint */

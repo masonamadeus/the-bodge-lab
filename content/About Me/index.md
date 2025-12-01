@@ -1,8 +1,8 @@
 ---
 title: About Mason
 uid: about-mason
-contentHash: 0e84a82c
-date: '2025-11-29T01:23:12.968Z'
+contentHash: d89efacb
+date: '2025-12-01T23:37:00.724Z'
 ---
 
 
@@ -50,5 +50,7 @@ Let's be friends and make something cool together!
 ## Here's a demo reel I produced for my friend Josiah O'Knight!
 
 {%audio "Josiah O'Knight Demo (Prod. by Mason).mp3"%}
+
+## Here are some [Award-Winning Commercials](<Award-Winning Commercials>) I've produced!
 
 ## Or maybe you're looking for my [Professional Resume](Professional%20Resume.md)?
