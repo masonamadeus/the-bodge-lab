@@ -1,0 +1,358 @@
+---
+permalink: guestbook.html
+layout: layout.njk
+title: "Sign the Guestbook"
+eleventyExcludeFromCollections: true
+uid: guestbook
+---
+
+<!-- Cloudflare Turnstile Script -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<style>
+    /* Theme Variables */
+    .guestbook-form {
+        background: var(--bg-muted);
+        border: 1px dashed var(--border-color);
+        padding: 1.5em;
+        margin-bottom: 2em;
+        position: relative;
+    }
+
+    .input-group { margin-bottom: 1.2em; }
+    
+    .input-group label {
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--mono-font);
+        font-weight: bold;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 0.85em;
+        margin-bottom: 0.4em;
+    }
+
+    .char-count { font-weight: normal; font-size: 0.9em; color: var(--text-muted); }
+    .char-count.limit-reached { color: #d32f2f; font-weight: bold; }
+
+    .input-group input, .input-group textarea, .search-input {
+        width: 100%;
+        padding: 0.8em;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        font-family: var(--body-font);
+        font-size: 1em;
+        border-radius: 0; 
+    }
+
+    .input-group input:focus, .input-group textarea:focus, .search-input:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: inset 4px 0 0 var(--accent-color);
+    }
+
+    .submit-button {
+        background: var(--accent-color);
+        color: var(--bg-color-bright);
+        border: none;
+        padding: 0.8em 1.5em;
+        font-family: var(--mono-font);
+        font-weight: bold;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        width: 100%;
+    }
+    .submit-button:hover { opacity: 0.9; }
+    .submit-button:disabled { background: var(--text-muted); cursor: not-allowed; }
+
+    /* Load More Button specific style (Outline style) */
+    .load-more-btn {
+        background: transparent;
+        color: var(--text-muted);
+        border: 1px solid var(--border-color);
+        margin-top: 1em;
+    }
+    .load-more-btn:hover {
+        background: var(--bg-muted);
+        color: var(--text-color);
+    }
+
+    /* List Styles */
+    .entries-container {
+    }
+
+    .search-bar-container {
+        padding: 1em;
+        background: var(--bg-muted);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .scrollable-list {
+        max-height: 700px; 
+        overflow-y: auto;
+        padding-top: 1em;
+        scrollbar-color: var(--accent-color) var(--bg-muted);
+        scrollbar-width: thin;
+    }
+
+    .entry {
+        padding: 1em;
+        margin-bottom: 1em;
+        border-left: 4px solid var(--border-color);
+        background: var(--bg-muted);
+    }
+    
+    .status-msg {
+        margin-top: 1em;
+        font-weight: bold;
+        font-family: var(--mono-font);
+        display: none;
+        padding: 0.5em;
+    }
+    .status-msg.error { color: #d32f2f; background: #ffebee; border: 1px solid #ffcdd2; }
+    .status-msg.success { color: var(--accent-color); background: var(--bg-muted); border: 1px solid var(--border-color); }
+</style>
+
+<h1>Sign the Guestbook!</h1>
+
+Leave me a message, ask me a question, just say hi! :)
+
+<div class="guestbook-form">
+    <div class="input-group">
+        <label>Name <span id="nameCount" class="char-count">0/50</span></label>
+        <input type="text" id="name" maxlength="50" placeholder="Your name (or alias)">
+    </div>
+
+    <div class="input-group">
+        <label>Message <span id="msgCount" class="char-count">0/500</span></label>
+        <textarea id="message" maxlength="500" rows="3" placeholder="Leave a note..."></textarea>
+    </div>
+
+    <div style="margin-bottom: 1em;">
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAACEZQxTYyvkgzXXv"></div>
+    </div>
+
+    <button id="submitBtn" class="submit-button" onclick="submitEntry()">Sign Guestbook</button>
+    <div id="statusMsg" class="status-msg"></div>
+</div>
+
+<hr>
+
+<h3>Read the Guestbook!</h3>
+
+<div class="entries-container">
+    <div class="search-bar-container">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search the guestbook...">
+    </div>
+
+    <div id="entries-list" class="scrollable-list">
+        <p class="loading">Loading entries...</p>
+    </div>
+    
+    <!-- Load More Button (Hidden by default) -->
+    <div style="padding: 0 1em 1em 1em;">
+        <button id="loadMoreBtn" class="load-more-btn" style="display:none;" onclick="loadMore()">
+            Load More...
+        </button>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://guestbook-backend.bodgelab.workers.dev"; 
+    const COOLDOWN_HOURS = 8;
+    const STORAGE_KEY = 'guestbook_last_signed';
+    const LIMIT = 50;
+
+    let allEntries = [];
+    let currentOffset = 0;
+    let isLoading = false;
+
+    // --- CHARACTER COUNTERS ---
+    const nameInput = document.getElementById('name');
+    const msgInput = document.getElementById('message');
+    const nameCount = document.getElementById('nameCount');
+    const msgCount = document.getElementById('msgCount');
+
+    function updateCount(input, display, max) {
+        const len = input.value.length;
+        display.innerText = `${len}/${max}`;
+        if (len >= max) display.classList.add('limit-reached');
+        else display.classList.remove('limit-reached');
+    }
+    nameInput.addEventListener('input', () => updateCount(nameInput, nameCount, 50));
+    msgInput.addEventListener('input', () => updateCount(msgInput, msgCount, 500));
+
+    // --- SEARCH ---
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        
+        // Hide load more button while searching to avoid confusion
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        if (term.length > 0) {
+            loadMoreBtn.style.display = 'none';
+        } else {
+            // Restore button if we aren't at the end
+            loadMoreBtn.style.display = 'block'; 
+        }
+
+        const filtered = allEntries.filter(entry => 
+            entry.name.toLowerCase().includes(term) || 
+            entry.message.toLowerCase().includes(term)
+        );
+        renderEntries(filtered, true); // true = overwrite list
+    });
+
+    // --- FETCH & LOAD MORE ---
+    async function loadEntries(offset = 0) {
+        if (isLoading) return;
+        isLoading = true;
+        
+        const list = document.getElementById('entries-list');
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        
+        // Show loading state on button if it's visible
+        if (offset > 0) loadMoreBtn.innerText = "Loading...";
+
+        try {
+            const res = await fetch(`${API_URL}?offset=${offset}`);
+            const newEntries = await res.json();
+            
+            if (offset === 0) {
+                // First load
+                allEntries = newEntries;
+                renderEntries(allEntries, true);
+            } else {
+                // Append
+                allEntries = [...allEntries, ...newEntries];
+                renderEntries(newEntries, false); // false = append to list
+            }
+
+            // Hide/Show Load More Button
+            if (newEntries.length < LIMIT) {
+                loadMoreBtn.style.display = 'none'; // End of list
+            } else {
+                loadMoreBtn.style.display = 'block';
+                loadMoreBtn.innerText = "Load More...";
+            }
+            
+            currentOffset = offset;
+
+        } catch (err) {
+            if (offset === 0) list.innerHTML = "<p style='color:var(--text-muted)'>Failed to load entries.</p>";
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    function loadMore() {
+        const nextOffset = currentOffset + LIMIT;
+        loadEntries(nextOffset);
+    }
+
+    function renderEntries(entries, overwrite) {
+        const list = document.getElementById('entries-list');
+        
+        const html = entries.map(entry => {
+            const safeName = escapeHtml(entry.name);
+            const safeMsg = escapeHtml(entry.message);
+            const date = new Date(entry.created_at).toLocaleDateString();
+            return `
+                <div class="entry">
+                    <div>${safeMsg}</div>
+                    <div class="meta">signed by <strong>${safeName}</strong> on ${date}</div>
+                </div>
+            `;
+        }).join('');
+
+        if (overwrite) {
+            if (entries.length === 0) {
+                list.innerHTML = "<p style='padding:1em'>No entries found.</p>";
+            } else {
+                list.innerHTML = html;
+            }
+        } else {
+            list.insertAdjacentHTML('beforeend', html);
+        }
+    }
+
+    // --- SUBMISSION LOGIC ---
+    async function submitEntry() {
+        const btn = document.getElementById('submitBtn');
+        const name = nameInput.value;
+        const message = msgInput.value;
+
+        // Cooldown
+        const lastSigned = localStorage.getItem(STORAGE_KEY);
+        if (lastSigned) {
+            const diff = Date.now() - parseInt(lastSigned);
+            const hoursLeft = (COOLDOWN_HOURS - (diff / (1000 * 60 * 60))).toFixed(1);
+            if (diff < COOLDOWN_HOURS * 60 * 60 * 1000) {
+                showStatus(`You can sign again in ${hoursLeft} hours.`, 'error');
+                return;
+            }
+        }
+
+        if (typeof turnstile === 'undefined') {
+            showStatus("Error: Captcha not loaded. Refresh.", 'error');
+            return;
+        }
+        const token = turnstile.getResponse();
+
+        if (!name || !message || !token) {
+            showStatus("Please fill in fields and captcha.", 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Signing...";
+        
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, message, token })
+            });
+
+            if (res.ok) {
+                nameInput.value = '';
+                msgInput.value = '';
+                updateCount(nameInput, nameCount, 50);
+                updateCount(msgInput, msgCount, 500);
+                turnstile.reset(); 
+                localStorage.setItem(STORAGE_KEY, Date.now().toString());
+                showStatus("Signed successfully!", 'success');
+                
+                // Refresh list from top
+                loadEntries(0); 
+            } else {
+                const errText = await res.text();
+                throw new Error(errText);
+            }
+        } catch (err) {
+            showStatus("Error: " + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Sign Guestbook";
+        }
+    }
+
+    function showStatus(msg, type) {
+        const el = document.getElementById('statusMsg');
+        el.innerText = msg;
+        el.className = 'status-msg ' + type;
+        el.style.display = 'block';
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.innerText = text;
+        return div.innerHTML;
+    }
+
+    // Start
+    loadEntries(0);
+</script>

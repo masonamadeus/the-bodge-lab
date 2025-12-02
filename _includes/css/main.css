@@ -715,6 +715,68 @@ code { line-height: 1.4; }
   transform: none;
 }
 
+/* --- ACCORDION (Hide/Show) --- */
+details.bodge-accordion {
+  margin: 1em 0;
+  /* Optional: A subtle left border to visually group the hidden content when expanded */
+  border-left: 2px solid var(--border-color);
+  padding-left: 1em;
+}
+
+/* The Clickable Label */
+details.bodge-accordion summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--accent-color); /* Looks like a link */
+  font-family: var(--mono-font);
+  list-style: none; /* Hide default browser triangle */
+  position: relative;
+  padding-left: 1.2em; /* Space for our custom arrow */
+  user-select: none;
+}
+
+/* Remove default marker in Safari/Chrome */
+details.bodge-accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Custom Arrow (Subtle) */
+details.bodge-accordion summary::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+/* Rotate Arrow when Open */
+details.bodge-accordion[open] summary::before {
+  transform: rotate(90deg);
+}
+
+/* Hover Effect */
+details.bodge-accordion summary:hover {
+  text-decoration: underline;
+  color: var(--text-color);
+}
+details.bodge-accordion summary:hover::before {
+  color: var(--accent-color);
+}
+
+/* The Content Box */
+.bodge-accordion-content {
+  margin-top: 0.8em;
+  /* Simple Fade-in Animation */
+  animation: accordionFade 0.2s ease-out;
+}
+
+@keyframes accordionFade {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* =========================================
    12. SCROLLBARS & TOUCH
    ========================================= */

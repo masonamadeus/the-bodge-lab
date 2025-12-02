@@ -455,6 +455,7 @@ module.exports = function (eleventyConfig) {
   });
 
   // 3D Model Shortcode
+  // Usage: {% 3d "path/to/model.glb" %}
   eleventyConfig.addShortcode("3d", function (src) {
     const resolvedSrc = resolveSrc.call(this, src); // Resolve the path
     const filename = path.basename(resolvedSrc);
@@ -524,6 +525,7 @@ module.exports = function (eleventyConfig) {
   //#endregion
 
   // #region LAYOUT SHORTCODES
+
   // Layout Row (Flex Container)
   // Usage: {% row %} ... {% endrow %}
   eleventyConfig.addPairedShortcode("row", function (content) {
@@ -591,6 +593,16 @@ module.exports = function (eleventyConfig) {
     return `<div class="text-${safeAlignment}">\n${trimmedContent}\n</div>`;
   });
 
+  // Hide/Reveal Shortcode (Accordion)
+  // Usage: {% hide "Read More..." %} ...content... {% endhide %}
+  eleventyConfig.addPairedShortcode("hide", function(content, summary="Read More...") {
+    // 1. Render the Markdown inside the block
+    const renderedContent = mdLib.render(content);
+    
+    // 2. Return the <details> wrapper
+    return `
+      <details class="bodge-accordion"><summary>${summary}</summary><div class="bodge-accordion-content">${renderedContent}</div></details>`;
+  });
  
 
 

@@ -74,64 +74,98 @@ function getDirectoryNode(data) {
  *  Extracts H1, Excerpt and Image using Markdown Tokens
  */
 function parseMarkdownData(content, page) {
-  if (!content) return { h1: null, image: null, excerpt: null };
+  if (!content) return { h1: null, image: null, excerpt: null, media: null };
 
-  // 1. Parse tokens
   const tokens = md.parse(content, {});
   
   let h1 = null;
   let imagePath = null;
-  let textContent = ""; // For excerpt
+  let mediaPath = null;
+  let textContent = "";
 
+  // Extensions we consider "Playable" for Open Graph
+  const mediaExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.mp4', '.mov', '.mkv', '.webm'];
+
+  // 1. TOKEN SCAN (Standard Markdown)
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
 
     // FIND H1
-    // Look for heading_open with tag 'h1'
     if (!h1 && t.type === 'heading_open' && t.tag === 'h1') {
-      // The next token contains the inline text content
       if (tokens[i+1] && tokens[i+1].type === 'inline') {
         h1 = tokens[i+1].content;
       }
     }
 
-    // FIND IMAGE
-    // Look for 'image' token (standard markdown) OR the shortcode structure
-    // Since shortcodes {% image %} aren't parsed by markdown-it, we might still need regex for shortcodes specifically.
-    // BUT, if you use standard markdown images ![alt](src), this captures them.
-    if (!imagePath && t.type === 'image') {
-      imagePath = t.attrGet('src');
+    // FIND IMAGE (Standard ![alt](src))
+    if (t.type === 'image') {
+      const src = t.attrGet('src');
+      if (src) {
+          // Priority 1: Is this the first image? (Cover Art)
+          if (!imagePath) imagePath = src;
+          
+          // Priority 2: Is this actually a video/audio file? (Rare but possible in some parsers)
+          if (!mediaPath) {
+              const ext = path.extname(src).toLowerCase();
+              if (mediaExtensions.includes(ext)) mediaPath = src;
+          }
+      }
+    }
+
+    // FIND LINKS (Standard [Text](src))
+    // This catches hotlinked media files
+    if (t.type === 'link_open') {
+        const href = t.attrGet('href');
+        if (href && !mediaPath) {
+            const ext = path.extname(href).toLowerCase();
+            if (mediaExtensions.includes(ext)) {
+                mediaPath = href; 
+            }
+        }
     }
     
-    // BUILD EXCERPT (Accumulate text from paragraphs)
+    // BUILD EXCERPT
     if (t.type === 'inline' && tokens[i-1] && tokens[i-1].type === 'paragraph_open') {
         textContent += t.content + " ";
     }
   }
 
-  // FALLBACK: Shortcode Regex for Images
-  // Markdown-it ignores Nunjucks shortcodes, so we keep this ONLY for {% image %} tags
+  // 2. REGEX FALLBACKS (Shortcodes)
+  
+  // Fallback A: Image Shortcode {% image "..." %}
+  // Critical for posts that use the shortcode instead of markdown syntax
   if (!imagePath) {
-    const match = content.match(/\{%\s*image\s*\"([^\"]+)\"/);
-    if (match) imagePath = match[1];
+    const imgMatch = content.match(/\{%\s*image\s*["']([^"']+)["']/);
+    if (imgMatch) imagePath = imgMatch[1];
   }
 
-  // Process Image Path (Resolve relative to absolute)
-  if (imagePath) {
-    try {
-      const pageDir = path.dirname(page.inputPath);
-      const contentDir = path.resolve(__dirname); 
-      const physicalImagePath = path.resolve(pageDir, imagePath);
-      imagePath = '/' + path.relative(contentDir, physicalImagePath).replace(/\\/g, '/');
-    } catch (e) {
-      imagePath = null;
-    }
+  // Fallback B: Media Shortcodes {% video "..." %} or {% audio "..." %}
+  if (!mediaPath) {
+    const mediaMatch = content.match(/\{%\s*(video|audio)\s*["']([^"']+)["']/);
+    if (mediaMatch) mediaPath = mediaMatch[2];
   }
-  
+
+  // 3. PATH RESOLUTION (Relative -> Absolute)
+  // Helper to resolve paths relative to the content folder
+  const resolve = (p) => {
+      try {
+        if (!p.startsWith('http') && !p.startsWith('/')) {
+            const pageDir = path.dirname(page.inputPath);
+            const contentDir = path.resolve(__dirname);
+            const physicalPath = path.resolve(pageDir, p);
+            return '/' + path.relative(contentDir, physicalPath).replace(/\\/g, '/');
+        }
+      } catch (e) {}
+      return p;
+  };
+
+  if (imagePath) imagePath = resolve(imagePath);
+  if (mediaPath) mediaPath = resolve(mediaPath);
+
   // Process Excerpt
   const excerpt = textContent.slice(0, 155).trim() + (textContent.length > 155 ? "..." : "");
 
-  return { h1, image: imagePath, excerpt };
+  return { h1, image: imagePath, excerpt, media: mediaPath };
 }
 
 module.exports = {
