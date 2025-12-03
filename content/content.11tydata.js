@@ -441,62 +441,59 @@ module.exports = {
         (data._pageData && data._pageData.image) || 
         meta.defaultImage;
 
-      // --- Helper to fix the Ampersand Trap ---
+      // Helper for Ampersands
       const safeUrl = (urlStr) => {
           if (!urlStr) return null;
           return urlStr.replace(/&/g, '%26');
       };
 
       let mediaUrl = null;
-      // 1. Check generated media page
       if (data.media && data.media.url) mediaUrl = data.media.url;
-      // 2. Check detected media in post
       else if (data._pageData && data._pageData.media) mediaUrl = data._pageData.media;
 
-      // Base URLs
       const seoImage = safeUrl(imagePath.startsWith('http') ? imagePath : new URL(imagePath, meta.url).href);
       const seoUrl = safeUrl(new URL(page.url, meta.url).href);
       
       let seoMedia = null;
 
       if (mediaUrl) {
-          // A. YouTube Logic (Keep as is)
+          // A. YouTube (Keep as is - embeds work fine)
           if (mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be')) {
               seoMedia = {
-                  url: mediaUrl, 
-                  type: 'text/html', 
-                  tag: 'video'
+                  url: mediaUrl,
+                  type: 'text/html',
+                  tag: 'video',
+                  isYouTube: true
               };
-              // Thumbnail override logic
               if (imagePath === meta.defaultImage) {
                   const match = mediaUrl.match(/\/embed\/([^/?]+)/);
                   if (match) imagePath = `https://i.ytimg.com/vi/${match[1]}/maxresdefault.jpg`;
               }
           } 
-          // B. Local File Logic (Audio OR Video)
+          // B. Local File (The Split Strategy)
           else {
-              // FIX: FORCE PLAYER MODE
-              // Instead of linking to the raw file (audio/mpeg), we link to the
-              // generated HTML page (text/html) that hosts the player.
-              
-              // 1. Calculate the URL of the "Shadow Page" (file.ext -> file.ext.html)
-              // Note: If we are already ON the media page, seoUrl is correct.
-              // If we are on a blog post, we need to construct the link to the media asset's page.
-              
-              let playerUrl = seoUrl; // Default to current page
-              
-              if (!page.url.endsWith('.html')) {
-                  // We are in a blog post, but we want to embed the media page.
-                  // Construct absolute URL to the media asset's generated page.
-                  const assetUrl = new URL(mediaUrl, meta.url).href;
-                  playerUrl = assetUrl + ".html";
-              }
+              const mimeType = mime.lookup(mediaUrl);
+              if (mimeType) {
+                  // 1. Calculate Raw File URL (For Discord/Native Players)
+                  const rawFileUrl = new URL(mediaUrl, meta.url).href;
+                  
+                  // 2. Calculate HTML Page URL (For Twitter Iframe)
+                  let playerPageUrl = seoUrl;
+                  if (!page.url.endsWith('.html')) {
+                      playerPageUrl = rawFileUrl + ".html";
+                  }
 
-              seoMedia = {
-                  url: safeUrl(playerUrl), // Link to the HTML Page
-                  type: 'text/html',       // Treat as an Embeddable App
-                  tag: 'video'             // Force "Video" tag so it gets an iframe
-              };
+                  seoMedia = {
+                      // OG Tags get the RAW FILE (Native Player)
+                      rawUrl: safeUrl(rawFileUrl),
+                      rawType: mimeType,
+                      tag: mimeType.startsWith('audio') ? 'audio' : 'video',
+                      
+                      // Twitter Tags get the HTML PAGE (Iframe Player)
+                      playerUrl: safeUrl(playerPageUrl),
+                      isYouTube: false
+                  };
+              }
           }
       }
 

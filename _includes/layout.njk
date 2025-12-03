@@ -63,23 +63,44 @@
         property="og:type" content="website">
        {# --- PLAYABLE MEDIA LOGIC --- #}
         {% if seo.media %}
-            {# We forced 'video' tag in 11tydata, so this outputs og:video #}
-            <meta property="og:{{ seo.media.tag }}" content="{{ seo.media.url }}">
-            <meta property="og:{{ seo.media.tag }}:secure_url" content="{{ seo.media.url }}">
-            <meta property="og:{{ seo.media.tag }}:type" content="{{ seo.media.type }}">
+            {# 1. OPEN GRAPH (For Discord/Bluesky/Slack) #}
+            {# YouTube: Use standard video embed #}
+            {% if seo.media.isYouTube %}
+                <meta property="og:video" content="{{ seo.media.url }}">
+                <meta property="og:video:secure_url" content="{{ seo.media.url }}">
+                <meta property="og:video:type" content="text/html">
+                <meta property="og:video:width" content="1280">
+                <meta property="og:video:height" content="720">
             
-            {# Force Dimensions for the Player Card #}
-            <meta property="og:video:width" content="1280">
-            <meta property="og:video:height" content="720">
-            
-            {# Twitter Player Card (Critical for Bluesky/Discord Embeds) #}
+            {# Local Files: Point to RAW FILE so Discord uses native player #}
+            {% else %}
+                <meta property="og:{{ seo.media.tag }}" content="{{ seo.media.rawUrl }}">
+                <meta property="og:{{ seo.media.tag }}:secure_url" content="{{ seo.media.rawUrl }}">
+                <meta property="og:{{ seo.media.tag }}:type" content="{{ seo.media.rawType }}">
+                
+                {# If it's video, give dimensions to encourage a large card #}
+                {% if seo.media.tag == 'video' %}
+                    <meta property="og:video:width" content="1280">
+                    <meta property="og:video:height" content="720">
+                {% endif %}
+            {% endif %}
+
+            {# 2. TWITTER CARDS (For X) #}
+            {# They might respect the iframe player #}
             <meta name="twitter:card" content="player">
-            <meta name="twitter:player" content="{{ seo.media.url }}">
+            
+            {% if seo.media.isYouTube %}
+                <meta name="twitter:player" content="{{ seo.media.url }}">
+            {% else %}
+                <meta name="twitter:player" content="{{ seo.media.playerUrl }}">
+            {% endif %}
+            
             <meta name="twitter:player:width" content="1280">
             <meta name="twitter:player:height" content="720">
             <meta name="twitter:image" content="{{ seo.image }}">
+            
         {% else %}
-            {# Default Summary Card #}
+            {# Default Card #}
             <meta name="twitter:card" content="summary_large_image">
             <meta name="twitter:image" content="{{ seo.image }}">
         {% endif %}
