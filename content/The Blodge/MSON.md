@@ -1,11 +1,11 @@
 ---
 uid: how-i-got-like-this
-contentHash: f4796b09
-date: '2025-12-02T22:19:11.594Z'
+contentHash: 8b22d2a1
+date: '2025-12-03T03:20:23.405Z'
 ---
 
-# Why Am I The Way That I Am?
+# My Zero Academia
 
-Testing testing 1 2 3
+coming soon
 
-{%hide "Click this biznatch"%}For some more bisnaztchiness{%endhide%}
+{%hide "Click this dropdown"%}cool it worked{%endhide%}
