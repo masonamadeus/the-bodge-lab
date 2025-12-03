@@ -61,31 +61,28 @@
         <meta property="og:url" content="{{ seo.url }}">
         <meta
         property="og:type" content="website">
-        {# --- PLAYABLE MEDIA LOGIC --- #}
-    {% if seo.media %}
-        <meta property="og:{{ seo.media.tag }}" content="{{ seo.media.url }}">
-        <meta property="og:{{ seo.media.tag }}:secure_url" content="{{ seo.media.url }}">
-        <meta property="og:{{ seo.media.tag }}:type" content="{{ seo.media.type }}">
-        
-        {# UNIVERSAL PLAYER STRATEGY #}
-        {# We treat BOTH Video and Audio as "Players" so they get iframes #}
-        <meta name="twitter:card" content="player">
-        
-        {# Determine the Embed URL #}
-        {# For YouTube/Files, seo.media.url is usually the direct file. #}
-        {# But for a "Player Card", this URL must return an HTML page with a video/audio tag. #}
-        {# Since you are sharing generated pages (media.njk), the current page URL is the player! #}
-        <meta name="twitter:player" content="{{ seo.url }}">
-        
-        <meta name="twitter:player:width" content="1280">
-        <meta name="twitter:player:height" content="720">
-        <meta name="twitter:image" content="{{ seo.image }}">
-        
-    {% else %}
-        {# Default Card for Text Posts #}
-        <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:image" content="{{ seo.image }}">
-    {% endif %}
+       {# --- PLAYABLE MEDIA LOGIC --- #}
+        {% if seo.media %}
+            {# We forced 'video' tag in 11tydata, so this outputs og:video #}
+            <meta property="og:{{ seo.media.tag }}" content="{{ seo.media.url }}">
+            <meta property="og:{{ seo.media.tag }}:secure_url" content="{{ seo.media.url }}">
+            <meta property="og:{{ seo.media.tag }}:type" content="{{ seo.media.type }}">
+            
+            {# Force Dimensions for the Player Card #}
+            <meta property="og:video:width" content="1280">
+            <meta property="og:video:height" content="720">
+            
+            {# Twitter Player Card (Critical for Bluesky/Discord Embeds) #}
+            <meta name="twitter:card" content="player">
+            <meta name="twitter:player" content="{{ seo.media.url }}">
+            <meta name="twitter:player:width" content="1280">
+            <meta name="twitter:player:height" content="720">
+            <meta name="twitter:image" content="{{ seo.image }}">
+        {% else %}
+            {# Default Summary Card #}
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:image" content="{{ seo.image }}">
+        {% endif %}
     </head>
     <body>
         <header>
