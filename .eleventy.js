@@ -427,22 +427,28 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addShortcode("embed", function (src, ratioOrClass) {
     const resolvedSrc = resolveSrc.call(this, src);
     const filename = decodeURIComponent(path.basename(resolvedSrc));
+    const ext = path.extname(filename).toLowerCase();
     
     let customStyle = "";
     let customClass = "";
     
     if (ratioOrClass) {
-      // Detection: Does it look like a ratio (numbers/numbers)?
       if (/^\d+(\.\d+)?\/\d+(\.\d+)?$/.test(ratioOrClass)) {
-        // It's a direct ratio (e.g. "16/9"). Lock it in style.
         customStyle = `aspect-ratio: ${ratioOrClass}; height: auto;`;
       } else {
-        // It's a class name (e.g. "pocketpal-mode"). Add it to class list.
         customClass = ratioOrClass;
       }
     } else {
-        // Default fallback if nothing provided
         customStyle = `background-color:light-dark(#FFFFFF,#000000);`;
+    }
+
+    // Detect if this is a text file we can copy
+    const copyableExts = ['.txt', '.md', '.json', '.js', '.css', '.html', '.bat', '.sh', '.xml', '.yml', '.ini', '.cfg'];
+    let copyButton = "";
+    
+    if (copyableExts.includes(ext)) {
+        // We add a button that JS will hook onto later
+        copyButton = `<button class="text-copy-btn" title="Copy text content">COPY TEXT</button>`;
     }
 
     return `<div class="media-embed-wrapper">
@@ -451,7 +457,10 @@ module.exports = function (eleventyConfig) {
       <p>Your browser does not support embedded frames. <a href="${resolvedSrc}">Download the file</a> to view it.</p>
     </iframe>
   </p>
-  <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p></div>`;
+  <p class="download-btn-container">
+    <a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a>
+    ${copyButton}
+  </p></div>`;
   });
 
   // 3D Model Shortcode

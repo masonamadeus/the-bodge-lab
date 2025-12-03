@@ -32,7 +32,7 @@ Here are commercials I created that won! I'll put them in order according to my 
 
 ``
 
-### Karl Roberts Cuts for Men - Back to School 2017
+## Karl Roberts Cuts for Men - Back to School 2017
 
 {% audio "KarlRoberts_GraniteMike2017.mp3" %}
 
@@ -46,7 +46,7 @@ At least, I think so. 🤷‍♂️
 
 {%grid "two-thirds, one-third"%}
 
-### Salsa Sisters - General 2020
+## Salsa Sisters - General 2020
 
 {%audio "SalsaSisters_GraniteMike2020.mp3"%}
 
@@ -68,7 +68,7 @@ It was a blast, they loved it, and it won "Best Individual Commercial" in the NH
 
 ``
 
-### Fran's Auto Body - Accident Rap 2016
+## Fran's Auto Body - Accident Rap 2016
 
 {%audio "FransRap_GraniteMike2016.mp3"%}
 

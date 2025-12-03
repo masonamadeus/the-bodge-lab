@@ -1,13 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        {# --- DYNAMIC BODGE FAVICON (Decayed + Solid + Dark Mode) --- #}
+        <script>
+            (function () { // 1. Config
+                const size = 5;
+                // 2. Color Generation (HSL)
+                const hue = Math.floor(Math.random() * 360);
+                const colorLight = `hsl(${hue}, 80%, 40%)`; // Darker for Light Mode
+                const colorDark = `hsl(${hue}, 80%, 70%)`;
+                // Lighter for Dark Mode
+                // 3. Generate Pattern (Mirrored + Random Opacity)
+                let rects = '';
+                for (let x = 0; x < Math.ceil(size / 2); x++) {
+                    for (let y = 0; y < size; y++) {
+                        if (Math.random() > 0.5) { // Random Opacity (The "Decayed" Look)
+                            const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                            // Draw Left Pixel
+                            rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${alpha}" />`;
+                            // Draw Mirror Pixel (if not center column)
+                            if (x < Math.floor(size / 2)) {
+                                rects += `<rect x="${
+                                    size - 1 - x
+                                }" y="${y}" width="1" height="1" opacity="${alpha}" />`;
+                            }
+                        }
+                    }
+                }
+                // 4. Construct SVG (Solid Fill + Dark Mode Support)
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">
+            <style>
+                rect { fill: ${colorLight}; }
+                @media (prefers-color-scheme: dark) {
+                    rect { fill: ${colorDark}; } 
+                }
+            </style>
+            ${rects}
+        </svg>`;
+                // 5. Inject
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+            })();
+        </script>
+        <link href="/css/prism.css" rel="stylesheet"/>
+        <link rel="stylesheet" href="/css/main.css">
         <script src="/js/theme.js"></script>
         <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-        <link rel="stylesheet" href="/css/main.css">
-        <link href="/css/prism.css" rel="stylesheet"/>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin
-        
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <meta charset="UTF-8">
         <title>BodgeLab: {{ title }}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,13 +59,33 @@
         <meta property="og:description" content="{{ seo.description }}">
         <meta property="og:image" content="{{ seo.image }}">
         <meta property="og:url" content="{{ seo.url }}">
-        <meta property="og:type" content="website">
-        <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="BodgeLab: {{ title }}">
-        <meta name="twitter:description" content="{{ seo.description }}">
-        <meta name="twitter:image" content="{{ seo.image }}">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta
+        property="og:type" content="website">
+        {# --- PLAYABLE MEDIA LOGIC --- #}
+    {% if seo.media %}
+        <meta property="og:{{ seo.media.tag }}" content="{{ seo.media.url }}">
+        <meta property="og:{{ seo.media.tag }}:secure_url" content="{{ seo.media.url }}">
+        <meta property="og:{{ seo.media.tag }}:type" content="{{ seo.media.type }}">
         
+        {# UNIVERSAL PLAYER STRATEGY #}
+        {# We treat BOTH Video and Audio as "Players" so they get iframes #}
+        <meta name="twitter:card" content="player">
+        
+        {# Determine the Embed URL #}
+        {# For YouTube/Files, seo.media.url is usually the direct file. #}
+        {# But for a "Player Card", this URL must return an HTML page with a video/audio tag. #}
+        {# Since you are sharing generated pages (media.njk), the current page URL is the player! #}
+        <meta name="twitter:player" content="{{ seo.url }}">
+        
+        <meta name="twitter:player:width" content="1280">
+        <meta name="twitter:player:height" content="720">
+        <meta name="twitter:image" content="{{ seo.image }}">
+        
+    {% else %}
+        {# Default Card for Text Posts #}
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="{{ seo.image }}">
+    {% endif %}
     </head>
     <body>
         <header>
@@ -44,7 +107,8 @@
                         {% endif %}
                     {% endfor %}
                 </div>
-                <div class="page-nav">
+                <div
+                    class="page-nav">
                     {# Right Side: Parent Link #}
                     {% if parentUrl %}
                         <div>
@@ -82,7 +146,6 @@
                             <p class="download-btn-container"> <a class="page-share-btn" href="/s/{{ uid }}/" title="Get permanent link">
                                 SHARE⇗
                             </a>
-                            
                             <a class="page-download-btn nowrap" href="{{ download_href | safe }}" download="{{ download_filename | safe }}" title='Download "{{ download_filename | safe }}"'>
                                 DOWNLOAD POST ⤓
                             </a>
@@ -146,8 +209,7 @@
             {% endif %}
         {% endif %}
         {% if uid %}
-            <script>
-                /*
+            <script>/*
                 // REPLACE URL IN BAR WITH SHARELINK
                 (function () { // 1. This is the "permanent" URL
                     const permanentUrl = "/s/{{ uid }}/";
@@ -160,9 +222,7 @@
                         history.replaceState(null, "", permanentUrl);
                     }
                 })();
-                //*/
-            </script>
-        {% endif %}
-        <script src="/js/main.js"></script>
-    </body>
-</html></body></html>
+                // */</script>
+    {% endif %}
+    <script src="/js/main.js"></script>
+</body></html></body></html>

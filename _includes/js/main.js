@@ -287,4 +287,83 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log("Cannot auto-resize iframe:", e);
     }
   };
+
+  // --- CODE BLOCK COPY BUTTONS ---
+  (function() {
+    // Target the PRE, because that is the relative container
+    const codeBlocks = document.querySelectorAll('pre');
+
+    codeBlocks.forEach(pre => {
+      // 1. Create the button
+      const btn = document.createElement('button');
+      btn.className = 'code-copy-btn';
+      btn.textContent = 'COPY';
+      btn.title = "Copy code to clipboard";
+
+      // 2. Add Click Logic
+      btn.addEventListener('click', () => {
+        // Find the code inside this pre
+        const code = pre.querySelector('code');
+        if (!code) return;
+
+        // Copy text
+        navigator.clipboard.writeText(code.innerText).then(() => {
+          btn.textContent = 'COPIED!';
+          btn.classList.add('copied');
+
+          // Reset after 2s
+          setTimeout(() => {
+            btn.textContent = 'COPY';
+            btn.classList.remove('copied');
+          }, 2000);
+        }).catch(err => {
+          console.error('Copy failed', err);
+          btn.textContent = 'ERROR';
+        });
+      });
+
+      // 3. Inject it into the PRE (which is position:relative)
+      pre.appendChild(btn);
+    });
+  })();
+
+  // --- IFRAME TEXT COPY (For .txt, .md, etc) ---
+  (function() {
+    const copyBtns = document.querySelectorAll('.text-copy-btn');
+    
+    copyBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // 1. Find the wrapper and the iframe
+        const wrapper = btn.closest('.media-embed-wrapper');
+        const iframe = wrapper ? wrapper.querySelector('iframe') : null;
+        
+        if (!iframe) return;
+
+        try {
+            // 2. Reach into the iframe to get the text
+            // Note: This works because the files are hosted on the same domain (Same Origin)
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            const textContent = doc.body.innerText; // Grabs visible text only
+            
+            // 3. Copy to Clipboard
+            navigator.clipboard.writeText(textContent).then(() => {
+                const originalText = btn.textContent;
+                btn.textContent = "COPIED!";
+                btn.style.backgroundColor = "var(--accent-color)";
+                btn.style.color = "white";
+
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.backgroundColor = "";
+                    btn.style.color = "";
+                }, 2000);
+            });
+        } catch (e) {
+            console.error("Copy failed (likely cross-origin restriction):", e);
+            btn.textContent = "ERROR";
+        }
+      });
+    });
+  })();
 });
+

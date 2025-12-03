@@ -1,5 +1,6 @@
 const path = require('path');
 const MarkdownIt = require('markdown-it');
+const mime = require('mime-types');
 
 const md = new MarkdownIt;
 
@@ -81,30 +82,31 @@ function parseMarkdownData(content, page) {
   let h1 = null;
   let imagePath = null;
   let mediaPath = null;
+  let youtubeID = null; // New tracker for YT
   let textContent = "";
 
-  // Extensions we consider "Playable" for Open Graph
   const mediaExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.mp4', '.mov', '.mkv', '.webm'];
 
-  // 1. TOKEN SCAN (Standard Markdown)
+  // Helper to extract ID from various YouTube URL formats
+  const getYTID = (url) => {
+      const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+      return match ? match[1] : null;
+  };
+
+  // 1. TOKEN SCAN
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
 
-    // FIND H1
-    if (!h1 && t.type === 'heading_open' && t.tag === 'h1') {
-      if (tokens[i+1] && tokens[i+1].type === 'inline') {
+    // H1
+    if (!h1 && t.type === 'heading_open' && t.tag === 'h1' && tokens[i+1]?.type === 'inline') {
         h1 = tokens[i+1].content;
-      }
     }
 
-    // FIND IMAGE (Standard ![alt](src))
+    // IMAGE
     if (t.type === 'image') {
       const src = t.attrGet('src');
       if (src) {
-          // Priority 1: Is this the first image? (Cover Art)
           if (!imagePath) imagePath = src;
-          
-          // Priority 2: Is this actually a video/audio file? (Rare but possible in some parsers)
           if (!mediaPath) {
               const ext = path.extname(src).toLowerCase();
               if (mediaExtensions.includes(ext)) mediaPath = src;
@@ -112,41 +114,54 @@ function parseMarkdownData(content, page) {
       }
     }
 
-    // FIND LINKS (Standard [Text](src))
-    // This catches hotlinked media files
+    // LINKS (Check for Media OR YouTube)
     if (t.type === 'link_open') {
         const href = t.attrGet('href');
-        if (href && !mediaPath) {
-            const ext = path.extname(href).toLowerCase();
-            if (mediaExtensions.includes(ext)) {
-                mediaPath = href; 
+        if (href) {
+            // Check Local Media
+            if (!mediaPath) {
+                const ext = path.extname(href).toLowerCase();
+                if (mediaExtensions.includes(ext)) mediaPath = href;
+            }
+            // Check YouTube (if we haven't found one yet)
+            if (!youtubeID) {
+                youtubeID = getYTID(href);
             }
         }
     }
     
-    // BUILD EXCERPT
-    if (t.type === 'inline' && tokens[i-1] && tokens[i-1].type === 'paragraph_open') {
+    // EXCERPT
+    if (t.type === 'inline' && tokens[i-1]?.type === 'paragraph_open') {
         textContent += t.content + " ";
     }
   }
 
   // 2. REGEX FALLBACKS (Shortcodes)
   
-  // Fallback A: Image Shortcode {% image "..." %}
-  // Critical for posts that use the shortcode instead of markdown syntax
+  // Fallback A: Image Shortcode
   if (!imagePath) {
     const imgMatch = content.match(/\{%\s*image\s*["']([^"']+)["']/);
     if (imgMatch) imagePath = imgMatch[1];
   }
 
-  // Fallback B: Media Shortcodes {% video "..." %} or {% audio "..." %}
+  // Fallback B: Local Media Shortcodes
   if (!mediaPath) {
     const mediaMatch = content.match(/\{%\s*(video|audio)\s*["']([^"']+)["']/);
     if (mediaMatch) mediaPath = mediaMatch[2];
   }
 
-  // 3. PATH RESOLUTION (Relative -> Absolute)
-  // Helper to resolve paths relative to the content folder
+  // Fallback C: YouTube Shortcode {% yt "ID_OR_URL" %}
+  if (!youtubeID) {
+      // Matches {% yt "..." %}
+      const ytMatch = content.match(/\{%\s*yt\s*["']([^"']+)["']/);
+      if (ytMatch) {
+          // Could be a full URL or just an ID
+          const val = ytMatch[1];
+          youtubeID = getYTID(val) || val; // If getYTID fails, assume it IS the ID
+      }
+  }
+
+  // 3. RESOLVE PATHS (Local Only)
   const resolve = (p) => {
       try {
         if (!p.startsWith('http') && !p.startsWith('/')) {
@@ -162,7 +177,11 @@ function parseMarkdownData(content, page) {
   if (imagePath) imagePath = resolve(imagePath);
   if (mediaPath) mediaPath = resolve(mediaPath);
 
-  // Process Excerpt
+  // If we found a YouTube ID but no local media, construct a "Virtual" media object
+  if (!mediaPath && youtubeID) {
+      mediaPath = `https://www.youtube.com/embed/${youtubeID}`;
+  }
+
   const excerpt = textContent.slice(0, 155).trim() + (textContent.length > 155 ? "..." : "");
 
   return { h1, image: imagePath, excerpt, media: mediaPath };
@@ -410,29 +429,67 @@ module.exports = {
 
     // open graph and SEO metadata
     seo: data => {
-      // data.meta is from _data/meta.js
-      // data.page is the current page
       const meta = data.meta;
       const page = data.page;
 
-      // Get Description - Use the pre-calculated excerpt
-      const seoDescription = data.description ||
-        (data._pageData && data._pageData.excerpt) ||
-        meta.defaultDescription;
+      const seoDescription = data.description || (data._pageData && data._pageData.excerpt) || meta.defaultDescription;
+      let imagePath = data.image || (data._pageData && data._pageData.image) || meta.defaultImage;
 
-      // Get Image - Use the pre-calculated image path
-      let imagePath = data.image ||
-        (data._pageData && data._pageData.image) ||
-        meta.defaultImage;
+      // Detect Media
+      let mediaUrl = null;
+      
+      // A. Generated Page
+      if (data.media && data.media.url) mediaUrl = data.media.url;
+      // B. Embedded in Post
+      else if (data._pageData && data._pageData.media) mediaUrl = data._pageData.media;
 
-      // Build absolute URLs
       const seoImage = new URL(imagePath, meta.url).href;
       const seoUrl = new URL(page.url, meta.url).href;
+      
+      let seoMedia = null;
+      
+      if (mediaUrl) {
+          // SPECIAL CASE: YouTube
+          if (mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be')) {
+              seoMedia = {
+                  url: mediaUrl,
+                  type: 'text/html', // YouTube embeds are HTML iframes
+                  tag: 'video'
+              };
+              
+              // If we don't have a custom cover image, grab the YT thumbnail
+              // (Only if imagePath is still the default)
+              if (imagePath === meta.defaultImage) {
+                  // Extract ID again (quick and dirty)
+                  const match = mediaUrl.match(/\/embed\/([^/?]+)/);
+                  if (match) {
+                      // High-res thumbnail
+                      const ytThumb = `https://i.ytimg.com/vi/${match[1]}/maxresdefault.jpg`;
+                      // We can return this directly in the object to override
+                      // But for simplicity, let's just let the layout handle it or leave it.
+                      // Actually, let's override the image right here:
+                      imagePath = ytThumb; 
+                  }
+              }
+          } 
+          // STANDARD CASE: Local File
+          else {
+              const mimeType = mime.lookup(mediaUrl);
+              if (mimeType) {
+                  seoMedia = {
+                      url: new URL(mediaUrl, meta.url).href,
+                      type: mimeType,
+                      tag: mimeType.startsWith('audio') ? 'audio' : 'video'
+                  };
+              }
+          }
+      }
 
       return {
         description: seoDescription,
-        image: seoImage,
-        url: seoUrl
+        image: imagePath.startsWith('http') ? imagePath : new URL(imagePath, meta.url).href,
+        url: seoUrl,
+        media: seoMedia
       };
     },
   }

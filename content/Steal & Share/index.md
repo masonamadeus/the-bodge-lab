@@ -1,5 +1,5 @@
 ---
-title: Stealables
+title: Steal & Share
 uid: steal-n-share
 contentHash: b1b1e4b5
 date: '2025-11-29T20:50:41.814Z'

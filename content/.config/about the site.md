@@ -41,21 +41,21 @@ const uniqueString = [
 
 - Your User-Agent string, which identifies your browser application.
 - Your primary language preferences.
-- The total screen resolution (width and height) of the display.
-- The time zone offset from UTC in minutes.
-- The number of logical processor cores (threads) available on the system.
-- The approximate device RAM/memory size.
-- The device pixel ratio (screen pixel density).
+- The total screen resolution (width and height) of your display.
+- Your time zone offset from UTC in minutes.
+- The number of logical processor cores (threads) available on your system.
+- The approximate RAM/memory available on your device.
+- Your device's pixel ratio (screen pixel density).
 
 ``
 
-- The browser vendor string.
-- The screen color depth (bit depth).
-- A flag indicating if the browser is being controlled by automated software (like Selenium).
+- Your browser's vendor string.
+- The color bit depth of your device..
+- A flag indicating if youre browser is being controlled by automated software (like Selenium).
 - The *available* screen resolution (width and height, excluding OS taskbars or docks).
-- The maximum number of simultaneous touch contacts the device supports.
+- The maximum number of simultaneous touch contacts your device supports.
 - Your Do Not Track (DNT) preference.
-- The IANA time zone identifier (e.g., "America/New_York").
+- Your IANA time zone identifier (e.g., "America/New_York").
 
 {%endgrid%}
 
@@ -105,7 +105,7 @@ As I spent a lot of text explaining, that's a problem.
 
 In comes the "share" button you'll see at the bottom of this post!
 
-I built a little function that will dynamically generate static links for each page. I originally had it replacing the URL with these static links in case someone copy/pastes a link to share that way... but I didn't like it for some reason. I might go back.
+I built a little function that will dynamically generate static links for each page. I originally had it replacing the URL with these static links in case someone copy/pastes a link to share that way... but it caused some downstream issues with pathing that have been annoying to resolve. I might go at it again sometime.
 
 Anyways the way it works is that those automatically generated links will always point towards that specific page, and they can be overridden in the 'front matter' of any post (by setting a custom uid field).
 
@@ -124,3 +124,52 @@ To that end, every post has a download button to grab the markdown source of the
 Every media page has a download button, every asset has a download button. Download it all. The whole site is up on github, though some larger assets are hosted at assets.bodgelab.com using Cloudflare R2. Their free tier is super generous, and also they have great prices on domains.
 
 I'm not sponsored by Cloudflare but I would like to be lol.
+
+___
+
+# Dynamic Favicons
+
+I've got a script that dynamically generates a random favicon every time you load a page. Maybe you noticed it keeps changing? I just think that's fun.
+
+```js
+(function() { // 1. Config
+    const size = 5;
+    // 2. Color Generation (HSL)
+    const hue = Math.floor(Math.random() * 360);
+    const colorLight = `hsl(${hue}, 80%, 40%)`; // Darker for Light Mode
+    const colorDark = `hsl(${hue}, 80%, 70%)`;
+    // Lighter for Dark Mode
+    // 3. Generate Pattern (Mirrored + Random Opacity)
+    let rects = '';
+    for (let x = 0; x < Math.ceil(size / 2); x++) {
+        for (let y = 0; y < size; y++) {
+            if (Math.random() > 0.5) { // Random Opacity (The "Decayed" Look)
+                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                // Draw Left Pixel
+                rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${alpha}" />`;
+                // Draw Mirror Pixel (if not center column)
+                if (x < Math.floor(size / 2)) {
+                    rects += `<rect x="${
+                                    size - 1 - x
+                                }" y="${y}" width="1" height="1" opacity="${alpha}" />`;
+                }
+            }
+        }
+    }
+    // 4. Construct SVG (Solid Fill + Dark Mode Support)
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">
+            <style>
+                rect { fill: ${colorLight}; }
+                @media (prefers-color-scheme: dark) {
+                    rect { fill: ${colorDark}; } 
+                }
+            </style>
+            ${rects}
+        </svg>`;
+    // 5. Inject
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+    document.head.appendChild(link);
+})();
+```

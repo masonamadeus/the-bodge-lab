@@ -1,6 +1,7 @@
 ---
 download: false
 uid: home
+title: "Home"
 contentHash: 25daba0f
 date: '2025-11-20T02:50:16.324Z'
 ---
