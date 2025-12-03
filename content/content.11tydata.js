@@ -432,52 +432,64 @@ module.exports = {
       const meta = data.meta;
       const page = data.page;
 
-      const seoDescription = data.description || (data._pageData && data._pageData.excerpt) || meta.defaultDescription;
-      let imagePath = data.image || (data._pageData && data._pageData.image) || meta.defaultImage;
+      const seoDescription = data.description || 
+        (data._pageData && data._pageData.excerpt) || 
+        meta.defaultDescription;
 
-      // Detect Media
+      let imagePath = data.image || 
+        (data._pageData && data._pageData.image) || 
+        meta.defaultImage;
+
+      // --- Helper to fix the Ampersand Trap ---
+      // Replaces '&' with '%26' to prevent URL breaking in meta tags
+      const safeUrl = (urlStr) => {
+          if (!urlStr) return null;
+          return urlStr.replace(/&/g, '%26');
+      };
+
+      // --- NEW MEDIA DETECTION LOGIC ---
       let mediaUrl = null;
-      
-      // A. Generated Page
-      if (data.media && data.media.url) mediaUrl = data.media.url;
-      // B. Embedded in Post
-      else if (data._pageData && data._pageData.media) mediaUrl = data._pageData.media;
 
-      const seoImage = new URL(imagePath, meta.url).href;
-      const seoUrl = new URL(page.url, meta.url).href;
+      // 1. Check generated media page
+      if (data.media && data.media.url) {
+          mediaUrl = data.media.url;
+      } 
+      // 2. Check detected media in post
+      else if (data._pageData && data._pageData.media) {
+          mediaUrl = data._pageData.media;
+      }
+
+      // Build objects with SAFE URLs
+      const seoImage = safeUrl(imagePath.startsWith('http') ? imagePath : new URL(imagePath, meta.url).href);
+      const seoUrl = safeUrl(new URL(page.url, meta.url).href);
       
       let seoMedia = null;
-      
+
       if (mediaUrl) {
-          // SPECIAL CASE: YouTube
+          // A. YouTube Logic
           if (mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be')) {
               seoMedia = {
-                  url: mediaUrl,
-                  type: 'text/html', // YouTube embeds are HTML iframes
+                  url: mediaUrl, // YouTube URLs usually don't need our encoding
+                  type: 'text/html', 
                   tag: 'video'
               };
               
-              // If we don't have a custom cover image, grab the YT thumbnail
-              // (Only if imagePath is still the default)
+              // If using default site image, grab YouTube thumbnail
               if (imagePath === meta.defaultImage) {
-                  // Extract ID again (quick and dirty)
                   const match = mediaUrl.match(/\/embed\/([^/?]+)/);
                   if (match) {
-                      // High-res thumbnail
-                      const ytThumb = `https://i.ytimg.com/vi/${match[1]}/maxresdefault.jpg`;
-                      // We can return this directly in the object to override
-                      // But for simplicity, let's just let the layout handle it or leave it.
-                      // Actually, let's override the image right here:
-                      imagePath = ytThumb; 
+                      // Override the SEO image
+                      imagePath = `https://i.ytimg.com/vi/${match[1]}/maxresdefault.jpg`;
                   }
               }
           } 
-          // STANDARD CASE: Local File
+          // B. Local File Logic
           else {
               const mimeType = mime.lookup(mediaUrl);
               if (mimeType) {
                   seoMedia = {
-                      url: new URL(mediaUrl, meta.url).href,
+                      // FIX: Ensure the media URL is also safe
+                      url: safeUrl(new URL(mediaUrl, meta.url).href),
                       type: mimeType,
                       tag: mimeType.startsWith('audio') ? 'audio' : 'video'
                   };
@@ -485,9 +497,12 @@ module.exports = {
           }
       }
 
+      // Re-calculate image if we swapped it for a YouTube thumbnail (and make it safe)
+      const finalSeoImage = safeUrl(imagePath.startsWith('http') ? imagePath : new URL(imagePath, meta.url).href);
+
       return {
         description: seoDescription,
-        image: imagePath.startsWith('http') ? imagePath : new URL(imagePath, meta.url).href,
+        image: finalSeoImage,
         url: seoUrl,
         media: seoMedia
       };
