@@ -4,6 +4,11 @@ uid: home
 title: "Home"
 contentHash: 25daba0f
 date: '2025-11-20T02:50:16.324Z'
+# Front-matter sharing overrides (for reference):
+#
+# share_embed: "/s/embed/my-player/"    # Optional URL (absolute or relative) to use as the preview player/embed
+# share_poster: "/.config/sitebg2.webp" # Optional poster image for video/audio previews
+# share_type: "video"                    # Optional hint: "video", "audio", or "youtube"
 ---
 # Welcome to The Bodge Lab!
 

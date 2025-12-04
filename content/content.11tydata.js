@@ -392,119 +392,160 @@ module.exports = {
       const meta = data.meta || { url: "https://bodgelab.com/", defaultImage: "", defaultDescription: "" };
       const page = data.page;
 
-      // 1. Initial Defaults
+      const siteName = meta.siteName || "The Bodge Lab";
+
+      // 1. Initial Defaults (title formatted to include site name)
       let seoData = {
-        title: data.title || "The Bodge Lab",
-        description: data.description || meta.defaultDescription,
-        image: meta.defaultImage,
-        url: toAbsoluteUrl(page.url, meta.url),
-        type: 'website',
-        media: null // Will hold structure { type: 'video'|'audio', url: '', ... }
+      title: data.title ? `${data.title} — ${siteName}` : siteName,
+      description: data.description || meta.defaultDescription || "",
+      image: data.image || meta.defaultImage || null,
+      url: toAbsoluteUrl(data.permalink || page.url, meta.url),
+      type: 'website',
+      media: null // Will hold structure { type: 'video'|'audio', url: '', embedUrl: '', ... }
       };
 
       // 2. Extract Data from Parser
-      // Note: _pageData is computed above, so we use it here
       const assets = (data._pageData && data._pageData.assets) ? data._pageData.assets : { images:[], videos:[], audio:[] };
       const excerpt = (data._pageData && data._pageData.excerpt) ? data._pageData.excerpt : null;
 
       // 3. Description Fallback
       if (!data.description && excerpt) {
-        seoData.description = excerpt;
+      seoData.description = excerpt;
+      }
+
+      // --- FRONT-MATTER SHARE OVERRIDES (HIGHEST PRIORITY) ---
+      // Authors can explicitly force share behavior per-page using front-matter keys:
+      //   share_embed: URL to use as embed/player (absolute or relative)
+      //   share_poster: image to use as poster/preview
+      //   share_type: "video"|"audio"|"youtube" (optional hint)
+      if (data.share_poster) {
+        seoData.image = toAbsoluteUrl(data.share_poster, meta.url);
+      }
+
+      if (data.share_embed) {
+        const embedUrl = toAbsoluteUrl(data.share_embed, meta.url);
+        const mimeType = mime.lookup(data.share_embed) || 'text/html';
+        const inferredType = data.share_type || (mimeType.startsWith('audio') ? 'audio' : (mimeType.startsWith('video') ? 'video' : 'video'));
+        const ytId = getYouTubeID(data.share_embed);
+
+        seoData.media = {
+          url: embedUrl,
+          secure_url: embedUrl,
+          embedUrl: embedUrl,
+          type: inferredType,
+          mime: mimeType,
+          isYouTube: Boolean(ytId)
+        };
+
+        if (inferredType === 'video') seoData.type = 'video.other';
+        if (inferredType === 'audio') seoData.type = 'music.song';
+
+        // If the embed is a YouTube URL but user didn't provide an id, normalize the image
+        if (ytId && !data.share_poster) {
+          seoData.image = `https://i.ytimg.com/vi/${ytId}/maxresdefault.jpg`;
+        }
+
+        // Highest priority: return now with overrides applied
+        seoData.image = toAbsoluteUrl(seoData.image || meta.defaultImage, meta.url);
+        seoData.url = toAbsoluteUrl(seoData.url || page.url || '/', meta.url);
+        return seoData;
       }
 
       // --- ASSET PRIORITIZATION ---
 
       // Priority A: Front Matter Override (e.g. Generated Media Pages)
       if (data.media && data.media.url) {
-         // If we are on a generated media page, the 'media' object is passed in directly
-         const mediaUrl = data.media.url;
-         const absUrl = toAbsoluteUrl(mediaUrl, meta.url);
-         const mimeType = mime.lookup(mediaUrl) || 'application/octet-stream';
-         
-         if (data.media.type === 'video') {
-             seoData.media = {
-                 url: absUrl,
-                 secure_url: absUrl,
-                 type: 'video',
-                 mime: mimeType,
-                 width: 1280, height: 720
-             };
-             seoData.type = 'video.other';
-         } else if (data.media.type === 'audio') {
-             seoData.media = {
-                 url: absUrl,
-                 secure_url: absUrl,
-                 type: 'audio',
-                 mime: mimeType
-             };
-             seoData.type = 'music.song';
-         } else if (data.media.type === 'image') {
-             seoData.image = absUrl;
-         }
+       const mediaUrl = data.media.url;
+       const absUrl = toAbsoluteUrl(mediaUrl, meta.url);
+       const mimeType = mime.lookup(mediaUrl) || 'application/octet-stream';
+
+       if (data.media.type === 'video') {
+         seoData.media = {
+           url: absUrl,
+           secure_url: absUrl,
+           embedUrl: absUrl,
+           type: 'video',
+           mime: mimeType,
+           width: data.media.width || 1280,
+           height: data.media.height || 720
+         };
+         seoData.type = 'video.other';
+       } else if (data.media.type === 'audio') {
+         seoData.media = {
+           url: absUrl,
+           secure_url: absUrl,
+           type: 'audio',
+           mime: mimeType
+         };
+         seoData.type = 'music.song';
+       } else if (data.media.type === 'image') {
+         seoData.image = absUrl;
+       }
       }
       // Priority B: Content Detection
       else {
-          // 1. Check for VIDEO (Highest Priority)
-          if (assets.videos.length > 0) {
-              const vid = assets.videos[0];
-              
-              if (vid.type === 'youtube') {
-                  seoData.media = {
-                      url: `https://www.youtube.com/embed/${vid.id}`,
-                      secure_url: `https://www.youtube.com/embed/${vid.id}`,
-                      type: 'video',
-                      mime: 'text/html',
-                      width: 1280,
-                      height: 720,
-                      isYouTube: true
-                  };
-                  // Override Image with YT Thumbnail
-                  seoData.image = `https://i.ytimg.com/vi/${vid.id}/maxresdefault.jpg`;
-                  seoData.type = 'video.other';
-              } else {
-                  // Local Video
-                  const absUrl = toAbsoluteUrl(vid.src, meta.url);
-                  seoData.media = {
-                      url: absUrl,
-                      secure_url: absUrl,
-                      type: 'video',
-                      mime: mime.lookup(vid.src) || 'video/mp4',
-                      width: 1280,
-                      height: 720
-                  };
-                  seoData.type = 'video.other';
-              }
-          }
+        // 1. VIDEO (Highest Priority)
+        if (assets.videos.length > 0) {
+          const vid = assets.videos[0];
 
-          // 2. Check for AUDIO (If no video found)
-          else if (assets.audio.length > 0) {
-              const aud = assets.audio[0];
-              const absUrl = toAbsoluteUrl(aud.src, meta.url);
-              
-              seoData.media = {
-                  url: absUrl,
-                  secure_url: absUrl,
-                  type: 'audio',
-                  mime: mime.lookup(aud.src) || 'audio/mpeg'
-              };
-              seoData.type = 'music.song';
+          if (vid.type === 'youtube') {
+            const embed = `https://www.youtube.com/embed/${vid.id}`;
+            seoData.media = {
+              url: `https://www.youtube.com/watch?v=${vid.id}`,
+              secure_url: `https://www.youtube.com/watch?v=${vid.id}`,
+              embedUrl: embed,
+              type: 'video',
+              mime: 'text/html',
+              width: vid.width || 1280,
+              height: vid.height || 720,
+              isYouTube: true
+            };
+            // Use highest quality YT thumbnail available as preview
+            seoData.image = `https://i.ytimg.com/vi/${vid.id}/maxresdefault.jpg`;
+            seoData.type = 'video.other';
+          } else {
+            // Local Video
+            const absUrl = toAbsoluteUrl(vid.src, meta.url);
+            seoData.media = {
+              url: absUrl,
+              secure_url: absUrl,
+              embedUrl: absUrl,
+              type: 'video',
+              mime: mime.lookup(vid.src) || 'video/mp4',
+              width: vid.width || 1280,
+              height: vid.height || 720
+            };
+            seoData.type = 'video.other';
           }
+        }
 
-          // 3. Check for IMAGE (If defaults are active)
-          if (seoData.image === meta.defaultImage) {
-              // Check Front Matter First
-              if (data.image) {
-                  seoData.image = data.image;
-              } 
-              // Then Check Content Images
-              else if (assets.images.length > 0) {
-                  seoData.image = assets.images[0].src;
-              }
+        // 2. AUDIO (If no video found)
+        else if (assets.audio.length > 0) {
+          const aud = assets.audio[0];
+          const absUrl = toAbsoluteUrl(aud.src, meta.url);
+
+          seoData.media = {
+            url: absUrl,
+            secure_url: absUrl,
+            type: 'audio',
+            mime: mime.lookup(aud.src) || 'audio/mpeg'
+          };
+          seoData.type = 'music.song';
+        }
+
+        // 3. IMAGE selection (Front matter overrides content images)
+        if (!seoData.image || seoData.image === meta.defaultImage) {
+          if (data.image) {
+            seoData.image = data.image;
+          } else if (assets.images.length > 0) {
+            seoData.image = assets.images[0].src;
           }
+        }
       }
 
-      // Final URL cleanup
-      seoData.image = toAbsoluteUrl(seoData.image, meta.url);
+      // Final URL cleanup and fallbacks
+      seoData.image = toAbsoluteUrl(seoData.image || meta.defaultImage, meta.url);
+      seoData.url = toAbsoluteUrl(seoData.url || page.url || '/', meta.url);
 
       return seoData;
     },

@@ -100,25 +100,34 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <meta charset="UTF-8">
-        <title>BodgeLab: {{ title }}</title>
+        <title>{{ seo.title }}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="{{ seo.description }}">
         <meta name="generator" content="{{ eleventy.generator }}">
+        <meta property="og:site_name" content="{{ meta.siteName or 'The Bodge Lab' }}">
         <meta property="og:type" content="{{ seo.type }}">
         <meta property="og:url" content="{{ seo.url }}">
-        <meta property="og:title" content="BodgeLab: {{ title }}">
+        <link rel="canonical" href="{{ seo.url }}">
+        <meta property="og:title" content="{{ seo.title }}">
         <meta property="og:description" content="{{ seo.description }}">
-        <meta
-        property="og:image" content="{{ seo.image }}">
+        {% if seo.image %}
+            <meta property="og:image" content="{{ seo.image }}">
+        {% endif %}
         {# --- MEDIA TAGS --- #}
+        {# MEDIA TAGS: prefer embedUrl for player/video tags when available #}
         {% if seo.media %}
             {% if seo.media.type == 'video' %}
-                {# Video Tags #}
-                <meta property="og:video" content="{{ seo.media.url }}">
-                <meta property="og:video:secure_url" content="{{ seo.media.secure_url }}">
+                {# Video Tags: use embedUrl when present (YouTube embed or local player) #}
+                {% if seo.media.embedUrl %}
+                    <meta property="og:video" content="{{ seo.media.embedUrl }}">
+                    <meta property="og:video:secure_url" content="{{ seo.media.embedUrl }}">
+                {% else %}
+                    <meta property="og:video" content="{{ seo.media.url }}">
+                    <meta property="og:video:secure_url" content="{{ seo.media.secure_url }}">
+                {% endif %}
                 <meta property="og:video:type" content="{{ seo.media.mime }}">
-                <meta property="og:video:width" content="{{ seo.media.width }}">
-                <meta property="og:video:height" content="{{ seo.media.height }}">
+                {% if seo.media.width %}<meta property="og:video:width" content="{{ seo.media.width }}">{% endif %}
+                {% if seo.media.height %}<meta property="og:video:height" content="{{ seo.media.height }}">{% endif %}
             {% elif seo.media.type == 'audio' %}
                 {# Audio Tags #}
                 <meta property="og:audio" content="{{ seo.media.url }}">
@@ -126,22 +135,19 @@
                 <meta property="og:audio:type" content="{{ seo.media.mime }}">
             {% endif %}
         {% endif %}
-        {% if seo.media and seo.media.isYouTube %}
-            {# YouTube specifically requests Player Cards #}
+
+        {# Twitter card: use player only for YouTube embeds (broad compatibility). Otherwise use summary_large_image. #}
+        {% if seo.media and seo.media.isYouTube and seo.media.embedUrl %}
             <meta name="twitter:card" content="player">
-            <meta name="twitter:player" content="{{ seo.media.url }}">
-            <meta name="twitter:player:width" content="{{ seo.media.width }}">
-            <meta name="twitter:player:height" content="{{ seo.media.height }}">
-        {% elif seo.media %}
-            {# Local media often works best as Summary Large Image with a link #}
-            {# But you can try 'player' if your host supports it well #} <meta name="twitter:card" content="player">
-            <meta name="twitter:player" content="{{ seo.media.url }}">
-            <meta name="twitter:player:width" content="500">
-            <meta name="twitter:player:height" content="80">
+            <meta name="twitter:player" content="{{ seo.media.embedUrl }}">
+            <meta name="twitter:player:width" content="{{ seo.media.width or 1280 }}">
+            <meta name="twitter:player:height" content="{{ seo.media.height or 720 }}">
         {% else %}
             <meta name="twitter:card" content="summary_large_image">
         {% endif %}
-        <meta name="twitter:image" content="{{ seo.image }}">
+        {% if seo.image %}
+            <meta name="twitter:image" content="{{ seo.image }}">
+        {% endif %}
     </head>
     <body>
         <header>

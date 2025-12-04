@@ -1,7 +1,7 @@
 ---
 uid: site-about
-contentHash: 1f97d6dd
-date: '2025-12-03T01:08:02.229Z'
+contentHash: 56d14abc
+date: '2025-12-04T01:56:48.673Z'
 title: BodgeLab Website Design Info
 ---
 # I Always Wanna Know How Stuff Works
@@ -129,7 +129,9 @@ ___
 
 # Dynamic Favicons
 
-I've got a script that dynamically generates a random favicon every time you load a page. Maybe you noticed it keeps changing? I just think that's fun.
+Just like your website theme, your favicon is generated for you except it's completely rand
+
+You can edit it if you'd like [here](<favicon editor>)
 
 ```js
 (function() { // 1. Config

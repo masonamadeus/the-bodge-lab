@@ -19,19 +19,85 @@ layout: false
     <meta name="description" content="{{ p.data.seo.description }}">
     <meta property="og:title" content="{{ p.data.title }}">
     <meta property="og:description" content="{{ p.data.seo.description }}">
-    <meta property="og:image" content="{{ p.data.seo.image }}">
+    {% if p.data.seo.image %}
+      <meta property="og:image" content="{{ p.data.seo.image }}">
+    {% endif %}
     <meta property="og:url" content="{{ p.data.seo.url }}">
-    <meta name="twitter:card" content="summary_large_image">
+    <meta property="og:type" content="{{ p.data.seo.type }}">
+    {% if p.data.seo.media %}
+      {% if p.data.seo.media.type == 'video' %}
+        {% if p.data.seo.media.embedUrl %}
+          <meta property="og:video" content="{{ p.data.seo.media.embedUrl }}">
+          <meta property="og:video:secure_url" content="{{ p.data.seo.media.embedUrl }}">
+        {% else %}
+          <meta property="og:video" content="{{ p.data.seo.media.url }}">
+          <meta property="og:video:secure_url" content="{{ p.data.seo.media.secure_url }}">
+        {% endif %}
+        <meta property="og:video:type" content="{{ p.data.seo.media.mime }}">
+        <meta property="og:video:width" content="{{ p.data.seo.media.width }}">
+        <meta property="og:video:height" content="{{ p.data.seo.media.height }}">
+        {% if p.data.seo.media.isYouTube and p.data.seo.media.embedUrl %}
+          <meta name="twitter:card" content="player">
+          <meta name="twitter:player" content="{{ p.data.seo.media.embedUrl }}">
+          <meta name="twitter:player:width" content="{{ p.data.seo.media.width }}">
+          <meta name="twitter:player:height" content="{{ p.data.seo.media.height }}">
+        {% endif %}
+      {% elif p.data.seo.media.type == 'audio' %}
+        <meta property="og:audio" content="{{ p.data.seo.media.url }}">
+        <meta property="og:audio:secure_url" content="{{ p.data.seo.media.secure_url }}">
+        <meta property="og:audio:type" content="{{ p.data.seo.media.mime }}">
+      {% endif %}
+    {% endif %}
+    {% if not (p.data.seo.media and p.data.seo.media.isYouTube) %}
+      <meta name="twitter:card" content="summary_large_image">
+    {% endif %}
 
     {# --- REDIRECT (For the Humans) --- #}
     {# Canonical tells Google this page is just a shadow of the real one #}
     <link rel="canonical" href="{{ p.url }}">
-    {# Instant refresh #}
-    <meta http-equiv="refresh" content="0; url={{ p.url }}">
+    {# No meta-refresh here: we'll redirect humans instantly with JS (bots don't run JS and will read the OG tags).
+       This gives a better UX while leaving the head intact for crawlers. A noscript fallback handles non-JS clients. #}
 </head>
 <body>
     {# Fallback link if the refresh fails #}
-    <script>window.location.replace("{{ p.url }}");</script>
-    <p>Redirecting to <a href="{{ p.url }}">{{ p.data.title }}</a>...</p>
+    <script>
+      (function () {
+        try {
+          var ua = navigator.userAgent || '';
+          var botSignals = ['facebookexternalhit', 'twitterbot', 'slackbot', 'discordbot', 'whatsapp', 'bingbot', 'googlebot', 'bot', 'crawler', 'spider'];
+          var isBot = botSignals.some(function (s) { return ua.toLowerCase().indexOf(s.toLowerCase()) !== -1; });
+          // If we don't detect a bot, redirect humans immediately to the original page
+          if (!isBot) {
+            window.location.replace("{{ p.url }}");
+          }
+        } catch (e) {
+          // On error, perform a safe replace so humans still get redirected
+          try { window.location.replace("{{ p.url }}"); } catch (e) {}
+        }
+      })();
+    </script>
+    {% if p.data.seo.media %}
+      <div style="max-width:900px;margin:2rem auto;text-align:center;">
+        {% if p.data.seo.media.type == 'video' %}
+          {% if p.data.seo.media.isYouTube and p.data.seo.media.embedUrl %}
+            <iframe src="{{ p.data.seo.media.embedUrl }}" width="{{ p.data.seo.media.width or 560 }}" height="{{ p.data.seo.media.height or 315 }}" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen title="{{ p.data.title }} preview"></iframe>
+          {% else %}
+            <video controls preload="metadata" style="max-width:100%;height:auto;" {% if p.data.seo.image %}poster="{{ p.data.seo.image }}"{% endif %}>
+              <source src="{{ p.data.seo.media.embedUrl or p.data.seo.media.url }}" type="{{ p.data.seo.media.mime }}">
+              Your browser does not support the video tag. <a href="{{ p.url }}">Open page</a>.
+            </video>
+          {% endif %}
+        {% elif p.data.seo.media.type == 'audio' %}
+          <audio controls style="width:100%;max-width:600px;" src="{{ p.data.seo.media.url }}">Your browser does not support the audio element.</audio>
+        {% endif %}
+        <p style="margin-top:1rem;">Opening original page shortly — <a href="{{ p.url }}">{{ p.data.title }}</a></p>
+      </div>
+    {% else %}
+      <noscript>
+        <meta http-equiv="refresh" content="2; url={{ p.url }}">
+        <p>Redirecting to <a href="{{ p.url }}">{{ p.data.title }}</a>... (enable JavaScript for instant redirect)</p>
+      </noscript>
+      <p>Redirecting to <a href="{{ p.url }}">{{ p.data.title }}</a>...</p>
+    {% endif %}
 </body>
 </html>
