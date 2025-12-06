@@ -239,7 +239,7 @@ iframe {
    ========================================= */
 .image-container {
   position: relative;
-  display: inline-block;
+  display: flex;
   max-width: 100%;
 }
 .image-container img {
