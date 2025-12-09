@@ -69,19 +69,6 @@ function getDirectoryNode(data) {
 // #region NEW SEO HELPERS
 
 /**
- * Ensures a URL is absolute (Required for OpenGraph)
- */
-function toAbsoluteUrl(url, baseUrl) {
-  if (!url) return null;
-  if (url.startsWith('http')) return url;
-  try {
-    return new URL(url, baseUrl).href;
-  } catch (e) {
-    return path.join(baseUrl, url);
-  }
-}
-
-/**
  * Extracts ID from various YouTube URL formats
  */
 function getYouTubeID(url) {
@@ -89,77 +76,96 @@ function getYouTubeID(url) {
   return match ? match[1] : null;
 }
 
-/**
- * Resolves relative paths to the current page
- */
-function resolvePath(src, pageInputPath) {
-    if (!src || src.startsWith('http') || src.startsWith('/')) return src;
-    
-    // Attempt to resolve relative to the file
-    // Note: In 11ty, relative paths in data files can be tricky. 
-    // This logic assumes a standard structure or that you want the web-path.
-    // Given your original logic used a complex resolve, we can stick to a simpler pass-through
-    // if we trust the markdown parser, OR re-implement the path.resolve logic if needed.
-    // For now, we will return it as-is if it looks like a relative path, and let toAbsoluteUrl handle the domain.
-    return src;
-}
 
 /**
- * Extracts H1, Clean Excerpt, and Assets
+ * Extracts H1, Excerpt and Lists of Assets
  */
 function parseMarkdownData(content, page) {
   if (!content) return { h1: null, excerpt: null, assets: { images: [], videos: [], audio: [] } };
 
-  // 1. CLEANUP FOR EXCERPT: Remove Nunjucks tags BEFORE parsing text to avoid leaking code into summaries
-  // This Regex removes {% ... %} and {{ ... }} blocks entirely from the text-processing view
-  const cleanContent = content
-      .replace(/\{%[^%]*%\}/g, '') 
-      .replace(/\{\{[^}]*\}\}/g, '');
-
-  const tokens = md.parse(content, {}); // We still parse original content for Assets
-  const textTokens = md.parse(cleanContent, {}); // We parse clean content for Text
+  const tokens = md.parse(content, {});
   
   let h1 = null;
   let textContent = "";
   
   // Asset Collections
-  const assets = { images: [], videos: [], audio: [] };
+  const assets = {
+      images: [],
+      videos: [],
+      audio: []
+  };
+
   const videoExts = ['.mp4', '.mov', '.mkv', '.webm'];
   const audioExts = ['.mp3', '.wav', '.ogg', '.m4a'];
 
+  // Helper to add asset if unique
   const addAsset = (type, item) => {
-      if (!assets[type].find(x => x.src === item.src)) assets[type].push(item);
+      if (!assets[type].find(x => x.src === item.src)) {
+          assets[type].push(item);
+      }
   };
 
-  // 1. EXTRACT ASSETS (From Original Content)
-  for (const t of tokens) {
-    // H1 Detection
-    if (!h1 && t.type === 'heading_open' && t.tag === 'h1') {
-        // We peek ahead in the token stream for the content
-        const next = tokens[tokens.indexOf(t) + 1];
-        if (next && next.type === 'inline') h1 = next.content;
+  // Helper to strip HTML tags, Nunjucks Shortcodes, and Markdown Images
+  const cleanText = (str) => {
+    if (!str) return "";
+    return str
+        .replace(/<[^>]*>?/gm, '')         // Strip HTML tags
+        .replace(/\{[%\{].*?[%\}]\}/g, '') // Strip {% ... %} and {{ ... }}
+        .replace(/!\[.*?\]\(.*?\)/g, '')   // Strip Markdown Images ![...](...)
+        .replace(/`/g, '')                 // Strip Backticks
+        .trim();
+  };
+
+  // 1. TOKEN SCAN
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+
+    // H1 (Critical for Title/Download Filename)
+    if (!h1 && t.type === 'heading_open' && t.tag === 'h1' && tokens[i+1]?.type === 'inline') {
+        h1 = tokens[i+1].content;
     }
-    // Standard Markdown Images
+
+    // IMAGE TOKENS
     if (t.type === 'image') {
       const src = t.attrGet('src');
       if (src) addAsset('images', { src: src });
     }
-    // Raw Links (Video/Audio auto-detect)
+
+    // LINK TOKENS
     if (t.type === 'link_open') {
         const href = t.attrGet('href');
         if (href) {
             const ext = path.extname(href).toLowerCase();
-            if (videoExts.includes(ext)) addAsset('videos', { src: href, type: 'local' });
-            else if (audioExts.includes(ext)) addAsset('audio', { src: href });
-            else {
+            
+            if (videoExts.includes(ext)) {
+                addAsset('videos', { src: href, type: 'local' });
+            } else if (audioExts.includes(ext)) {
+                addAsset('audio', { src: href });
+            } else {
                 const ytId = getYouTubeID(href);
-                if (ytId) addAsset('videos', { src: href, type: 'youtube', id: ytId });
+                if (ytId) {
+                    addAsset('videos', { src: href, type: 'youtube', id: ytId });
+                }
             }
+        }
+    }
+    
+    // EXCERPT GENERATION
+    // Grab content from ANY inline token (h2, h3, p, li, etc)
+    // UNLESS it belongs to the H1 (which we don't want in the description)
+    if (t.type === 'inline') {
+        const isH1Content = tokens[i-1]?.type === 'heading_open' && tokens[i-1]?.tag === 'h1';
+        
+        if (!isH1Content) {
+             const cleaned = cleanText(t.content);
+             if (cleaned && cleaned.length > 0) {
+                 textContent += cleaned + " ";
+             }
         }
     }
   }
 
-  // 2. SHORTCODE SCAN (Aggressive Regex on Original Content)
+  // 2. SHORTCODE SCAN (Aggressive Regex)
   const imgMatches = [...content.matchAll(/\{%\s*image\s*["']([^"']+)["']/g)];
   imgMatches.forEach(m => addAsset('images', { src: m[1] }));
 
@@ -175,13 +181,12 @@ function parseMarkdownData(content, page) {
     addAsset('videos', { src: `https://www.youtube.com/watch?v=${id}`, type: 'youtube', id });
   });
 
-  // 3. GENERATE CLEAN EXCERPT (From Cleaned Content)
-  // We simply extract all text nodes from the "clean" parse
-  textTokens.forEach(t => {
-      if (t.type === 'inline') textContent += t.content + " ";
-  });
+  const excerpt = textContent.slice(0, 155).trim() + (textContent.length > 155 ? "..." : "");
 
-  const excerpt = textContent.replace(/\s+/g, ' ').trim().slice(0, 200).trim() + (textContent.length > 200 ? "..." : "");
+  // H1 Fallback
+  if (!h1 && page && page.inputPath) {
+      h1 = path.basename(page.inputPath, path.extname(page.inputPath));
+  }
 
   return { h1, excerpt, assets };
 }
@@ -197,15 +202,11 @@ module.exports = {
 
     // --- Parse content once ---
     _pageData: data => {
-      // Skip running on special pages that don't have markdown content to parse
-      if (data.page.inputPath.endsWith("media.njk") ||
-        data.page.inputPath.endsWith("autoDirectory.njk") ||
-        !data.page.rawInput ||
-        !data.page.rawInput.trim()) {
-        return null;
-      }
+      const p = data.page.inputPath;
 
-      // Run the expensive parsing once
+      if (!p.endsWith('.md')) return null;
+
+      // Run the expensive parsing
       return parseMarkdownData(data.page.rawInput, data.page);
     },
 
@@ -375,10 +376,13 @@ module.exports = {
     },
 
     seo: data => {
-      const meta = data.meta || { url: "https://bodgelab.com/", defaultImage: "/.config/ogimg.jpg", defaultDescription: "A curious folder on the internet. Home of Mason Amadeus" };
-      const page = data.page;
+      // 1. SETUP & HELPERS
+      const meta = data.meta || { 
+        url: "https://bodgelab.com/", 
+        defaultImage: "/.config/ogimg.jpg", 
+        defaultDescription: "A curious folder on the internet. Home of Mason Amadeus",
+      };
       
-      // Helper to force absolute URLs
       const toAbsolute = (url) => {
         if (!url) return null;
         if (url.startsWith('http')) return url;
@@ -386,122 +390,94 @@ module.exports = {
         catch (e) { return path.join(meta.url, url); }
       };
 
-      // 1. BASELINE DEFAULTS
-      let seo = {
-        title: data.title || "The Bodge Lab",
-        description: data.description || meta.defaultDescription || "",
-        url: toAbsolute(data.permalink || page.url),
-        image: toAbsolute(meta.defaultImage),
-        type: 'website',
-        // Media Object: { mode: 'player'|'image', url: '', secure_url: '', mime: '', width: '', height: '' }
-        media: null 
-      };
+      // 2. PARSE CONTENT (Get what we know exists)
+      const parsed = data._pageData 
+        || parseMarkdownData(data.page.rawInput, data.page) 
+        || { h1: null, excerpt: null, assets: { images: [], videos: [], audio: [] } };
 
-      // 2. EXTRACTED DATA (From the helper we fixed in Step 1)
-      const parsed = data._pageData || { excerpt: null, assets: { images: [], videos: [], audio: [] } };
-      
-      // If no manual description, use the clean excerpt
-      if (!seo.description && parsed.excerpt) {
-        seo.description = parsed.excerpt;
-      }
+      // 3. DETECT STRATEGY (Find the best specific candidate, if any)
+      let type = 'website';
+      let media = null;
+      let detectedImage = null; // Placeholder for content-found images
 
-      // 3. DETECT MEDIA STRATEGY
-      // We check sources in priority order: FrontMatter > Media Page > Content Body
-
-      // --- STRATEGY A: Explicit Front Matter (share_embed / share_poster) ---
+      // Strategy A: Manual Embed (Front Matter)
       if (data.share_embed) {
         const embedUrl = toAbsolute(data.share_embed);
-        const isYt = Boolean(getYouTubeID(data.share_embed));
+        const ytId = getYouTubeID(data.share_embed);
         
-        seo.type = 'video.other';
-        seo.media = {
+        type = 'video.other';
+        media = {
             mode: 'player',
             url: embedUrl,
             secure_url: embedUrl,
-            mime: data.share_type || 'text/html', // 'text/html' triggers iframes in Twitter cards
-            isYouTube: isYt
+            mime: data.share_type || 'text/html',
+            isYouTube: !!ytId
         };
-        if (data.share_poster) seo.image = toAbsolute(data.share_poster);
-        else if (isYt) seo.image = `https://i.ytimg.com/vi/${getYouTubeID(data.share_embed)}/maxresdefault.jpg`;
+        // If it's YouTube, we get a free image
+        if (ytId) detectedImage = `https://i.ytimg.com/vi/${ytId}/maxresdefault.jpg`;
       }
-
-      // --- STRATEGY B: "Media" Page Type (media.njk) ---
+      
+      // Strategy B: Media Page (media.njk)
       else if (data.media && data.media.url) {
         const mediaUrl = toAbsolute(data.media.url);
         const mimeType = mime.lookup(mediaUrl) || 'application/octet-stream';
 
         if (data.media.type === 'video') {
-            seo.type = 'video.other';
-            seo.media = {
-                mode: 'player',
-                url: mediaUrl,
-                secure_url: mediaUrl,
-                mime: mimeType,
-                width: data.media.width || 1280,
-                height: data.media.height || 720
-            };
+            type = 'video.other';
+            media = { mode: 'player', url: mediaUrl, secure_url: mediaUrl, mime: mimeType, width: data.media.width || 1280, height: data.media.height || 720 };
         } else if (data.media.type === 'audio') {
-            seo.type = 'music.song';
-            seo.media = {
-                mode: 'audio',
-                url: mediaUrl,
-                secure_url: mediaUrl,
-                mime: mimeType
-            };
+            type = 'music.song';
+            media = { mode: 'audio', url: mediaUrl, secure_url: mediaUrl, mime: mimeType };
         } else if (data.media.type === 'image') {
-            seo.image = mediaUrl;
+            detectedImage = mediaUrl;
         }
       }
 
-      // --- STRATEGY C: Content Auto-Detection ---
+      // Strategy C: Content Auto-Detection (Markdown Body)
       else {
-        // Check for Videos in content
+        // Video
         if (parsed.assets.videos.length > 0) {
             const vid = parsed.assets.videos[0];
-            seo.type = 'video.other';
-
+            type = 'video.other';
             if (vid.type === 'youtube') {
-                seo.media = {
-                    mode: 'player',
-                    url: `https://www.youtube.com/embed/${vid.id}`,
-                    secure_url: `https://www.youtube.com/embed/${vid.id}`,
-                    mime: 'text/html',
-                    isYouTube: true,
-                    width: 1280, 
-                    height: 720
-                };
-                seo.image = `https://i.ytimg.com/vi/${vid.id}/maxresdefault.jpg`;
+                media = { mode: 'player', url: `https://www.youtube.com/embed/${vid.id}`, secure_url: `https://www.youtube.com/embed/${vid.id}`, mime: 'text/html', isYouTube: true, width: 1280, height: 720 };
+                detectedImage = `https://i.ytimg.com/vi/${vid.id}/maxresdefault.jpg`;
             } else {
                 const vidUrl = toAbsolute(vid.src);
-                seo.media = {
-                    mode: 'player',
-                    url: vidUrl,
-                    secure_url: vidUrl,
-                    mime: mime.lookup(vid.src) || 'video/mp4',
-                    width: 1280,
-                    height: 720
-                };
+                media = { mode: 'player', url: vidUrl, secure_url: vidUrl, mime: mime.lookup(vid.src) || 'video/mp4', width: 1280, height: 720 };
             }
-        }
-        // Check for Audio in content
+        } 
+        // Audio
         else if (parsed.assets.audio.length > 0) {
             const aud = parsed.assets.audio[0];
             const audUrl = toAbsolute(aud.src);
-            seo.type = 'music.song';
-            seo.media = {
-                mode: 'audio',
-                url: audUrl,
-                secure_url: audUrl,
-                mime: mime.lookup(aud.src) || 'audio/mpeg'
-            };
-        }
-        // Check for Images in content (if we don't already have a better one)
-        else if (parsed.assets.images.length > 0 && (!seo.image || seo.image === toAbsolute(meta.defaultImage))) {
-            seo.image = toAbsolute(parsed.assets.images[0].src);
+            type = 'music.song';
+            media = { mode: 'audio', url: audUrl, secure_url: audUrl, mime: mime.lookup(aud.src) || 'audio/mpeg' };
+        } 
+        // Image
+        else if (parsed.assets.images.length > 0) {
+            detectedImage = toAbsolute(parsed.assets.images[0].src);
         }
       }
 
-      return seo;
+      // 4. APPLY DEFAULTS (The Waterfall)
+      // Priority: Manual Override > Detected Content > System Default
+
+      return {
+        title: data.title || parsed.h1 || "The Bodge Lab",
+        
+        description: data.description || parsed.excerpt || meta.defaultDescription || "",
+        
+        url: toAbsolute(data.permalink || data.page.url),
+        
+        // share_poster overrides everything, then we check what we found, then default
+        image: (data.share_poster ? toAbsolute(data.share_poster) : null) 
+            || detectedImage 
+            || toAbsolute(meta.defaultImage),
+            
+        type: type,
+        media: media
+      };
     },
   }
 };

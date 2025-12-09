@@ -211,7 +211,7 @@
             });
 
             audio.src = item.src;
-            if (!isSingle) els.np.textContent = "BUFFERING...";
+            if (!isSingle) els.np.textContent = item.title;
             els.dlBtn.href = item.src;
 
             audio.load();
@@ -257,7 +257,7 @@
 
                 const url = new URL(window.location.href);
                 url.searchParams.set('popout', 'true');
-                window.open(url.toString(), 'BodgePopout', 'width=500,height=600,menubar=no,toolbar=no,location=no,status=no');
+                window.open(url.toString(), 'BodgePopout', 'width=600,height=600,menubar=no,toolbar=no,location=no,status=no');
                 
                 audio.pause();
                 return;
@@ -287,11 +287,6 @@
         audio.onpause = () => updatePlayBtn(false);
         audio.onloadedmetadata = () => {
              els.total.textContent = fmt(audio.duration);
-             // Robust title check
-             if(!isSingle) {
-                 const match = state.items.find(i => audio.src.includes(i.src));
-                 els.np.textContent = match ? match.title : "Playing";
-             }
         };
         
         audio.ontimeupdate = () => {
