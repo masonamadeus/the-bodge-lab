@@ -60,6 +60,8 @@
             container.style.maxHeight = "none";
             container.style.border = "none";
             container.style.transform = "none";
+            container.style.display = "flex";
+            container.style.flexDirection = "column";
             
             document.body.innerHTML = ''; 
             document.body.appendChild(container);
@@ -148,7 +150,7 @@
 
             <div class="rss-playlist-controls">
                 <span>Index // ${items.length} FILES</span>
-                <button class="rss-sort-btn">▼ Newest</button>
+                <button class="rss-sort-btn">▼ Descending</button>
             </div>
             <div class="rss-playlist"></div>`;
 
@@ -183,12 +185,16 @@
             els.list.innerHTML = '';
 
             if (isPopout) {
-                els.list.style.maxHeight = '100%';
+                els.list.style.flex = '1';
+                els.list.style.overflowY = 'auto';
+                els.list.style.minHeight = '0'; // Crucial for Firefox/Flexbox scrolling
+                els.list.style.maxHeight = 'none'; 
+                
                 els.popoutBtn.style.display = 'none';
             }
             
             state.items = state.sortAsc ? [...state.originalItems].reverse() : [...state.originalItems];
-            els.sort.textContent = state.sortAsc ? "▲ Oldest" : "▼ Newest";
+            els.sort.textContent = state.sortAsc ? "▲ Ascending" : "▼ Descending";
 
             state.items.forEach((item, i) => {
                 const div = document.createElement('div');
