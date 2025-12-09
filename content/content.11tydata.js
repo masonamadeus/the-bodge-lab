@@ -105,96 +105,83 @@ function resolvePath(src, pageInputPath) {
 }
 
 /**
- * UPGRADED: Extracts H1, Excerpt and Lists of Assets
+ * Extracts H1, Clean Excerpt, and Assets
  */
 function parseMarkdownData(content, page) {
   if (!content) return { h1: null, excerpt: null, assets: { images: [], videos: [], audio: [] } };
 
-  const tokens = md.parse(content, {});
+  // 1. CLEANUP FOR EXCERPT: Remove Nunjucks tags BEFORE parsing text to avoid leaking code into summaries
+  // This Regex removes {% ... %} and {{ ... }} blocks entirely from the text-processing view
+  const cleanContent = content
+      .replace(/\{%[^%]*%\}/g, '') 
+      .replace(/\{\{[^}]*\}\}/g, '');
+
+  const tokens = md.parse(content, {}); // We still parse original content for Assets
+  const textTokens = md.parse(cleanContent, {}); // We parse clean content for Text
   
   let h1 = null;
   let textContent = "";
   
   // Asset Collections
-  const assets = {
-      images: [],
-      videos: [],
-      audio: []
-  };
-
+  const assets = { images: [], videos: [], audio: [] };
   const videoExts = ['.mp4', '.mov', '.mkv', '.webm'];
   const audioExts = ['.mp3', '.wav', '.ogg', '.m4a'];
 
-  // Helper to add asset if unique
   const addAsset = (type, item) => {
-      // Very basic duplicate check based on src
-      if (!assets[type].find(x => x.src === item.src)) {
-          assets[type].push(item);
-      }
+      if (!assets[type].find(x => x.src === item.src)) assets[type].push(item);
   };
 
-  // 1. TOKEN SCAN
-  for (let i = 0; i < tokens.length; i++) {
-    const t = tokens[i];
-
-    // H1 (Critical for Title/Download Filename)
-    if (!h1 && t.type === 'heading_open' && t.tag === 'h1' && tokens[i+1]?.type === 'inline') {
-        h1 = tokens[i+1].content;
+  // 1. EXTRACT ASSETS (From Original Content)
+  for (const t of tokens) {
+    // H1 Detection
+    if (!h1 && t.type === 'heading_open' && t.tag === 'h1') {
+        // We peek ahead in the token stream for the content
+        const next = tokens[tokens.indexOf(t) + 1];
+        if (next && next.type === 'inline') h1 = next.content;
     }
-
-    // IMAGE TOKENS
+    // Standard Markdown Images
     if (t.type === 'image') {
       const src = t.attrGet('src');
       if (src) addAsset('images', { src: src });
     }
-
-    // LINK TOKENS (Check for raw media links or YouTube)
+    // Raw Links (Video/Audio auto-detect)
     if (t.type === 'link_open') {
         const href = t.attrGet('href');
         if (href) {
             const ext = path.extname(href).toLowerCase();
-            
-            if (videoExts.includes(ext)) {
-                addAsset('videos', { src: href, type: 'local' });
-            } else if (audioExts.includes(ext)) {
-                addAsset('audio', { src: href });
-            } else {
+            if (videoExts.includes(ext)) addAsset('videos', { src: href, type: 'local' });
+            else if (audioExts.includes(ext)) addAsset('audio', { src: href });
+            else {
                 const ytId = getYouTubeID(href);
-                if (ytId) {
-                    addAsset('videos', { src: href, type: 'youtube', id: ytId });
-                }
+                if (ytId) addAsset('videos', { src: href, type: 'youtube', id: ytId });
             }
         }
     }
-    
-    // EXCERPT GENERATION
-    if (t.type === 'inline' && tokens[i-1]?.type === 'paragraph_open') {
-        textContent += t.content + " ";
-    }
   }
 
-  // 2. SHORTCODE SCAN (Aggressive Regex)
-  
-  // Images {% image "..." %}
+  // 2. SHORTCODE SCAN (Aggressive Regex on Original Content)
   const imgMatches = [...content.matchAll(/\{%\s*image\s*["']([^"']+)["']/g)];
   imgMatches.forEach(m => addAsset('images', { src: m[1] }));
 
-  // Local Video {% video "..." %}
   const vidMatches = [...content.matchAll(/\{%\s*video\s*["']([^"']+)["']/g)];
   vidMatches.forEach(m => addAsset('videos', { src: m[1], type: 'local' }));
 
-  // Audio {% audio "..." %}
   const audMatches = [...content.matchAll(/\{%\s*audio\s*["']([^"']+)["']/g)];
   audMatches.forEach(m => addAsset('audio', { src: m[1] }));
 
-  // YouTube Shortcode {% yt "..." %}
   const ytMatches = [...content.matchAll(/\{%\s*yt\s*["']([^"']+)["']/g)];
   ytMatches.forEach(m => {
     const id = getYouTubeID(m[1]) || m[1];
     addAsset('videos', { src: `https://www.youtube.com/watch?v=${id}`, type: 'youtube', id });
   });
 
-  const excerpt = textContent.slice(0, 155).trim() + (textContent.length > 155 ? "..." : "");
+  // 3. GENERATE CLEAN EXCERPT (From Cleaned Content)
+  // We simply extract all text nodes from the "clean" parse
+  textTokens.forEach(t => {
+      if (t.type === 'inline') textContent += t.content + " ";
+  });
+
+  const excerpt = textContent.replace(/\s+/g, ' ').trim().slice(0, 200).trim() + (textContent.length > 200 ? "..." : "");
 
   return { h1, excerpt, assets };
 }
@@ -387,167 +374,134 @@ module.exports = {
       return "file";
     },
 
-    // --- REPLACED SEO LOGIC ---
     seo: data => {
-      const meta = data.meta || { url: "https://bodgelab.com/", defaultImage: "", defaultDescription: "" };
+      const meta = data.meta || { url: "https://bodgelab.com/", defaultImage: "/.config/ogimg.jpg", defaultDescription: "A curious folder on the internet. Home of Mason Amadeus" };
       const page = data.page;
-
-      const siteName = meta.siteName || "The Bodge Lab";
-
-      // 1. Initial Defaults (title formatted to include site name)
-      let seoData = {
-      title: data.title ? `${data.title} — ${siteName}` : siteName,
-      description: data.description || meta.defaultDescription || "",
-      image: data.image || meta.defaultImage || null,
-      url: toAbsoluteUrl(data.permalink || page.url, meta.url),
-      type: 'website',
-      media: null // Will hold structure { type: 'video'|'audio', url: '', embedUrl: '', ... }
+      
+      // Helper to force absolute URLs
+      const toAbsolute = (url) => {
+        if (!url) return null;
+        if (url.startsWith('http')) return url;
+        try { return new URL(url, meta.url).href; } 
+        catch (e) { return path.join(meta.url, url); }
       };
 
-      // 2. Extract Data from Parser
-      const assets = (data._pageData && data._pageData.assets) ? data._pageData.assets : { images:[], videos:[], audio:[] };
-      const excerpt = (data._pageData && data._pageData.excerpt) ? data._pageData.excerpt : null;
+      // 1. BASELINE DEFAULTS
+      let seo = {
+        title: data.title || "The Bodge Lab",
+        description: data.description || meta.defaultDescription || "",
+        url: toAbsolute(data.permalink || page.url),
+        image: toAbsolute(meta.defaultImage),
+        type: 'website',
+        // Media Object: { mode: 'player'|'image', url: '', secure_url: '', mime: '', width: '', height: '' }
+        media: null 
+      };
 
-      // 3. Description Fallback
-      if (!data.description && excerpt) {
-      seoData.description = excerpt;
+      // 2. EXTRACTED DATA (From the helper we fixed in Step 1)
+      const parsed = data._pageData || { excerpt: null, assets: { images: [], videos: [], audio: [] } };
+      
+      // If no manual description, use the clean excerpt
+      if (!seo.description && parsed.excerpt) {
+        seo.description = parsed.excerpt;
       }
 
-      // --- FRONT-MATTER SHARE OVERRIDES (HIGHEST PRIORITY) ---
-      // Authors can explicitly force share behavior per-page using front-matter keys:
-      //   share_embed: URL to use as embed/player (absolute or relative)
-      //   share_poster: image to use as poster/preview
-      //   share_type: "video"|"audio"|"youtube" (optional hint)
-      if (data.share_poster) {
-        seoData.image = toAbsoluteUrl(data.share_poster, meta.url);
-      }
+      // 3. DETECT MEDIA STRATEGY
+      // We check sources in priority order: FrontMatter > Media Page > Content Body
 
+      // --- STRATEGY A: Explicit Front Matter (share_embed / share_poster) ---
       if (data.share_embed) {
-        const embedUrl = toAbsoluteUrl(data.share_embed, meta.url);
-        const mimeType = mime.lookup(data.share_embed) || 'text/html';
-        const inferredType = data.share_type || (mimeType.startsWith('audio') ? 'audio' : (mimeType.startsWith('video') ? 'video' : 'video'));
-        const ytId = getYouTubeID(data.share_embed);
-
-        seoData.media = {
-          url: embedUrl,
-          secure_url: embedUrl,
-          embedUrl: embedUrl,
-          type: inferredType,
-          mime: mimeType,
-          isYouTube: Boolean(ytId)
+        const embedUrl = toAbsolute(data.share_embed);
+        const isYt = Boolean(getYouTubeID(data.share_embed));
+        
+        seo.type = 'video.other';
+        seo.media = {
+            mode: 'player',
+            url: embedUrl,
+            secure_url: embedUrl,
+            mime: data.share_type || 'text/html', // 'text/html' triggers iframes in Twitter cards
+            isYouTube: isYt
         };
+        if (data.share_poster) seo.image = toAbsolute(data.share_poster);
+        else if (isYt) seo.image = `https://i.ytimg.com/vi/${getYouTubeID(data.share_embed)}/maxresdefault.jpg`;
+      }
 
-        if (inferredType === 'video') seoData.type = 'video.other';
-        if (inferredType === 'audio') seoData.type = 'music.song';
+      // --- STRATEGY B: "Media" Page Type (media.njk) ---
+      else if (data.media && data.media.url) {
+        const mediaUrl = toAbsolute(data.media.url);
+        const mimeType = mime.lookup(mediaUrl) || 'application/octet-stream';
 
-        // If the embed is a YouTube URL but user didn't provide an id, normalize the image
-        if (ytId && !data.share_poster) {
-          seoData.image = `https://i.ytimg.com/vi/${ytId}/maxresdefault.jpg`;
+        if (data.media.type === 'video') {
+            seo.type = 'video.other';
+            seo.media = {
+                mode: 'player',
+                url: mediaUrl,
+                secure_url: mediaUrl,
+                mime: mimeType,
+                width: data.media.width || 1280,
+                height: data.media.height || 720
+            };
+        } else if (data.media.type === 'audio') {
+            seo.type = 'music.song';
+            seo.media = {
+                mode: 'audio',
+                url: mediaUrl,
+                secure_url: mediaUrl,
+                mime: mimeType
+            };
+        } else if (data.media.type === 'image') {
+            seo.image = mediaUrl;
         }
-
-        // Highest priority: return now with overrides applied
-        seoData.image = toAbsoluteUrl(seoData.image || meta.defaultImage, meta.url);
-        seoData.url = toAbsoluteUrl(seoData.url || page.url || '/', meta.url);
-        return seoData;
       }
 
-      // --- ASSET PRIORITIZATION ---
-
-      // Priority A: Front Matter Override (e.g. Generated Media Pages)
-      if (data.media && data.media.url) {
-       const mediaUrl = data.media.url;
-       const absUrl = toAbsoluteUrl(mediaUrl, meta.url);
-       const mimeType = mime.lookup(mediaUrl) || 'application/octet-stream';
-
-       if (data.media.type === 'video') {
-         seoData.media = {
-           url: absUrl,
-           secure_url: absUrl,
-           embedUrl: absUrl,
-           type: 'video',
-           mime: mimeType,
-           width: data.media.width || 1280,
-           height: data.media.height || 720
-         };
-         seoData.type = 'video.other';
-       } else if (data.media.type === 'audio') {
-         seoData.media = {
-           url: absUrl,
-           secure_url: absUrl,
-           type: 'audio',
-           mime: mimeType
-         };
-         seoData.type = 'music.song';
-       } else if (data.media.type === 'image') {
-         seoData.image = absUrl;
-       }
-      }
-      // Priority B: Content Detection
+      // --- STRATEGY C: Content Auto-Detection ---
       else {
-        // 1. VIDEO (Highest Priority)
-        if (assets.videos.length > 0) {
-          const vid = assets.videos[0];
+        // Check for Videos in content
+        if (parsed.assets.videos.length > 0) {
+            const vid = parsed.assets.videos[0];
+            seo.type = 'video.other';
 
-          if (vid.type === 'youtube') {
-            const embed = `https://www.youtube.com/embed/${vid.id}`;
-            seoData.media = {
-              url: `https://www.youtube.com/watch?v=${vid.id}`,
-              secure_url: `https://www.youtube.com/watch?v=${vid.id}`,
-              embedUrl: embed,
-              type: 'video',
-              mime: 'text/html',
-              width: vid.width || 1280,
-              height: vid.height || 720,
-              isYouTube: true
-            };
-            // Use highest quality YT thumbnail available as preview
-            seoData.image = `https://i.ytimg.com/vi/${vid.id}/maxresdefault.jpg`;
-            seoData.type = 'video.other';
-          } else {
-            // Local Video
-            const absUrl = toAbsoluteUrl(vid.src, meta.url);
-            seoData.media = {
-              url: absUrl,
-              secure_url: absUrl,
-              embedUrl: absUrl,
-              type: 'video',
-              mime: mime.lookup(vid.src) || 'video/mp4',
-              width: vid.width || 1280,
-              height: vid.height || 720
-            };
-            seoData.type = 'video.other';
-          }
+            if (vid.type === 'youtube') {
+                seo.media = {
+                    mode: 'player',
+                    url: `https://www.youtube.com/embed/${vid.id}`,
+                    secure_url: `https://www.youtube.com/embed/${vid.id}`,
+                    mime: 'text/html',
+                    isYouTube: true,
+                    width: 1280, 
+                    height: 720
+                };
+                seo.image = `https://i.ytimg.com/vi/${vid.id}/maxresdefault.jpg`;
+            } else {
+                const vidUrl = toAbsolute(vid.src);
+                seo.media = {
+                    mode: 'player',
+                    url: vidUrl,
+                    secure_url: vidUrl,
+                    mime: mime.lookup(vid.src) || 'video/mp4',
+                    width: 1280,
+                    height: 720
+                };
+            }
         }
-
-        // 2. AUDIO (If no video found)
-        else if (assets.audio.length > 0) {
-          const aud = assets.audio[0];
-          const absUrl = toAbsoluteUrl(aud.src, meta.url);
-
-          seoData.media = {
-            url: absUrl,
-            secure_url: absUrl,
-            type: 'audio',
-            mime: mime.lookup(aud.src) || 'audio/mpeg'
-          };
-          seoData.type = 'music.song';
+        // Check for Audio in content
+        else if (parsed.assets.audio.length > 0) {
+            const aud = parsed.assets.audio[0];
+            const audUrl = toAbsolute(aud.src);
+            seo.type = 'music.song';
+            seo.media = {
+                mode: 'audio',
+                url: audUrl,
+                secure_url: audUrl,
+                mime: mime.lookup(aud.src) || 'audio/mpeg'
+            };
         }
-
-        // 3. IMAGE selection (Front matter overrides content images)
-        if (!seoData.image || seoData.image === meta.defaultImage) {
-          if (data.image) {
-            seoData.image = data.image;
-          } else if (assets.images.length > 0) {
-            seoData.image = assets.images[0].src;
-          }
+        // Check for Images in content (if we don't already have a better one)
+        else if (parsed.assets.images.length > 0 && (!seo.image || seo.image === toAbsolute(meta.defaultImage))) {
+            seo.image = toAbsolute(parsed.assets.images[0].src);
         }
       }
 
-      // Final URL cleanup and fallbacks
-      seoData.image = toAbsoluteUrl(seoData.image || meta.defaultImage, meta.url);
-      seoData.url = toAbsoluteUrl(seoData.url || page.url || '/', meta.url);
-
-      return seoData;
+      return seo;
     },
   }
 };

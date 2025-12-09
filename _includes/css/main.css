@@ -376,6 +376,7 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
 .directory-container {
   background-color: var(--bg-muted);
   padding: calc(var(--base-spacing)*0.5);
+  margin-top: 1em;
 }
 .directory-header {
   display: flex;
