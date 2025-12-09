@@ -8,7 +8,8 @@
         pause: "M6 19h4V5H6v14zm8-14v14h4V5h-4z",
         back: "M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z",
         fwd: "M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z",
-        download: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"
+        download: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z",
+        popout: "M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"
     };
 
     // 2. Helper to generate the "Masked Icon" HTML
@@ -27,7 +28,8 @@
         back: `${mkIcon(paths.back)}<span class="rss-btn-txt">7</span>`, 
         // Layout: [30] [Icon]
         fwd: `<span class="rss-btn-txt">30</span>${mkIcon(paths.fwd)}`, 
-        download: mkIcon(paths.download)
+        download: mkIcon(paths.download),
+        popout: mkIcon(paths.popout)
     };
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -35,6 +37,35 @@
     });
 
     async function setupPlayer(container) {
+
+        // --- 1. POPOUT INITIALIZATION ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const isPopout = urlParams.get('popout') === 'true';
+
+        if (isPopout) {
+            // Hijack the page: Remove everything except the player container
+            document.documentElement.style.height = "100%";
+            document.body.style.margin = "0";
+            document.body.style.padding = "0";
+            document.body.style.background = "#111"; 
+            document.body.style.display = "flex";
+            document.body.style.alignItems = "center";
+            document.body.style.justifyContent = "center";
+            document.body.style.height = "100%";
+            document.body.style.overflow = "hidden";
+            document.body.style.maxWidth = "none";
+            
+            container.style.width = "100%";
+            container.style.height = "100%";
+            container.style.maxHeight = "none";
+            container.style.border = "none";
+            container.style.transform = "none";
+            
+            document.body.innerHTML = ''; 
+            document.body.appendChild(container);
+        }
+
+        // --- 2. DATA PARSING ---
         let items = [];
         let showTitle = "";
         let showArt = null; 
@@ -44,11 +75,7 @@
         if (container.dataset.playlist) {
             try {
                 items = JSON.parse(container.dataset.playlist);
-                // If title is missing, try to use the one passed in, or a generic one
                 showTitle = container.dataset.title || "Audio Collection";
-                
-                // Optional: Check if there's a cover.jpg in the playlist folder?
-                // For now, we leave showArt null so it hides gracefully.
             } catch (e) {
                 console.error("Playlist Parse Error", e);
             }
@@ -82,6 +109,7 @@
 
         if (items.length === 0) return;
 
+        // --- 3. RENDER UI ---
         const artStyle = showArt ? '' : 'display:none;';
         
         container.innerHTML = `
@@ -111,6 +139,7 @@
                     </div>
 
                     <div class="rss-extras">
+                        <button class="rss-btn" data-act="popout" title="Popout Player">${icons.popout}</button>
                         <button class="rss-btn rss-speed-btn" data-act="speed" title="Speed">1.0x</button>
                         <a class="rss-btn" data-act="download" href="#" title="Save" download>${icons.download}</a>
                     </div>
@@ -143,12 +172,20 @@
             curr: container.querySelector('.curr'),
             total: container.querySelector('.total'),
             list: container.querySelector('.rss-playlist'),
-            sort: container.querySelector('.rss-sort-btn')
+            sort: container.querySelector('.rss-sort-btn'),
+            popoutBtn: container.querySelector('[data-act="popout"]')
         };
+
+        // --- 4. CORE LOGIC ---
 
         function renderList() {
             if (isSingle) return;
             els.list.innerHTML = '';
+
+            if (isPopout) {
+                els.list.style.maxHeight = '100%';
+                els.popoutBtn.style.display = 'none';
+            }
             
             state.items = state.sortAsc ? [...state.originalItems].reverse() : [...state.originalItems];
             els.sort.textContent = state.sortAsc ? "▲ Oldest" : "▼ Newest";
@@ -158,14 +195,15 @@
                 div.className = 'rss-row';
                 div.textContent = item.title;
                 div.onclick = () => loadTrack(item); 
-                if (audio.src === item.src || (audio.src && audio.src.endsWith(item.src))) {
+                // Fix: Check matches more robustly for active class
+                if (audio.src === item.src || (audio.src && item.src && audio.src.endsWith(item.src))) {
                     div.classList.add('active');
                 }
                 els.list.appendChild(div);
             });
         }
 
-        function loadTrack(item) {
+        function loadTrack(item, autoplay = true) {
             const rows = els.list.querySelectorAll('.rss-row');
             state.items.forEach((it, i) => {
                 if (it === item) rows[i]?.classList.add('active');
@@ -177,21 +215,53 @@
             els.dlBtn.href = item.src;
 
             audio.load();
-            audio.play()
-                .then(() => updatePlayBtn(true))
-                .catch(e => console.log("Auto-play prevented", e));
+            
+            if (autoplay) {
+                audio.play()
+                    .then(() => updatePlayBtn(true))
+                    .catch(e => console.log("Auto-play prevented", e));
+            } else {
+                updatePlayBtn(false);
+            }
         }
 
         function updatePlayBtn(isPlaying) {
             state.playing = isPlaying;
-            // SWAP THE HTML TO USE THE MASKED ICON
             els.playBtn.innerHTML = isPlaying ? icons.pause : icons.play;
             els.seek.disabled = false;
         }
 
+        // --- 5. EVENT HANDLERS ---
+
         container.onclick = (e) => {
             const act = e.target.closest('[data-act]')?.dataset.act;
             if (!act) return;
+
+            if (act === 'popout') {
+                // Check both raw and decoded URLs to handle special characters (spaces, etc.)
+                const currentIdx = state.items.findIndex(i => {
+                    const src = audio.src || '';
+                    const decoded = decodeURIComponent(src);
+                    return src.includes(i.src) || decoded.includes(i.src);
+                });
+
+                // Save State (Include the index!)
+                const settings = {
+                    items: state.items, 
+                    currentSrc: audio.src,
+                    currentIdx: currentIdx, 
+                    currentTime: audio.currentTime,
+                    isPlaying: !audio.paused
+                };
+                sessionStorage.setItem('bodge_popout_data', JSON.stringify(settings));
+
+                const url = new URL(window.location.href);
+                url.searchParams.set('popout', 'true');
+                window.open(url.toString(), 'BodgePopout', 'width=500,height=600,menubar=no,toolbar=no,location=no,status=no');
+                
+                audio.pause();
+                return;
+            }
 
             if (act === 'play') {
                 if (audio.paused) {
@@ -217,7 +287,11 @@
         audio.onpause = () => updatePlayBtn(false);
         audio.onloadedmetadata = () => {
              els.total.textContent = fmt(audio.duration);
-             if(!isSingle) els.np.textContent = state.items.find(i => i.src === audio.getAttribute('src'))?.title || "Playing";
+             // Robust title check
+             if(!isSingle) {
+                 const match = state.items.find(i => audio.src.includes(i.src));
+                 els.np.textContent = match ? match.title : "Playing";
+             }
         };
         
         audio.ontimeupdate = () => {
@@ -228,7 +302,17 @@
             els.curr.textContent = fmt(audio.currentTime);
         };
         
-        audio.onended = () => updatePlayBtn(false);
+        audio.onended = () => {
+            const currentSrc = audio.getAttribute('src');
+            // FIX: Robust finding of current track index
+            const idx = state.items.findIndex(i => currentSrc.includes(i.src));
+            
+            if (idx > -1 && idx < state.items.length - 1) {
+                loadTrack(state.items[idx + 1]);
+            } else {
+                updatePlayBtn(false);
+            }
+        };
 
         els.seek.oninput = (e) => {
             const time = (e.target.value / 100) * audio.duration;
@@ -240,13 +324,66 @@
             renderList();
         };
 
+        // --- 6. INITIALIZATION & RESTORE ---
+
         renderList();
-        
-        if (isSingle) {
-            loadTrack(state.items[0]); 
-            audio.pause(); 
-            audio.currentTime = 0;
-            els.np.textContent = "READY";
+
+        if (isPopout) {
+            try {
+                const savedJson = sessionStorage.getItem('bodge_popout_data');
+                // CLEANUP: Remove data immediately to prevent loops
+                sessionStorage.removeItem('bodge_popout_data');
+
+                const saved = JSON.parse(savedJson);
+                if (saved) {
+                    state.items = saved.items;
+                    renderList();
+
+                    // 1. Try finding track by Index (Most Reliable)
+                    let track = null;
+                    if (typeof saved.currentIdx === 'number' && saved.currentIdx > -1) {
+                        track = state.items[saved.currentIdx];
+                    }
+
+                    // 2. Fallback: Try Smart URL Matching (Decodes %20 to spaces)
+                    if (!track) {
+                        track = state.items.find(i => {
+                            const raw = saved.currentSrc || '';
+                            const dec = decodeURIComponent(raw);
+                            return raw.includes(i.src) || dec.includes(i.src) || raw.endsWith(i.src);
+                        });
+                    }
+
+                    if (track) {
+                        // Load without autoplaying so we can seek safely
+                        loadTrack(track, false);
+
+                        const resumeTime = saved.currentTime;
+
+                        // Seek Logic: Handle race conditions where metadata might not be ready
+                        if (audio.readyState >= 1) {
+                            audio.currentTime = resumeTime;
+                        } else {
+                            audio.addEventListener('loadedmetadata', function onMeta() {
+                                audio.currentTime = resumeTime;
+                                audio.removeEventListener('loadedmetadata', onMeta);
+                            }, { once: true });
+                        }
+
+                        // Resume only if it was playing in the parent
+                        if (saved.isPlaying) {
+                            setTimeout(() => audio.play().catch(e => console.warn(e)), 150);
+                        }
+                    }
+                }
+            } catch (e) { console.error("Popout Restore Failed", e); }
+        } else {
+            // FIX: Only run standard single-track init if NOT popping out
+            if (isSingle) {
+                loadTrack(state.items[0], false); // Don't autoplay on page load
+                audio.currentTime = 0;
+                els.np.textContent = "READY";
+            }
         }
     }
 

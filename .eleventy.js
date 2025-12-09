@@ -29,7 +29,6 @@ function findStandaloneApps(dir) {
       if (fs.existsSync(path.join(fullPath, ".standalone"))) {
         
         // FIX: Convert to Relative Path (e.g., "content/PodCube/PocketPal")
-        // This prevents the "P:\" drive letter crash
         const relativePath = path.relative(__dirname, fullPath).replace(/\\/g, '/');
         results.push(relativePath); 
         
@@ -362,7 +361,7 @@ module.exports = function (eleventyConfig) {
     // We add 'Single-track' to help CSS hide the playlist
     return `<div class="bodge-rss-player single-track" data-src="${resolvedSrc}" data-title="${displayTitle}">
         <div class="rss-loading">
-             <img src="/content/.config/3dloading.svg" alt="Loading..." style="width: 50px; height: 50px;">
+             <img src="/.config/loading.svg" alt="Loading..." style="width: 50px; height: 50px;">
              <p>Loading Audio...</p>
         </div>
     </div><script src="/js/bodge-player.js" defer></script>`; 
@@ -409,7 +408,7 @@ module.exports = function (eleventyConfig) {
     // If only 1 file is found, mark it single-track to hide the list UI
     const modeClass = playlistData.length === 1 ? 'single-track' : '';
 
-    return `<div class="bodge-rss-player ${modeClass}" data-playlist="${jsonString}" data-title="${displayTitle}"><div class="rss-loading"><img src="/content/.config/3dloading.svg" alt="Loading..." style="width: 50px; height: 50px;"><p>Indexing...</p></div></div><script src="/js/bodge-player.js" defer></script>`;
+    return `<div class="bodge-rss-player ${modeClass}" data-playlist="${jsonString}" data-title="${displayTitle}"><div class="rss-loading"><img src="/.config/loading.svg" alt="Loading..." style="width: 50px; height: 50px;"><p>Indexing...</p></div></div><script src="/js/bodge-player.js" defer></script>`;
   });
 
   // Image Shortcode
@@ -473,7 +472,7 @@ module.exports = function (eleventyConfig) {
     src="${resolvedSrc}" 
     camera-controls 
     auto-rotate 
-    poster="/config/3dloading.svg" 
+    poster="/.config/3dloading.svg" 
     style="width: 100%; height: 400px; background-color: var(--bg-muted);">
   </model-viewer>
   <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p>
@@ -525,7 +524,7 @@ module.exports = function (eleventyConfig) {
     
     return `<div id="${uid}" class="bodge-rss-player" data-rss-url="${url}" data-sort-order="${orderAttr}">
         <div class="rss-loading">
-             <img src="/content/.config/3dloading.svg" alt="Loading..." style="width: 50px; height: 50px;">
+             <img src="/.config/loading.svg" alt="Loading..." style="width: 50px; height: 50px;">
              <p>Tuning in...</p>
         </div>
       </div><script src="/js/bodge-player.js" defer></script>`;
