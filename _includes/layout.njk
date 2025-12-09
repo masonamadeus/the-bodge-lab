@@ -75,8 +75,8 @@
             </style>
             ${rects}
             <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
-        </svg>`;
-                // 4. Inject
+            </svg>`;
+
                 const link = document.createElement('link');
                 link.rel = 'icon';
                 link.id = 'dynamic-favicon'; // ID for easier updates later
@@ -87,13 +87,11 @@
                     data: identity,
                     save: (newData) => {
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
-                        // Reload page to apply? Or we can just update the link tag logic here. For simplicity in the editor, we'll let the
-                        // editor handle the live update.
                     }
                 };
             })();
         </script>
-        <link href="/css/prism.css" rel="stylesheet"/>
+
         <link rel="stylesheet" href="/css/main.css">
         <script src="/js/theme.js"></script>
         <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
@@ -135,7 +133,6 @@
                 <meta property="og:audio:type" content="{{ seo.media.mime }}">
             {% endif %}
         {% endif %}
-
         {# Twitter card: use player only for YouTube embeds (broad compatibility). Otherwise use summary_large_image. #}
         {% if seo.media and seo.media.isYouTube and seo.media.embedUrl %}
             <meta name="twitter:card" content="player">
@@ -150,128 +147,137 @@
         {% endif %}
     </head>
     <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.02" numoctaves="8" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xchannelselector="R" ychannelselector="R">
+
+                </filter>
+            </defs>
+        </svg>
         <header>
             <nav class="nav-container">
                 <div class="breadcrumb-nav">
                     <span class="separator">\\</span>
                     <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
-                    {% set url_parts = page.url | split('/') %}
-                    {% set accumulated_path = '' %}
-                    {% for part in url_parts %}
-                        {% if part and part != 'index.html' %}
-                            {% set accumulated_path = accumulated_path + '/' + part %}
-                            <span class="separator">\</span>
-                            {% if not loop.last %}
-                                <a href="{{ accumulated_path }}/" class="breadcrumb">{{ part }}</a>
-                            {% else %}
-                                <span class="current">{{ title if title and title != "Home" else part }}</span>
+                        {% set url_parts = page.url | split('/') %}
+                        {% set accumulated_path = '' %}
+                        {% for part in url_parts %}
+                            {% if part and part != 'index.html' %}
+                                {% set accumulated_path = accumulated_path + '/' + part %}
+                                <span class="separator">\</span>
+                                {% if not loop.last %}
+                                    <a href="{{ accumulated_path }}/" class="breadcrumb">{{ part }}</a>
+                                {% else %}
+                                    <span class="current">{{ title if title and title != "Home" else part }}</span>
+                                {% endif %}
                             {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div
+                        class="page-nav">
+                        {# Right Side: Parent Link #}
+                        {% if parentUrl %}
+                            <div>
+                                <a href="{{ parentUrl }}" class="nav-link up">⇱ Go Up</a>
+                            </div>
                         {% endif %}
-                    {% endfor %}
-                </div>
-                <div
-                    class="page-nav">
-                    {# Right Side: Parent Link #}
-                    {% if parentUrl %}
-                        <div>
-                            <a href="{{ parentUrl }}" class="nav-link up">⇱ Go Up</a>
+                        {# Left Side: Date #}
+                        {% if page.date and page.url != "/" %}
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: {{ page.date | readableDate }}</em>
+                                </i>
+                            </div>
+                        {% endif %}
+                    </div>
+                </nav>
+            </header>
+            {% if content or media %}
+                <main class="main-content">
+                    {% block content %}
+                        {{ content | safe }}
+                    {% endblock %}
+                    {% if download %}
+                        <div class="page-meta">
+                            {% set download_href = "" %}
+                            {% if media and media.url %}
+                                {# This is a media page. Use the media.url (e.g., /Bug & Moss/logo.jpg) #}
+                                {% set download_href = media.url %}
+                            {% else %}
+                                {# This is a post page. Use the page.inputPath (e.g., /posts/firstpost.md) #}
+                                {#{% set download_href = "data:text/markdown;charset=utf-8," + page.inputContent | urlencode %}#}
+                            {% set download_href = "data:application/octet-stream;charset=utf-8," + (page.rawInput | urlencode) %}
+                            {% endif %}
+                            <hr>
+                                <p class="download-btn-container"> <a class="page-share-btn" href="/s/{{ uid }}/" title="Get permanent link">
+                                    SHARE⇗
+                                </a>
+                                <a class="page-download-btn nowrap" href="{{ download_href | safe }}" download="{{ download_filename | safe }}" title='Download "{{ download_filename | safe }}"'>
+                                    DOWNLOAD POST ⤓
+                                </a>
+                            </p>
                         </div>
                     {% endif %}
-                    {# Left Side: Date #}
-                    {% if page.date and page.url != "/" %}
-                        <div class="page-meta-date">
-                            <i>
-                                <em>Modified: {{ page.date | readableDate }}</em>
-                            </i>
+                </main>
+                <br>
+            {% endif %}
+            {# --- DIRECTORY LISTING SECTION --- #}
+            {% if directory %}
+                {% set hasDirs = directoryContents.directories | length > 0 %}
+                {% set hasPages = directoryContents.pages | length > 0 %}
+                {% set hasFiles = directoryContents.files | length > 0 %}
+                {% set hasContent = hasDirs or hasPages or hasFiles %}
+                {% if hasContent %}
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            {% if directoryParentUrl %}
+                                <a href="{{ directoryParentUrl }}" class="nav-link-small up">..\
+                                </a>
+                            {% endif %}
+                            <h3 class="directory-title">{{ directoryTitle | safe }}</h3>
                         </div>
-                    {% endif %}
-                </div>
-            </nav>
-        </header>
-        {% if content or media %}
-            <main class="main-content">
-                {% block content %}
-                    {{ content | safe }}
-                {% endblock %}
-                {% if download %}
-                    <div class="page-meta">
-                        {% set download_href = "" %}
-                        {% if media and media.url %}
-                            {# This is a media page. Use the media.url (e.g., /Bug & Moss/logo.jpg) #}
-                            {% set download_href = media.url %}
-                        {% else %}
-                            {# This is a post page. Use the page.inputPath (e.g., /posts/firstpost.md) #}
-                            {#{% set download_href = "data:text/markdown;charset=utf-8," + page.inputContent | urlencode %}#}
-                        {% set download_href = "data:application/octet-stream;charset=utf-8," + (page.rawInput | urlencode) %}
+                        {# 2. Directory Contents Listing #}
+                        {% if directoryContents %}
+                            <ul class="dir-listing">
+                                {% for dir in directoryContents.directories %}
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="{{ dir.url }}">{{ dir.name }}\</a>
+                                    </li>
+                                {% endfor %}
+                                {% for item in directoryContents.pages %}
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        {% if item.isCurrent %}
+                                            {# It's the current page, so make it bold and not a link #}
+                                            <strong>{{ item.name }}</strong>
+                                        {% else %}
+                                            {# It's not the current page, so make it a normal link #}
+                                            <a href="{{ item.url }}">{{ item.name }}</a>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                                {% for file in directoryContents.files %}
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="{{ file.url }}">{{ file.name }}</a>
+                                        <a href="{{ file.downloadUrl }}" download class="dir-download-icon" title="Download {{ file.name }}"></a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
                         {% endif %}
-                        <hr>
-                            <p class="download-btn-container"> <a class="page-share-btn" href="/s/{{ uid }}/" title="Get permanent link">
-                                SHARE⇗
-                            </a>
-                            <a class="page-download-btn nowrap" href="{{ download_href | safe }}" download="{{ download_filename | safe }}" title='Download "{{ download_filename | safe }}"'>
-                                DOWNLOAD POST ⤓
-                            </a>
-                        </p>
+                    </section>
+                    <div class="site-options-row">
+                        <button id="theme-toggle" class="theme-toggle">Dark Mode</button>
                     </div>
                 {% endif %}
-            </main>
-            <br>
-        {% endif %}
-        {# --- DIRECTORY LISTING SECTION --- #}
-        {% if directory %}
-            {% set hasDirs = directoryContents.directories | length > 0 %}
-            {% set hasPages = directoryContents.pages | length > 0 %}
-            {% set hasFiles = directoryContents.files | length > 0 %}
-            {% set hasContent = hasDirs or hasPages or hasFiles %}
-            {% if hasContent %}
-                <section class="directory-container">
-                    <div class="directory-header">
-                        {% if directoryParentUrl %}
-                            <a href="{{ directoryParentUrl }}" class="nav-link-small up">..\
-                            </a>
-                        {% endif %}
-                        <h3 class="directory-title">{{ directoryTitle | safe }}</h3>
-                    </div>
-                    {# 2. Directory Contents Listing #}
-                    {% if directoryContents %}
-                        <ul class="dir-listing">
-                            {% for dir in directoryContents.directories %}
-                                <li>
-                                    <span
-                                        class="icon"
-                                        style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
-                                    <a href="{{ dir.url }}">{{ dir.name }}\</a>
-                                </li>
-                            {% endfor %}
-                            {% for item in directoryContents.pages %}
-                                <li>
-                                    <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
-                                    {% if item.isCurrent %}
-                                        {# It's the current page, so make it bold and not a link #}
-                                        <strong>{{ item.name }}</strong>
-                                    {% else %}
-                                        {# It's not the current page, so make it a normal link #}
-                                        <a href="{{ item.url }}">{{ item.name }}</a>
-                                    {% endif %}
-                                </li>
-                            {% endfor %}
-                            {% for file in directoryContents.files %}
-                                <li>
-                                    <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
-                                    <a class="nowrap" href="{{ file.url }}">{{ file.name }}</a>
-                                    <a href="{{ file.downloadUrl }}" download class="dir-download-icon" title="Download {{ file.name }}"></a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                </section>
-                <div class="site-options-row">
-                    <button id="theme-toggle" class="theme-toggle">Dark Mode</button>
-                </div>
             {% endif %}
-        {% endif %}
-        {% if uid %}
-            <script>/*
+            {% if uid %}
+                <script>/*
                 // REPLACE URL IN BAR WITH SHARELINK
                 (function () { // 1. This is the "permanent" URL
                     const permanentUrl = "/s/{{ uid }}/";
@@ -285,6 +291,7 @@
                     }
                 })();
                 // */</script>
-    {% endif %}
-    <script src="/js/main.js"></script>
-</body></html></body></html>
+        {% endif %}
+        <script src="/js/main.js"></script>
+    </body>
+</html>

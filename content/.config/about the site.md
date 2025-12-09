@@ -1,7 +1,7 @@
 ---
 uid: site-about
-contentHash: 56d14abc
-date: '2025-12-04T01:56:48.673Z'
+contentHash: 3c524d03
+date: '2025-12-09T19:23:32.797Z'
 title: BodgeLab Website Design Info
 ---
 # I Always Wanna Know How Stuff Works
@@ -11,6 +11,8 @@ And I love seeing the inner workings of various design choices.
 One of the most magical things about the flash era (and [Homestarrunner](https://homestarrunner.com) in particular) was how you could easily download a finished animation (.SWF file) and then deconstruct it in the flash editor to see how it was made.
 
 I want to carry that spirit in the things I create, and try to share what I think are 'cool design choices'. Maybe this will help someone else make an even cooler website. Maybe nobody will read this. Maybe this will inspire someone to email me and tell me why my design choices are bad, actually. (I genuinely welcome any constructive criticism!!)
+
+I am far from an expert on web design or development, and I might say some really dumb stuff here that a professional would refute. You should listen to them.
 
 That said, here are some features of The Bodge Lab that I think are particularly neat.
 
@@ -95,8 +97,6 @@ I didn't use that here, because this isn't a single page site, but I mention thi
 
 If you try to go to a page that doesn't exist on this site, the 404 will automagically perform a search using keywords extracted from the bad URL - and if there is only ONE good result, it'll redirect you there right away! Otherwise it shows you a search result page.
 
-Go ahead, try it! Click the URL bar and add some words to the end, then hit enter. If you want something that I know will get you a result, you can type "farting".
-
 ## Solution #2: My Own Bodgey Shortlinking/Permalinking System
 
 By default every page gets built at an address that reflects its position in the folder hierarchy. You can probably see that right now if you look at the URL bar.
@@ -129,7 +129,7 @@ ___
 
 # Dynamic Favicons
 
-Just like your website theme, your favicon is generated for you except it's completely rand
+Just like your website theme, your favicon is generated for you except it's completely random to start.
 
 You can edit it if you'd like [here](<favicon editor>)
 

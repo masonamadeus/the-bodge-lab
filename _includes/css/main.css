@@ -52,6 +52,7 @@ body {
   background-size: cover;
   background-repeat: repeat-y;
   background-position-x: center;
+  
 }
 
 h1 { margin-top: 0.5em; }
@@ -79,17 +80,21 @@ iframe {
   display: block;
 }
 
+#paperfilter {
+  position:absolute;
+  width: 100%; height: 100%;
+}
+
 /* =========================================
    3. THE BODGE LAYOUT ENGINE (3D & Bleed)
    ========================================= */
 .main-content {
   /* Create shared 3D environment */
   transform-style: preserve-3d;
-  container-type: inline-size;
   padding-top: var(--base-spacing);
   padding-bottom: var(--base-spacing);
-  padding-left: var(--base-spacing);
-  padding-right: var(--base-spacing);
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
 /* The Content Elements */
@@ -97,36 +102,53 @@ iframe {
   transform-style: preserve-3d;
   position: relative;
   background-color: transparent;
+  hyphens: auto;
 }
 
 /* The "Bodge" Background Layer (Bleeding Box) */
+
 .main-content > *::before {
   content: "";
   display: block;
   position: absolute;
   
-  /* Vertical Bleed: Keep this rigid (Top/Bottom) */
-  top: -1.5em;
-  bottom: -2em;
+  /* 1. CREATE A BUFFER ZONE
+     We add a transparent border around the element. 
+     This forces the browser's 3D layer to be larger. */
+  border: 20px solid transparent;
   
-  left: 50%;
-
-  width: 105cqw;
-
-  max-width: 105cqw;
-
+  /* 2. CONSTRICT THE PAPER
+     We tell the background color to stop at the padding edge,
+     leaving the border area transparent. */
+  background-clip: padding-box;
+  
+  /* 3. COMPENSATE DIMENSIONS
+     Since we added a 20px border, we need to stretch the 
+     positioning slightly so the visual paper stays the same size.
+     (e.g., top was -1.5em, now we subtract the 20px border from that) */
+  top: calc(-1.5em - 20px);
+  bottom: calc(-2em - 20px);
+  
+  /* Width handling: 
+     We keep 105% but the transparent borders ensure 
+     the visible white part has room to wiggle inside the box 
+     without hitting the compositor edge. */
+  left: 49%;
+  width: calc(105% + 40px); /* Add 40px to cover the new border width */
+  max-width: calc(1200px + 40px);
 
   background-color: var(--bg-color-bright);
   
-  /* 4. Combine the 3D Layering (Z -1) with the Centering (X -50%) */
-  transform: translateZ(-1px) translateX(-50%);
-  
+  transform: translateZ(-100px) translateX(-50%);
   pointer-events: none;
+  
+  filter: url(#paperlike);
 }
 
-/* Specific Overrides */
-.main-content > pre::before {
-  display: none !important; /* Prism handles its own background */
+
+#textfilter {
+  position: absolute;
+  overflow: visible!important;
 }
 
 /* =========================================
@@ -267,107 +289,83 @@ iframe {
 }
 
 /* =========================================
-   7. CODE BLOCKS (Prism Override Edition)
+   7. CODE BLOCKS (Native Bodge Edition)
    ========================================= */
 
-/* 1. THE WRAPPER (PRE) 
-   We use !important to fight prism.css */
+/* 1. THE WRAPPER (PRE) */
 .main-content > pre,
 pre[class*="language-"] {
-  /* FLATTEN & RESET */
-  transform-style: flat !important;
-  isolation: isolate; 
-  position: relative;
-  z-index: -1;
-
-  /* Box Model */
   display: block;
-  margin: 1em 0;
-  border: 1px solid var(--border-color);
-  border-radius: 0;
-  width: auto;
-  max-width: 100%;
-
-  /* KILL PRISM STYLES */
-  background-color: transparent !important; /* Let the Bodge Card show */
-  padding: 0 !important;                    /* No padding on wrapper */
-  overflow: visible !important;             /* CRITICAL: Let the card bleed out */
+  margin: 1.5em 0;
+  padding: 0;
+  
+  /* CRITICAL: overflow must be visible so the "paper" background 
+     (which lives in ::before) can bleed outside the box. */
+  overflow: visible !important; 
+  
+  /* Reset Prism defaults */
+  background: transparent !important;
   text-shadow: none !important;
+  border: none !important;
 }
 
-/* 2. THE BACKGROUND CARD (::before) */
-.main-content > pre::before {
-  content: "";
-  display: block !important;
-  position: absolute;
-  
-  /* Dimensions */
-  top: -1.5em; 
-  bottom: -2em;
-  left: 50%;
-  width: 105cqw; 
-  max-width: 105cqw;
-  
-  /* Positioning */
-  transform: translateX(-50%); 
-  background-color: var(--bg-color-bright);
-  z-index: -1; 
-  pointer-events: none;
-}
-
-/* 3. THE CONTENT (CODE) 
-   This handles the scrolling and the gray background */
+/* 2. THE SCROLLING CONTENT (CODE)
+   The code tag handles the text styling and the scrolling. */
 code, 
 code[class*="language-"],
 pre[class*="language-"] code {
-  /* Visuals */
   display: block;
-  background-color: var(--bg-muted) !important;
-  color: var(--text-color) !important;
-  text-shadow: none !important;
   
-  /* Spacing */
-  padding: 10px !important;
-  padding-top: 2.5em !important; 
-  line-height: 1.4;
+  /* Typography */
+  font-family: var(--mono-font), monospace;
+  font-size: 0.9em;
+  line-height: 1.5;
+  color: var(--text-color);
+  text-shadow: none;
+  background: transparent !important;
+  
+  /* Layout & Spacing */
+  padding: 1em;
   white-space: pre; 
+  tab-size: 4;
   
-  /* SCROLLING */
+  /* Scrolling behavior */
+  overflow-x: auto; 
   width: 100%;
-  overflow: auto !important; 
-  max-height: 60vh; 
-  
-  /* Layering */
-  position: relative;
-  z-index: 1;
+
+  max-height: 500px;
 }
 
+/* Scrollbar styling for code blocks */
+code::-webkit-scrollbar { height: 8px; }
+code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
+
+/* 3. COPY BUTTON POSITIONING */
 .code-copy-btn {
   position: absolute;
-  top: 0; left: 0;
-  margin: 0.5em;
-  z-index: 10;
+  bottom: -1em; right: 0;
+  z-index: 20;
   
   background: var(--bg-muted);
   border: 2px dashed var(--border-color);
   padding: 0.3em 0.6em;
   font-size: 0.8em;
-  font-family: var(--body-font);
+  font-family: var(--mono-font);
   cursor: pointer;
-  opacity: 0.7;
+  opacity: 0.6;
 }
-
-.code-copy-btn:hover {
-  opacity: 1;
-  background: var(--accent-color);
-  color: var(--bg-color-bright);
-  border-color: var(--accent-color);
-}
+.code-copy-btn:hover { opacity: 1; color: var(--accent-color); border-color: var(--accent-color); }
 
 .code-copy-btn.copied {
   background: var(--accent-color);
   color: var(--bg-color-bright);
   opacity: 1;
+}
+
+@media (hover: none) {
+  .code-copy-btn {
+    opacity: 1;
+  }
 }
 
 /* =========================================
@@ -914,3 +912,70 @@ html {
     aspect-ratio: 16 / 9;
   }
 }
+
+/* =========================================
+   13. SYNTAX HIGHLIGHTING
+   ========================================= */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: slategray;
+}
+
+.token.punctuation {
+  color: #999;
+}
+
+.token.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #905;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #690;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #9a6e3a;
+  background: transparent;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #07a;
+}
+
+.token.function,
+.token.class-name {
+  color: #DD4A68;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #e90;
+}
+
+.token.important,
+.token.bold { font-weight: bold; }
+.token.italic { font-style: italic; }

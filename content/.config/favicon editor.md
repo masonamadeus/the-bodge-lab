@@ -4,8 +4,8 @@ layout: layout.njk
 uid: favicon-editor
 directory: false
 download: false
-contentHash: 33499f5e
-date: '2025-12-03T03:20:23.401Z'
+contentHash: c3c16b7a
+date: '2025-12-09T19:23:32.800Z'
 ---
 
 ## Edit Your Favicon
@@ -15,8 +15,7 @@ Click pixels to paint. Right-click to erase.
     <div class="editor-controls">
         <div class="control-group">
             <label>Color</label>
-            <input type="color" id="paint-color" value="#ff0000">
-            <button id="btn-use-theme" class="editor-btn active" title="Use Auto-Theme Color">AUTO</button>
+            <input type="color" id="paint-color">
         </div>
         
         <div class="control-group">
@@ -103,15 +102,28 @@ Click pixels to paint. Right-click to erase.
 </style>
 
 <script>
+
+function hslToHex(h, s, l) {
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const gridEl = document.getElementById('pixel-grid');
     const colorInput = document.getElementById('paint-color');
     const alphaInput = document.getElementById('paint-opacity');
-    const btnTheme = document.getElementById('btn-use-theme');
     
     // Global State
     let identity = window.BodgeIdentity ? window.BodgeIdentity.data : { hue: 0, grid: [] };
     let useThemeColor = true;
+    const startHex = hslToHex(identity.hue, 70, 50);
+    colorInput.value = startHex;
 
     // --- RENDER GRID ---
     function renderGrid() {
@@ -173,8 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- UPDATE REAL FAVICON ---
     function updateFavicon() {
         // We essentially re-run the logic from layout.njk
-        // But we can cheat and just reload the page? 
-        // No, let's regenerate the SVG string here to be smooth.
         
         const cLight = `hsl(${identity.hue}, 80%, 40%)`;
         const cDark  = `hsl(${identity.hue}, 80%, 70%)`;
@@ -184,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!pixel) return;
             const x = i % 5;
             const y = Math.floor(i / 5);
-            // We use inline styles for the editor update to ensure immediate feedback
+            // inline styles for the editor update to ensure immediate feedback
             // (Media queries inside data-uri SVGs can be tricky on some updates, but we try)
             const fillAttr = pixel.c ? `fill="${pixel.c}"` : `class="themable"`;
             rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${pixel.o}" ${fillAttr} />`;
@@ -206,11 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- CONTROLS ---
-    btnTheme.onclick = () => {
-        useThemeColor = true;
-        btnTheme.classList.add('active');
-        colorInput.parentElement.style.opacity = '0.5';
-    };
 
     colorInput.oninput = () => {
         useThemeColor = false;
