@@ -54,7 +54,7 @@ layout: false
 
     {# --- REDIRECT (For the Humans) --- #}
     {# Canonical tells Google this page is just a shadow of the real one #}
-    <link rel="canonical" href="{{ p.url }}">
+    <link rel="canonical" href="{{ p.url | safe}}">
     {# No meta-refresh here: we'll redirect humans instantly with JS (bots don't run JS and will read the OG tags).
        This gives a better UX while leaving the head intact for crawlers. A noscript fallback handles non-JS clients. #}
 </head>
@@ -68,11 +68,11 @@ layout: false
           var isBot = botSignals.some(function (s) { return ua.toLowerCase().indexOf(s.toLowerCase()) !== -1; });
           // If we don't detect a bot, redirect humans immediately to the original page
           if (!isBot) {
-            window.location.replace("{{ p.url }}");
+            window.location.replace("{{ p.url | safe }}");
           }
         } catch (e) {
           // On error, perform a safe replace so humans still get redirected
-          try { window.location.replace("{{ p.url }}"); } catch (e) {}
+          try { window.location.replace("{{ p.url | safe }}"); } catch (e) {}
         }
       })();
     </script>
@@ -84,20 +84,20 @@ layout: false
           {% else %}
             <video controls preload="metadata" style="max-width:100%;height:auto;" {% if p.data.seo.image %}poster="{{ p.data.seo.image }}"{% endif %}>
               <source src="{{ p.data.seo.media.embedUrl or p.data.seo.media.url }}" type="{{ p.data.seo.media.mime }}">
-              Your browser does not support the video tag. <a href="{{ p.url }}">Open page</a>.
+              Your browser does not support the video tag. <a href="{{ p.url | safe }}">Open page</a>.
             </video>
           {% endif %}
         {% elif p.data.seo.media.type == 'audio' %}
           <audio controls style="width:100%;max-width:600px;" src="{{ p.data.seo.media.url }}">Your browser does not support the audio element.</audio>
         {% endif %}
-        <p style="margin-top:1rem;">Opening original page shortly — <a href="{{ p.url }}">{{ p.data.title }}</a></p>
+        <p style="margin-top:1rem;">Opening original page shortly — <a href="{{ p.url | safe }}">{{ p.data.title }}</a></p>
       </div>
     {% else %}
       <noscript>
-        <meta http-equiv="refresh" content="2; url={{ p.url }}">
-        <p>Redirecting to <a href="{{ p.url }}">{{ p.data.title }}</a>... (enable JavaScript for instant redirect)</p>
+        <meta http-equiv="refresh" content="2; url={{ p.url |safe }}">
+        <p>Redirecting to <a href="{{ p.url |safe }}">{{ p.data.title }}</a>... (enable JavaScript for instant redirect)</p>
       </noscript>
-      <p>Redirecting to <a href="{{ p.url }}">{{ p.data.title }}</a>...</p>
+      <p>Redirecting to <a href="{{ p.url | safe }}">{{ p.data.title }}</a>...</p>
     {% endif %}
 </body>
 </html>

@@ -632,11 +632,11 @@ module.exports = function (eleventyConfig) {
   // Collection of "permanent" pages (with page_id in front matter)
   eleventyConfig.addCollection("permanent_pages", function (collectionApi) {
     return collectionApi.getAll().filter(function (item) {
-      // Return pages that have 'page_id' in their data
-      return "uid" in item.data;
+      // Only include items where uid is actually set (not null/undefined)
+      return item.data.uid; 
     });
   });
-
+  
   return {
     dir: {
       input: "content",
