@@ -67,9 +67,10 @@ export class SC_TRANSMISSIONS extends PodCubeScreen {
         this._initializeDisplayObjects(); // Setup core display objects
         this.registerContexts();         // Define user interaction contexts
 
+        this.populateFilterOptions(); // Populate filter categories initially
+        
         // Initialize with all episodes from feed based on default criteria
         this.refreshEpisodeList();
-        this.populateFilterOptions(); // Populate filter categories initially
 
         PodCube.log("SC_TRANSMISSIONS: Contexts registered.");
         this.switchContext("Transmissions:List"); // Default context on init

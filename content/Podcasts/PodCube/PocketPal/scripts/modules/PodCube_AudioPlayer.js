@@ -103,7 +103,7 @@ export class PodCubeAudioPlayer {
                 }
                 break;
             case 'pback':
-                this.previous();
+                this.skipBackward();
                 break;
             case 'pfwd':
                 this.skipForward();

@@ -602,14 +602,28 @@ module.exports = function (eleventyConfig) {
   });
 
   // Hide/Reveal Shortcode (Accordion)
-  // Usage: {% hide "Read More..." %} ...content... {% endhide %}
-  eleventyConfig.addPairedShortcode("hide", function(content, summary="Read More...") {
+  // Usage: {% toggle "Read More..." %} ...content... {% endtoggle %}
+  eleventyConfig.addPairedShortcode("toggle", function(content, summary="Read More...") {
     // 1. Render the Markdown inside the block
     const renderedContent = mdLib.render(content);
     
     // 2. Return the <details> wrapper
     return `
       <details class="bodge-accordion"><summary>${summary}</summary><div class="bodge-accordion-content">${renderedContent}</div></details>`;
+  });
+
+  // Reveal Shortcode (Arbitrary Distance)
+  // Usage: {% reveal "Trigger Text", "Hidden Content" %} Text between... {% endreveal %}
+  eleventyConfig.addPairedShortcode("reveal", function(content, trigger, hidden) {
+    const uid = "reveal-" + Math.random().toString(36).substr(2, 9);
+    // 1. The Trigger
+    const btnHtml = `<button class="bodge-reveal-btn" data-reveal-id="${uid}" aria-expanded="false" aria-controls="${uid}">${trigger}</button>`;
+    
+    // 2. The Hidden Content (Starts hidden)
+    const hiddenHtml = `<span id="${uid}" class="bodge-reveal-content" hidden>${hidden}</span>`;
+    
+    // 3. Return: Trigger + The Distance (content) + The Reveal
+    return `${btnHtml}${content}${hiddenHtml}`;
   });
  
 

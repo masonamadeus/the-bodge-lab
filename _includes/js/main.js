@@ -365,5 +365,36 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   })();
+
+  // --- REVEAL SHORTCODE ---
+  (function() {
+    document.body.addEventListener('click', (e) => {
+      // 1. Check if we clicked a reveal button
+      if (e.target.matches('.bodge-reveal-btn')) {
+        const btn = e.target;
+        const id = btn.dataset.revealId;
+        const target = document.getElementById(id);
+        
+        if (target) {
+            // 2. Toggle State
+            const isHidden = target.hidden;
+            
+            if (isHidden) {
+                target.hidden = false;
+                btn.setAttribute('aria-expanded', 'true');
+                btn.classList.add('active');
+            } else {
+                // Optional: Allow hiding it again?
+                // If you want it permanent, remove this else block.
+                target.hidden = true;
+                btn.setAttribute('aria-expanded', 'false');
+                btn.classList.remove('active');
+            }
+        }
+      }
+    });
+  })();
+
+  
 });
 

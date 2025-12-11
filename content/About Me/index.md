@@ -1,8 +1,8 @@
 ---
 title: About Mason
 uid: about-mason
-contentHash: af89a298
-date: '2025-12-04T01:56:48.676Z'
+contentHash: a0e733b0
+date: '2025-12-11T01:56:08.662Z'
 ---
 
 
@@ -53,4 +53,4 @@ Let's be friends and make something cool together!
 
 ## Here are some [Award-Winning Commercials](<Award-Winning Commercials/>) I've produced!
 
-## Or maybe you're looking for my [Professional Resume](Professional%20Resume.md)?
+## Or maybe you're looking for my [Professional Resume](<Professional Resume>)?
