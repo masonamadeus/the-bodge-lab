@@ -229,17 +229,17 @@
     const accent2Hue = (seed >> 16) % 360;
     
     // Bodge Light S/L
-    const light_bg_s = getSeededRandomInRange(seed, 2, 55, 85);
+    const light_bg_s = getSeededRandomInRange(seed, 2, 15, 85);
     const light_bg_l = getSeededRandomInRange(seed, 4, 88, 92);
-    const light_text_s = getSeededRandomInRange(seed, 6, 25, 65);
+    const light_text_s = getSeededRandomInRange(seed, 6, 15, 65);
     const light_text_l = getSeededRandomInRange(seed, 8, 18, 22);
     const light_text_muted_s = getSeededRandomInRange(seed, 10, 5, 30);
     const light_text_muted_l = getSeededRandomInRange(seed, 12, 33, 37);
-    const accent1_s = getSeededRandomInRange(seed, 14, 45, 75);
+    const accent1_s = getSeededRandomInRange(seed, 14, 15, 75);
     const accent1_l = getSeededRandomInRange(seed, 16, 42, 48);
     const accent2_border_s = getSeededRandomInRange(seed, 18, 5, 65);
     const accent2_border_l = getSeededRandomInRange(seed, 20, 18, 25);
-    const accent2_muted_s = getSeededRandomInRange(seed, 22, 25, 35);
+    const accent2_muted_s = getSeededRandomInRange(seed, 22, 5, 45);
     const accent2_muted_l = getSeededRandomInRange(seed, 24, 78, 82);
     
     const bodyFont = BODY_FONT_PALETTE[getSeededRandomInRange(seed, 0, 0, BODY_FONT_PALETTE.length - 1)];

@@ -1,8 +1,8 @@
 ---
 title: About Mason
 uid: about-mason
-contentHash: a0e733b0
-date: '2025-12-11T01:56:08.662Z'
+contentHash: 45dd3737
+date: '2025-12-11T02:40:57.816Z'
 ---
 
 
@@ -20,15 +20,13 @@ date: '2025-12-11T01:56:08.662Z'
 
 I don't really know how to describe myself succintly. I've had a weird, non-traditional academic and career path.
 
-I am a Destination Imagination alum, and I carry the values and skills I learned from that program as the highest inspiration for what I do.
-
 My personal goal is to try and fill the world with as much harmless joy and inspiration as I can.
 
 The best one-line description of who I am and what I do came from my friend Aemyn. She described me as an...
 
-## **All-Terrain Professional Bodge Technician.**
-
 {%endgrid%}
+
+## **All-Terrain Professional Bodge Technician.**
 
 
 ### I am the creative director at [8th Layer Media](https://8thlayermedia.com/), where [Perry Carpenter](https://www.linkedin.com/in/perrycarpenter/) and I create various shows about the intersections of humanity and technology!

@@ -552,7 +552,6 @@ module.exports = function (eleventyConfig) {
     return `<div class="${className}">${content}</div>`;
   });
 
-
   // "Grid" Shortcode (The *easy* way)
   //    Usage: {% grid "half, half" %} ...content... ...content... {% endgrid %}
   eleventyConfig.addPairedShortcode("grid", function (content, widths) {
@@ -626,6 +625,13 @@ module.exports = function (eleventyConfig) {
     return `${btnHtml}${content}${hiddenHtml}`;
   });
  
+  // Book Style Wrapper
+  // Usage: {% book %} ... paragraphs ... {% endbook %}
+  eleventyConfig.addPairedShortcode("book", function(content) {
+    // Render the markdown inside, then wrap it
+    const rendered = mdLib.render(content);
+    return `<div class="book-style">${rendered}</div>`;
+  });
 
 
   //#endregion

@@ -395,6 +395,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   })();
 
-  
+  // --- SMART INDENT (No indent for single lines) ---
+  (function() {
+    function handleIndents() {
+      // 1. Select all paragraphs in the main content
+      const paras = document.querySelectorAll('.main-content p');
+      
+      paras.forEach(p => {
+        // Reset (in case of resize)
+        p.classList.remove('is-single-line');
+        
+        // 2. Measure
+        // We use a buffer (1.2x) to account for sub-pixel rendering differences
+        const lineHeight = parseFloat(window.getComputedStyle(p).lineHeight);
+        const height = p.clientHeight;
+        
+        // 3. Compare: If height is essentially one line, tag it
+        if (height < (lineHeight * 1.5)) {
+          p.classList.add('is-single-line');
+        }
+      });
+    }
+
+    // Run on load
+    handleIndents();
+    
+    // Run on resize (using your existing debounce utility)
+    if (window.BodgeLab && window.BodgeLab.debounce) {
+      window.addEventListener('resize', window.BodgeLab.debounce(handleIndents, 200));
+    } else {
+      window.addEventListener('resize', handleIndents);
+    }
+  })();
+
 });
 

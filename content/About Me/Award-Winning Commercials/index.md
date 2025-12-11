@@ -1,7 +1,7 @@
 ---
 uid: granite-mikes
-contentHash: 95f25d6d
-date: '2025-12-03T01:08:02.232Z'
+contentHash: 0adcc6ba
+date: '2025-12-11T02:40:57.814Z'
 ---
 
 # ADMISSION: I Love Making Advertisements
@@ -26,7 +26,7 @@ Also a general shoutout to my home-station, if anyone from MBG is reading this -
 
 Here are commercials I created that won! I'll put them in order according to my personal favoritism.
 
-{%grid "one-third, two-thirds"%}
+{%grid%}
 
 ![img](NHABkarlroberts.jpg)
 
@@ -44,7 +44,7 @@ At least, I think so. 🤷‍♂️
 
 {%endgrid%}
 
-{%grid "two-thirds, one-third"%}
+{%grid %}
 
 ## Salsa Sisters - General 2020
 
@@ -62,7 +62,7 @@ It was a blast, they loved it, and it won "Best Individual Commercial" in the NH
 
 {%endgrid%}
 
-{%grid "one-third, two-thirds"%}
+{%grid%}
 
 ![img](NHABfrans.jpg)
 
