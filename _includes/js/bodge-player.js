@@ -141,8 +141,8 @@
                     </div>
 
                     <div class="rss-extras">
-                        <button class="rss-btn" data-act="popout" title="Popout Player">${icons.popout}</button>
                         <button class="rss-btn rss-speed-btn" data-act="speed" title="Speed">1.0x</button>
+                        <button id="popout-btn" class="rss-btn" data-act="popout" title="Popout Player">${icons.popout}</button>
                         <a class="rss-btn" data-act="download" href="#" title="Save" download>${icons.download}</a>
                     </div>
                 </div>

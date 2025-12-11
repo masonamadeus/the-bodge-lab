@@ -752,7 +752,6 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   display: flex;
   align-items: center;
   gap: 1em;
-  width: 80px; /* Matches time display width for centering */
   justify-content: flex-end;
 }
 
@@ -838,6 +837,7 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
 .rss-playlist {
   max-height: 250px;
   overflow-y: auto;
+  overflow-x:hidden;
   background: var(--bg-color);
   border-top: 1px solid var(--border-color); /* Separates controls from list */
 }
@@ -865,6 +865,7 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
 /* --- RESPONSIVE --- */
 @media (max-width: 500px) {
   .rss-time-display { display: none; }
+  #popout-btn { display: none; }
   .rss-extras { width: auto; } /* Let it collapse */
   .rss-toolbar { justify-content: center; gap: 2em; }
 }
