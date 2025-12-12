@@ -1,5 +1,5 @@
 ---
-title: REAPER Plugins/Scripts
+title: REAPER Plugins && Scripts
 uid: reaper-resources
 contentHash: 78a30d86
 date: '2025-11-29T20:50:41.817Z'
