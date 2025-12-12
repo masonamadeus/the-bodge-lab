@@ -50,6 +50,11 @@ export class MessageSystem {
         });
     }
 
+    unsubscribe(eventType, handler) {
+        if (!this._subscriptions[eventType]) return;
+        this._subscriptions[eventType] = this._subscriptions[eventType].filter(h => h !== handler);
+    }
+
     keyboard(e) {
         let k = e.key;
         if (k == " ") {

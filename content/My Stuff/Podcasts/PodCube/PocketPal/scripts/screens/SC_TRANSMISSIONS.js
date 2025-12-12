@@ -282,6 +282,17 @@ export class SC_TRANSMISSIONS extends PodCubeScreen {
      * This method is responsible for updating the UI.
      */
     refreshEpisodeList() {
+        if (PodCube.Feed == null) {
+            this.feedSub = true;
+            PodCube.MSG.subscribe("Feed-Ready", this.refreshEpisodeList.bind(this));
+            return;
+        }
+
+        if (this.feedSub && PodCube.Feed != null) {
+            PodCube.MSG.unsubscribe("Feed-Ready", this.refreshEpisodeList.bind(this));
+            this.feedSub = false;
+        }
+
         PodCube.log("SC_TRANSMISSIONS: Refreshing episode list with criteria:", this.currentCriteria);
         const episodesToDisplay = PodCube.Feed.getFilteredAndSortedList(this.currentCriteria);
         this.populateEpisodeSymbols(episodesToDisplay); // Re-render visual list

@@ -11,6 +11,4 @@
 - add custom commit message via control panel
 - double check env shit && r2
 
-- input elements need pseudo ::before to style properly
-- remove 'main' from tilt filter
 - make 404 page invisible (or artistic) redirect, pass to mock-404 for search page if not found

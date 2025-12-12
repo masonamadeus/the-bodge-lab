@@ -19,11 +19,11 @@
   --accent-color: hsl(var(--accent-hue), 70%, 45%);
 
   /* --- Dimensions --- */
-  --max-width: 1200px;
+  --max-width: 1000px;
   --line-height: 1.3;
   --base-spacing: 1.1em;
 
-  font-size: 1.1em;
+  font-size: 1em;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeSpeed;
@@ -50,13 +50,13 @@ body {
   
   /* Background Pattern */
   background-image: url(/.config/sitebg3.svg);
-  background-attachment: fixed;
   background-size: cover;
   background-repeat: repeat-y;
   background-position-x: center;
 }
 
 h1 { margin-top: 0.5em; }
+
 li { margin-bottom: 0.5em; }
 
 a {
@@ -81,16 +81,21 @@ iframe {
   display: block;
 }
 
+.book-style{
+  transform: none!important;
+}
+
 /* Manual "Book Style" Wrapper */
 .book-style p {
   text-indent: 2em;   /* The Indent */
   margin-top: inherit;      /* Remove gaps */
-  margin-bottom: inherit;   /* Remove gaps */
-  line-height: 1.6;
+  margin-bottom: 1em;   /* Remove gaps */
+  line-height: 1.5;
 }
 
+
 /* =========================================
-   3. LAYOUT ENGINE (Refactored)
+   3. LAYOUT ENGINE
    ========================================= */
 
 /* 1. The Main Sheet Container */
@@ -100,36 +105,16 @@ iframe {
   margin: 4em auto; 
   padding: 3em 4em;
   max-width: 1000px;
-  
-  /* Transparent background so we can see the pseudo-element behind it */
-  background-color: transparent; 
-  
-  /* Ensure content sits on top of the paper background */
   z-index: 1; 
-  
-  /* CRITICAL: Allow the ragged edges to bleed outside the box */
   overflow: visible; 
-}
-
-/* 2. The Ragged Paper Background */
-
-.main-content {
-  position: relative;
-  /* Adjust margin/padding as needed for your layout */
-  margin: 4em auto; 
-  padding: 3em 4em;
-  max-width: 1000px;
   background-color: transparent; 
-  z-index: 1; 
-  overflow: visible;
   hyphens: auto;
 
-  /* --- 1. CONFIGURATION ZONE --- */
   
   /* STROKE SETTINGS */
   --paper-color: var(--bg-color-bright);      /* The paper color */
   --stroke-color: var(--bg-muted);   /* The border color */
-  --stroke-width: 2px;         /* How thick the border is */
+  --stroke-width: 4px;         /* How thick the border is */
   
   /* ROUGHNESS SETTINGS */
   --r-depth: 10px;   /* How deep the tears are */
@@ -137,7 +122,7 @@ iframe {
   --c-size: 20px;    /* Corner size */
 
 
-  /* --- 2. THE ASSETS (Shared) --- */
+  /* --- ASSETS (Shared) --- */
   /* Corners */
   --c-tl: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M100 0 L100 100 L0 100 L0 60 L10 50 L5 40 L20 30 L15 10 L40 15 L50 5 L70 10 L100 0 Z' fill='black'/%3E%3C/svg%3E");
   --c-tr: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L0 100 L100 100 L100 60 L90 50 L95 35 L80 30 L85 15 L60 10 L50 0 L0 0 Z' fill='black'/%3E%3C/svg%3E");
@@ -155,7 +140,7 @@ iframe {
   --r2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L20 0 L10 15 L20 30 L5 45 L20 60 L12 75 L20 85 L8 95 L20 100 L0 100 Z' fill='black'/%3E%3C/svg%3E");
 }
 
-/* --- 3. SHARED MASK LOGIC (The Engine) --- */
+/* --- SHARED MASK LOGIC (The Engine) --- */
 .main-content::before,
 .main-content::after {
   content: "";
@@ -163,35 +148,6 @@ iframe {
   /* Use the variables from parent */
   
   /* THE COMPOSITE MASK */
-  -webkit-mask-image: 
-    var(--c-tl), var(--c-tr), var(--c-bl), var(--c-br),
-    var(--t1), var(--t2), var(--b1), var(--b2),
-    var(--l1), var(--l2), var(--r1), var(--r2),
-    linear-gradient(#000, #000);
-
-  -webkit-mask-position: 
-    top left, top right, bottom left, bottom right,
-    var(--c-size) 0, var(--c-size) 0,
-    var(--c-size) 100%, var(--c-size) 100%,
-    0 var(--c-size), 0 var(--c-size),
-    100% var(--c-size), 100% var(--c-size),
-    center;
-
-  -webkit-mask-repeat: 
-    no-repeat, no-repeat, no-repeat, no-repeat,
-    repeat-x, repeat-x, repeat-x, repeat-x,
-    repeat-y, repeat-y, repeat-y, repeat-y,
-    no-repeat;
-
-  -webkit-mask-size: 
-    var(--c-size) var(--c-size), var(--c-size) var(--c-size), var(--c-size) var(--c-size), var(--c-size) var(--c-size),
-    var(--r-freq) var(--r-depth), calc(var(--r-freq) * 0.73) var(--r-depth),
-    var(--r-freq) var(--r-depth), calc(var(--r-freq) * 0.73) var(--r-depth),
-    var(--r-depth) var(--r-freq), var(--r-depth) calc(var(--r-freq) * 0.73),
-    var(--r-depth) var(--r-freq), var(--r-depth) calc(var(--r-freq) * 0.73),
-    calc(100% - var(--c-size)) calc(100% - var(--c-size));
-
-  /* Duplicate for Standard Syntax */
   mask-image: 
     var(--c-tl), var(--c-tr), var(--c-bl), var(--c-br),
     var(--t1), var(--t2), var(--b1), var(--b2),
@@ -254,8 +210,6 @@ iframe {
 
 /* 4. Cleanup old hacks */
 .main-content > * {
-  transform-style: flat;
-  position: static;
 }
 
 #paperfilter {
@@ -323,9 +277,13 @@ iframe {
 .nav-link-small.up {
   font-weight: bold;
   color: var(--accent-color);
-  font-size: 1em;
+  font-size: 1.1em;
   text-decoration: none;
   line-height: 1;
+}
+
+.nav-link-small.up {
+  font-size: 1.3em;
 }
 
 /* =========================================
@@ -384,7 +342,7 @@ iframe {
 }
 
 .media-embed-wrapper {
-  border: 1px dashed var(--border-color);
+  border: 0px dashed var(--border-color);
   width: 100%;
 }
 
@@ -490,7 +448,7 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
 .directory-container {
   background-color: var(--bg-muted);
   padding: calc(var(--base-spacing)*0.5);
-  margin-top: 1em;
+  margin-top: 0.5em;
 }
 .directory-header {
   display: flex;
@@ -501,7 +459,7 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
 }
 .directory-title {
   font-size: 1.2em;
-  color: var(--accent-color);
+  color: var(--muted-text);
   margin: 0.2em;
   font-family: var(--mono-font);
 }

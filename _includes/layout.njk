@@ -229,7 +229,6 @@
                         </div>
                     {% endif %}
                 </main>
-                <br>
             {% endif %}
             {# --- DIRECTORY LISTING SECTION --- #}
             {% if directory %}
@@ -241,8 +240,7 @@
                     <section class="directory-container">
                         <div class="directory-header">
                             {% if directoryParentUrl %}
-                                <a href="{{ directoryParentUrl }}" class="nav-link-small up">..\
-                                </a>
+                                <a href="{{ directoryParentUrl }}" class="nav-link-small up">...\</a>
                             {% endif %}
                             <h3 class="directory-title">{{ directoryTitle | safe }}</h3>
                         </div>

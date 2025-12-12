@@ -39,21 +39,19 @@
   const BODY_FONT_PALETTE = [
     "Open Sans",
     "Lato",
-    "Montserrat", 
     "Noto Sans", 
     "Poppins", 
     "Merriweather", 
     "PT Serif", 
-    "Lora", 
-    "Playfair Display",
-    "Galindo",
+    "Lora",
     "M PLUS Rounded 1c",
-    "Quantico",
     "Roboto",
     "Saira",
     "Signika Negative",
     "Spectral",
-    "Wellfleet"
+    "League Spartan",
+    "PT Serif",
+    "Manrope",
   ];
   
   const MONO_FONT_PALETTE = [

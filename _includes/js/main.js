@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   (function () {
 
     // Set the maximum tilt (e.g., 0.5 means -0.5deg to +0.5deg)
-    const maxTilt = 0.5;
+    const maxTilt = 0.6;
 
     // get all the main page containers
     const elements = document.querySelectorAll('header, p, button, section, div, h1, h2, h3, h4, h5, h6');
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   })();
 
-  /*
+/*
 =========================================
  SITE SEARCH (using MiniSearch now)
 =========================================

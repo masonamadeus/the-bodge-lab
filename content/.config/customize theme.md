@@ -3,8 +3,8 @@ title: Customize Theme
 download: false
 directory: true
 uid: 0a85b49b
-contentHash: c3bc5289
-date: '2025-11-20T02:50:16.320Z'
+contentHash: e561ff48
+date: '2025-12-12T02:53:21.708Z'
 ---
 
 <style>
@@ -102,22 +102,22 @@ If you don't like it, you can customize it here. **All changes save automaticall
 <br>
 <br>
 
-## Font Selection
+## The Way The Text Looks
 
 <div class="form-row">
   <label for="body-font-name">Body Font Name:</label>
   <input type="text" id="body-font-name" placeholder="Open Sans">
 </div>
 <div class="form-row">
-  <label for="mono-font-name">Monospace Font Name:</label>
-  <input type="text" id="mono-font-name" placeholder="Roboto Mono">
+  <label for="mono-font-name" style="font-family:var(--mono-font);">Monospace Font Name:</label>
+  <input type="text" id="mono-font-name" style="font-family:var(--mono-font);" placeholder="Roboto Mono">
 </div>
 
 You can use any font from [Google Fonts](https://fonts.google.com/). Just enter the name exactly as it appears on the site.
 
 <br>
 
-## Color Changing Magic
+## These Are Sort Of The Colors
 
 <div class="theme-editor-grid">
   <fieldset id="editor-light">
@@ -163,17 +163,11 @@ You can use any font from [Google Fonts](https://fonts.google.com/). Just enter 
       <input type="color" id="dark-color-accent" value="#5DADE2" class="realtime-picker" data-mode="dark">
     </div>
     <div class="form-row">
-      <label for="dark-color-bg-muted">Muted Background</label>
+      <label for="dark-color-bg-muted">Borders & Dir Background</label>
       <input type="color" id="dark-color-bg-muted" value="#34495E" class="realtime-picker" data-mode="dark">
     </div>
   </fieldset>
 </div>
-
-**The Bodge Theme Engine™ will attempt to adjust your color choices for proper contrast and accessibility, so they may change slightly while editing.**
-
-This adjustment might also fail, and you can definitely make the site unreadable if you try. 
-
-Good Luck!
 
 
 <script>
