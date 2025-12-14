@@ -611,18 +611,50 @@ module.exports = function (eleventyConfig) {
       <details class="bodge-accordion"><summary>${summary}</summary><div class="bodge-accordion-content">${renderedContent}</div></details>`;
   });
 
-  // Reveal Shortcode (Arbitrary Distance)
-  // Usage: {% reveal "Trigger Text", "Hidden Content" %} Text between... {% endreveal %}
-  eleventyConfig.addPairedShortcode("reveal", function(content, trigger, hidden) {
-    const uid = "reveal-" + Math.random().toString(36).substr(2, 9);
-    // 1. The Trigger
-    const btnHtml = `<button class="bodge-reveal-btn" data-reveal-id="${uid}" aria-expanded="false" aria-controls="${uid}">${trigger}</button>`;
+
+  // --- CLICKABLE EASTER-EGG SYSTEM ---
+
+  function slugify(text) {
+    return text.toString().toLowerCase()
+      .replace(/\s+/g, '-')     // Replace spaces with -
+      .replace(/[^\w\-]+/g, '') // Remove all non-word chars
+      .replace(/\-\-+/g, '-')   // Replace multiple - with single -
+      .replace(/^-+/, '')       // Trim - from start of text
+      .replace(/-+$/, '');      // Trim - from end of text
+  }
+
+  // 1. The Trigger
+  // Usage: I walked down the {% trigger "stinky, wet road" %}...
+  eleventyConfig.addShortcode("trigger", function(text) {
+    const id = slugify(text);
+    // We output the exact same HTML structure, so the JS/CSS still works
+    return `<button class="bodge-trigger notilt" data-trigger-id="${id}" title="Reveal Note">${text}</button>`;
+  });
+
+  // 2. The Reaction
+  // Usage: {% react "stinky, wet road" %} ...content... {% endreact %}
+  eleventyConfig.addPairedShortcode("react", function(content, idOrText) {
+
+    const id = slugify(idOrText);
     
-    // 2. The Hidden Content (Starts hidden)
-    const hiddenHtml = `<span id="${uid}" class="bodge-reveal-content" hidden>${hidden}</span>`;
+    // 1. Render the Markdown
+    let rendered = mdLib.render(content).trim();
     
-    // 3. Return: Trigger + The Distance (content) + The Reveal
-    return `${btnHtml}${content}${hiddenHtml}`;
+    // 2. Detect: Is this exactly ONE paragraph?
+    // Checks if it starts with <p>, ends with </p>, and has no <p> in the middle.
+    const isSinglePara = rendered.startsWith('<p>') && 
+                         rendered.endsWith('</p>') && 
+                         (rendered.indexOf('<p>', 3) === -1);
+
+    if (isSinglePara) {
+      // INLINE MODE: Strip the outer <p> tags and use a <span>
+      // This allows it to sit inside another paragraph without breaking it.
+      const innerHTML = rendered.substring(3, rendered.length - 4);
+      return `<span class="bodge-reaction notilt" data-react-id="${id}" hidden>${innerHTML}</span>`;
+    } else {
+      // BLOCK MODE: Keep the structure and use a <div>
+      return `<div class="bodge-reaction" data-react-id="${id}" hidden>${rendered}</div>`;
+    }
   });
  
   // Book Style Wrapper

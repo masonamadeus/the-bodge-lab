@@ -1,22 +1,21 @@
 ---
 download: false
 uid: home
-title: "Home"
-contentHash: 25daba0f
-date: '2025-11-20T02:50:16.324Z'
-# Front-matter sharing overrides (for reference):
-#
-# share_embed: "/s/embed/my-player/"    # Optional URL (absolute or relative) to use as the preview player/embed
-# share_poster: "/.config/sitebg2.webp" # Optional poster image for video/audio previews
-# share_type: "video"                    # Optional hint: "video", "audio", or "youtube"
+title: Home
+contentHash: c9dbcae8
+date: '2025-12-14T21:02:08.898Z'
 ---
 # Welcome to The Bodge Lab!
 
 ### My name is Mason Amadeus (he/him)! 
 
-This is my folder on the internet. You're free to poke around here and take anything you'd like with you.
+This is my folder on the internet. You're free to {%trigger "poke"%} around here and take anything you'd like with you.
 
-If you want to get in touch, you should listen to the [Bug & Moss Morning Telephone Show](/s/bug-and-moss-morning-telephone).
+{%react "poke"%} Be sure to click anything that seems eminently {%trigger "clickable"%}. I like to tuck things into corners like this. {%endreact%}
+
+{% react "clickable"%} If you want to get in touch, you should listen to the [Bug & Moss Morning Telephone Show](/s/bug-and-moss-morning-telephone) or [The FAIK Files](</s/faikfiles>).
+
+Or, shoot me an email at: Mason@8thLayerMedia.com {%endreact%}
 
 Explore! I hope you find joy and utility amongst my nonsense.
 
@@ -32,19 +31,19 @@ ___
   // This is dispatched by main.js when all helper functions are loaded.
   document.addEventListener('bodgelab:searchready', async () => {
     const container = document.getElementById('random-page-container');
-    
+
     try {
       // 2. Fetch the search data (or get it from the cache)
       const allPages = await window.BodgeLab.getSearchData();
-
+    
       // 3. Filter out the homepage itself
       const pagesWithoutHome = allPages.filter(page => page.url !== '/');
-
+    
       if (pagesWithoutHome.length > 0) {
         // 4. Pick a random page from the list
         const randomIndex = Math.floor(Math.random() * pagesWithoutHome.length);
         const randomPage = pagesWithoutHome[randomIndex];
-
+    
         // 5. Create the link using the data from search.json
         const link = document.createElement('a');
         link.href = randomPage.url;
@@ -52,11 +51,11 @@ ___
         
         const content = document.createElement('p');
         content.appendChild(link);
-
+    
         // 6. Clear the "loading" text and add the new link
         container.innerHTML = 'FOR YOU: ';
         container.appendChild(link);
-
+    
       } else {
         container.innerHTML = '<p><i>Could not find a random page.</i></p>';
       }

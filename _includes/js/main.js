@@ -1,5 +1,6 @@
 // This script runs after all the HTML has loaded
 document.addEventListener('DOMContentLoaded', () => {
+  window.BodgeLab = window.BodgeLab || {};
 
   // RANDOM TILT
   (function () {
@@ -133,11 +134,187 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   })();
+  
+  // --- IFRAME AUTO-RESIZE FUNCTION ---
+  window.BodgeLab.resizeIframe = (iframe) => {
+    try {
+      // Only works for same-origin files (which your passthrough apps are!)
+      const doc = iframe.contentWindow.document;
+      const body = doc.body;
+      const html = doc.documentElement;
+
+      // Calculate the max height of the content
+      const height = Math.max(
+        body.scrollHeight, body.offsetHeight,
+        html.clientHeight, html.scrollHeight, html.offsetHeight
+      );
+
+      // Safety Check:
+      // If the app is trying to be 100% height (like PocketPal), scrollHeight might equal clientHeight.
+      // In that case, we DON'T auto-resize because it would create a loop or collapse.
+      // We only resize if the content is LARGER than the frame, or if it's clearly a text document.
+
+      // Heuristic: If it has a scrollbar, expand it.
+      if (doc.body.scrollHeight > doc.body.clientHeight) {
+        iframe.style.height = height + 'px';
+      }
+    } catch (e) {
+      // Cross-origin or error: do nothing, fall back to CSS default
+      console.log("Cannot auto-resize iframe:", e);
+    }
+  };
+
+  // --- CODE BLOCK COPY BUTTONS ---
+  (function() {
+    // Target the PRE, because that is the relative container
+    const codeBlocks = document.querySelectorAll('pre');
+
+    codeBlocks.forEach(pre => {
+      // 1. Create the button
+      const btn = document.createElement('button');
+      btn.className = 'code-copy-btn';
+      btn.textContent = 'COPY';
+      btn.title = "Copy code to clipboard";
+
+      // 2. Add Click Logic
+      btn.addEventListener('click', () => {
+        // Find the code inside this pre
+        const code = pre.querySelector('code');
+        if (!code) return;
+
+        // Copy text
+        navigator.clipboard.writeText(code.innerText).then(() => {
+          btn.textContent = 'COPIED!';
+          btn.classList.add('copied');
+
+          // Reset after 2s
+          setTimeout(() => {
+            btn.textContent = 'COPY';
+            btn.classList.remove('copied');
+          }, 2000);
+        }).catch(err => {
+          console.error('Copy failed', err);
+          btn.textContent = 'ERROR';
+        });
+      });
+
+      // 3. Inject it into the PRE (which is position:relative)
+      pre.appendChild(btn);
+    });
+  })();
+
+  // --- IFRAME TEXT COPY (For .txt, .md, etc) ---
+  (function() {
+    const copyBtns = document.querySelectorAll('.text-copy-btn');
+    
+    copyBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // 1. Find the wrapper and the iframe
+        const wrapper = btn.closest('.media-embed-wrapper');
+        const iframe = wrapper ? wrapper.querySelector('iframe') : null;
+        
+        if (!iframe) return;
+
+        try {
+            // 2. Reach into the iframe to get the text
+            // Note: This works because the files are hosted on the same domain (Same Origin)
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            const textContent = doc.body.innerText; // Grabs visible text only
+            
+            // 3. Copy to Clipboard
+            navigator.clipboard.writeText(textContent).then(() => {
+                const originalText = btn.textContent;
+                btn.textContent = "COPIED!";
+                btn.style.backgroundColor = "var(--accent-color)";
+                btn.style.color = "white";
+
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.backgroundColor = "";
+                    btn.style.color = "";
+                }, 2000);
+            });
+        } catch (e) {
+            console.error("Copy failed (likely cross-origin restriction):", e);
+            btn.textContent = "ERROR";
+        }
+      });
+    });
+  })();
+
+  // --- EASTER EGG TRIGGER/REACTION LOGIC ---
+  (function() {
+    document.body.addEventListener('click', (e) => {
+      // 1. Did we click a Trigger?
+      // (We use .closest so it works even if you wrap an image or bold text)
+      const trigger = e.target.closest('.bodge-trigger');
+      if (!trigger) return;
+
+      // 2. Get the ID
+      const id = trigger.dataset.triggerId;
+      if (!id) return;
+
+      // 3. Mark Trigger as "Found" (Visual Feedback)
+      trigger.classList.remove('bodge-trigger');
+      trigger.classList.add('found');
+      trigger.setAttribute('disabled', 'true'); // Prevent double-clicking
+
+      // 4. Find all Reactions waiting for this ID
+      const reactions = document.querySelectorAll(`.bodge-reaction[data-react-id="${id}"]`);
+      
+      reactions.forEach(block => {
+        // 5. Reveal them
+        block.hidden = false;
+        
+        // 6. Optional: Scroll hint? 
+        // If the reaction is huge, we might want to highlight it.
+        block.classList.add('revealed');
+      });
+
+    });
+  })();
+
+  // --- SMART INDENT (No indent for single lines) ---
+  (function() {
+    function handleIndents() {
+      // 1. Select all paragraphs in the main content
+      const paras = document.querySelectorAll('.main-content p');
+      
+      paras.forEach(p => {
+        // Reset (in case of resize)
+        p.classList.remove('is-single-line');
+        
+        // 2. Measure
+        // We use a buffer (1.2x) to account for sub-pixel rendering differences
+        const lineHeight = parseFloat(window.getComputedStyle(p).lineHeight);
+        const height = p.clientHeight;
+        
+        // 3. Compare: If height is essentially one line, tag it
+        if (height < (lineHeight * 1.5)) {
+          p.classList.add('is-single-line');
+        }
+      });
+    }
+
+    // Run on load
+    handleIndents();
+    
+    // Run on resize (using your existing debounce utility)
+    if (window.BodgeLab && window.BodgeLab.debounce) {
+      window.addEventListener('resize', window.BodgeLab.debounce(handleIndents, 200));
+    } else {
+      window.addEventListener('resize', handleIndents);
+    }
+  })();
+
+
+  
+
 
 /*
-=========================================
+==============================================================================
  SITE SEARCH (using MiniSearch now)
-=========================================
+==============================================================================
 */
 
   // Load MiniSearch if needed
@@ -256,177 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Ready signal
   document.dispatchEvent(new CustomEvent('bodgelab:searchready'));
-
-
-
-  // IFRAME RESIZER (Smart Height)
-  window.BodgeLab.resizeIframe = (iframe) => {
-    try {
-      // Only works for same-origin files (which your passthrough apps are!)
-      const doc = iframe.contentWindow.document;
-      const body = doc.body;
-      const html = doc.documentElement;
-
-      // Calculate the max height of the content
-      const height = Math.max(
-        body.scrollHeight, body.offsetHeight,
-        html.clientHeight, html.scrollHeight, html.offsetHeight
-      );
-
-      // Safety Check:
-      // If the app is trying to be 100% height (like PocketPal), scrollHeight might equal clientHeight.
-      // In that case, we DON'T auto-resize because it would create a loop or collapse.
-      // We only resize if the content is LARGER than the frame, or if it's clearly a text document.
-
-      // Heuristic: If it has a scrollbar, expand it.
-      if (doc.body.scrollHeight > doc.body.clientHeight) {
-        iframe.style.height = height + 'px';
-      }
-    } catch (e) {
-      // Cross-origin or error: do nothing, fall back to CSS default
-      console.log("Cannot auto-resize iframe:", e);
-    }
-  };
-
-  // --- CODE BLOCK COPY BUTTONS ---
-  (function() {
-    // Target the PRE, because that is the relative container
-    const codeBlocks = document.querySelectorAll('pre');
-
-    codeBlocks.forEach(pre => {
-      // 1. Create the button
-      const btn = document.createElement('button');
-      btn.className = 'code-copy-btn';
-      btn.textContent = 'COPY';
-      btn.title = "Copy code to clipboard";
-
-      // 2. Add Click Logic
-      btn.addEventListener('click', () => {
-        // Find the code inside this pre
-        const code = pre.querySelector('code');
-        if (!code) return;
-
-        // Copy text
-        navigator.clipboard.writeText(code.innerText).then(() => {
-          btn.textContent = 'COPIED!';
-          btn.classList.add('copied');
-
-          // Reset after 2s
-          setTimeout(() => {
-            btn.textContent = 'COPY';
-            btn.classList.remove('copied');
-          }, 2000);
-        }).catch(err => {
-          console.error('Copy failed', err);
-          btn.textContent = 'ERROR';
-        });
-      });
-
-      // 3. Inject it into the PRE (which is position:relative)
-      pre.appendChild(btn);
-    });
-  })();
-
-  // --- IFRAME TEXT COPY (For .txt, .md, etc) ---
-  (function() {
-    const copyBtns = document.querySelectorAll('.text-copy-btn');
-    
-    copyBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        // 1. Find the wrapper and the iframe
-        const wrapper = btn.closest('.media-embed-wrapper');
-        const iframe = wrapper ? wrapper.querySelector('iframe') : null;
-        
-        if (!iframe) return;
-
-        try {
-            // 2. Reach into the iframe to get the text
-            // Note: This works because the files are hosted on the same domain (Same Origin)
-            const doc = iframe.contentDocument || iframe.contentWindow.document;
-            const textContent = doc.body.innerText; // Grabs visible text only
-            
-            // 3. Copy to Clipboard
-            navigator.clipboard.writeText(textContent).then(() => {
-                const originalText = btn.textContent;
-                btn.textContent = "COPIED!";
-                btn.style.backgroundColor = "var(--accent-color)";
-                btn.style.color = "white";
-
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.style.backgroundColor = "";
-                    btn.style.color = "";
-                }, 2000);
-            });
-        } catch (e) {
-            console.error("Copy failed (likely cross-origin restriction):", e);
-            btn.textContent = "ERROR";
-        }
-      });
-    });
-  })();
-
-  // --- REVEAL SHORTCODE ---
-  (function() {
-    document.body.addEventListener('click', (e) => {
-      // 1. Check if we clicked a reveal button
-      if (e.target.matches('.bodge-reveal-btn')) {
-        const btn = e.target;
-        const id = btn.dataset.revealId;
-        const target = document.getElementById(id);
-        
-        if (target) {
-            // 2. Toggle State
-            const isHidden = target.hidden;
-            
-            if (isHidden) {
-                target.hidden = false;
-                btn.setAttribute('aria-expanded', 'true');
-                btn.classList.add('active');
-            } else {
-                // Optional: Allow hiding it again?
-                // If you want it permanent, remove this else block.
-                target.hidden = true;
-                btn.setAttribute('aria-expanded', 'false');
-                btn.classList.remove('active');
-            }
-        }
-      }
-    });
-  })();
-
-  // --- SMART INDENT (No indent for single lines) ---
-  (function() {
-    function handleIndents() {
-      // 1. Select all paragraphs in the main content
-      const paras = document.querySelectorAll('.main-content p');
-      
-      paras.forEach(p => {
-        // Reset (in case of resize)
-        p.classList.remove('is-single-line');
-        
-        // 2. Measure
-        // We use a buffer (1.2x) to account for sub-pixel rendering differences
-        const lineHeight = parseFloat(window.getComputedStyle(p).lineHeight);
-        const height = p.clientHeight;
-        
-        // 3. Compare: If height is essentially one line, tag it
-        if (height < (lineHeight * 1.5)) {
-          p.classList.add('is-single-line');
-        }
-      });
-    }
-
-    // Run on load
-    handleIndents();
-    
-    // Run on resize (using your existing debounce utility)
-    if (window.BodgeLab && window.BodgeLab.debounce) {
-      window.addEventListener('resize', window.BodgeLab.debounce(handleIndents, 200));
-    } else {
-      window.addEventListener('resize', handleIndents);
-    }
-  })();
 
 });
 

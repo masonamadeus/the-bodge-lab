@@ -1,7 +1,7 @@
 ---
 uid: how-i-got-like-this
-contentHash: 6d86bce0
-date: '2025-12-11T02:40:57.819Z'
+contentHash: e242b0f5
+date: '2025-12-14T21:02:08.904Z'
 ---
 
 ## this is a big time wip
@@ -16,9 +16,9 @@ I can summarize the entirety of my formal education with a single anecdote, whic
 
 Senior year of high school. I was failing Computer Science, Film Studies, and Algebra 2. Three subjects that I needed to graduate, that I honestly loved and excelled in, but because I had sewn a diaper’s worth of moral hairs across my buttcheeks about how inequitable the very concept of ‘homework’ was, and these classes each weighted ‘homework’ far more heavily than test results, I was floundering with a capital F.
 
-Computer science, film studies, and algebra 2. Graduation was looming. I needed to kill three birds with one stone, and I wasn’t gonna do it on my own time. So I skipped a couple classes, filched a chromebook from an unlocked cart, and created a twenty-six-variable algebraic expression designed to {% reveal "'objectively'", "I remember thinking as a kid that life would be so much easier if you could reduce everything to a mathematical equation. That thought is kind of chilling now, because I bet that's how a lot of the silicon valley technofascists think."%} rate movies based on twenty six criteria that the user would assign a numeric value to. 
+Computer science, film studies, and algebra 2. Graduation was looming. I needed to kill three birds with one stone, and I wasn’t gonna do it on my own time. So I skipped a couple classes, filched a chromebook from an unlocked cart, and created a twenty-six-variable algebraic expression designed to {% trigger "objectively" %} rate movies based on twenty six criteria that the user would assign a numeric value to. 
 
-{%endreveal%}
+{%react "objectively"%} I remember thinking as a kid that life would be so much easier if you could reduce everything to a mathematical equation. I find that thought pretty chilling, now.{%endreact%}
 
 Really, the equation was just an overly complicated weighting system based on how much *I* thought various aspects of a film mattered to it’s overall quality. It included things like “the Spielberg-Jackson constant” and other fun tidbits like that. I’ve unfortunately lost the original, but you would rate things like character depth, pacing, the quality of the effects, etc. on a scale of one to ten. Plug those values into the equation and it would spit out what I dubbed the “Overall Entertainment Value” or OEV for the movie. To make it easy to use, I put together an excel spreadsheet that would do the calculations for you. Just plug in your rating numbers next to each prompt, and whambi-bambi -- there’s your OEV.
 
@@ -38,7 +38,7 @@ Not much later on, I would discover that I could change the ‘dot html’ at th
 I was a ScanDisk kid with Pentium dreams. Flash was my first exposure to the possibility of digital creation. Strong Bad was my spiritual advisor, and the Brothers’ Chaps were titanesque figures whose footprints left craters I would study with an aspiring archaeologist’s appetite for answers.
 Almost all of my early summers and after-schools were spent perched, butt-and-feet-on-the-seat of a wooden kitchen chair, absent-mindedly sucking on the collar of my plain long-sleeved shirt, staring transfixed into the many rectangular eyes of the Macromedia Flash MX editor. And it stared back. Lovingly.
 
-Here are some examples of animations I made between the ages of eleven and thirteen. I had thought they were lost forever; but on a semi-recent Christmas trip back home, I rooted around my parent’s basement until I found the mouldering grey corpse of an ancient Dell computer tower containing the minutely magnetized metal platters which still trapped the fading genomic ghost of my childhood artistic toils.
+Here are some examples of animations I made between the ages of eleven and thirteen. I had thought they were lost forever; but on a semi-recent Christmas trip back home, I rooted around my parent’s basement until I found the mouldering grey corpse of an {%trigger "ancient Dell computer tower" %}{%react "ancient Dell computer tower"%}. It smelled exactly how you think. I'd forgotten that we used to have giant ribbon-like cables connecting all the various components together. I indelicately yoinked out the small, grubby metal rectangle{%endreact%} containing the minutely magnetized metal platters which still held the fading genome of my childhood artistic toils.
 
 I won’t pretend they’re all good. Poring through the contents of the recovered hard drive, there are hundreds of near-empty, half-started projects. Only a handful of them extend beyond exploratory character designs or sketches. Just a few of those have any actual animation to them. Of the ones that do, only a few are more than three seconds long.
 
