@@ -2,13 +2,83 @@
 document.addEventListener('DOMContentLoaded', () => {
   window.BodgeLab = window.BodgeLab || {};
 
+/* =========================================
+   DIRECTORY BAR (Sentinel + Click Outside)
+   ========================================= */
+(function() {
+  const dir = document.querySelector('.directory-container');
+  const sentinel = document.getElementById('dir-sentinel');
+  
+  if (!dir) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // ARRIVED AT BOTTOM: Release to Static
+        dir.classList.add('is-static');
+        dir.classList.remove('open');
+      } else {
+        // SCROLLING UP: Dock to HUD
+        // 1. Kill animation instantly
+        dir.classList.add('no-transition');
+        
+        // 2. Switch state (Browser snaps to hidden position)
+        dir.classList.remove('is-static');
+        
+        // 3. Force the browser to accept the new position *now*
+        void dir.offsetWidth; 
+        
+        // 4. Restore animation (so manual clicks still look smooth)
+        // We use a tiny timeout to ensure the "snap" is finished
+        setTimeout(() => {
+          dir.classList.remove('no-transition');
+        }, 50);
+      }
+    });
+  }, {
+    rootMargin: "0px 0px 0px 0px"
+  });
+
+  // If sentinel is missing (no content), force static mode
+  if (sentinel) {
+    observer.observe(sentinel);
+  } else {
+    dir.classList.add('is-static');
+  }
+
+  // 2. INTERACTION LOGIC
+  document.addEventListener('click', (e) => {
+    // A. Ignore clicks if we are in Static/Block mode (it's part of the page)
+    if (dir.classList.contains('is-static')) return;
+
+    const clickedInside = dir.contains(e.target);
+    const clickedHeader = e.target.closest('.directory-header');
+    const clickedLink = e.target.closest('a');
+
+    // B. HEADER CLICK: Toggle Open/Close
+    if (clickedHeader && !clickedLink) {
+      dir.classList.toggle('open');
+      e.stopPropagation(); // Stop this click from triggering the "Close Outside" check
+      return;
+    }
+
+    // C. CLICK OUTSIDE: Close if Open
+    if (!clickedInside && dir.classList.contains('open')) {
+      dir.classList.remove('open');
+    }
+  });
+
+})();
+
+
   // RANDOM TILT
   (function () {
 
     // Set the maximum tilt (e.g., 0.5 means -0.5deg to +0.5deg)
     const maxTilt = 0.6;
 
-    // get all the main page containers
+    
+    // For all the other stuff
     const elements = document.querySelectorAll('header, p, button, section, div, h1, h2, h3, h4, h5, h6');
     // Map to store the final, cumulative rotation (in degrees) for every element.
     // This is the key to counteracting inherited rotation.
@@ -51,6 +121,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const newVisualRotation = parentRotation + randomTilt;
       rotationMap.set(el, newVisualRotation);
     });
+
+    // For the MAIN CONTENT area only
+    const content = document.querySelector('.main-content');
+    if (content) {
+      // Calculate a random STARTING rotation (e.g., between -6deg and +6deg)
+      const randomAngle = (Math.random() * 12 - 6).toFixed(2);
+
+      // Set the variable
+      content.style.setProperty('--start-rotation', `${randomAngle}deg`);
+    }
+
   })();
 
 
@@ -67,11 +148,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentTheme === 'light') {
           // Switch to Dark
           newTheme = 'dark';
-          toggleButton.innerText = "Light Mode";
         } else {
           // Switch to Light
           newTheme = 'light';
-          toggleButton.innerText = "Dark Mode";
         }
 
         // Call the global function from theme.js
@@ -86,13 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.dispatchEvent(event);
       });
 
-      // Set initial button text
-      const currentTheme = document.documentElement.getAttribute('data-theme');
-      if (currentTheme === 'dark') {
-        toggleButton.innerText = "Light Mode";
-      } else {
-        toggleButton.innerText = "Dark Mode";
-      }
     }
   })();
 
@@ -134,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   })();
-  
+
   // --- IFRAME AUTO-RESIZE FUNCTION ---
   window.BodgeLab.resizeIframe = (iframe) => {
     try {
@@ -165,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // --- CODE BLOCK COPY BUTTONS ---
-  (function() {
+  (function () {
     // Target the PRE, because that is the relative container
     const codeBlocks = document.querySelectorAll('pre');
 
@@ -204,46 +276,46 @@ document.addEventListener('DOMContentLoaded', () => {
   })();
 
   // --- IFRAME TEXT COPY (For .txt, .md, etc) ---
-  (function() {
+  (function () {
     const copyBtns = document.querySelectorAll('.text-copy-btn');
-    
+
     copyBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         // 1. Find the wrapper and the iframe
         const wrapper = btn.closest('.media-embed-wrapper');
         const iframe = wrapper ? wrapper.querySelector('iframe') : null;
-        
+
         if (!iframe) return;
 
         try {
-            // 2. Reach into the iframe to get the text
-            // Note: This works because the files are hosted on the same domain (Same Origin)
-            const doc = iframe.contentDocument || iframe.contentWindow.document;
-            const textContent = doc.body.innerText; // Grabs visible text only
-            
-            // 3. Copy to Clipboard
-            navigator.clipboard.writeText(textContent).then(() => {
-                const originalText = btn.textContent;
-                btn.textContent = "COPIED!";
-                btn.style.backgroundColor = "var(--accent-color)";
-                btn.style.color = "white";
+          // 2. Reach into the iframe to get the text
+          // Note: This works because the files are hosted on the same domain (Same Origin)
+          const doc = iframe.contentDocument || iframe.contentWindow.document;
+          const textContent = doc.body.innerText; // Grabs visible text only
 
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.style.backgroundColor = "";
-                    btn.style.color = "";
-                }, 2000);
-            });
+          // 3. Copy to Clipboard
+          navigator.clipboard.writeText(textContent).then(() => {
+            const originalText = btn.textContent;
+            btn.textContent = "COPIED!";
+            btn.style.backgroundColor = "var(--accent-color)";
+            btn.style.color = "white";
+
+            setTimeout(() => {
+              btn.textContent = originalText;
+              btn.style.backgroundColor = "";
+              btn.style.color = "";
+            }, 2000);
+          });
         } catch (e) {
-            console.error("Copy failed (likely cross-origin restriction):", e);
-            btn.textContent = "ERROR";
+          console.error("Copy failed (likely cross-origin restriction):", e);
+          btn.textContent = "ERROR";
         }
       });
     });
   })();
 
   // --- EASTER EGG TRIGGER/REACTION LOGIC ---
-  (function() {
+  (function () {
     document.body.addEventListener('click', (e) => {
       // 1. Did we click a Trigger?
       // (We use .closest so it works even if you wrap an image or bold text)
@@ -261,11 +333,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 4. Find all Reactions waiting for this ID
       const reactions = document.querySelectorAll(`.bodge-reaction[data-react-id="${id}"]`);
-      
+
       reactions.forEach(block => {
         // 5. Reveal them
         block.hidden = false;
-        
+
         // 6. Optional: Scroll hint? 
         // If the reaction is huge, we might want to highlight it.
         block.classList.add('revealed');
@@ -275,20 +347,20 @@ document.addEventListener('DOMContentLoaded', () => {
   })();
 
   // --- SMART INDENT (No indent for single lines) ---
-  (function() {
+  (function () {
     function handleIndents() {
       // 1. Select all paragraphs in the main content
       const paras = document.querySelectorAll('.main-content p');
-      
+
       paras.forEach(p => {
         // Reset (in case of resize)
         p.classList.remove('is-single-line');
-        
+
         // 2. Measure
         // We use a buffer (1.2x) to account for sub-pixel rendering differences
         const lineHeight = parseFloat(window.getComputedStyle(p).lineHeight);
         const height = p.clientHeight;
-        
+
         // 3. Compare: If height is essentially one line, tag it
         if (height < (lineHeight * 1.5)) {
           p.classList.add('is-single-line');
@@ -298,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Run on load
     handleIndents();
-    
+
     // Run on resize (using your existing debounce utility)
     if (window.BodgeLab && window.BodgeLab.debounce) {
       window.addEventListener('resize', window.BodgeLab.debounce(handleIndents, 200));
@@ -308,20 +380,23 @@ document.addEventListener('DOMContentLoaded', () => {
   })();
 
 
-  
 
 
-/*
-==============================================================================
- SITE SEARCH (using MiniSearch now)
-==============================================================================
-*/
+
+  /*
+  ==============================================================================
+   SITE SEARCH (using MiniSearch now)
+  ==============================================================================
+  */
 
   // Load MiniSearch if needed
   if (typeof MiniSearch === 'undefined') {
     const script = document.createElement('script');
     script.src = '/js/lib/minisearch.js'; // Corrected path
+    script.onload = () => { window.BodgeLab.searchReady = true; };
     document.head.appendChild(script);
+  } else {
+    window.BodgeLab.searchReady = true;
   }
 
   window.BodgeLab = window.BodgeLab || {};
@@ -354,6 +429,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // LOGIC: Get Results (Async & Discriminatory)
   window.BodgeLab.getResults = async (query) => {
     if (!query) return [];
+
+    if (!window.BodgeLab.searchReady) {
+      console.log("Search library loading...");
+      return []; // Or implement a retry/wait logic here
+    }
 
     // Initialize engine once
     if (!miniSearchEngine) {

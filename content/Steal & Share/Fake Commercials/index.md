@@ -1,8 +1,8 @@
 ---
 title: WIDK Commercials
 uid: widk-ads
-contentHash: 65b6c49d
-date: '2025-12-14T21:02:08.902Z'
+contentHash: a019cc38
+date: '2025-12-14T23:56:54.384Z'
 ---
 
 # Commercials from [iDunnoRadio (109.1 WIDK)](/s/idunnoradio)
@@ -17,7 +17,9 @@ date: '2025-12-14T21:02:08.902Z'
 
 All the music is either original or royalty-free from the YouTube Creator Library and thus is cleared for use (except probably commercial TV/radio broadcast, idk). 
 
-All voices were recorded by me or my friends, and this is my blanket permission for you to steal them. Use these in your project! Need something to play during your livestream hold screen? Want a funny ad to stick in your audiodrama? Go for it!
+All voices were recorded by me or my friends, and this is my blanket permission for you to steal them. Use these in your {%trigger "project!"%} 
+
+{%react "project!"%}Need something to play during your livestream hold screen? Want a funny ad to stick in your audiodrama?{%endreact%}
 
 **Quite a few of these are very NSFW** so be aware of that.
 
