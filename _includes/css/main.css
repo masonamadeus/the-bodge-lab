@@ -1057,105 +1057,63 @@ html {
 .token.bold { font-weight: bold; }
 .token.italic { font-style: italic; }
 
-//* =========================================
-   14. MEMORY TRIGGER SYSTEM (Final Polish)
+/* =========================================
+   14. REVEAL SHORTCODE
    ========================================= */
 
-/* 1. DEFINE THE WIGGLE */
-@keyframes bodgeWiggle {
-  /* Sit still for 95% of the time */
-  0%, 95% { 
-    transform: rotate(0deg) translateX(0); 
-  }
-  /* Rapid wiggle in the last 5% */
-  96% { transform: rotate(-2deg) translateX(-1px)!important; }
-  97% { transform: rotate(2deg) translateX(1px)!important; }
-  98% { transform: rotate(-1deg) translateX(-1px)!important; }
-  99% { transform: rotate(1deg) translateX(0)!important; }
-  100% { transform: rotate(0deg) translateX(0)!important; }
-}
-
-/* 2. THE TRIGGER BUTTON */
+/* The Trigger Button */
 .bodge-trigger {
-  /* Reset Button Styles */
   background: none;
   border: none;
-  padding: 0 2px; /* Slight padding helps the hover effect */
+  padding: 0;
   margin: 0;
-  
-  /* Inherit Text Styles */
   font-family: inherit;
   font-size: inherit;
   font-style: inherit;
   font-weight: inherit;
+  cursor: pointer;
   color: var(--text-color);
-  
-  /* Interaction Styles */
-  cursor: help;
+  transition: all 0.2s ease;
   border-bottom: 1px dashed var(--border-color);
-  transition: color 0.2s ease, background-color 0.2s ease, border 0.2s ease;
-
-  /* ANIMATION SETUP */
-  display: inline-block; /* Required for 'transform' to work */
-  /* Runs for 5 seconds, loops infinitely */
-  animation: bodgeWiggle 5s linear infinite;
-  
-  /* Randomize start time so multiple triggers don't wiggle in unison */
-  /* (This requires a tiny JS helper or manual HTML adjustment, 
-     but defaults to unison without it, which is fine) */
 }
 
 .bodge-trigger:hover {
   background-color: var(--bg-muted);
   color: var(--text-color);
   border-bottom-style: solid;
-  
-  /* Pause wiggle on hover so it's easier to click */
-  animation-play-state: paused;
 }
 
-/* 3. STATE: FOUND / USED */
-.bodge-trigger.found {
-  /* Stop the wiggle once found */
-  animation: none;
-  
-  /* Visual feedback */
-  border-bottom-color: transparent;
-  color: var(--border-color); /* Ghostly color */
-  text-decoration: line-through;
-  cursor: default;
-  pointer-events: none;
+/* When it's open */
+.bodge-trigger.active {
+  border-bottom: none;
+  color: var(--text-color);
+  font-weight: bold;
 }
 
-/* 4. THE REACTION (Smart Mode) */
-
-/* Shared Animation */
-.bodge-reaction {
+/* The Hidden Content */
+div.bodge-reaction,
+span.bodge-reaction{
   animation: revealFade 0.5s ease forwards;
+  font-weight: inherit;
+}
+
+.found {
+  border: inherit;
+  font-size: inherit;
+  font-family: inherit;
+  font-weight: inherit;
+  color: var(--border-color);
+  background: inherit;
+  background-color: inherit;
+  padding: inherit;
+}
+
+div.bodge-reaction {
+  font-family: var(--mono-font);
 }
 
 .bodge-reaction[hidden] {
   display: none;
-}
-
-/* Block Mode (Div) */
-div.bodge-reaction {
-  font-family: var(--mono-font);
-  display: block;
-  margin: 1.5em 0;
-  padding: 1em;
-  border-left: 4px solid var(--accent-color);
-  background-color: var(--bg-muted);
-}
-
-/* Inline Mode (Span) */
-span.bodge-reaction {
-  display: inline;
-  background-color: var(--bg-muted);
-  padding: 0 0.2em;
-  border-radius: 2px;
-  /* Optional: Keep font normal or inherit */
-  font-family: inherit; 
 }
 
 @keyframes revealFade {
