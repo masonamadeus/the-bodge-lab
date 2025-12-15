@@ -16,28 +16,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 1. SCROLL OBSERVER (Dock/Undock Logic)
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        // ARRIVED AT BOTTOM: Release to Static
-        dir.classList.add('is-static');
-        dir.classList.remove('open');
-      } else {
-        // SCROLLING UP: Dock to HUD
-        // 1. Kill animation instantly to prevent "pop"
-        dir.classList.add('no-transition');
-        
-        // 2. Switch state
-        dir.classList.remove('is-static');
-        
-        // 3. Force browser reflow
-        void dir.offsetWidth; 
-        
-        // 4. Restore animation
-        setTimeout(() => {
-          dir.classList.remove('no-transition');
-        }, 50);
+    // Destructure the first entry (we only have one sentinel)
+    const [entry] = entries;
+
+    if (entry.isIntersecting) {
+      // ARRIVED AT BOTTOM: Release to Static
+      dir.classList.add('is-static');
+      dir.classList.remove('open');
+    } else {
+      // SENTINEL IS GONE. But where did it go?
+      
+      // If the sentinel is BELOW the viewport (top > 0), it means we scrolled UP into the content.
+      // In that case, we should Dock.
+      if (entry.boundingClientRect.top > 0) {
+         // SCROLLING UP: Dock to HUD
+         dir.classList.add('no-transition');
+         
+         dir.classList.remove('is-static');
+         
+         // Force browser reflow
+         void dir.offsetWidth; 
+         
+         setTimeout(() => {
+           dir.classList.remove('no-transition');
+         }, 50);
       }
-    });
+      
+      // If (top < 0), it means the sentinel is ABOVE us. 
+      // We are scrolling down inside the tall directory. 
+      // Do nothing. Keep it Static.
+    }
   }, {
     rootMargin: "0px 0px 0px 0px"
   });
