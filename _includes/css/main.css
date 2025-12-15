@@ -272,6 +272,28 @@ iframe {
   
 }
 
+.breadcrumb-mover {
+  display: inline-block;
+  white-space: nowrap;
+  /* GPU Acceleration */
+  will-change: transform;
+}
+
+/* 3. The Animation Class (Applied by JS) */
+.breadcrumb-mover.is-scrolling {
+  animation: breadcrumb-bounce var(--scroll-duration) linear infinite alternate;
+}
+
+/* 4. Pause on Hover (So people can click!) */
+.breadcrumb-nav:hover .breadcrumb-mover.is-scrolling {
+  animation-play-state: paused;
+}
+
+@keyframes breadcrumb-bounce {
+  0%, 15% { transform: translateX(0); }
+  85%, 100% { transform: translateX(var(--scroll-dist)); }
+}
+
 .breadcrumb {
   color: var(--accent-color);
   font-family: var(--mono-font);
@@ -508,11 +530,15 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
 
 
 /* STATE B: OPEN (User Tapped or Hovered while Docked) */
-.directory-container.open,
-.directory-container:hover{
+.directory-container.open {
   transform: translateY(0)!important;
 }
 
+@media (hover: hover) {
+  .directory-container:hover {
+    transform: translateY(0)!important;
+  }
+}
 /* STATE C: STATIC / RELEASED (Natural Flow) */
 /* Added by JS when we scroll past the main content */
 .directory-container.is-static {
@@ -577,6 +603,8 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   padding-left: 1.5em;
   padding-top: 1em;
   padding-bottom: 1em;
+  max-height: 60vh;
+  overflow-y:auto;
   
   /* CRITICAL FIX: Prevents the body from scrolling when this list hits the end */
   overscroll-behavior: contain;

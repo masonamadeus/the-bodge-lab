@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- NEW: SAFETY CHECK ---
     // If the safety lock is ON, and you tried to click a link inside the directory...
-    if (linkLock && clickedInside && clickedLink) {
+    if (linkLock && clickedInside) {
       e.preventDefault(); // Stop the link
       e.stopImmediatePropagation(); // Stop other scripts
       return; // Do nothing
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Release lock after 400ms (enough time to lift finger)
         setTimeout(() => {
           linkLock = false;
-        }, 400); 
+        }, 600); 
       }
       return;
     }
@@ -396,6 +396,75 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       window.addEventListener('resize', handleIndents);
     }
+  })();
+
+  // --- AUTO-SCROLL BREADCRUMBS (Mobile Safe) ---
+  (function() {
+    let resizeTimer;
+    
+    function initBreadcrumbs() {
+      const container = document.querySelector('.breadcrumb-nav');
+      const mover = document.querySelector('.breadcrumb-mover');
+
+      if (!container || !mover) return;
+
+      // 1. Reset everything
+      mover.classList.remove('is-scrolling');
+      mover.style.removeProperty('--scroll-dist');
+      mover.style.removeProperty('--scroll-duration');
+      mover.style.transform = ''; // Clear manual transforms
+      container.scrollLeft = 0;   // Reset scroll
+
+      // 2. Measure
+      const containerWidth = container.clientWidth;
+      const contentWidth = mover.scrollWidth;
+
+      // 3. Only animate if there is overflow
+      if (contentWidth > containerWidth) {
+        const overflow = contentWidth - containerWidth;
+        const dist = overflow + 20; // Buffer
+        const duration = Math.max(dist / 40, 5); // Speed logic
+
+        // Set CSS vars
+        mover.style.setProperty('--scroll-dist', `-${dist}px`);
+        mover.style.setProperty('--scroll-duration', `${duration}s`);
+        mover.classList.add('is-scrolling');
+
+        // --- NEW: THE "CATCH" LOGIC ---
+        // If user touches the bar, stop animation and hand over to native scroll
+        const stopAnimation = () => {
+          if (!mover.classList.contains('is-scrolling')) return;
+
+          // A. Get the current visual position (where the animation is right now)
+          const style = window.getComputedStyle(mover);
+          const matrix = new DOMMatrix(style.transform);
+          const currentX = matrix.m41; // The X translation (negative number)
+
+          // B. Swap: Set the scroll position to match the animation
+          // We flip the sign (Animation -50px = Scroll Left 50px)
+          container.scrollLeft = Math.abs(currentX);
+
+          // C. Kill the animation class
+          mover.classList.remove('is-scrolling');
+          
+          // D. Remove the transform so it doesn't double-apply
+          mover.style.transform = 'none';
+        };
+
+        // Listen for touch or mouse click
+        container.addEventListener('pointerdown', stopAnimation, { once: true });
+        container.addEventListener('touchstart', stopAnimation, { passive: true, once: true });
+      }
+    }
+
+    // Run on load
+    setTimeout(initBreadcrumbs, 100);
+
+    // Run on resize
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(initBreadcrumbs, 200);
+    });
   })();
 
 

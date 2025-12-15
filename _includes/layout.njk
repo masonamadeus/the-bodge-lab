@@ -76,7 +76,6 @@
             ${rects}
             <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
             </svg>`;
-
                 const link = document.createElement('link');
                 link.rel = 'icon';
                 link.id = 'dynamic-favicon'; // ID for easier updates later
@@ -91,7 +90,6 @@
                 };
             })();
         </script>
-
         <link rel="stylesheet" href="/css/main.css">
         <script src="/js/theme.js"></script>
         <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
@@ -99,36 +97,31 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <meta charset="UTF-8">
         <title>{{ seo.title }}</title>
-
-
         {# --- BASIC TAGS --- #}
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="generator" content="{{ eleventy.generator }}">
         <meta name="description" content="{{ seo.description }}">
-        <link rel="canonical" href="{{ seo.url }}">
-
-        {# --- SEO & SOCIAL TAGS --- #}
+        <link
+        rel="canonical" href="{{ seo.url }}"> {# --- SEO & SOCIAL TAGS --- #}
         <meta property="og:site_name" content="{{ meta.siteName or 'The Bodge Lab' }}">
         <meta property="og:type" content="{{ seo.type }}">
         <meta property="og:url" content="{{ seo.url }}">
         <meta property="og:title" content="{{ seo.title }}">
-        <meta property="og:description" content="{{ seo.description }}">
-        
-        {# Image is always required for a good card #}
+        <meta
+        property="og:description" content="{{ seo.description }}"> {# Image is always required for a good card #}
         <meta property="og:image" content="{{ seo.image }}">
-        <meta name="twitter:image" content="{{ seo.image }}">
-
+        <meta
+        name="twitter:image" content="{{ seo.image }}">
         {# --- MEDIA PLAYER LOGIC --- #}
         {% if seo.media %}
-            
             {% if seo.media.mode == 'player' %}
                 {# VIDEO / EMBED #}
                 <meta property="og:video" content="{{ seo.media.url }}">
                 <meta property="og:video:secure_url" content="{{ seo.media.secure_url }}">
                 <meta property="og:video:type" content="{{ seo.media.mime }}">
                 <meta property="og:video:width" content="{{ seo.media.width }}">
-                <meta property="og:video:height" content="{{ seo.media.height }}">
-
+                <meta
+                property="og:video:height" content="{{ seo.media.height }}">
                 {# Twitter Player Card: Only use for 'text/html' (YouTube/Iframes) #}
                 {% if seo.media.mime == 'text/html' %}
                     <meta name="twitter:card" content="player">
@@ -139,16 +132,13 @@
                     {# For raw video files (mp4), Twitter prefers Summary Large Image or native video upload #}
                     <meta name="twitter:card" content="summary_large_image">
                 {% endif %}
-
             {% elif seo.media.mode == 'audio' %}
                 {# AUDIO #}
                 <meta property="og:audio" content="{{ seo.media.url }}">
                 <meta property="og:audio:secure_url" content="{{ seo.media.secure_url }}">
                 <meta property="og:audio:type" content="{{ seo.media.mime }}">
                 <meta name="twitter:card" content="summary_large_image">
-
             {% endif %}
-
         {% else %}
             {# STANDARD POST #}
             <meta name="twitter:card" content="summary_large_image">
@@ -159,27 +149,33 @@
             <defs>
                 <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
                     <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
-                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R">
-
-                </filter>
-            </defs>
-        </svg>
-        <header class="sticky">
-            <nav class="nav-container">
-                <div class="breadcrumb-nav">
-                    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon">
-        <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-        
-        <g id="moon-icon">
-            <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1 .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
-            <path d="M9 21h6"></path>
-            <path d="M9 17h6"></path>
-        </g>
-    </svg>
-</button>
-                    <span class="separator">\\</span>
-                    <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                    <div class="breadcrumb-mover">
+                        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                            <svg
+                                viewbox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="theme-icon">
+                                <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                <g id="moon-icon">
+                                    <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                        .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                    <path d="M9 21h6"></path>
+                                    <path d="M9 17h6"></path>
+                                </g>
+                            </svg>
+                        </button>
+                        <span class="separator">\\</span>
+                        <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
                         {% set url_parts = page.url | split('/') %}
                         {% set accumulated_path = '' %}
                         {% for part in url_parts %}
@@ -194,8 +190,8 @@
                             {% endif %}
                         {% endfor %}
                     </div>
-                    <div
-                        class="page-nav">
+                    </div>
+                    <div class="page-nav">
                         {# Right Side: Parent Link #}
                         {% if parentUrl %}
                             <div>
@@ -309,4 +305,4 @@
         {% endif %}
         <script src="/js/main.js"></script>
     </body>
-</html>
+</body></html>
