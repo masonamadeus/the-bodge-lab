@@ -1,0 +1,53 @@
+//MW: Auto-Feeder 2025
+//USAGE: Place this on video tracks that you want to feed into the auto-switcher.
+//       It has some simple zoom/pan controls for QoL. I'll flesh these out more eventually.
+//@param1:zoom 'Zoom' 0 0 10 5 0.1
+//@param2:xoffs 'Horizontal' 0 -1 1 0
+//@param3:yoffs 'Vertical' 0 -1 1 0
+
+//@gmem=activeSpeaker
+total_tracks = gmem[10];
+tr_count = input_track_count();
+tr = total_tracks - tr_count + 1;
+
+z = 10^(zoom/10);
+    
+    
+//auto-crop
+input_info(lastFrame,preW,preH);
+aspectP = project_w/project_h;
+aspectS = preW/preH;
+    
+aspectP < aspectS ?
+    ( //crop from width
+      vW = (preH*aspectP);
+      vH = preH;
+      vX = (preW-vW)/2;
+      vY = 0;
+    )
+    :
+    ( //crop from height
+      vW = preW;
+      vH = (preW*(project_h/project_w));
+      vX = 0;
+      vY = (preH - vH)/2;
+    );
+    
+    dW = (vW*z)&-2;
+    dH = (vH*z)&-2;
+    dX = vX+(vW*xoffs);
+    dY = vY+(vH*yoffs);
+  
+
+input_next_item(-1) >= (input = input_track(0)) ? (
+    
+    gmem[1] == tr ? (gmem[1] = 0;);
+    gfx_blit(lastFrame,0,0,0,project_w,project_h,dX,dY,dW,dH);
+  )
+  :
+  (
+    gmem[1] == 0 ? ( gmem[1] = tr );
+    gfx_img_free(lastFrame);
+    gfx_blit(0,0,0,0,project_w,project_h,dX,dY,dW,dH);
+    lastFrame = gfx_img_hold(0);
+  );
