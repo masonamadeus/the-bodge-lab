@@ -469,7 +469,7 @@ module.exports = function (eleventyConfig) {
     const copyableExts = ['.txt', '.md', '.json', '.js', '.css', '.html', 
       '.bat', '.sh', '.xml', '.yml', '.ini', '.cfg', '.csv', 
       '.lua', '.py', '.java', '.c', '.cpp', '.h', '.rb', '.php', '.rs', '.go', '.swift',
-    '.cmd', '.ps1', '.log',];
+    '.cmd', '.ps1', '.log','.eel'];
     let copyButton = "";
     
     if (copyableExts.includes(ext)) {

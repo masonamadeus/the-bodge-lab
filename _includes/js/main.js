@@ -98,73 +98,49 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 
 
- // RANDOM TILT (The "Ripple" Edition)
+ // RANDOM TILT (Lite & Fast Edition)
   (function () {
-    // 1. Configuration
-    const MAX_TILT = 0.6;
-    const BATCH_SIZE = 50; // Process 50 elements per frame (adjust if still slow)
+    const MAX_TILT = 0.5; // Tweak this number for more/less chaos
+    const BATCH_SIZE = 100;
     
-    // 2. Select EVERYTHING you want to tilt
-    // We convert the NodeList to an Array so we can slice it easily
+    // Select the items you want to "mess up"
     const allElements = Array.from(document.querySelectorAll(
-      'article, section, header, p, button, img, ul, h1, h2, h3, h4, h5, h6, blockquote, .bodge-card'
+      'article, header, section, p, button, img, ul, h1, h2, h3, h4, h5, h6, blockquote, .bodge-card'
     ));
 
-    const rotationMap = new Map();
     let currentIndex = 0;
 
-    // 3. The Batch Runner
     function processBatch() {
-      // If we've finished all elements, stop.
       if (currentIndex >= allElements.length) return;
 
-      // Grab the next slice of elements
       const batch = allElements.slice(currentIndex, currentIndex + BATCH_SIZE);
-
+      
+      // PHASE 1: CALC (Pure Math)
+      const updates = [];
+      
       batch.forEach(el => {
-        // A. SKIP LOGIC
-        // If element is invisible or excluded, skip calculation
-        if (el.offsetParent === null) return;
+        // 1. Simple Exclusion: If it's explicitly "notilt", just leave it alone.
         if (el.closest('.notilt') || el.classList.contains('notilt')) return;
 
-        // B. PARENT COMPENSATION
-        // (This ensures nested items don't spiral out of control)
-        const parent = el.parentElement;
-        let parentRotation = 0;
-        if (parent && rotationMap.has(parent)) {
-          parentRotation = rotationMap.get(parent);
-        }
-
-        // C. CALCULATE TILT
+        // 2. Pure Random Tilt (No parent checking, no math offset)
         const randomTilt = (Math.random() * (MAX_TILT * 2)) - MAX_TILT;
-        const totalRotation = parentRotation + randomTilt;
-
-        // D. APPLY
-        // The CSS transition we added will make this "drift" into place
-        el.style.transform = `rotate(${totalRotation}deg)`;
         
-        // E. STORE for children
-        rotationMap.set(el, totalRotation);
+        updates.push({ element: el, rotation: randomTilt });
       });
 
-      // Advance the index
-      currentIndex += BATCH_SIZE;
+      // PHASE 2: WRITE (One reflow per batch)
+      updates.forEach(item => {
+        item.element.style.transform = `rotate(${item.rotation}deg)`;
+      });
 
-      // Request the next frame to continue processing
+      currentIndex += BATCH_SIZE;
       requestAnimationFrame(processBatch);
     }
 
-    // 4. Start the Ripple (after a tiny delay to ensure paint)
+    // Start
     requestAnimationFrame(() => {
         processBatch();
     });
-
-    // 5. Main Paper Rotation (Keep this separate/instant)
-    const content = document.querySelector('.main-content');
-    if (content) {
-      const randomAngle = (Math.random() * 6 - 3).toFixed(2);
-      content.style.setProperty('--start-rotation', `${randomAngle}deg`);
-    }
 
   })();
 
