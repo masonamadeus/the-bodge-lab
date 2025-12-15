@@ -98,64 +98,71 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 
 
-  // RANDOM TILT
+ // RANDOM TILT (The "Ripple" Edition)
   (function () {
-
-    // Set the maximum tilt (e.g., 0.5 means -0.5deg to +0.5deg)
-    const maxTilt = 0.6;
-
+    // 1. Configuration
+    const MAX_TILT = 0.6;
+    const BATCH_SIZE = 50; // Process 50 elements per frame (adjust if still slow)
     
-    // For all the other stuff
-    const elements = document.querySelectorAll('header, p, button, section, div, h1, h2, h3, h4, h5, h6');
-    // Map to store the final, cumulative rotation (in degrees) for every element.
-    // This is the key to counteracting inherited rotation.
+    // 2. Select EVERYTHING you want to tilt
+    // We convert the NodeList to an Array so we can slice it easily
+    const allElements = Array.from(document.querySelectorAll(
+      'article, section, header, p, button, img, ul, h1, h2, h3, h4, h5, h6, blockquote, .bodge-card'
+    ));
+
     const rotationMap = new Map();
+    let currentIndex = 0;
 
-    // Loop through each element
-    elements.forEach(el => {
-      const parent = el.parentElement;
-      let parentRotation = 0;
+    // 3. The Batch Runner
+    function processBatch() {
+      // If we've finished all elements, stop.
+      if (currentIndex >= allElements.length) return;
 
-      // Get the parent's *total visual rotation* from the map
-      if (parent && rotationMap.has(parent)) {
-        parentRotation = rotationMap.get(parent);
-      }
+      // Grab the next slice of elements
+      const batch = allElements.slice(currentIndex, currentIndex + BATCH_SIZE);
 
-      // Check for the exclusion class
-      if (el.closest('.notilt')) {
-        // --- ABSOLUTE CANCELLATION LOGIC ---
+      batch.forEach(el => {
+        // A. SKIP LOGIC
+        // If element is invisible or excluded, skip calculation
+        if (el.offsetParent === null) return;
+        if (el.closest('.notilt') || el.classList.contains('notilt')) return;
 
-        // If excluded, apply the exact inverse rotation of the parent's tilt.
-        // This results in a final visual rotation of 0 degrees relative to the viewport.
-        el.style.transform = `rotate(${-parentRotation}deg)`;
+        // B. PARENT COMPENSATION
+        // (This ensures nested items don't spiral out of control)
+        const parent = el.parentElement;
+        let parentRotation = 0;
+        if (parent && rotationMap.has(parent)) {
+          parentRotation = rotationMap.get(parent);
+        }
 
-        // Store 0 rotation for this element. Any children of this element 
-        // will now look up 0 and remain straight.
-        rotationMap.set(el, 0);
-        return;
-      }
+        // C. CALCULATE TILT
+        const randomTilt = (Math.random() * (MAX_TILT * 2)) - MAX_TILT;
+        const totalRotation = parentRotation + randomTilt;
 
-      // If NOT excluded:
+        // D. APPLY
+        // The CSS transition we added will make this "drift" into place
+        el.style.transform = `rotate(${totalRotation}deg)`;
+        
+        // E. STORE for children
+        rotationMap.set(el, totalRotation);
+      });
 
-      // Generate a new random tilt (e.g., 0.3 deg)
-      const randomTilt = (Math.random() * (maxTilt * 2)) - maxTilt;
+      // Advance the index
+      currentIndex += BATCH_SIZE;
 
-      // Calculate the required relative rotation: 
-      // (Parent's inverse tilt) + (New random tilt)
-      el.style.transform = `rotate(${-parentRotation + randomTilt}deg)`;
+      // Request the next frame to continue processing
+      requestAnimationFrame(processBatch);
+    }
 
-      // Store the new total VISUAL rotation for its children to use.
-      const newVisualRotation = parentRotation + randomTilt;
-      rotationMap.set(el, newVisualRotation);
+    // 4. Start the Ripple (after a tiny delay to ensure paint)
+    requestAnimationFrame(() => {
+        processBatch();
     });
 
-    // For the MAIN CONTENT area only
+    // 5. Main Paper Rotation (Keep this separate/instant)
     const content = document.querySelector('.main-content');
     if (content) {
-      // Calculate a random STARTING rotation (e.g., between -6deg and +6deg)
-      const randomAngle = (Math.random() * 12 - 6).toFixed(2);
-
-      // Set the variable
+      const randomAngle = (Math.random() * 6 - 3).toFixed(2);
       content.style.setProperty('--start-rotation', `${randomAngle}deg`);
     }
 

@@ -41,6 +41,10 @@
   box-sizing: border-box;
 }
 
+html {
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
 
 body {
   font-family: var(--body-font);
@@ -58,7 +62,6 @@ body {
   background-position-x: center;
   min-height: 100vh;
   position: relative; /* Ensure we have a coordinate context */
-  overflow-x: hidden;
 }
 
 h1 { margin-top: 0.5em; }
@@ -99,6 +102,14 @@ iframe {
   line-height: 1.5;
 }
 
+.font-mono {
+  font-family: var(--mono-font);
+}
+
+.note {
+  border: 2px dashed var(--border-color);
+  padding: 1em;
+}
 
 /* =========================================
    3. LAYOUT ENGINE
@@ -421,6 +432,11 @@ iframe {
   border: none!important;
 }
 
+.text-embed {
+  height: 60vh;
+  max-height: 1000px;
+}
+
 /* =========================================
    7. CODE BLOCKS (Native Bodge Edition)
    ========================================= */
@@ -431,15 +447,13 @@ pre[class*="language-"] {
   display: block;
   margin: 1.5em 0;
   padding: 0;
-  
-  /* CRITICAL: overflow must be visible so the "paper" background 
-     (which lives in ::before) can bleed outside the box. */
   overflow: visible !important; 
   
   /* Reset Prism defaults */
   background: transparent !important;
   text-shadow: none !important;
   border: none !important;
+  position: relative;
 }
 
 /* 2. THE SCROLLING CONTENT (CODE)
@@ -474,22 +488,29 @@ code::-webkit-scrollbar { height: 8px; }
 code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
 
 /* 3. COPY BUTTON POSITIONING */
-.code-copy-btn {
+.code-copy-btn, .text-copy-btn {
   position: relative;
-  bottom: 4em; right: 0;
-  z-index: 20;
-  
+  z-index: 2000;
   background: var(--bg-muted);
   border: 2px dashed var(--border-color);
   padding: 0.3em 0.6em;
   font-size: 0.8em;
   font-family: var(--mono-font);
   cursor: pointer;
-  opacity: 0.6;
+  opacity: 0.9;
 }
-.code-copy-btn:hover { opacity: 1; color: var(--accent-color); border-color: var(--accent-color); }
 
-.code-copy-btn.copied {
+.text-copy-btn, .code-copy-btn{
+  position: absolute;
+  top:-1em;
+  right: -1em;
+  transform: rotate(12deg)!important;
+  font-size: 1.1em;
+}
+
+.code-copy-btn:hover, .text-copy-btn:hover { opacity: 1; color: var(--accent-color); border-color: var(--accent-color); }
+
+.code-copy-btn.copied, .text-copy-btn.copied {
   background: var(--accent-color);
   color: var(--bg-color-bright);
   opacity: 1;
@@ -527,6 +548,13 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   
   /* Smooth transition for mode switching */
   transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  filter: 
+    drop-shadow(2px 0 0 var(--border-color)) 
+    drop-shadow(-2px 0 0 var(--border-color)) 
+    drop-shadow(0 2px 0 var(--border-color)) 
+    drop-shadow(0 -2px 0 var(--border-color));
+
 }
 
 
@@ -552,11 +580,7 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   max-width: 1200px;
   margin: 2em auto 0em auto;
   padding-bottom: 3em;
-  
-  /* Visuals: Physical Block */
-  border: none;
-  border-top: 0px solid var(--border-color);
-  box-shadow: none;
+
   
   /* Force Visibility */
   transform: none !important;
@@ -574,17 +598,16 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   padding-top: 0.5em;
   padding-left: 0.5em;
   background: var(--bg-muted);
-  border-bottom: 0px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: left;
   user-select: none;
   padding-right: 1em;
   width: fit-content;
-  margin-bottom: -2px;
+  margin-bottom: -6px;
   min-width: 150px;
   
-  box-shadow: 0 -10px 20px rgba(0,0,0,0.1);
+  border-bottom: none;
   
 }
 
@@ -593,6 +616,7 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   color: var(--text-muted);
   margin: 0.2em;
   font-family: var(--mono-font);
+
 }
 
 .dir-listing {
@@ -606,9 +630,9 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   max-height: 60vh;
   overflow-y:auto;
   
+  
   /* CRITICAL FIX: Prevents the body from scrolling when this list hits the end */
   overscroll-behavior: contain;
-  transform: translateZ(2px);
 }
 
 
@@ -769,7 +793,7 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   margin: 2em 0;
   font-family: var(--mono-font), monospace;
   background: var(--bg-muted); /* Solid background for the whole unit */
-  border: 1px dashed var(--border-color);
+  border: 2px dashed var(--border-color);
 
 }
 
@@ -1020,22 +1044,20 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
 
 /* --- ACCORDION (Hide/Show) --- */
 details.bodge-accordion {
-  margin: 1em 0;
   /* Optional: A subtle left border to visually group the hidden content when expanded */
   border-left: 2px solid var(--border-color);
-  padding-left: 1em;
+  padding-left: 1.5em;
 }
 
 /* The Clickable Label */
 details.bodge-accordion summary {
   cursor: pointer;
   font-weight: bold;
-  color: var(--accent-color); /* Looks like a link */
   font-family: var(--mono-font);
-  list-style: none; /* Hide default browser triangle */
   position: relative;
-  padding-left: 1.2em; /* Space for our custom arrow */
+  padding-left:0;
   user-select: none;
+  text-decoration:dashed;
 }
 
 /* Remove default marker in Safari/Chrome */
@@ -1043,25 +1065,9 @@ details.bodge-accordion summary::-webkit-details-marker {
   display: none;
 }
 
-/* Custom Arrow (Subtle) */
-details.bodge-accordion summary::before {
-  content: "▸";
-  position: absolute;
-  left: 0;
-  color: var(--text-muted);
-  transition: transform 0.2s ease;
-  font-size: 1.1em;
-  line-height: 1;
-}
-
-/* Rotate Arrow when Open */
-details.bodge-accordion[open] summary::before {
-  transform: rotate(90deg);
-}
-
 /* Hover Effect */
 details.bodge-accordion summary:hover {
-  text-decoration: underline;
+  text-decoration:dashed;
   color: var(--text-color);
 }
 details.bodge-accordion summary:hover::before {
@@ -1080,26 +1086,12 @@ details.bodge-accordion summary:hover::before {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Text File Copy Button --- */
-.text-copy-btn {
-  background: var(--bg-muted);
-  border: 1px solid var(--border-color);
-  color: var(--text-muted);
-  padding: 0.3em 0.8em;
-  font-size: 0.8em;
-  font-family: var(--mono-font);
-  cursor: pointer;
-  text-transform: uppercase;
-  /* Hard Edges */
-  border-radius: 0; 
-  transition: all 0.2s;
+/* Smoothly animate the "Bodge" effect */
+article, section, ul, header, p, button, img, h1, h2, h3, h4, h5, h6, .bodge-card {
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform; /* Hint to browser to optimize this */
 }
 
-.text-copy-btn:hover {
-  background: var(--accent-color);
-  color: var(--bg-color-bright);
-  border-color: var(--accent-color);
-}
 
 /* =========================================
    12. SCROLLBARS & TOUCH
@@ -1239,6 +1231,7 @@ html {
 
 /* The Trigger Button */
 .bodge-trigger {
+  display: inline;
   background: none;
   border: none;
   padding: 0;
@@ -1257,7 +1250,6 @@ html {
 .bodge-trigger:hover {
   background-color: var(--bg-muted);
   color: var(--text-color);
-  border-bottom-style: solid;
 }
 
 /* When it's open */
@@ -1299,7 +1291,7 @@ div.bodge-reaction {
 }
 
 /* =========================================
-   15. THE PAPER PILE ENGINE
+   15. THE PAPER PILE
    ========================================= */
 .main-content {
   /* Default State: Perfectly straight (0 rotation) */
@@ -1309,9 +1301,7 @@ div.bodge-reaction {
   /* The Animation */
   /* We use a 'back-out' bezier (cubic-bezier) to give it a slight bounce/settle effect */
   animation: paperDrop 0.4s cubic-bezier(0.6, 0.4, 0.5, 0.5) forwards;
-  
-  /* Start hidden so we don't see it before the JS sets the angle */
-  opacity: 0; 
+
 }
 
 @keyframes paperDrop {

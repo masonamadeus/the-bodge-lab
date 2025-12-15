@@ -37,7 +37,7 @@ downloadURL: "{{ media.url | safe }}"
   {% elif media.type == 'other' %}
   
     {# This handles PDF, .txt, etc. #}
-    {% embed media.url %}
+    {% embed media.url, "text-embed" %}
   
   {% else %}
   

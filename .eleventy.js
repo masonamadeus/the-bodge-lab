@@ -191,6 +191,30 @@ let fileTreeCache = null;
 
 module.exports = function (eleventyConfig) {
 
+  /**
+   * Smartly renders markdown.
+   * - If the result is a single paragraph, it strips the <p> tags (Inline Mode).
+   * - Otherwise, it returns the full rendered HTML (Block Mode).
+   * * @param {string} content - Raw markdown content
+   * @returns {Object} { html: string, isInline: boolean }
+   */
+  function renderSmart(content) {
+    const rendered = mdLib.render(content).trim();
+    
+    // Regex to detect a single <p> wrapper (ignoring attributes)
+    const pattern = /^<p(?:\s[^>]*)?>(.*?)<\/p>$/s;
+    const match = rendered.match(pattern);
+    const pCount = (rendered.match(/<p(?:\s[^>]*)?>/g) || []).length;
+
+    if (match && pCount === 1) {
+      // INLINE MODE: Return the content inside the <p>
+      return { html: match[1], isInline: true };
+    } else {
+      // BLOCK MODE: Return everything
+      return { html: rendered, isInline: false };
+    }
+  }
+
   // #region PASSTHROUGHS
 
 
@@ -442,23 +466,26 @@ module.exports = function (eleventyConfig) {
     }
 
     // Detect if this is a text file we can copy
-    const copyableExts = ['.txt', '.md', '.json', '.js', '.css', '.html', '.bat', '.sh', '.xml', '.yml', '.ini', '.cfg'];
+    const copyableExts = ['.txt', '.md', '.json', '.js', '.css', '.html', 
+      '.bat', '.sh', '.xml', '.yml', '.ini', '.cfg', '.csv', 
+      '.lua', '.py', '.java', '.c', '.cpp', '.h', '.rb', '.php', '.rs', '.go', '.swift',
+    '.cmd', '.ps1', '.log',];
     let copyButton = "";
     
     if (copyableExts.includes(ext)) {
         // We add a button that JS will hook onto later
-        copyButton = `<button class="text-copy-btn" title="Copy text content">COPY TEXT</button>`;
+        copyButton = `<button class="text-copy-btn" title="Copy text content">COPY</button>`;
     }
 
     return `<div class="media-embed-wrapper">
   <p>
+    ${copyButton}
     <iframe class="embed-container ${customClass}" style="${customStyle}" src="${resolvedSrc}" onload="if(window.BodgeLab && window.BodgeLab.resizeIframe) window.BodgeLab.resizeIframe(this)">
       <p>Your browser does not support embedded frames. <a href="${resolvedSrc}">Download the file</a> to view it.</p>
     </iframe>
   </p>
   <p class="download-btn-container">
     <a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a>
-    ${copyButton}
   </p></div>`;
   });
 
@@ -535,21 +562,19 @@ module.exports = function (eleventyConfig) {
   // #region LAYOUT SHORTCODES
 
   // Layout Row (Flex Container)
-  // Usage: {% row %} ... {% endrow %}
   eleventyConfig.addPairedShortcode("row", function (content) {
-    // This creates the flexbox container
-    return `<div class="layout-row">${content}</div>`;
+    // Render markdown content before wrapping
+    return `<div class="layout-row">${mdLib.render(content)}</div>`;
   });
 
   // Layout Column (Flex Item)
-  // Usage: {% col %} or {% col "half" %}
   eleventyConfig.addPairedShortcode("col", function (content, width) {
     let className = 'layout-col';
     if (width) {
-      // Creates classes like "layout-col-half", "layout-col-one-third"
       className += ` layout-col-${width}`;
     }
-    return `<div class="${className}">${content}</div>`;
+    // Render markdown content before wrapping
+    return `<div class="${className}">${mdLib.render(content)}</div>`;
   });
 
   // "Grid" Shortcode (The *easy* way)
@@ -560,7 +585,6 @@ module.exports = function (eleventyConfig) {
     const columns = content.split("``");
 
     // Split the widths string into an array
-    //    "half, half" -> ["half", "half"]
     const widthArray = (widths || "half, half").split(',').map(s => s.trim());
 
     // Build the HTML for each column
@@ -573,31 +597,45 @@ module.exports = function (eleventyConfig) {
         className += ` layout-col-${width}`;
       }
 
-      // Return the column, wrapping the user's content
-      return `<div class="${className}">${colContent}</div>`;
+      // --- FIX START ---
+      // Explicitly render Markdown here, so the result is valid HTML 
+      // before it gets wrapped in the div.
+      const renderedItem = mdLib.render(colContent);
+      // --- FIX END ---
+
+      return `<div class="${className}">${renderedItem}</div>`;
     }).join('');
 
     // Wrap all columns in the "layout-row" container
     return `<div class="layout-row">${columnHtml}</div>`;
   });
 
-  // Text alignment shortcode. {%align "center"} {% endalign %}
+ // Text alignment shortcode. {%align "center"} {% endalign %}
   eleventyConfig.addPairedShortcode("align", function (content, alignment = 'left') {
     const validAlignments = ['left', 'right', 'center', 'justify'];
 
     // Use 'left' as a safe default if an invalid value is passed
     const safeAlignment = validAlignments.includes(alignment) ? alignment : 'left';
 
-    // The 'content' variable contains the already-rendered HTML
-    // (e.g., from Markdown) from inside the shortcode block.
-    // We trim to avoid outputting empty divs if there's only whitespace.
     const trimmedContent = content.trim();
 
     if (!trimmedContent) {
       return '';
     }
 
-    return `<div class="text-${safeAlignment}">\n${trimmedContent}\n</div>`;
+    // Render the content so markdown works inside the div
+    return `<div class="text-${safeAlignment}">\n${mdLib.render(trimmedContent)}\n</div>`;
+  });
+
+  // Mono: Simple helper to use mono font on a whim
+ eleventyConfig.addPairedShortcode("mono", function(content) {
+    const { html, isInline } = renderSmart(content);
+    
+    if (isInline) {
+      return `<span class="font-mono">${html}</span>`;
+    } else {
+      return `<div class="font-mono">${html}</div>`;
+    }
   });
 
   // Hide/Reveal Shortcode (Accordion)
@@ -607,10 +645,32 @@ module.exports = function (eleventyConfig) {
     const renderedContent = mdLib.render(content);
     
     // 2. Return the <details> wrapper
-    return `
-      <details class="bodge-accordion"><summary>${summary}</summary><div class="bodge-accordion-content">${renderedContent}</div></details>`;
+    return `<details class="bodge-accordion"><summary>${summary}</summary><div class="bodge-accordion-content">${renderedContent}</div></details>`;
   });
 
+  eleventyConfig.addPairedShortcode("note", function(content, color="bg-muted"){
+
+    const rendered = mdLib.render(content).trim();
+    const style = `background-color:var(--${color})`;
+    
+    // 2. Detect: Is this just simple text (one paragraph)?
+    // Logic: Starts with <p>, ends with </p>, and contains no other <p> tags.
+    const isSinglePara = rendered.startsWith('<p>') && 
+                         rendered.endsWith('</p>') && 
+                         (rendered.indexOf('<p>', 3) === -1);
+
+    if (isSinglePara) {
+      // INLINE MODE: Strip the outer <p> tags and use a <span>
+      // This allows it to sit inside other text without breaking the line.
+      const inlineContent = rendered.substring(3, rendered.length - 4);
+      return `<span style=${style} class="font-mono note">${inlineContent}</span>`;
+    } else {
+      // BLOCK MODE: Keep the structure and use a <div>
+      // This allows headings, lists, and multiple paragraphs.
+      return `<div style=${style} class="font-mono note">${rendered}</div>`;
+    }
+
+  });
 
   // --- CLICKABLE EASTER-EGG SYSTEM ---
 
@@ -626,34 +686,33 @@ module.exports = function (eleventyConfig) {
   // 1. The Trigger
   // Usage: I walked down the {% trigger "stinky, wet road" %}...
   eleventyConfig.addShortcode("trigger", function(text) {
+    // 1. Generate ID from the RAW text
     const id = slugify(text);
-    // We output the exact same HTML structure, so the JS/CSS still works
-    return `<button class="bodge-trigger notilt" data-trigger-id="${id}" title="Reveal Note">${text}</button>`;
+    
+    // 2. FORCE Inline Rendering.
+    // mdLib.renderInline() parses markdown but prevents <p> tags.
+    // This ensures the button stays an inline element.
+    const html = mdLib.renderInline(text);
+
+    // 3. Generate random animation delay
+    const randomDelay = (Math.random() * -10).toFixed(2);
+
+    return `<button class="bodge-trigger notilt" 
+                    style="animation-delay: ${randomDelay}s;" 
+                    data-trigger-id="${id}" 
+                    title="Reveal Note">${html}</button>`;
   });
 
   // 2. The Reaction
   // Usage: {% react "stinky, wet road" %} ...content... {% endreact %}
   eleventyConfig.addPairedShortcode("react", function(content, idOrText) {
-
     const id = slugify(idOrText);
-    
-    // 1. Render the Markdown
-    let rendered = mdLib.render(content).trim();
-    
-    // 2. Detect: Is this exactly ONE paragraph?
-    // Checks if it starts with <p>, ends with </p>, and has no <p> in the middle.
-    const isSinglePara = rendered.startsWith('<p>') && 
-                         rendered.endsWith('</p>') && 
-                         (rendered.indexOf('<p>', 3) === -1);
+    const { html, isInline } = renderSmart(content);
 
-    if (isSinglePara) {
-      // INLINE MODE: Strip the outer <p> tags and use a <span>
-      // This allows it to sit inside another paragraph without breaking it.
-      const innerHTML = rendered.substring(3, rendered.length - 4);
-      return `<span class="bodge-reaction notilt" data-react-id="${id}" hidden>${innerHTML}</span>`;
+    if (isInline) {
+      return `<span class="bodge-reaction notilt" data-react-id="${id}" hidden>${html}</span>`;
     } else {
-      // BLOCK MODE: Keep the structure and use a <div>
-      return `<div class="bodge-reaction" data-react-id="${id}" hidden>${rendered}</div>`;
+      return `<div class="bodge-reaction" data-react-id="${id}" hidden>${html}</div>`;
     }
   });
  

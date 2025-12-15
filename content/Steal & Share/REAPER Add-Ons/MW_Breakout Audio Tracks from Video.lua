@@ -1,3 +1,12 @@
+--[[--
+			  !!!!IMPORTANT!!!!
+
+--> FOR THIS TO WORK YOU MUST HAVE FFMPEG.EXE INSIDE YOUR REAPER\USERPLUGINS FOLDER <--
+
+YOU CAN DOWNLOAD FFMPEG.EXE HERE: https://www.ffmpeg.org/download.html
+
+--]]--
+
 -- @description Extract Multi-Channel Audio Streams (FFPMEG.EXE MUST BE IN USERPLUGINS FOLDER)
 
 function log(m) reaper.ShowConsoleMsg(tostring(m) .. "\n") end
