@@ -492,14 +492,10 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   left: 0; right: 0;
   
   /* Visuals: HUD Style */
-  background-color: var(--bg-muted);
   border: none;
-  border-top: 2px solid var(--border-color);
-  box-shadow: 0 -10px 20px rgba(0,0,0,0.1);
-  
   /* Layout: Full Width HUD */
   width: 100%;
-  max-width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
   z-index: 1000;
   
@@ -509,6 +505,7 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   /* Smooth transition for mode switching */
   transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
 
 /* STATE B: OPEN (User Tapped or Hovered while Docked) */
 .directory-container.open,
@@ -525,12 +522,13 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   
   /* Layout: Match Main Content */
   width: 100%;
+  max-width: 1200px;
   margin: 2em auto 0em auto;
   padding-bottom: 3em;
   
   /* Visuals: Physical Block */
   border: none;
-  border-top: 2px solid var(--border-color);
+  border-top: 0px solid var(--border-color);
   box-shadow: none;
   
   /* Force Visibility */
@@ -549,21 +547,19 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   padding-top: 0.5em;
   padding-left: 0.5em;
   background: var(--bg-muted);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 0px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: left;
   cursor: pointer;
   user-select: none;
-}
-
-/* Grip Lines (Only visible when docked) */
-.directory-header::after {
-  content: ""; /* Restored your empty content logic if you had icons, or text if you want */
-  /* If you want the text grip you had earlier: content: "///"; */
-  font-family: var(--mono-font);
-  color: var(--accent-color);
-  letter-spacing: 2px;
+  padding-right: 1em;
+  width: fit-content;
+  margin-bottom: -2px;
+  min-width: 150px;
+  
+  box-shadow: 0 -10px 20px rgba(0,0,0,0.1);
+  
 }
 
 .directory-title {
@@ -574,6 +570,7 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
 }
 
 .dir-listing {
+  background-color: var(--bg-muted);
   list-style: none;
   margin: 0;
   line-height: 1;
@@ -583,7 +580,9 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   
   /* CRITICAL FIX: Prevents the body from scrolling when this list hits the end */
   overscroll-behavior: contain;
+  transform: translateZ(2px);
 }
+
 
 /* Static: Let it grow */
 .directory-container.is-static .dir-listing {
@@ -1281,7 +1280,7 @@ div.bodge-reaction {
   
   /* The Animation */
   /* We use a 'back-out' bezier (cubic-bezier) to give it a slight bounce/settle effect */
-  animation: paperDrop 0.2s cubic-bezier(0.6, 0.4, 0.5, 0.5) forwards;
+  animation: paperDrop 0.4s cubic-bezier(0.6, 0.4, 0.5, 0.5) forwards;
   
   /* Start hidden so we don't see it before the JS sets the angle */
   opacity: 0; 

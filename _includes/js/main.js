@@ -3,14 +3,18 @@ document.addEventListener('DOMContentLoaded', () => {
   window.BodgeLab = window.BodgeLab || {};
 
 /* =========================================
-   DIRECTORY BAR (Sentinel + Click Outside)
+   DIRECTORY BAR (Sentinel + Click Outside + Safety Lock)
    ========================================= */
 (function() {
   const dir = document.querySelector('.directory-container');
   const sentinel = document.getElementById('dir-sentinel');
   
+  // SAFETY LOCK: Prevents "double-tap" accidents when menu pops up
+  let linkLock = false;
+  
   if (!dir) return;
 
+  // 1. SCROLL OBSERVER (Dock/Undock Logic)
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -19,17 +23,16 @@ document.addEventListener('DOMContentLoaded', () => {
         dir.classList.remove('open');
       } else {
         // SCROLLING UP: Dock to HUD
-        // 1. Kill animation instantly
+        // 1. Kill animation instantly to prevent "pop"
         dir.classList.add('no-transition');
         
-        // 2. Switch state (Browser snaps to hidden position)
+        // 2. Switch state
         dir.classList.remove('is-static');
         
-        // 3. Force the browser to accept the new position *now*
+        // 3. Force browser reflow
         void dir.offsetWidth; 
         
-        // 4. Restore animation (so manual clicks still look smooth)
-        // We use a tiny timeout to ensure the "snap" is finished
+        // 4. Restore animation
         setTimeout(() => {
           dir.classList.remove('no-transition');
         }, 50);
@@ -39,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
     rootMargin: "0px 0px 0px 0px"
   });
 
-  // If sentinel is missing (no content), force static mode
   if (sentinel) {
     observer.observe(sentinel);
   } else {
@@ -48,17 +50,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 2. INTERACTION LOGIC
   document.addEventListener('click', (e) => {
-    // A. Ignore clicks if we are in Static/Block mode (it's part of the page)
+    // A. Ignore clicks if we are in Static/Block mode
     if (dir.classList.contains('is-static')) return;
 
     const clickedInside = dir.contains(e.target);
     const clickedHeader = e.target.closest('.directory-header');
     const clickedLink = e.target.closest('a');
 
+    // --- NEW: SAFETY CHECK ---
+    // If the safety lock is ON, and you tried to click a link inside the directory...
+    if (linkLock && clickedInside && clickedLink) {
+      e.preventDefault(); // Stop the link
+      e.stopImmediatePropagation(); // Stop other scripts
+      return; // Do nothing
+    }
+
     // B. HEADER CLICK: Toggle Open/Close
     if (clickedHeader && !clickedLink) {
       dir.classList.toggle('open');
-      e.stopPropagation(); // Stop this click from triggering the "Close Outside" check
+      e.stopPropagation(); 
+      
+      // IF WE JUST OPENED IT: Engage the Safety Lock
+      if (dir.classList.contains('open')) {
+        linkLock = true;
+        // Release lock after 400ms (enough time to lift finger)
+        setTimeout(() => {
+          linkLock = false;
+        }, 400); 
+      }
       return;
     }
 
