@@ -1,20 +1,36 @@
 ---
 uid: how-i-got-like-this
-contentHash: e242b0f5
-date: '2025-12-14T21:02:08.904Z'
+contentHash: 567596a8
+date: '2025-12-16T23:38:46.111Z'
 ---
-
-## this is a big time wip
 
 {%book%}
 
-# How I Got Like This
+# This is an attempt to narratively serialize myself
 
-Hi. My name is Mason Amadeus. I’m thirty one years old, I have a mustache, and my favorite color has been purple for a long time, but I am starting to come around to liking orange more these days. I hold no formal titles; I barely graduated high school. I did not attend college, but I did apply to one. Just the one.
+{%grid%}
+
+![My wife snapped this pic of me in a cafe and I really like it.](./files/nice%20headshot.webp)
+
+``
+
+Hi. My name is Mason Amadeus. I’m thirty two years old, I have a mustache, and my favorite color has been purple for a long time, but I am starting to come around to liking orange more these days. I'm a chaotic, nerdy, dorky, anxious mess.
+
+My highest goal in life is to bring joy to people, and to help others overcome technical barriers to making their art or understanding the science of the world around them. I'm not uniquely qualified for anything, I'm just a guy trying to figure out how to stumble through life while having the biggest net-positive impact that I can.
+
+{%endgrid%}
+
+___
+
+# My Zero Academia
+
+I hold no formal titles. I did not attend college, but I did apply to {%trigger "one"%}. {%react "one"%} Just the one. The local one in my town, in fact. We were forced to complete at least one college application in class, and that was mine.{%endreact%} In my highschool graduating class of 127 kids, I didn't even make it into the top hundred.
 
 I can summarize the entirety of my formal education with a single anecdote, which I’m willing to bet will feel relatable to the kind of person who would like my work.
 
-Senior year of high school. I was failing Computer Science, Film Studies, and Algebra 2. Three subjects that I needed to graduate, that I honestly loved and excelled in, but because I had sewn a diaper’s worth of moral hairs across my buttcheeks about how inequitable the very concept of ‘homework’ was, and these classes each weighted ‘homework’ far more heavily than test results, I was floundering with a capital F.
+It's senior year of high school. I was failing Computer Science, Film Studies, and Algebra 2. Three subjects that I needed to graduate -- three subjects that I honestly loved and excelled in -- but because I had sewn a diaper’s worth of moral hairs across my buttcheeks about how inequitable the very concept of ‘{%trigger "homework"%}’ was (and these classes each weighted ‘homework’ far more heavily than test results), I was floundering with a capital F.
+
+{%react "homework"%} To be perfectly honest, this diaper has only grown thicker with age. Our education system is a nightmare. I'm sure we all knew many kids with rough home lives or other circumstances that make completing additional work outside of school infeasible. {%endreact%}
 
 Computer science, film studies, and algebra 2. Graduation was looming. I needed to kill three birds with one stone, and I wasn’t gonna do it on my own time. So I skipped a couple classes, filched a chromebook from an unlocked cart, and created a twenty-six-variable algebraic expression designed to {% trigger "objectively" %} rate movies based on twenty six criteria that the user would assign a numeric value to. 
 
@@ -24,6 +40,8 @@ Really, the equation was just an overly complicated weighting system based on ho
 
 This project either demonstrated to the teachers of all three classes that I sufficiently understood the subject matter - or they all just felt bad for me but all three of them granted enough extra credit that I managed to scrape by and graduate with a D- in each of their classes. 
 To be clear, I think that this story speaks more to the patience and grace of my excellent high school teachers than it does to any brilliance on my part - but it’s certainly illustrative of the way I’ve approached basically my entire life.
+
+___
 
 ## WHY AM I THE WAY THAT I AM
 

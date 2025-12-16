@@ -446,47 +446,90 @@ module.exports = function (eleventyConfig) {
   <p class="download-btn-container"><a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a></p></div>`;
   });
 
-  // Embed Shortcode (Smart: Supports "16/9" OR "my-custom-class")
+  // Embed Shortcode (Smart: Inlines Text/Code, Iframes Apps/HTML)
   eleventyConfig.addShortcode("embed", function (src, ratioOrClass) {
-    const resolvedSrc = resolveSrc.call(this, src);
-    const filename = decodeURIComponent(path.basename(resolvedSrc));
-    const ext = path.extname(filename).toLowerCase();
     
+    // 1. Resolve Paths (Web URL vs File System Path)
+    let webUrl = resolveSrc.call(this, src);
+    let fileSystemPath;
+
+    if (src.startsWith('/') || src.startsWith('http')) {
+      // Absolute path relative to content dir
+      // We strip the leading slash to join it with current directory
+      const cleanSrc = src.startsWith('/') ? src.substring(1) : src;
+      fileSystemPath = path.join(contentDir, cleanSrc);
+    } else {
+      // Relative path: Resolve against the current page's folder
+      const pageDir = path.dirname(this.page.inputPath);
+      fileSystemPath = path.resolve(pageDir, src);
+    }
+
+    const filename = path.basename(fileSystemPath);
+    const ext = path.extname(filename).toLowerCase();
+
+    // 2. Define "Inline-able" Text Formats
+    const textExtensions = [
+      '.txt', '.md', '.json', '.js', '.css', '.html', 
+      '.bat', '.sh', '.xml', '.yml', '.ini', '.cfg', '.csv', 
+      '.lua', '.py', '.java', '.c', '.cpp', '.h', '.rb', '.php', '.rs', '.go', '.swift',
+      '.cmd', '.ps1', '.log', '.eel'
+    ];
+    
+    // Exception: We usually want to IFRAME .html "apps", but INLINE .html "snippets".
+    const isText = textExtensions.includes(ext) && ext !== '.html'; 
+
+    // 3. Handle Custom Classes/Ratio
     let customStyle = "";
     let customClass = "";
-    
     if (ratioOrClass) {
       if (/^\d+(\.\d+)?\/\d+(\.\d+)?$/.test(ratioOrClass)) {
         customStyle = `aspect-ratio: ${ratioOrClass}; height: auto;`;
       } else {
         customClass = ratioOrClass;
       }
-    } else {
-        customStyle = `background-color:light-dark(#FFFFFF,#000000);`;
     }
 
-    // Detect if this is a text file we can copy
-    const copyableExts = ['.txt', '.md', '.json', '.js', '.css', '.html', 
-      '.bat', '.sh', '.xml', '.yml', '.ini', '.cfg', '.csv', 
-      '.lua', '.py', '.java', '.c', '.cpp', '.h', '.rb', '.php', '.rs', '.go', '.swift',
-    '.cmd', '.ps1', '.log','.eel'];
-    let copyButton = "";
-    
-    if (copyableExts.includes(ext)) {
-        // We add a button that JS will hook onto later
-        copyButton = `<button class="text-copy-btn" title="Copy text content">COPY</button>`;
+    // --- BRANCH A: INLINE TEXT (Respects Theme) ---
+    if (isText && fs.existsSync(fileSystemPath)) {
+        try {
+            // Read file content
+            const fileContent = fs.readFileSync(fileSystemPath, 'utf8');
+            
+            // Escape HTML (Crucial for displaying code like <stdio.h>)
+            const escapedContent = fileContent
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+
+            // Render as a native code block
+            // Your main.js will automatically attach the "COPY" button to this <pre>!
+            return `<div class="media-embed-wrapper ${customClass}">
+                      <pre class="language-${ext.substring(1)}"><code class="language-${ext.substring(1)}">${escapedContent}</code></pre>
+                      <p class="download-btn-container">
+                        <a href="${webUrl}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a>
+                      </p>
+                    </div>`;
+        } catch (e) {
+            console.warn(`[BodgeLab] Failed to inline embed: ${src}`, e);
+            // Fallthrough to iframe if read fails
+        }
+    }
+
+    // --- BRANCH B: IFRAME (Apps, PDFs, HTML) ---
+    if (!customStyle && !customClass) {
+        // Default style for iframes (light/dark bg handled by browser or internal css)
+        customStyle = `background-color:var(--bg-muted);`; 
     }
 
     return `<div class="media-embed-wrapper">
-  <p>
-    ${copyButton}
-    <iframe class="embed-container ${customClass}" style="${customStyle}" src="${resolvedSrc}" onload="if(window.BodgeLab && window.BodgeLab.resizeIframe) window.BodgeLab.resizeIframe(this)">
-      <p>Your browser does not support embedded frames. <a href="${resolvedSrc}">Download the file</a> to view it.</p>
-    </iframe>
-  </p>
-  <p class="download-btn-container">
-    <a href="${resolvedSrc}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a>
-  </p></div>`;
+      <iframe class="embed-container ${customClass}" style="${customStyle}" src="${webUrl}" onload="if(window.BodgeLab && window.BodgeLab.resizeIframe) window.BodgeLab.resizeIframe(this)">
+        <p>Your browser does not support embedded frames. <a href="${webUrl}">Download the file</a> to view it.</p>
+      </iframe>
+      <p class="download-btn-container">
+        <a href="${webUrl}" class="page-download-btn" download>DOWNLOAD "${filename}" ⤓</a>
+      </p></div>`;
   });
 
   // 3D Model Shortcode
@@ -564,7 +607,7 @@ module.exports = function (eleventyConfig) {
   // Layout Row (Flex Container)
   eleventyConfig.addPairedShortcode("row", function (content) {
     // Render markdown content before wrapping
-    return `<div class="layout-row">${mdLib.render(content)}</div>`;
+    return `<div class="layout-row">${mdLib.render(content, {page: this.page })}</div>`;
   });
 
   // Layout Column (Flex Item)
@@ -574,7 +617,7 @@ module.exports = function (eleventyConfig) {
       className += ` layout-col-${width}`;
     }
     // Render markdown content before wrapping
-    return `<div class="${className}">${mdLib.render(content)}</div>`;
+    return `<div class="${className}">${mdLib.render(content, {page: this.page})}</div>`;
   });
 
   // "Grid" Shortcode (The *easy* way)
@@ -624,7 +667,7 @@ module.exports = function (eleventyConfig) {
     }
 
     // Render the content so markdown works inside the div
-    return `<div class="text-${safeAlignment}">\n${mdLib.render(trimmedContent)}\n</div>`;
+    return `<div class="text-${safeAlignment}">\n${mdLib.render(trimmedContent, {page: this.page})}\n</div>`;
   });
 
   // Mono: Simple helper to use mono font on a whim
@@ -642,7 +685,7 @@ module.exports = function (eleventyConfig) {
   // Usage: {% toggle "Read More..." %} ...content... {% endtoggle %}
   eleventyConfig.addPairedShortcode("toggle", function(content, summary="Read More...") {
     // 1. Render the Markdown inside the block
-    const renderedContent = mdLib.render(content);
+    const renderedContent = mdLib.render(content, {page: this.page});
     
     // 2. Return the <details> wrapper
     return `<details class="bodge-accordion"><summary>${summary}</summary><div class="bodge-accordion-content">${renderedContent}</div></details>`;
@@ -650,7 +693,7 @@ module.exports = function (eleventyConfig) {
 
   eleventyConfig.addPairedShortcode("note", function(content, color="bg-muted"){
 
-    const rendered = mdLib.render(content).trim();
+    const rendered = mdLib.render(content, {page: this.page}).trim();
     const style = `background-color:var(--${color})`;
     
     // 2. Detect: Is this just simple text (one paragraph)?
@@ -692,7 +735,7 @@ module.exports = function (eleventyConfig) {
     // 2. FORCE Inline Rendering.
     // mdLib.renderInline() parses markdown but prevents <p> tags.
     // This ensures the button stays an inline element.
-    const html = mdLib.renderInline(text);
+    const html = mdLib.renderInline(text, {page: this.page});
 
     // 3. Generate random animation delay
     const randomDelay = (Math.random() * -10).toFixed(2);
@@ -720,7 +763,7 @@ module.exports = function (eleventyConfig) {
   // Usage: {% book %} ... paragraphs ... {% endbook %}
   eleventyConfig.addPairedShortcode("book", function(content) {
     // Render the markdown inside, then wrap it
-    const rendered = mdLib.render(content);
+    const rendered = mdLib.render(content, {page: this.page});
     return `<div class="book-style">${rendered}</div>`;
   });
 

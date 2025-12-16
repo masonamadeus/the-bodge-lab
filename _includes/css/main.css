@@ -433,7 +433,6 @@ iframe {
 }
 
 .text-embed {
-  height: 60vh;
   max-height: 1000px;
 }
 
@@ -1306,7 +1305,7 @@ div.bodge-reaction {
 
 @keyframes paperDrop {
   0% {
-    opacity: 0;
+    opacity: 0.4;
     /* START: Lifted up (-80px), Scaled up (1.1), and Rotated Randomly */
     transform: translateY(-80px) scale(2) rotate(var(--start-rotation, 5deg));
     filter: brightness(0);
