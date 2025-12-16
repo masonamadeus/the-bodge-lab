@@ -51,20 +51,24 @@ function bodgeMarkdownImage(tokens, idx, options, env, self) {
   let src = token.attrs[srcIndex][1];
   const alt = token.content || ""; // Use the alt text as caption/alt
 
+  //Decode URI Components
+  let cleanSrc = decodeURI(src);
+
   // Resolve Relative Paths (Logic borrowed from Shortcode)
   //    If it's not a URL or root path, resolve it relative to the current file.
   if (!src.startsWith('http') && !src.startsWith('/') && env.page && env.page.inputPath) {
     try {
       const pagePath = path.dirname(env.page.inputPath);
-      const resolvedPath = path.resolve(pagePath, src);
+      const resolvedPath = path.resolve(pagePath, cleanSrc);
       const webPath = path.relative(contentDir, resolvedPath);
       src = '/' + webPath.replace(/\\/g, '/');
+      src = encodeURI(src);
     } catch(e) {
       console.warn("Failed to resolve markdown image path:", src);
     }
   }
 
-  const filename = decodeURI(path.basename(src));
+  const filename = path.basename(cleanSrc)
   // Return the "Bodge Card" HTML
   // Use a <span> wrapper with display:block to be (mostly) valid inside <p> tags
   return `<span class="media-embed-wrapper" style="display: block;">
@@ -199,7 +203,7 @@ module.exports = function (eleventyConfig) {
    * @returns {Object} { html: string, isInline: boolean }
    */
   function renderSmart(content) {
-    const rendered = mdLib.render(content).trim();
+    const rendered = mdLib.render(content, {page: this.page}).trim();
     
     // Regex to detect a single <p> wrapper (ignoring attributes)
     const pattern = /^<p(?:\s[^>]*)?>(.*?)<\/p>$/s;
@@ -640,12 +644,9 @@ module.exports = function (eleventyConfig) {
         className += ` layout-col-${width}`;
       }
 
-      // --- FIX START ---
-      // Explicitly render Markdown here, so the result is valid HTML 
-      // before it gets wrapped in the div.
-      const renderedItem = mdLib.render(colContent);
-      // --- FIX END ---
-
+      
+      const renderedItem = mdLib.render(colContent, {page: this.page});
+      
       return `<div class="${className}">${renderedItem}</div>`;
     }).join('');
 

@@ -1,14 +1,26 @@
 ---
 uid: how-i-got-like-this
-contentHash: 567596a8
-date: '2025-12-16T23:38:46.111Z'
+contentHash: e7962ff6
+date: '2025-12-16T23:51:13.894Z'
 ---
+
+{%note%}
+
+THIS IS AN UNFINISHED WORK IN PROGRESS.
+
+PLEASE STOP READING NOW.
+
+THANKS.
+
+-MANAGEMENT
+
+{%endnote%}
 
 {%book%}
 
 # This is an attempt to narratively serialize myself
 
-{%grid%}
+{%grid "one-third, two-thirds"%}
 
 ![My wife snapped this pic of me in a cafe and I really like it.](./files/nice%20headshot.webp)
 
