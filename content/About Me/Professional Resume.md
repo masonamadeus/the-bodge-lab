@@ -1,7 +1,7 @@
 ---
 uid: mason-resume
-contentHash: 353c91c0
-date: '2025-12-01T23:37:00.725Z'
+contentHash: 7f9b7c11
+date: '2025-12-19T23:57:19.917Z'
 ---
 
 # Mason Amadeus Washer 
@@ -66,7 +66,7 @@ ___
 * Aided in commissioning new transmitters and HD importer/exporter systems in 2019. 
 * Acted as first point of contact to resolve major equipment failures including a loss of our main IPSTL relay point, tower site remote control failures, master antenna system combiner/filter failure, rebroadcast receiver signal path issues, etc. 
 * Covered other engineers' duties as needed across multiple states and markets.
-* Recapped & Rebuilt multiple small transmitters and transmitter components.
+* Recapped & rebuilt multiple small transmitters and transmitter components.
 
 #### On-Air / Production (Original hired position, April 2014) 
 * Hosted a weekday afternoon drive program on a Hot AC music station. 
@@ -98,6 +98,7 @@ ___
 
 ## Additional Skills 
 
+* Performer and comedian, cast member and sound designer/producer of [PodCube™](</s/podcube>) (the funniest podcast on Human Earth)
 * Voice Actor for various audiodrama podcasts including *Hemophobia*, *Inn Between*, *Something's Amiss at Juniper's House*, and more.
 * Elaborate Live Streaming Event Designer. (Once built a face-spraying robot that raised over $700).
 * Deep understanding of AI systems including transformer-based LLMs and diffusion models (I'm not an AI developer, though).

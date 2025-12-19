@@ -1,7 +1,7 @@
 ---
 uid: how-i-got-like-this
-contentHash: e7962ff6
-date: '2025-12-16T23:51:13.894Z'
+contentHash: 3e58316c
+date: '2025-12-19T23:57:19.922Z'
 ---
 
 {%note%}
@@ -28,7 +28,15 @@ THANKS.
 
 Hi. My name is Mason Amadeus. I’m thirty two years old, I have a mustache, and my favorite color has been purple for a long time, but I am starting to come around to liking orange more these days. I'm a chaotic, nerdy, dorky, anxious mess.
 
-My highest goal in life is to bring joy to people, and to help others overcome technical barriers to making their art or understanding the science of the world around them. I'm not uniquely qualified for anything, I'm just a guy trying to figure out how to stumble through life while having the biggest net-positive impact that I can.
+My highest goal in life is to bring as much harmless joy to it as possible, and to share things that I'm excited about with other people.
+
+I'm not uniquely qualified for anything. 
+
+I like to mess around with everything. 
+
+I think that in a world where cynicism is the default, it's brave to be earnest and give a shit. I don't like taking myself seriously, and I'm just here to make weird stuff with cool people. 
+
+Here's a bit of my personal history.
 
 {%endgrid%}
 

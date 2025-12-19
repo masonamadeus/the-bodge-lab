@@ -51,7 +51,6 @@ body {
   color: var(--text-color);
   background: var(--bg-color);
   margin: 0;
-  margin-bottom: 80px;
   padding: 0;
   line-height: var(--line-height);
   
@@ -120,6 +119,7 @@ iframe {
   position: relative;
   /* Make room for the ragged edges so they don't get chopped off */
   margin: 0 auto; 
+  margin-bottom: 70px;
   padding: 3em 4em;
   max-width: 1000px;
   z-index: 1; 
@@ -549,10 +549,11 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 
   filter: 
-    drop-shadow(2px 0 0 var(--border-color)) 
-    drop-shadow(-2px 0 0 var(--border-color)) 
-    drop-shadow(0 2px 0 var(--border-color)) 
-    drop-shadow(0 -2px 0 var(--border-color));
+  drop-shadow(2px 0 0px var(--border-color)) 
+  drop-shadow(-2px 0 0px var(--border-color)) 
+  drop-shadow(0 2px 0px var(--border-color)) 
+  drop-shadow(0 -2px 0px var(--border-color))
+  drop-shadow(5px -10px 15px rgba(0,0,0,0.2));
 
 }
 
@@ -577,14 +578,32 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   /* Layout: Match Main Content */
   width: 100%;
   max-width: 1200px;
-  margin: 2em auto 0em auto;
+  margin: 0px auto 0em auto;
   padding-bottom: 3em;
 
   
   /* Force Visibility */
-  transform: none !important;
+  transform: none!important;
   opacity: 1;
   z-index: 10;
+  filter: 
+  drop-shadow(1px 0 0px var(--border-color)) 
+  drop-shadow(-1px 0 0px var(--border-color)) 
+  drop-shadow(0 1px 0px var(--border-color)) 
+  drop-shadow(0 -1px 0px var(--border-color));
+}
+
+.directory-container.is-static::after{
+  content: '';
+  justify-content: center;
+  border-top: 2px dashed var(--border-color);
+  padding-top: 1em;
+  margin-top: -0px;
+  width: 100%;
+  height: 80px;
+  margin-bottom: -200px;
+  display: flex;
+  background-color: var(--bg-muted);
 }
 
 /* Hide the "grip" lines when static */
@@ -603,17 +622,23 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   user-select: none;
   padding-right: 1em;
   width: fit-content;
-  margin-bottom: -6px;
+  margin-bottom: -5px;
   min-width: 150px;
-  
   border-bottom: none;
-  
+  clip-path: polygon(
+    0 0,                     /* top-left (square) */
+    calc(100% - 20px) 0,     /* before top-right bevel */
+    100% 40px,               /* top-right bevel */
+    100% 100%,               /* bottom-right (square) */
+    0 100%                   /* bottom-left (square) */
+  );
 }
 
 .directory-title {
   font-size: 1.2em;
   color: var(--text-muted);
   margin: 0.2em;
+  margin-right:1em;
   font-family: var(--mono-font);
 
 }

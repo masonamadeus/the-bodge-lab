@@ -155,43 +155,44 @@
             <header class="sticky">
                 <nav class="nav-container">
                     <div class="breadcrumb-nav">
-                    <div class="breadcrumb-mover">
-                        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
-                            <svg
-                                viewbox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="theme-icon">
-                                <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                                <g id="moon-icon">
-                                    <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
-                                        .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
-                                    <path d="M9 21h6"></path>
-                                    <path d="M9 17h6"></path>
-                                </g>
-                            </svg>
-                        </button>
-                        <span class="separator">\\</span>
-                        <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
-                        {% set url_parts = page.url | split('/') %}
-                        {% set accumulated_path = '' %}
-                        {% for part in url_parts %}
-                            {% if part and part != 'index.html' %}
-                                {% set accumulated_path = accumulated_path + '/' + part %}
-                                <span class="separator">\</span>
-                                {% if not loop.last %}
-                                    <a href="{{ accumulated_path }}/" class="breadcrumb">{{ part }}</a>
-                                {% else %}
-                                    <span class="current">{{ title if title and title != "Home" else part }}</span>
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            {% set url_parts = page.url | split('/') %}
+                            {% set accumulated_path = '' %}
+                            {% for part in url_parts %}
+                                {% if part and part != 'index.html' %}
+                                    {% set accumulated_path = accumulated_path + '/' + part %}
+                                    <span class="separator">\</span>
+                                    {% if not loop.last %}
+                                        <a href="{{ accumulated_path }}/" class="breadcrumb">{{ part }}</a>
+                                    {% else %}
+                                        <span class="current">{{ title if title and title != "Home" else part }}</span>
+                                    {% endif %}
                                 {% endif %}
-                            {% endif %}
-                        {% endfor %}
+                            {% endfor %}
+                        </div>
                     </div>
-                    </div>
-                    <div class="page-nav">
+                    <div
+                        class="page-nav">
                         {# Right Side: Parent Link #}
                         {% if parentUrl %}
                             <div>
@@ -235,10 +236,12 @@
                             </p>
                         </div>
                     {% endif %}
+                    {# --- DIRECTORY LISTING SECTION --- #}
+                    {# The Placeholder: This div will be forced by JS to match the exact height of the directory.
+                       It pushes the page content up so the Directory has a 'slot' to land in without overlapping text. #}
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
                 </main>
             {% endif %}
-            {# --- DIRECTORY LISTING SECTION --- #}
-            <div id="dir-sentinel" style="height: 1px; width: 100%; pointer-events: none; margin-bottom: 5px;"></div>
             {% if directory %}
                 {% set hasDirs = directoryContents.directories | length > 0 %}
                 {% set hasPages = directoryContents.pages | length > 0 %}
