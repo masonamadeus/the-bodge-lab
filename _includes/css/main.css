@@ -350,7 +350,6 @@ iframe {
   font-weight: bold;
   color: var(--accent-color);
   font-size: 1.1em;
-  text-decoration: none;
   line-height: 1;
 }
 
@@ -640,8 +639,8 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   margin: 0.2em;
   margin-right:1em;
   font-family: var(--mono-font);
-
 }
+
 
 .dir-listing {
   background-color: var(--bg-muted);
@@ -653,9 +652,6 @@ code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
   padding-bottom: 1em;
   max-height: 60vh;
   overflow-y:auto;
-  
-  
-  /* CRITICAL FIX: Prevents the body from scrolling when this list hits the end */
   overscroll-behavior: contain;
 }
 

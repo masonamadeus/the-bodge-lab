@@ -2,8 +2,8 @@
 download: false
 uid: home
 title: Home
-contentHash: c9dbcae8
-date: '2025-12-14T21:02:08.898Z'
+contentHash: ac18f826
+date: '2026-01-20T16:51:15.455Z'
 ---
 # Welcome to The Bodge Lab!
 
@@ -17,9 +17,17 @@ This is my folder on the internet. You're free to {%trigger "poke"%} around here
 
 Or, shoot me an email at: Mason@8thLayerMedia.com {%endreact%}
 
-Explore! I hope you find joy and utility amongst my nonsense.
+Explore! I hope you find joy and utility amongst my {% trigger "nonsense"%}.
 
 ##### NOTE: There's a lot of placeholder content up here right now as I build out the site. Make sure you come back later!
+
+{%react "nonsense" %}### GOAL FOR 2026: BE LESS SCRUTABLE
+
+Maybe, if I do it just right, I can become the kind of artist whom everyone suspects is part of an ARG{%endreact%}
+
+!
+
+
 
 ___
 

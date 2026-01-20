@@ -251,13 +251,29 @@
                     <section class="directory-container">
                         <div class="directory-header">
                             {% if directoryParentUrl %}
-                                <a href="{{ directoryParentUrl }}" class="nav-link-small up">...\</a>
+                                <a href="{{ directoryParentUrl }}" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
                             {% endif %}
-                            <h3 class="directory-title">{{ directoryTitle | safe }}</h3>
+                            
+                            {#Clickable Title #}
+                            <h3 class="directory-title">
+                                {{ directoryTitle | safe }}
+                            </h3>
                         </div>
                         {# 2. Directory Contents Listing #}
                         {% if directoryContents %}
                             <ul class="dir-listing">
+
+                                {% if directoryContents.index %}
+                                    <li class="directory-index-in-list">
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        {% if directoryContents.index.isCurrent %}
+                                            <strong>{{ directoryContents.index.name }}</strong>
+                                        {% else %}
+                                            <a href="{{ directoryContents.index.url }}">{{ directoryContents.index.name }}</a>
+                                        {% endif %}
+                                    </li>
+                                {% endif %}
+
                                 {% for dir in directoryContents.directories %}
                                     <li>
                                         <span

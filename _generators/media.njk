@@ -10,12 +10,13 @@ layout: false
 downloadURL: "{{ media.url | safe }}"
 
 ---
+
+{# This is an embedded file. You're probably meant to download it and use it somehow. #}
+
 {% extends "layout.njk" %}
 
 {% block content %}
   <h2>{{ media.name }}</h2>
-
-  {# --- This is the new, simplified logic --- #}
   
   {% if media.type == 'image' %}
     
@@ -29,14 +30,12 @@ downloadURL: "{{ media.url | safe }}"
   
     {% audio media.url, media.name %}
   
-  {# We must check for .glb *before* 'other' #}
   {% elif media.ext == '.glb' %}
   
     {% 3d media.url %} 
   
   {% elif media.type == 'other' %}
   
-    {# This handles PDF, .txt, etc. #}
     {% embed media.url, "text-embed" %}
   
   {% else %}

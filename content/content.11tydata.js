@@ -278,6 +278,14 @@ module.exports = {
       return "Directory"; 
     },
 
+    directoryUrl: data => {
+      const dirNode = getDirectoryNode(data);
+      if (dirNode) {
+        return dirNode.webPath === '/' ? '/' : `${dirNode.webPath}/`;
+      }
+      return null;
+    },
+
     parentUrl: data => {
       if (data.page.url === "/") {
         return null;
@@ -305,7 +313,8 @@ module.exports = {
       const dirNode = getDirectoryNode(data);
 
       if (!dirNode || !dirNode.children) {
-        return { directories: [], files: [], pages: [] };
+        // Return empty index as well
+        return { directories: [], files: [], pages: [], index: null };
       }
 
       const cleanUrl = dirNode.webPath === '/' ? '/' : `${dirNode.webPath}/`;
@@ -313,6 +322,7 @@ module.exports = {
       let directories = [];
       let files = [];
       let pages = [];
+      let indexPage = null; // Holder for the index
 
       const mainPageUrl = normalizeLookupKey(data.page.url);
 
@@ -335,12 +345,19 @@ module.exports = {
 
           const itemName = item.title || baseName;
           const isCurrent = (normalizeLookupKey(itemUrl) === mainPageUrl);
-
-          pages.push({
-            name: `» ${itemName}`,
+          
+          const pageObj = {
+            name: `${itemName}`, // You could add specific styling logic here if needed
             url: itemUrl,
             isCurrent: isCurrent
-          });
+          };
+
+          // Check if this is the index
+          if (item.isIndex) {
+            indexPage = pageObj;
+          } else {
+            pages.push(pageObj);
+          }
         }
         else if (item.isMedia) {
           files.push({ 
@@ -351,7 +368,8 @@ module.exports = {
         }
       }
 
-      return { directories, files, pages };
+      // Return 'index' as a separate property
+      return { directories, files, pages, index: indexPage };
     },
 
     download_filename: data => {
