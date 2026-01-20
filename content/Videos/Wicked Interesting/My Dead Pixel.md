@@ -1,9 +1,13 @@
 ---
 uid: my-dead-pixel-f492c
-contentHash: 184542c1
-date: '2026-01-20T16:51:15.463Z'
+contentHash: '84602457'
+date: '2026-01-20T17:40:55.502Z'
 ---
-## My Dead Pixel
+# My Dead Pixel
+
+This is a video eulogy expressing 
+
+## SCRIPT:
 
 ### Video Hook - My Dead Pixel
 

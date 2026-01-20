@@ -1,15 +1,15 @@
 ---
 title: WIDK Commercials
 uid: widk-ads
-contentHash: a019cc38
-date: '2025-12-14T23:56:54.384Z'
+contentHash: 24ac0169
+date: '2026-01-20T17:40:55.498Z'
 ---
 
 # Commercials from [iDunnoRadio (109.1 WIDK)](/s/idunnoradio)
 
 {%grid "one-third, two-thirds"%}
 
-{%image "/My Stuff/Podcasts/.old/WIDK - iDunnoRadio/idkrnowebNEW3k.webp" %}
+{%image "/Podcasts/.old/WIDK - iDunnoRadio/idkrnowebNEW3k.webp" %}
 
 ``
 
