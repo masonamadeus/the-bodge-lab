@@ -107,6 +107,12 @@ iframe {
 
 .note {
   border: 2px dashed var(--border-color);
+  display: block;        /* Force block even for short text */
+  margin-left: auto;     /* Center horizontally */
+  margin-right: auto;
+  width: fit-content;    /* Shrink box to fit text */
+  max-width: 90%;        /* Safety width for mobile */
+  text-align: center;    /* Center the text inside */
   padding: 1em;
 }
 
@@ -345,6 +351,10 @@ iframe {
   font-size: 0.8em;
 }
 
+.download-btn-container a {
+  color: var(--bg-muted);
+}
+
 .nav-link, 
 .nav-link-small.up {
   font-weight: bold;
@@ -374,6 +384,8 @@ iframe {
 
 /* Desktop Breakpoint */
 @media (min-width: 768px) {
+
+
   .layout-col {
     flex: 1;
     flex-basis: auto;
@@ -392,6 +404,45 @@ iframe {
   .layout-col-two-thirds {
     flex-basis: calc(66.666% - 0.5em);
     flex-grow: 0;
+  }
+
+  /* I know this is psychotic*/
+
+  .layout-col-one-quarter {
+    flex-basis: calc(25% - 1.125em);
+    flex-grow: 0;
+  }
+  
+  .layout-col-three-quarters {
+    flex-basis: calc(75% - 0.375em);
+    flex-grow: 0;
+  }
+
+  /* Eighths because I'm not trying to do code right now I'm trying to author */
+  .layout-col-one-eighth {
+    flex-basis: calc(12.5% - 1.3125em);
+    flex-grow: 0;
+  }
+
+  .layout-col-three-eighths {
+    flex-basis: calc(37.5% - 0.8125em);
+    flex-grow: 0;
+  }
+
+  .layout-col-five-eighths {
+    flex-basis: calc(62.5% - 0.6875em);
+    flex-grow: 0;
+  }
+
+  .layout-col-seven-eighths {
+    flex-basis: calc(87.5% - 0.1875em);
+    flex-grow: 0;
+  }
+
+  /* I'm aware I'll regret this */
+
+  .layout-col > :last-child {
+    margin-bottom: 0;
   }
 
   .layout-col > :first-child {
@@ -1337,4 +1388,59 @@ div.bodge-reaction {
     transform: translateY(0) scale(1) rotate(0deg);
     filter: brightness(1);
   }
+}
+
+/* =========================================
+   16. LIGHTBOX (ZOOM)
+   ========================================= */
+
+/* The Overlay (Hidden by default) */
+.lightbox-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 20000; /* Sit on top of everything, including the sticky header */
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  opacity: 0;
+  pointer-events: none; /* Let clicks pass through when hidden */
+  transition: opacity 0.25s ease;
+  cursor: zoom-out;
+  
+  /* Modern blur effect */
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+/* Active State */
+.lightbox-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* The Zoomed Image */
+.lightbox-overlay img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  
+  transform: scale(0.95);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  border-radius: 4px;
+  user-select: none;
+}
+
+/* Animation on open */
+.lightbox-overlay.open img {
+  transform: scale(1);
+}
+
+/* Indicate that regular images can be clicked */
+.image-container img {
+  cursor: zoom-in;
 }

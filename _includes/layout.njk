@@ -265,7 +265,7 @@
 
                                 {% if directoryContents.index %}
                                     <li class="directory-index-in-list">
-                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/homeicon.svg');"></span>
                                         {% if directoryContents.index.isCurrent %}
                                             <strong>{{ directoryContents.index.name }}</strong>
                                         {% else %}
@@ -273,6 +273,7 @@
                                         {% endif %}
                                     </li>
                                 {% endif %}
+
 
                                 {% for dir in directoryContents.directories %}
                                     <li>

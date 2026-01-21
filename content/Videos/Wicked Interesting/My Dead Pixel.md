@@ -1,66 +1,91 @@
 ---
 uid: my-dead-pixel-f492c
-contentHash: '84602457'
-date: '2026-01-20T17:40:55.502Z'
+contentHash: af0640c0
+date: '2026-01-21T00:44:00.510Z'
 ---
-# My Dead Pixel
+# My Dead Pixel (WIP)
 
-This is a video eulogy expressing 
+![Thumbnail for the video. The video isn't made yet.](.files/pixel_thumbnail_test1.webp)
+
+
 
 ## SCRIPT:
 
 ### Video Hook - My Dead Pixel
 
-Let me take you on a journey through something that happened to me a couple of months ago. I got a new computer monitor. I was really excited, for two reasons: One, Because it’s a fancy color-accurate monitor so that hopefully I can make my videos look less terrible. 
+A couple months ago I got a new computer monitor! I was really, really excited; for two reasons: 
 
-And two: Because my old monitor has pee in it.
+One, Because it’s a fancy color-accurate monitor so that hopefully I can make my videos look less terrible. 
 
-I mean, I say pee... three apartments ago it was in a closet, and our upstairs neighbor’s toilet broke and this sort of offensively viscous fluid came down through the ceiling. I had to throw a bunch of stuff away, but like… I needed the monitor. I cleaned out all the pee that I could, and it works fine. I’m still using it as a second screen—it doesn’t smell or anything!
+And two: Because my old monitor has *pee* in it.
+
+I mean, I say pee... three apartments ago it was in a closet, and our upstairs neighbor’s toilet broke. Some sort of offensively viscous fluid came down through the ceiling. I had to throw a bunch of stuff away, but like… I needed the monitor. I cleaned out all the pee that I could, and it works fine. I’m still using it as a second screen—it doesn’t smell or anything!
 
 Anyways, the new monitor gets here, it’s great, I love it. And then one morning, I woke up to this:
 
-**-- Cutaway to dead pixel**
+![A photograph of the dead pixel visible against the stark white background of default windows Notepad.](.files/deadpixel.webp)
 
-I tried to wipe it off, but I knew in my heart right away what it was: a single dead pixel. And like, I know it's just one pixel out of literally two million, three hundred four thousand—but now it's the only thing I can see.
+I tried to wipe it off, but I knew in my heart right away what it was: a single dead pixel. And like, I know it's just one pixel out of literally two million, three hundred four thousand of 'em — but now it's the only thing I can see.
 
-**-- Display resolution 1920 x 1200**
+It's like someone took a shotgun to my brand new monitor. 
 
-It's like someone took a shotgun to my brand new monitor. So, as an engineer, naturally my first response to something like this is to completely and utterly dispose of any critical thinking or problem solving skills. I Googled "dead pixel fix Reddit", and found some posts and comments suggesting that you could flick or smush a pixel back to life in some cases.
+So, as an engineer, naturally my first response to something like this is to completely and utterly dispose of any critical thinking or problem solving skills. I googled "dead pixel fix Reddit", and found some posts and comments suggesting that you could flick or smush a pixel back to life in some cases.
 
-**-- Broll: Googling dead pixel fix** 
+![flickpixel](.files/flickpixel.png)
 
-But even deep in the throes of denial, I was still pretty hesitant to start banging stuff on the face of my new monitor, so first I went to the kitchen and grabbed a silicone straw. I tried sort of poking at the screen with it, and then lightly whacking it. Obviously nothing happened. So I took a deep breath and tried with a pencil. First really gently, and then I got a little more desperate. None of it helped. I didn't really think it would, I guess I was just hoping I'd be lucky. And - you know - the world is complicated, sometimes you can fix stuff by hitting it!
+But even deep in the throes of denial, I was still pretty hesitant to start banging stuff on the face of my new monitor, so first I went to the kitchen and grabbed a silicone straw. I tried sort of poking at the screen with it, and then lightly whacking it. Obviously nothing happened. 
+
+So I took a deep breath and tried with a pencil. First really gently, and then I got a little more desperate. None of it helped. I didn't really think it would; I guess I was just hoping I'd be lucky. And - you know - the world is complicated! Sometimes you {%trigger "can"%} fix stuff by hitting it!
+
+{%react "can"%}Typically this is stuff that has physical moving parts. The trick is knowing exactly where to hit, and how hard. Really, the trick is understanding whatever the f**k you're doing. Which I did not. {%endreact%}
 
 But at this point I turned to a more technological approach, and downloaded some pixel-flashing software. Specifically this one, UDpixel—short for "Undead Pixel".
 
-**-- Angle change to screen w/ webcam**
+![Screenshot of the UDPixel website and application](.files/udpixel.webp)
 
-All it does is make a tiny flashing box. The idea is that you drag it on top of your problem pixel, and force it to cycle through different colors really quickly. It's kind of like poking it, in that it's trying to "unstick" anything that might be "stuck", but like... electrically. Honestly I'm doubtful this has ever worked; I think it might just be folklore. Regardless, I lined this up, and let it run for... hours. No dice. Still dead.
+All it does is make a tiny flashing box. 
+
+The idea is that you drag it on top of your problem pixel, and force it to cycle through different colors really quickly. It's kind of like poking it, in that it's trying to "unstick" anything that might be "stuck", but like... electrically. 
+
+Honestly I'm doubtful this has ever worked; I think it might just be folklore. Regardless, I lined this up, and let it run for... hours. 
+
+No dice. Still dead.
 
 Then I remembered that years ago, my engineering mentor Ira gave me an old USB microscope. So in a flash of inspiration I hooked that up, mounted it flush against the monitor, and check this out.
 
-**-- Broll: Pixels** 
+![The USB microscope pressed against the monitor screen.](.files/usbmicroscopepixel.webp)
 
-Wicked cool, right? You can see all the individual pixels—and the red, green, and blue subpixels that make them up. It reminds me of being a kid and getting way too close to the TV. And look—there's the dead pixel. I filmed this with the flashing software running, so the dead pixel is trying really hard to change colors.
+![A microscope view of my monitor showing the dead pixel as well as a text arrow.](.files/pixelswitharrow.webp)
 
-With the microscope, I could see specifically that the red and green bits were the problem. The blue subpixel still works! But the red one had become stuck off, and the green one was just sort of... impotently flickering. And this is when the rabbit hole opened up underneath me. Because I realized that I don't actually know how this thing that I use every day works. Like, what is *physically* going on inside the screen? Without knowing what is actually, physically happening, how could I even begin to diagnose the issue? I needed to know what part of this system failed. How did he die? I needed answers.
+Wicked cool, right? You can see all the individual pixels — and the red, green, and blue subpixels that make them up. It reminds me of being a kid and getting way too close to the TV. And look—there's the dead pixel. I filmed this with the flashing software running, so the dead pixel is trying really hard to change colors.
 
-What I didn't expect... was that the inner workings of an LCD screen are...
+With the microscope, I could see specifically that the red and green bits were the problem. The blue subpixel still works! But the red and the green ones were just sort of... impotently flickering. And this is when the rabbit hole opened up underneath me. Because I realized that I don't actually know how this thing that I use every day works.
 
-...Wicked Interesting.
+Like, what is *physically* going on inside the screen? Without knowing what is actually, physically happening how could I even begin to diagnose the issue? I needed to know what part of this system failed. 
 
-**-- Title card fades** 
+How did he die? I needed answers.
 
-I got sucked in deep on this one. And I actually made something that you can download and play with, and it's really really cool. But we have to lay some foundational knowledge for that "thing" to make any sense.
+What I didn't expect was that the inner workings of an LCD screen are...
+
+**...Wicked Interesting.**
+
+![WI_AVCart Intro](.files/WI_AVCartIntro.gif)
+
+I got sucked in deep on this one. And I actually made something that you can download and play with! It's really really cool. But we have to lay some foundational knowledge for that "thing" to make any sense.
 
 So - here's what's gonna happen in this video:
 
-- We're gonna define a few basic structures, like what a pixel is and the general construction of a monitor.
-- Then we have to speedrun some basic theory about waves, light, and the concept of polarization. (Trust me, they're super cool and I'm going to explain them in a fun way that's really easy to follow ).
-- With those in our pocket, we can move on to answering a question I can't believe I never thought to ask before: What the f*** are liquid crystals?
-- And then we'll bring it all together, and explain exactly what's going on inside an LCD pixel—and I can show you the crazy thing that I built.
+1. We're gonna define a few basic structures, like what a pixel is and the general construction of a monitor
+2. Then we have to speedrun some basic theory about waves, light, and the concept of polarization. (Trust me, they're super cool and I'm going to explain them in a fun way that's really easy to follow ).
+3. With those in our pocket, we can move on to answering a question I can't believe I never thought to ask before: What the f**k are *liquid crystals*?
 
-So there's our plan for the video! Oh and at the very very end we're going to have a funeral service for my pixel and you're invited to join. It would mean a lot if you can make it. We have a funeral to get to—let's jump in.
+And then we'll bring it all together, and explain exactly what's going on inside an LCD pixel — and I can show you the crazy thing that I built.
+
+So there's our plan for the video! 
+
+Oh -- and at the very very end we're going to have a memorial service for my pixel. You're invited. It would mean a lot if you can make it. 
+
+We've got a funeral to get to — let's jump in.
 
 
 
@@ -68,41 +93,45 @@ So there's our plan for the video! Oh and at the very very end we're going to ha
 
 ### Defining Our Terms
 
-**Mason webcam/cam/screenshare**
+The word **pixel** is short for "picture element". I can't believe I didn't know that before. "Pixel" actually has a lot of context-specific definitions, but we're only talking about LCD screens in this video, so in our context—this is a pixel.
 
-The word "pixel" is short for "picture element". I genuinely didn't know that before this project. "Pixel" actually has a lot of context-specific definitions, but we're only talking about LCD screens in this video, so in our context—this is a pixel.
+![a single TFT IPS LCD pixel](.files/singlepixel.png)
 
-We were looking at these a minute ago! Some displays have different subpixel arrangements—but this is the most common. The resolution of a display is the number of pixels it has. A common resolution is 1920 by 1080. This is the resolution of 1080p (but the "p" does not stand for pixel, it stands for something else and we're not getting into it ). There are 1,920 pixels across, and 1,080 pixels up and down—a bit over two million pixels. Which I guess is technically about 2 megapixels; mega means million.
+We were looking at these a minute ago! The **resolution** of a display is the number of pixels it has. A very common resolution is 1920 by 1080. There are 1,920 pixels across, and 1,080 pixels up and down—a bit over {%trigger "two million pixels"%} total. {%react "two million pixels"%}Which I guess is technically about 2 megapixels but nobody calls it that. {%endreact%}This is the resolution of 1080p (importantly, the "p" does not stand for pixel -- it stands for "progressive scan" and we're not getting into that). 
 
-Anyways, my display is 1920 by 1200—so just a bit taller. Which honestly makes screen recording a bit annoying lol. There are two million, three hundred and four thousand pixels on my screen. Each one is made up of three sub-pixels: red, green, and blue. Each subpixel can change brightness between fully on and fully off. And that's it. Because they're so small, you don't really see the individual subpixels with the naked eye. The light coming through the red, green, and blue bits all blends together. When all three subpixels are at full brightness, it's white; when they're off, it's black.
+Each pixel is made up of three **sub-pixels**: red, green, and blue. Each subpixel can change brightness between fully on and fully off. And that's it! 
 
-By combining different brightnesses of red, green, and blue—you can make just about any color the human eye can perceive. Maybe in the future I'll make a whole video about why that's true, but for now just know that...
+Because they're so small, you don't really *see* the individual subpixels with your naked eyes. The light coming through the red, green, and blue bits all blends together. When all three subpixels are at full brightness, it's white; when they're off, it's black.
 
-**-- Increment video idea counter**
+By combining different brightnesses of red, green, and blue — you can make just about any color the human eye can perceive. Maybe in the future I'll make a whole video about why that's true...
 
-Basically, all you have to do is stick two million of these tiny color-changing dots on a screen, individually control the brightness of six million subpixels with unthinkable speed and precision at least sixty times a second, and whambo-bambo that's a pretty alright looking picture.
+**(NEW VIDEO IDEAS: 01)**
 
-**-- Swoosh** 
+ But for now just know that, basically, all you have to do is stick two million of these tiny color-changing RBG dots on a screen, individually control the brightness of their six million subpixels without mistakes *at least* sixty times a second, and whambo-bambo that's a pretty okay looking picture!
 
-We're not going to talk about graphics drivers or how the control logic for actually displaying a picture works. That's a layer of abstraction higher than we want to be. We just need to find a probable cause of death for our individual pixel. We're going down to the component level.
+Note: We are absolutely *not* going to talk about graphics drivers or how the control logic for actually displaying a picture works. That's a layer of abstraction higher than we want to be. We just need to find a probable cause of death for my individual pixel.
 
-**-- Pull Back**
+We're going down to the component level.
 
-How would *you* build a pixel? Like, if someone literally asked you to make a pixel, what would you do? 
+Here's a question for you!
 
-What comes to my mind first is to get some translucent colored plastic sheets, and make a little box with a red sheet, a blue one, and a green one and stick a dimmable light behind each one. That would work, but it's hard to scale down. Even LED lights are pretty hot and power hungry, especially when you put a bunch of them close together.
+**Just knowing what you do now, how would *you* go about building a pixel?** Like, if someone in real life literally asked you to *make a pixel*, what would you do? 
 
-We have gotten really good at making tiny LED lights though, and actually that is pretty much how an OLED display works. But it's not how a liquid crystal display works.
+What comes to my mind first is to get some translucent colored plastic sheets, and make a little three-compartment box with a red, blue, and green section, and stick a dimmable light behind each one. 
+
+That would work! But it's hard to scale down. Even LED lights are pretty hot and power hungry, especially when you put a bunch of them close together. We *have* gotten really good at making tiny LED lights though, and actually -- that is pretty much how an OLED display works.
+
+*But it's not how a liquid crystal display works.*
 
 In an LCD, there is actually only one light source—the backlight.
 
 In older displays, it might have been rows of compact fluorescent tube lights—but in modern displays it's a bunch of white-ish LEDs. There's actually a lot of cool stuff to talk about regarding backlights and color, but that'll have to be a different video.
 
-**-- Increment video idea counter** 
+**(NEW VIDEO IDEAS: 02)**
 
 What's important right now is that: if there's only one light source in the back—the backlight—and it's always on—that means each individual subpixel must be able to like, open or close somehow to let more or less of the backlight through, right? How else would you be able to get different colors? Is that what the liquid crystals do somehow? Yes.
 
-But the WAY they do it is really really clever. To understand it tho, we have to speedrun some basic concepts about waves, light, and polarization.
+But the WAY they do it is really really clever. To understand it though, we have to speedrun some basic concepts about waves, light, and polarization.
 
 
 
@@ -110,19 +139,23 @@ But the WAY they do it is really really clever. To understand it tho, we have to
 
 ### Wave Theory
 
-Don't you dare click away now. Just because I said some big words—I promise this is really really cool. We're not gonna do any math. We're going to do some demonstrations together and stuff, it's gonna be a good time. 
+Don't you dare click away now, just because I said *one* word that sounds dense — I promise this is really really cool, and wicked simple. 
 
-Starting with this: you might have done an experiment like this in high school physics class. Take a slinky, attach one end to something, and stretch it out a bit—and you can see waves in action. If you wiggle the end of the slinky left and right, you can create a little wave that travels along the slinky. You can also push and pull it, forward and back, and send a pulse along the length of the slinky that way.
+**We're not gonna do any math.** 
 
+We're going to do some demonstrations together and stuff, it's gonna be a good time. 
 
+{%note%}
+
+**BROLL: SLINKY FOOTAGE**
+
+{%endnote%}
+
+You might have done an experiment like this in high school physics class. Take a slinky, attach one end to something, and stretch it out a bit—and you can see waves in action. If you wiggle the end of the slinky left and right, you can create a little wave that travels along the slinky. You can also push and pull it, forward and back, and send a pulse along the length of the slinky that way.
 
 It's a little harder to see, but you're creating an area of the slinky that's either bunched up or stretched out, and that oscillation moves down the slinky. That's how sound waves work—compressed and stretched regions of air. And that's called a longitudinal wave. A longitudinal wave is when the direction of the oscillations is in the same direction that the wave is traveling or propagating.
 
-
-
 The first wave, where we went left and right, is called a transverse wave—because even though the wave travels in the same direction (down the slinky), the oscillations are *perpendicular* to the direction of travel. In this case, the wiggles go left and right, while the wave itself is going forwards. The wiggling direction is 90 degrees off from the direction it's headed.
-
-
 
 Because we live in a 3D world, we could also shake the slinky up and down, and have the same result—another transverse wave. This time, the oscillations go up and down, but the wave is still moving forwards. 
 
@@ -166,6 +199,10 @@ And I bought a dozen of them online for like three bucks.
 
 ### Fun with Filters
 
+
+
+
+
 Check this out! This is a sheet of polarizing celluloid plastic. It's called a Polaroid sheet—and yeah it was invented by Edwin H. Land who then created the company Polaroid.
 
 My little USB microscope can't do it, but if we could zoom in far enough you'd see that this sheet is made of really long chains of electrically conductive plastic, all oriented in the same direction.
@@ -182,7 +219,11 @@ All the light coming through it is only wiggling the direction that the polarize
 
 Now check this out. The magic happens when you get more than one.
 
-**-- Two polarizers** 
+{%note%}
+
+DEMONSTRATION STUFF
+
+{%endnote%}
 
 If I put another polarizer in front of it, it doesn't really get much dimmer. Or at least it doesn't get as dim as I'd expect, given how dark a single one is. That's because the light coming through the first one is already polarized in the correct direction to slip through the next one, so there's no additional light being blocked by the second filter, really.
 
@@ -198,7 +239,11 @@ And I swear we are almost ready to talk about how an LCD pixel works. But we can
 
 So they do something really clever instead. We just have to get through one more bit about polarization.
 
-**-- Transition** 
+{%note%}
+
+SOME KIND OF TRANSITION
+
+{%endnote%}
 
 If I take our brightness control we just built, we know that on either end we can be aligned and let through as much as possible—or we can be perpendicular and block all the light from going through.
 
@@ -206,7 +251,11 @@ But we can also stop it halfway—so that the second filter is 45 degrees off fr
 
 Let's think through it step-by-step, from one end to the other. Raw, unpolarized light hits one side of the first filter. It only lets through the vertical components of that light, so now we've got vertically polarized light headed towards that second filter. It's intuitive what would happen if the next filter was horizontal. It'd block our path because then we can't move up and down at all. But the second filter is 45 degrees off. What happens now?
 
-**-- Cutaway** 
+{%note%}
+
+MAYBE WHILE DRIVING, MAYBE DO A DIAGRAM
+
+{%endnote%}
 
 Imagine you're driving a car --
 
@@ -224,7 +273,7 @@ As you rotate the second filter closer to being horizontal, it cuts off more and
 
 There's no room to wiggle in that direction anymore.
 
-**-- Break** 
+![Animated gif of a rotating sine wave being broken into X and Y components, demonstrating the concept of polarization. I made this, you can steal it if you want.](.files/Polarization0001.gif)
 
 I hope that made sense because otherwise this next bit is gonna look crazy. If I take our two filters, and make them perpendicular to one another so that they block all the light—but then I stick a third filter in between them at a 45 degree angle... suddenly you can see through it. The first filter is vertically polarized, the last filter is horizontally polarized, so you'd expect that to block out all light—but having that 45 degree filter in the middle makes it see-through again.
 
@@ -374,6 +423,10 @@ So— to recap, liquid crystal is made of rod-like molecules which naturally set
 
 Got that? Because THIS is where it ALL COMES TOGETHER.
 
+
+
+___
+
 ### How an TN TFT LCD Screen Works
 
 Let's build ourselves a pixel. Specifically, a TFT TN LCD pixel.
@@ -408,9 +461,93 @@ We're going to fill the space in the middle with liquid crystal - but there's a 
 
 The liquid crystal is sandwiched between two very, very thin glass plates. There's a plate at the top, screen-side; and a plate at the bottom, backlight-side. The inner surfaces of those plates have tiny grooves or channels in them. The grooves are actually created by coating the glass in a thin plastic film, and then passing a fast-spinning velvet-covered roller over them, which scratches the surface to create these microscopic parallel grooves oriented in a single direction.
 
-Remember how liquid crystal molecules are rod shaped, and that's part of how they self-organize into a crystal structure? Well, these grooves are
+Remember how liquid crystal molecules are rod shaped, and that's part of how they self-organize into a crystal structure? Well these grooves serve as little guides, to orient the liquid crystal in a specific direction. You pour the liquid crystal on top and they literally just fall into the grooves, which sets up the rest of the stack to form in that orientation.
 
+And here's the trick:
 
+The plate on the bottom, just above the horizontal polarizer, has its grooves in the "horizontal" direction to match. The plate on the top has its grooves in the "vertical" direction, just like the vertical polarizer above it. When we add in the liquid crystal, the bottom layer starts settling into those grooves horizontally, while the top layer settles into the vertical grooves. Because of its fluid nature, this makes the crystals in-between form a twisting spiral from bottom to top, which gradually rotates 90 degrees.
+
+Remember how we talked about 'rotating' the polarization? We took two perpendicular polarizing sheets - which blocked the light - and then slid a third one in the middle at a 45 degree angle, and suddenly we could see through it again, because now as light passes through each one in turn it has SOME component in the right orientation to get through.
+
+If we add more filters at angles in between, it gets even brighter because as the light passes through each one, it's closer to the correct orientation for the next one. If we had infinite filters we could make a smooth twisting gradient that lets through almost all of the light entirely.
+
+Earlier I said:
+
+> what does all this have to do with pixels? Do they have some kind of infinite filter staircase inside them, and they control their brightness by twisting and untwisting it or something?
+
+Voila! Instead of plastic filters, it's liquid crystal. That's the "TN" part I mentioned earlier - "Twisted Nematic".
+
+Don't worry about what "nematic" means.
+
+The important part is that we have a very, very gradual twisting "staircase" that essentially ferries the vertically polarized light up through the crystals, rotating gently as it progresses, until the light is in the right polarization-orientation to pass through the top filter!
+
+If we stopped now, we'd have a screen that is all white because we've allowed all the light to pass through.
+
+So the final key to the puzzle is gonna be adjusting the brightness, and we do that by twisting and untwisting the crystals. This is where that bit about liquid crystal molecules being *polar* comes in. Since they can be affected by electric fields, we place a transparent electrode at the top and bottom of the subpixel.
+
+At rest, without any electricity applied to the electrodes, everything sits how you see it now. They naturally fall into this smooth twist, guided by the grooved plates on the top and bottom. When we apply a voltage to the electrodes, one of them becomes positively charged, and one of them becomes negatively charged, which pulls on the crystal molecules -- forcing them to try and align with the electric field rather than their resting state.
+
+Because the electrodes are at the top and the bottom, this makes the crystals try to stand upright. The positive ends are drawn towards the negative electrode, and the negative ends are drawn towards the positive electrode. This force is stronger than their natural internal friction, so they move.
+
+This f**ks up the spiral, so now the light entering the bottom is horizontally polarized, passes through the crystals - but doesn't get twisted, and is blocked by the vertical polarizer up top.
+
+If we're really careful about how much voltage we apply, we can disturb the spiral a little bit less. This results in some of the light getting twisted, and some of it not. Which makes the brightness vary depending on how messed up the spiral is. The more you disturb the spiral, the less light gets through.
+
+Vary the voltage, you vary the spiral-ness, which varies the brightness, and hot diggity dog we've built ourselves a subpixel where the only moving parts are liquid! This is also why you see weird artifacts when you smush the screen. That phenomenon is actually called "viscous fingering" which I think is hilarious.
+
+You might be wondering "okay so where's the bit that controls the voltage". There's a lot of infrastructure hiding in the black horizontal lines that you can see in between rows of pixels. That's called the "black matrix" and that's where they tuck the wires and a single transistor for each subpixel.
+
+I'm not going to explain those parts in the same excruciating detail as everything else, but it's important to note that the transistor is the thing which controls the voltage on the electrodes. Its job is to receive a signal, and then provide the right voltage to the electrode, which twists the crystals and adjusts the brightness yadda yadda.
+
+The transistors for each subpixel are micro-printed on a big sheet that spans the entire screen, and that's what the "TFT" or "thin film transistor" part I mentioned earlier was referring to. They're super important! It's just that the specific electronics of it all is way too much to include in this video.
+
+Maybe a future one...
+
+**--increment video idea counter**
+
+Okay It's almost time for the funeral, but real quick I want to tell you a couple fun facts now that we have the basic ideas out of the way.
+
+If you've ever had an older LCD computer monitor where it looked like trash if you were even slightly at an angle - it was probably a TN or "twisted nematic" display that works exactly like we just laid out.
+
+The reason they look bad from an angle has to do with the fact that the crystals are forced to stand more or less upright to dim each subpixel. Think about how they're all little rods -- if you look at a screen from an angle you're gonna be seeing partially through the sides of them, and that is gonna mess with the balance of light coming through.
+
+If we wanted to avoid that, we could design a screen where instead of the rods twisting upright to break the spiral, we simply had them rotate horizontally. That way we're always looking straight-on at the long sides of the rods, instead of at their ends or odd-angles.
+
+So, uh... we did that. Instead of electrodes on the top and bottom, we put one on each side - left and right. Now when we apply a voltage, we untwist the spiral in the same plane instead of three-dimensionally. That's called "In-Plane Switching" or "IPS", and that acronym has actually made its way into the marketing world so maybe you recognize it!
+
+Newer screens, including your phone screen and probably most LCDs you encounter, are IPS. It's a little more complicated to manufacture, but it's basically better overall. It used to be that the IPS twisting and untwisting wasn't as quick as a twisted nematic configuration, meaning that you couldn't achieve very high refresh rates - you couldn't change the picture as fast because the pixels took more time to rearrange themselves. 
+
+But we cracked that nut. I mean, not me personally, obviously, but manufacturing tech is crazy and we figured it out. Now basically everything is IPS and we're all better off for it.
+
+In fact, my monitor is an IPS display. My dead pixel is an IPS pixel. This was its way of life.
+
+___
+
+### An Autopsy
+
+**--while putting on a funeral suit**
+
+So what *did* happen to my pixel? What was the cause of death?
+
+There's two ways pixels usually die. Either stuck open, always letting light through and creating a "hot" pixel that never changes or dims; or stuck closed, creating a "dead" pixel that stays black.
+
+Can smushing or flashing *ever* fix a dead pixel?
+
+Maybe. 
+
+Anecdotally, people have sworn by both methods. In either case, they only really work if the problem is the liquid crystal itself becoming stuck. Smushing could physically move the crystals out of a stuck position and back into fluidity, and flashing would try to do the same except by forcing the electrodes to rapidly change voltage in hopes that electric yanking would have enough force to unstick them.
+
+But what happens more often is that the control transistor breaks. No amount of squishing can fix that.
+
+In a twisted-nematic screen, when there's no voltage the pixel is white. Remember how the spiral, at rest, twists the light to let it through? IPS screens are the opposite. They're normally black at rest, and when the voltage is applied it aligns the crystals to let light through. Without voltage, they're closed.
+
+Now, the transistor can fail in two ways. It can either fail "open", meaning it no longer conducts electricity and thus provides no voltage to the electrodes -- or it can fail "short", literally shorting out and *always* applying a voltage. Depending on your type of screen this would change whether your dead pixel is "hot" or not.
+
+Haha, Hot or Not, amirite?
+
+Here's my best guess as to what exactly happened.
+
+My screen is IPS, and the pixels are black when there's no voltage. In the microscope we could see that one of the subpixels was totally off, one was trying really hard to light up, and one was working fine.
 
 
 
@@ -420,7 +557,7 @@ Remember how liquid crystal molecules are rod shaped, and that's part of how the
 
 ---
 
-Remember how we talked about 'rotating' the polarization? We took two perpendicular polarizing sheets - which blocked the light - and then slid a third one in the middle at a 45 degree angle, and suddenly we could see through it again, because now as light passes through each one in turn it has SOME component in the right orientation to get through.
+
 
 If we add more filters at angles in between, it gets even brighter because as the light passes through each one, it's closer to the correct orientation for the next one. If we had infinite filters we could make a smooth twisting gradient that lets through almost all of the light entirely.
 
@@ -432,7 +569,7 @@ I even said:
 
 ---
 
-If you've ever had an older LCD computer monitor where it looked like trash if you were even slightly at an angle - it was probably a TN or "twisted nematic" display.
+
 
 Most LCDs these days are IPS. That acronym has actually made its way into marketing, so it might sound familiar. Your phone, computer monitor, or laptop screen is probably IPS because its generally better. IPS stands for "In-Plane Switching" and that'll make sense in a little bit.  Again, don't worry about it right now. Just let this all wash over you.
 

@@ -1,8 +1,8 @@
 ---
 title: Video Index
 uid: videos
-contentHash: c303f810
-date: '2025-11-29T20:50:41.824Z'
+contentHash: 21a36848
+date: '2026-01-21T00:44:00.506Z'
 ---
 
 # My Videos
@@ -15,10 +15,30 @@ If you want to know what I'm up to *currently*, then check out these:
 
 ## Main Channels:
 
-- [Wicked Interesting](<Wicked Interesting>) - my chaotic science channel. This has been a lifelong goal of mine to make, and I think you'll love it.
+{%grid "one-eighth, seven-eighths"%}
 
-- [Mason Amadeus](https://youtube.com/@masonamadeus) - my personal YouTube channel, which is a messy 'second channel' for various things.
+![WickedInteresting logo](Wicked%20Interesting/.files/Circle%20Logo%20Pixelated.png)
 
-- [The FAIK Files](https://youtube.com/@theFAIKfiles) - The video podcast about AI for sane people. Perry Carpenter & I attempt to look objectively at AI news/developments.
+``
 
-Otherwise, feel free to poke around all the stuff below! 🔽🔽
+### [Wicked Interesting](<Wicked Interesting>) - my chaotic science channel. This has been a lifelong goal of mine to make, and I think you'll love it.
+
+{%endgrid%}{%grid "one-eighth,seven-eighths"%}
+
+![masonprof](files/masonprof.webp)
+
+``
+
+### [Mason Amadeus](https://youtube.com/@masonamadeus) - my personal YouTube channel, which is a messy 'second channel' for various things that either don't fit anywhere else, or just aren't up to the same standard as what I'd consider my "work"
+
+{%endgrid%}{%grid "one-eighth,five-eighths"%}
+
+![TheFAIKFilesLOGO_TINY FLOATER](files/TheFAIKFilesLOGO_TINY%20FLOATER.webp)
+
+``
+
+### [The FAIK Files](https://youtube.com/@theFAIKfiles) - The video podcast about AI for sane people. Perry Carpenter & I attempt to look objectively at AI news/developments.
+
+{%endgrid%}
+
+# Otherwise, feel free to poke around all the stuff below! 🔽🔽

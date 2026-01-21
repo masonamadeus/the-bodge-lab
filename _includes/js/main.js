@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 
 
- // RANDOM TILT (Lite & Fast Edition)
+ // RANDOM TILT
   (function () {
     const MAX_TILT = 0.5; // Tweak this number for more/less chaos
     const BATCH_SIZE = 100;
@@ -458,7 +458,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   })();
 
+// --- IMAGE LIGHTBOX (Zoom) ---
+  (function () {
+    // 1. Create the overlay elements (Only once)
+    const overlay = document.createElement('div');
+    overlay.className = 'lightbox-overlay';
+    
+    const img = document.createElement('img');
+    overlay.appendChild(img);
+    
+    document.body.appendChild(overlay);
+    
+    // 2. Close Logic
+    const closeLightbox = () => {
+      overlay.classList.remove('open');
+      document.body.style.overflow = ''; // Unlock scrolling
+    };
 
+    // Close on click or Escape key
+    overlay.addEventListener('click', closeLightbox);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLightbox();
+    });
+
+    // 3. Open Logic (Event Delegation)
+    // This catches clicks on ANY image inside .image-container
+    document.body.addEventListener('click', (e) => {
+      // Check if the clicked element is an IMG inside your wrapper
+      if (e.target.tagName === 'IMG' && e.target.closest('.image-container')) {
+        e.preventDefault(); // Prevent default browser behavior
+        
+        // Transfer source and alt text
+        img.src = e.target.src;
+        img.alt = e.target.alt;
+        
+        // Show overlay
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden'; // Lock scrolling background
+      }
+    });
+  })();
 
 
 
