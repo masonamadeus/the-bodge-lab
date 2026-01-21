@@ -1,17 +1,17 @@
 ---
 uid: wickedinteresting
 title: Wicked Interesting - Index
-contentHash: b82474b6
-date: '2026-01-21T00:44:00.509Z'
+contentHash: 6c5a68d8
+date: '2026-01-21T00:48:36.874Z'
 ---
 
 # Wicked Interesting
 
-![GIF version of the animated title card I created in blender](files/WI_AVCartIntro.gif)
+![GIF version of the animated title card I created in blender](.files/WI_AVCartIntro.gif)
 
-{%grid "one-third, two-thirds"%}
+{%grid "one-quarter, three-quarters"%}
 
-![Circle Logo Pixelated](files/Circle%20Logo%20Pixelated.png)
+![Circle Logo Pixelated](.files/Circle%20Logo%20Pixelated.png)
 
 ``
 
