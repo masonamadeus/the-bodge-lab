@@ -1,0 +1,46 @@
+Standard Screen Events - Let's keep it minimal for now:
+
+SCREEN_LOADED:
+
+Published by: A Screen instance (from within its initialize() method, after it's set up).
+Purpose: Signals to the ScreenManager (and potentially other parts of the application) that the screen has finished its initialization and is ready.
+Data (Optional): Could include the screen's name or ID. For simplicity, maybe no data needed initially.
+
+
+SCREEN_DISPOSED:
+
+Published by: A Screen instance (from within its destroy() method, after it has cleaned up).
+Purpose: Signals to the ScreenManager that the screen has finished its disposal and is ready to be fully removed from memory.
+Data (Optional): Could include the screen's name or ID. For simplicity, maybe no data needed initially.
+
+BEHAVIOR DISPENSER
+Expects items with naming convention:
+IDENTIFIER_ALIAS__KEY_VALUE_VALUE__KEY_VALUE_VALUE
+e.g.
+BTN_Play_Keybind_space
+
+MENU ITEMS
+Use frame labels to do things like 'selected' and 'deselected' and stuff
+MENU_1_OBJECT naming convention maybe? Have to figure out how to organize/order things.
+maybe each menu item calculates its own immediate neighbors on load?
+
+// Example within the initialization function for a menu item:
+this.leftNeighbor = nearestLeft;
+this.rightNeighbor = nearestRight;
+this.upNeighbor = nearestUp;
+this.downNeighbor = nearestDown;
+
+
+EPISODE PROPERTIES
+
+this.title
+this.model
+this.integrity
+this.origin 
+this.locale 
+this.region 
+this.zone
+this.planet 
+this.date ;
+this.tags 
+

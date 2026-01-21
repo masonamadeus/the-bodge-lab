@@ -1,0 +1,1446 @@
+/* =========================================
+   1. CORE VARIABLES & THEME
+   ========================================= */
+:root {
+  /* --- Typography --- */
+  --body-font: system-ui, -apple-system, sans-serif;
+  --mono-font: monospace;
+
+  /* --- Colors (HSL Theme System) --- */
+  --accent-hue: 210; /* Default: Blue */
+  
+  /* Generated Palette */
+  --bg-color: hsl(var(--accent-hue), 10%, 99%);
+  --bg-color-bright: hsl(var(--accent-hue), 15%, 100%);
+  --text-color: hsl(var(--accent-hue), 20%, 15%);
+  --text-muted: hsl(var(--accent-hue), 10%, 40%);
+  --border-color: hsl(var(--accent-hue), 20%, 90%);
+  --bg-muted: hsl(var(--accent-hue), 20%, 95%);
+  --accent-color: hsl(var(--accent-hue), 70%, 45%);
+
+  /* --- Dimensions --- */
+  --max-width: 1200px;
+  --line-height: 1.5;
+  --base-spacing: 1.1em;
+
+  font-size: 1em;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeSpeed;
+}
+
+.no-transition {
+  transition: none !important;
+}
+
+/* =========================================
+   2. GLOBAL RESET & TYPOGRAPHY
+   ========================================= */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+body {
+  font-family: var(--body-font);
+  color: var(--text-color);
+  background: var(--bg-color);
+  margin: 0;
+  padding: 0;
+  line-height: var(--line-height);
+  
+  /* Background Pattern */
+  background-image: url(/.config/sitebg3.svg);
+  background-size:100% auto;
+  background-repeat: repeat-y;
+  background-position-x: center;
+  min-height: 100vh;
+  position: relative; /* Ensure we have a coordinate context */
+}
+
+h1 { margin-top: 0.5em; }
+
+li { margin-bottom: 0.5em; }
+
+a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+hr {
+  border: 0;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.break {
+  background-color: var(--bg-color);
+  width: 100%;
+}
+
+iframe {
+  border: none;
+  width:100%;
+  display: block;
+}
+
+.book-style{
+  transform: none!important;
+}
+
+/* Manual "Book Style" Wrapper */
+.book-style p {
+  text-indent: 2em;   /* The Indent */
+  margin-top: inherit;      /* Remove gaps */
+  margin-bottom: 1em;   /* Remove gaps */
+  line-height: 1.5;
+}
+
+.font-mono {
+  font-family: var(--mono-font);
+}
+
+.note {
+  border: 2px dashed var(--border-color);
+  display: block;        /* Force block even for short text */
+  margin-left: auto;     /* Center horizontally */
+  margin-right: auto;
+  width: fit-content;    /* Shrink box to fit text */
+  max-width: 90%;        /* Safety width for mobile */
+  text-align: center;    /* Center the text inside */
+  padding: 1em;
+}
+
+/* =========================================
+   3. LAYOUT ENGINE
+   ========================================= */
+
+/* 1. The Main Sheet Container */
+.main-content {
+  position: relative;
+  /* Make room for the ragged edges so they don't get chopped off */
+  margin: 0 auto; 
+  margin-bottom: 70px;
+  padding: 3em 4em;
+  max-width: 1000px;
+  z-index: 1; 
+  overflow: visible; 
+  background-color: transparent; 
+  hyphens: auto;
+  filter: drop-shadow(5px 5px 4px rgba(0,0,0,0.2));
+
+  
+  /* STROKE SETTINGS */
+  --paper-color: var(--bg-color-bright);      /* The paper color */
+  --stroke-color: var(--bg-muted);   /* The border color */
+  --stroke-width: 4px;         /* How thick the border is */
+  
+  /* ROUGHNESS SETTINGS */
+  --r-depth: 10px;   /* How deep the tears are */
+  --r-freq: 150px;   /* Density of tears */
+  --c-size: 20px;    /* Corner size */
+
+
+  /* --- ASSETS (Shared) --- */
+  /* Corners */
+  --c-tl: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M100 0 L100 100 L0 100 L0 60 L10 50 L5 40 L20 30 L15 10 L40 15 L50 5 L70 10 L100 0 Z' fill='black'/%3E%3C/svg%3E");
+  --c-tr: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L0 100 L100 100 L100 60 L90 50 L95 35 L80 30 L85 15 L60 10 L50 0 L0 0 Z' fill='black'/%3E%3C/svg%3E");
+  --c-bl: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M100 100 L100 0 L0 0 L0 40 L15 50 L5 60 L20 75 L10 90 L30 85 L50 95 L60 90 L100 100 Z' fill='black'/%3E%3C/svg%3E");
+  --c-br: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 100 L0 0 L100 0 L100 40 L85 55 L95 65 L80 80 L90 90 L60 85 L50 95 L40 90 L0 100 Z' fill='black'/%3E%3C/svg%3E");
+
+  /* Edges (Polyrhythm Layers) */
+  --t1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M0 20 L0 0 L10 0 L15 10 L25 0 L35 0 L40 12 L50 2 L60 15 L70 0 L80 0 L85 8 L90 0 L100 0 L100 20 Z' fill='black'/%3E%3C/svg%3E");
+  --t2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M0 20 L0 0 L5 5 L15 0 L25 5 L35 0 L45 8 L55 0 L65 12 L75 0 L85 6 L95 0 L100 0 L100 20 Z' fill='black'/%3E%3C/svg%3E");
+  --b1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L0 20 L15 20 L20 10 L30 20 L40 5 L50 20 L60 12 L70 20 L80 8 L90 20 L100 20 L100 0 Z' fill='black'/%3E%3C/svg%3E");
+  --b2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L0 20 L10 15 L20 20 L35 12 L45 20 L55 10 L65 20 L75 12 L85 20 L95 15 L100 20 L100 0 Z' fill='black'/%3E%3C/svg%3E");
+  --l1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 100' preserveAspectRatio='none'%3E%3Cpath d='M20 0 L0 0 L0 15 L12 25 L0 35 L5 50 L0 60 L15 75 L0 85 L10 95 L0 100 L20 100 Z' fill='black'/%3E%3C/svg%3E");
+  --l2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 100' preserveAspectRatio='none'%3E%3Cpath d='M20 0 L0 0 L8 10 L0 20 L10 35 L0 45 L6 60 L0 70 L12 85 L0 100 L20 100 Z' fill='black'/%3E%3C/svg%3E");
+  --r1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L20 0 L20 10 L10 20 L20 35 L8 50 L20 65 L10 75 L20 90 L5 95 L20 100 L0 100 Z' fill='black'/%3E%3C/svg%3E");
+  --r2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0 L20 0 L10 15 L20 30 L5 45 L20 60 L12 75 L20 85 L8 95 L20 100 L0 100 Z' fill='black'/%3E%3C/svg%3E");
+}
+
+/* --- SHARED MASK LOGIC (The Engine) --- */
+.main-content::before,
+.main-content::after {
+  content: "";
+  position: absolute;
+  /* Use the variables from parent */
+  
+  /* THE COMPOSITE MASK */
+  mask-image: 
+    var(--c-tl), var(--c-tr), var(--c-bl), var(--c-br),
+    var(--t1), var(--t2), var(--b1), var(--b2),
+    var(--l1), var(--l2), var(--r1), var(--r2),
+    linear-gradient(#000, #000);
+  mask-position: 
+    top left, top right, bottom left, bottom right,
+    var(--c-size) 0, var(--c-size) 0,
+    var(--c-size) 100%, var(--c-size) 100%,
+    0 var(--c-size), 0 var(--c-size),
+    100% var(--c-size), 100% var(--c-size),
+    center;
+  mask-repeat: 
+    no-repeat, no-repeat, no-repeat, no-repeat,
+    repeat-x, repeat-x, repeat-x, repeat-x,
+    repeat-y, repeat-y, repeat-y, repeat-y,
+    no-repeat;
+  mask-size: 
+    var(--c-size) var(--c-size), var(--c-size) var(--c-size), var(--c-size) var(--c-size), var(--c-size) var(--c-size),
+    var(--r-freq) var(--r-depth), calc(var(--r-freq) * 0.73) var(--r-depth),
+    var(--r-freq) var(--r-depth), calc(var(--r-freq) * 0.73) var(--r-depth),
+    var(--r-depth) var(--r-freq), var(--r-depth) calc(var(--r-freq) * 0.73),
+    var(--r-depth) var(--r-freq), var(--r-depth) calc(var(--r-freq) * 0.73),
+    calc(100% - var(--c-size)) calc(100% - var(--c-size));
+}
+
+/* --- 4. LAYER 1: THE BORDER (Background) --- */
+.main-content::before {
+  /* This layer sits behind and acts as the stroke */
+  background-color: var(--stroke-color);
+  z-index: -2;
+  
+  /* We make this layer fill the whole space */
+  top: 0; bottom: 0; left: 0; right: 0;
+}
+
+/* --- 5. LAYER 2: THE PAPER (Foreground) --- */
+.main-content::after {
+  /* This layer sits on top and is the actual paper */
+  background-color: var(--paper-color);
+  z-index: -1;
+  
+  /* We inset this layer by the stroke width */
+  /* This reveals the layer behind it at the edges */
+  top: var(--stroke-width);
+  bottom: var(--stroke-width);
+  left: var(--stroke-width);
+  right: var(--stroke-width);
+}
+
+/* 3. Mobile Adjustments */
+@media (max-width: 700px) {
+  .main-content {
+    /* Add side margins so the ragged edges don't trigger horizontal scroll */
+    width: auto;
+    margin: 2em 15px; 
+    padding: 2em 1.5em;
+  }
+}
+
+
+#paperfilter {
+  position: absolute;
+  width: 0; height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* =========================================
+   4. NAVIGATION
+   ========================================= */
+.nav-container {
+  margin-bottom: calc(var(--base-spacing) * 2);
+  filter: drop-shadow(5px 5px 10px rgba(0,0,0,0.2));
+}
+
+.nav-container::before {
+  content: "";
+  position: absolute;
+  
+  /* Anchor it to the top edge */
+  bottom: 80%; 
+  left: 0; 
+  right: 0;
+  
+  /* How far up you want it to bleed off-screen */
+  height: 150px; 
+  
+  /* MATCH THIS to your nav's background color */
+  background-color: var(--bg-muted); 
+  
+}
+
+.sticky {
+  position: sticky;
+  top:0;
+  z-index: 100000;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Breadcrumbs */
+.breadcrumb-nav {
+  font-size: 1.1em;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: calc(var(--base-spacing)*0.5);
+  padding-top: calc(var(--base-spacing)*0.5);
+  color: var(--text-muted);
+  line-height: normal;
+  background-color: var(--bg-muted);
+
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch; /* Smooth scroll on mobile */ 
+  
+}
+
+.breadcrumb-mover {
+  display: inline-block;
+  white-space: nowrap;
+  /* GPU Acceleration */
+  will-change: transform;
+}
+
+/* 3. The Animation Class (Applied by JS) */
+.breadcrumb-mover.is-scrolling {
+  animation: breadcrumb-bounce var(--scroll-duration) linear infinite alternate;
+}
+
+/* 4. Pause on Hover (So people can click!) */
+.breadcrumb-nav:hover .breadcrumb-mover.is-scrolling {
+  animation-play-state: paused;
+}
+
+@keyframes breadcrumb-bounce {
+  0%, 15% { transform: translateX(0); }
+  85%, 100% { transform: translateX(var(--scroll-dist)); }
+}
+
+.breadcrumb {
+  color: var(--accent-color);
+  font-family: var(--mono-font);
+}
+.separator { margin: 0 0.2em; }
+.current { color: var(--text-muted); }
+
+/* Page Meta / Bottom Nav */
+.page-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.2em;
+  font-size: 0.8em;
+  border-bottom: 2px solid var(--border-color);
+  background-color: hsl(from var(--bg-color) h s l / 0.9);
+  font-family: var(--mono-font);
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.page-meta { margin-top: 0; }
+
+.page-meta-date em {
+  color: var(--border-color);
+  font-style: italic;
+}
+
+.download-btn-container {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.8em;
+}
+
+.download-btn-container a {
+  color: var(--bg-muted);
+}
+
+.nav-link, 
+.nav-link-small.up {
+  font-weight: bold;
+  color: var(--accent-color);
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.nav-link-small.up {
+  font-size: 1.3em;
+}
+
+/* =========================================
+   5. GRID & COLUMNS
+   ========================================= */
+.layout-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5em;
+  margin: 1.5em 0;
+}
+
+.layout-col {
+  flex-basis: 100%; /* Mobile First */
+  min-width:0;
+}
+
+/* Desktop Breakpoint */
+@media (min-width: 768px) {
+
+
+  .layout-col {
+    flex: 1;
+    flex-basis: auto;
+  }
+  
+  .layout-col-half {
+    flex-basis: calc(50% - 0.75em);
+    flex-grow: 0;
+  }
+
+  .layout-col-one-third {
+    flex-basis: calc(33.333% - 1em);
+    flex-grow: 0;
+  }
+
+  .layout-col-two-thirds {
+    flex-basis: calc(66.666% - 0.5em);
+    flex-grow: 0;
+  }
+
+  /* I know this is psychotic*/
+
+  .layout-col-one-quarter {
+    flex-basis: calc(25% - 1.125em);
+    flex-grow: 0;
+  }
+  
+  .layout-col-three-quarters {
+    flex-basis: calc(75% - 0.375em);
+    flex-grow: 0;
+  }
+
+  /* Eighths because I'm not trying to do code right now I'm trying to author */
+  .layout-col-one-eighth {
+    flex-basis: calc(12.5% - 1.3125em);
+    flex-grow: 0;
+  }
+
+  .layout-col-three-eighths {
+    flex-basis: calc(37.5% - 0.8125em);
+    flex-grow: 0;
+  }
+
+  .layout-col-five-eighths {
+    flex-basis: calc(62.5% - 0.6875em);
+    flex-grow: 0;
+  }
+
+  .layout-col-seven-eighths {
+    flex-basis: calc(87.5% - 0.1875em);
+    flex-grow: 0;
+  }
+
+  /* I'm aware I'll regret this */
+
+  .layout-col > :last-child {
+    margin-bottom: 0;
+  }
+
+  .layout-col > :first-child {
+    margin-top: 0;
+  }
+}
+
+/* =========================================
+   6. MEDIA & EMBEDS
+   ========================================= */
+.image-container {
+  position: relative;
+  display: flex;
+  max-width: 100%;
+}
+.image-container img {
+  display: block;
+  max-width: 100%;
+}
+
+.media-embed-wrapper {
+  border: 0px dashed var(--border-color);
+  width: 100%;
+}
+
+.video-embed-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 Aspect Ratio */
+  background: var(--bg-muted);
+}
+.video-embed-container iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border: none!important;
+}
+
+.text-embed {
+  max-height: 1000px;
+}
+
+/* =========================================
+   7. CODE BLOCKS (Native Bodge Edition)
+   ========================================= */
+
+/* 1. THE WRAPPER (PRE) */
+.main-content > pre,
+pre[class*="language-"] {
+  display: block;
+  margin: 1.5em 0;
+  padding: 0;
+  overflow: visible !important; 
+  
+  /* Reset Prism defaults */
+  background: transparent !important;
+  text-shadow: none !important;
+  border: none !important;
+  position: relative;
+}
+
+/* 2. THE SCROLLING CONTENT (CODE)
+   The code tag handles the text styling and the scrolling. */
+code, 
+code[class*="language-"],
+pre[class*="language-"] code {
+  display: block;
+  
+  /* Typography */
+  font-family: var(--mono-font), monospace;
+  font-size: 0.9em;
+  line-height: 1.5;
+  color: var(--text-color);
+  text-shadow: none;
+  background: transparent !important;
+  
+  /* Layout & Spacing */
+  padding: 1em;
+  white-space: pre; 
+  tab-size: 4;
+  
+  /* Scrolling behavior */
+  overflow-x: auto; 
+  width: 100%;
+
+  max-height: 500px;
+}
+
+/* Scrollbar styling for code blocks */
+code::-webkit-scrollbar { height: 8px; }
+code::-webkit-scrollbar-thumb { border: 2px solid var(--bg-color-bright); }
+
+/* 3. COPY BUTTON POSITIONING */
+.code-copy-btn, .text-copy-btn {
+  position: relative;
+  z-index: 2000;
+  background: var(--bg-muted);
+  border: 2px dashed var(--border-color);
+  padding: 0.3em 0.6em;
+  font-size: 0.8em;
+  font-family: var(--mono-font);
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+.text-copy-btn, .code-copy-btn{
+  position: absolute;
+  top:-1em;
+  right: -1em;
+  transform: rotate(12deg)!important;
+  font-size: 1.1em;
+}
+
+.code-copy-btn:hover, .text-copy-btn:hover { opacity: 1; color: var(--accent-color); border-color: var(--accent-color); }
+
+.code-copy-btn.copied, .text-copy-btn.copied {
+  background: var(--accent-color);
+  color: var(--bg-color-bright);
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .code-copy-btn {
+    opacity: 1;
+  }
+}
+
+/* =========================================
+   8. COMPONENTS
+   ========================================= */
+
+/* --- Directory Listing --- */
+
+/* DEFAULT STATE: DOCKED (The HUD) */
+/* This is how it loads by default to prevent "pop-in" */
+.directory-container {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  
+  /* Visuals: HUD Style */
+  border: none;
+  /* Layout: Full Width HUD */
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  z-index: 1000;
+  
+  /* HIDE LOGIC: Collapse down */
+  transform: translateY(calc(100% - 3em))!important;
+  
+  /* Smooth transition for mode switching */
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  filter: 
+  drop-shadow(2px 0 0px var(--border-color)) 
+  drop-shadow(-2px 0 0px var(--border-color)) 
+  drop-shadow(0 2px 0px var(--border-color)) 
+  drop-shadow(0 -2px 0px var(--border-color))
+  drop-shadow(5px -10px 15px rgba(0,0,0,0.2));
+
+}
+
+
+/* STATE B: OPEN (User Tapped or Hovered while Docked) */
+.directory-container.open {
+  transform: translateY(0)!important;
+}
+
+@media (hover: hover) {
+  .directory-container:hover {
+    transform: translateY(0)!important;
+  }
+}
+/* STATE C: STATIC / RELEASED (Natural Flow) */
+/* Added by JS when we scroll past the main content */
+.directory-container.is-static {
+  /* Reset to Block Flow */
+  position: relative;
+  bottom: auto; left: auto; right: auto;
+  
+  /* Layout: Match Main Content */
+  width: 100%;
+  max-width: 1200px;
+  margin: 0px auto 0em auto;
+  padding-bottom: 3em;
+
+  
+  /* Force Visibility */
+  transform: none!important;
+  opacity: 1;
+  z-index: 10;
+  filter: 
+  drop-shadow(1px 0 0px var(--border-color)) 
+  drop-shadow(-1px 0 0px var(--border-color)) 
+  drop-shadow(0 1px 0px var(--border-color)) 
+  drop-shadow(0 -1px 0px var(--border-color));
+}
+
+.directory-container.is-static::after{
+  content: '';
+  justify-content: center;
+  border-top: 2px dashed var(--border-color);
+  padding-top: 1em;
+  margin-top: -0px;
+  width: 100%;
+  height: 80px;
+  margin-bottom: -200px;
+  display: flex;
+  background-color: var(--bg-muted);
+}
+
+/* Hide the "grip" lines when static */
+.directory-container.is-static .directory-header::after {
+  display: none;
+}
+
+/* --- Internal Layout (Preserved from your code) --- */
+.directory-header {
+  padding-top: 0.5em;
+  padding-left: 0.5em;
+  background: var(--bg-muted);
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  user-select: none;
+  padding-right: 1em;
+  width: fit-content;
+  margin-bottom: -5px;
+  min-width: 150px;
+  border-bottom: none;
+  clip-path: polygon(
+    0 0,                     /* top-left (square) */
+    calc(100% - 20px) 0,     /* before top-right bevel */
+    100% 40px,               /* top-right bevel */
+    100% 100%,               /* bottom-right (square) */
+    0 100%                   /* bottom-left (square) */
+  );
+}
+
+.directory-title {
+  font-size: 1.2em;
+  color: var(--text-muted);
+  margin: 0.2em;
+  margin-right:1em;
+  font-family: var(--mono-font);
+}
+
+
+.dir-listing {
+  background-color: var(--bg-muted);
+  list-style: none;
+  margin: 0;
+  line-height: 1;
+  padding-left: 1.5em;
+  padding-top: 1em;
+  padding-bottom: 1em;
+  max-height: 60vh;
+  overflow-y:auto;
+  overscroll-behavior: contain;
+}
+
+
+/* Static: Let it grow */
+.directory-container.is-static .dir-listing {
+  max-height: none;
+  overflow: visible;
+}
+
+.dir-listing li {
+  font-family: var(--mono-font);
+  font-size: 1.1em;
+  margin-bottom: 0.5em;
+  display: flex;
+  align-items: center;
+}
+
+.dir-listing .icon {
+  width: 1.2em; height: 1.2em;
+  margin-right: 0.75em;
+  flex-shrink: 0;
+  background-color: var(--text-color);
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+/* --- UI Options / Theme Toggle --- */
+.site-options-row {
+  display: flex;
+  justify-content: flex-end; 
+  gap: 0.5em;
+  width: 90%;
+  margin: -0.6em auto;
+}
+
+.theme-toggle {
+  color: var(--text-muted);
+  background: inherit;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+/* --- THEME TOGGLE SVG LOGIC --- */
+.theme-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  vertical-align: middle;
+  transition: transform 0.3s ease;
+}
+
+/* Default State (Light Mode) */
+#moon-icon { display: none; }
+#sun-icon { display: block; }
+
+/* Dark Mode State: When <html data-theme="dark"> is active */
+[data-theme="dark"] #moon-icon { display: block; }
+[data-theme="dark"] #sun-icon { display: none; }
+
+/* Optional: Add a little rotation effect on click */
+.theme-toggle:active .theme-icon {
+  transform: scale(0.9) rotate(15deg);
+}
+
+/* --- Tags --- */
+.tag-list {
+  display: inline-flex;
+  gap: 0.5em;
+  margin-left: 1em;
+}
+.tag {
+  background: var(--bg-muted);
+  padding: 0.2em 0.6em;
+  border-radius: 0px;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+.tag:hover { background: var(--border-color); }
+
+/* =========================================
+   9. SCREENPLAY (Fountain)
+   ========================================= */
+.fountain-script-container {
+  font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+  font-size: 12pt;
+  line-height: 1.25; 
+  max-width: clamp(35ch, 95%, 80ch); 
+  margin: 1em auto 1em; 
+  text-align: left; 
+  padding: 0 1ch;
+}
+
+.action, .scene-heading, .general {
+  margin-left: 0; margin-right: 0;
+  max-width: 100%; 
+  margin-top: 0.8em; margin-bottom: 0.8em; 
+  text-transform: uppercase; 
+}
+
+.scene-heading {
+  font-weight: bold;
+  margin-top: 2.5em; margin-bottom: 1em;
+}
+
+.character {
+  margin-left: clamp(5ch, 37ch, 25vw); 
+  margin-right: auto;
+  max-width: 38ch; 
+  margin-top: 1.5em; margin-bottom: 0.1em;
+  text-align: left; 
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.parenthetical {
+  margin-left: clamp(10ch, 31ch, 20vw); 
+  margin-right: auto;
+  max-width: 22ch; 
+  margin-top: 0.2em; margin-bottom: 0.2em;
+  text-align: left;
+  font-style: italic;
+  text-transform: none;
+}
+
+.dialogue {
+  margin-left: clamp(3ch, 15ch, 10vw); 
+  margin-right: auto;
+  max-width: 45ch; 
+  margin-top: 0.3em; margin-bottom: 0.3em;
+  text-align: left;
+  text-transform: none;
+}
+
+.transition {
+  margin-left: 0; margin-right: 0; max-width: 100%; 
+  margin-top: 2em;
+  text-align: right; 
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.dialogue b, .action b { font-weight: bold; }
+.dialogue i, .action i { font-style: italic; }
+.dialogue u, .action u { text-decoration: underline; }
+
+.title-page {
+  font-family: var(--body-font);
+  text-align: center;
+  padding: 3em 1em;
+}
+.title-page h1 { font-size: 2.5em; margin-bottom: 1em; }
+.title-page p { margin: 0.5em 0; font-size: 1.1em; }
+
+/* =========================================
+   10. BODGE PLAYER v3.0 (Clean Deck)
+   ========================================= */
+.bodge-rss-player {
+  margin: 2em 0;
+  font-family: var(--mono-font), monospace;
+  background: var(--bg-muted); /* Solid background for the whole unit */
+  border: 2px dashed var(--border-color);
+
+}
+
+/* --- HEADER (Clean) --- */
+.rss-header {
+  display: flex;
+  padding: 1em;
+  gap: 1.5em; /* Use space, not lines, to separate art from text */
+  align-items: center;
+}
+
+.rss-art {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg-color);
+  /* No border */
+}
+
+.rss-meta {
+  flex: 1;
+  min-width: 0; /* Allows text truncation */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.rss-meta h3 {
+  margin: 0 0 0.4em 0;
+  font-size: 1.1em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rss-now-playing {
+  font-size: 0.85em;
+  color: var(--accent-color);
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* --- CONTROLS DECK (Clean) --- */
+.rss-controls-area {
+  padding: 0 1em 1em 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+/* 1. Progress Bar */
+.rss-seek-container {
+  height: 12px;
+  background: var(--bg-color); /* White/Page track */
+  position: relative;
+  cursor: pointer;
+  width: 100%;
+}
+
+.rss-seek-fill {
+  height: 100%;
+  background: var(--accent-color);
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+.rss-seek-input {
+  position: absolute;
+  top: -5px; bottom: -5px; left: 0; right: 0; /* Larger hit area */
+  width: 100%; height: auto;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* 2. Toolbar (Flexbox, No Grid, No Borders) */
+.rss-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Spacing does the work */
+  height: 40px;
+  margin-top: 0.5em;
+}
+
+.rss-time-display {
+  font-size: 0.8em;
+  font-weight: bold;
+  color: var(--text-muted);
+  width: 80px; /* Fixed width to prevent jumping */
+}
+
+/* The Transport Group sits in the center */
+.rss-transport {
+  display: flex;
+  align-items: center;
+  gap: 1em; /* Space between buttons */
+}
+
+/* Right Side Controls */
+.rss-extras {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  justify-content: flex-end;
+}
+
+/* --- BUTTONS (Floating) --- */
+.rss-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em; /* Space between Icon and Text */
+  transition: opacity 0.2s;
+}
+
+.rss-btn:hover {
+  opacity: 0.7;
+}
+
+/* The small numbers (7s, 30s) inside the buttons */
+.rss-btn-txt {
+  font-size: 0.75em;
+  font-weight: bold;
+  color: var(--text-muted);
+  font-family: var(--mono-font), monospace;
+  line-height: 1;
+}
+
+/* Ensure the Play button mask is colored correctly */
+.rss-play-btn .rss-icon {
+  background-color: var(--accent-color);
+  width: 32px; height: 32px;
+}
+
+.rss-speed-btn {
+  font-size: 0.85em;
+  font-weight: bold;
+  color: var(--text-muted);
+  width: 3em;
+  text-align: right;
+}
+
+/* --- ICONS (The Bodge Mask System) --- */
+.rss-icon {
+  display: block;
+  width: 24px; height: 24px;
+  background-color: var(--text-muted);
+  -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+}
+
+/* Play button is slightly larger and accent colored */
+.rss-play-btn .rss-icon {
+  width: 32px; height: 32px;
+  background-color: var(--accent-color); 
+}
+
+/* --- PLAYLIST (The Only Borders) --- */
+.rss-playlist-controls {
+  padding: 0.8em 1em;
+  border-top: 1px solid var(--border-color); /* The Divider */
+  background: var(--bg-color);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  font-weight: bold;
+  color: var(--text-muted);
+  align-items: center;
+}
+
+.rss-sort-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: bold;
+  color: var(--accent-color);
+}
+
+.rss-playlist {
+  max-height: 250px;
+  overflow-y: auto;
+  overflow-x:hidden;
+  background: var(--bg-color);
+  border-top: 1px solid var(--border-color); /* Separates controls from list */
+}
+
+.rss-row {
+  padding: 0.8em 1em;
+  font-size: 0.9em;
+  border-bottom: 1px dotted var(--border-color); /* The List Borders */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.rss-row:hover {
+  background: var(--bg-muted);
+}
+
+.rss-row.active {
+  background: var(--bg-muted);
+  color: var(--accent-color);
+  font-weight: bold;
+  box-shadow: inset 4px 0 0 var(--accent-color); /* Left indicator strip */
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 500px) {
+  .rss-time-display { display: none; }
+  #popout-btn { display: none; }
+  .rss-extras { width: auto; } /* Let it collapse */
+  .rss-toolbar { justify-content: center; gap: 2em; }
+}
+
+/* --- SINGLE TRACK ADAPTATIONS --- */
+.bodge-rss-player.single-track .rss-playlist-controls,
+.bodge-rss-player.single-track .rss-playlist {
+  display: none !important;
+}
+
+/* =========================================
+   11. UTILITIES
+   ========================================= */
+.nowrap {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.text-justify { text-align: justify; }
+
+.notilt, .notilt * {
+  transform: none;
+}
+
+/* --- ACCORDION (Hide/Show) --- */
+details.bodge-accordion {
+  /* Optional: A subtle left border to visually group the hidden content when expanded */
+  border-left: 2px solid var(--border-color);
+  padding-left: 1.5em;
+}
+
+/* The Clickable Label */
+details.bodge-accordion summary {
+  cursor: pointer;
+  font-weight: bold;
+  font-family: var(--mono-font);
+  position: relative;
+  padding-left:0;
+  user-select: none;
+  text-decoration:dashed;
+}
+
+/* Remove default marker in Safari/Chrome */
+details.bodge-accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Hover Effect */
+details.bodge-accordion summary:hover {
+  text-decoration:dashed;
+  color: var(--text-color);
+}
+details.bodge-accordion summary:hover::before {
+  color: var(--accent-color);
+}
+
+/* The Content Box */
+.bodge-accordion-content {
+  margin-top: 0.8em;
+  /* Simple Fade-in Animation */
+  animation: accordionFade 0.2s ease-out;
+}
+
+@keyframes accordionFade {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Smoothly animate the "Bodge" effect */
+article, section, ul, header, p, button, img, h1, h2, h3, h4, h5, h6, .bodge-card {
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform; /* Hint to browser to optimize this */
+}
+
+
+/* =========================================
+   12. SCROLLBARS & TOUCH
+   ========================================= */
+html {
+  scrollbar-color: var(--accent-color) var(--bg-muted);
+  scrollbar-width: thin;
+  touch-action: manipulation;
+}
+
+::-webkit-scrollbar {
+  width: 12px; height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-muted);
+  border-left: 1px solid var(--border-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--accent-color);
+  border: 3px solid var(--bg-muted);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  filter: brightness(0.8);
+}
+
+.rss-playlist::-webkit-scrollbar { width: 8px; }
+.rss-playlist::-webkit-scrollbar-thumb {
+  border: 2px solid var(--bg-muted);
+}
+
+
+/* --- PocketPal Specific Embed --- */
+.pocketpal-embed {
+  /* Default: Portrait (Tall) */
+  /* Use 9/16 (or 1/2 to match your app exactly) */
+  aspect-ratio: 9 / 16; 
+  height: auto;
+  width: 100%;
+}
+
+/* Switch to Landscape if the screen is wider than it is tall */
+@media (orientation: landscape) {
+  .pocketpal-embed {
+    /* Landscape (Wide) */
+    /* Use 16/9 (or 2/1 to match your app exactly) */
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* =========================================
+   13. SYNTAX HIGHLIGHTING
+   ========================================= */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: slategray;
+}
+
+.token.punctuation {
+  color: #999;
+}
+
+.token.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #905;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #690;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #9a6e3a;
+  background: transparent;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #07a;
+}
+
+.token.function,
+.token.class-name {
+  color: #DD4A68;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #e90;
+}
+
+.token.important,
+.token.bold { font-weight: bold; }
+.token.italic { font-style: italic; }
+
+/* =========================================
+   14. REVEAL SHORTCODE
+   ========================================= */
+
+  @keyframes bodgeWiggle {
+  /* Wait for 4.5 seconds... */
+  0%, 90% { 
+    translate: 0 0;
+  }
+  /* ...then wiggle in the last 0.5 seconds */
+  92% { translate: -1px 0; }
+  94% { translate: 1px 0; }
+  96% { translate: -1px 0; }
+  98% { translate: 1px 0; }
+  100% { translate: 0 0; }
+}
+
+/* The Trigger Button */
+.bodge-trigger {
+  display: inline;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  font-style: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+  color: var(--text-color);
+  transition: all 0.2s ease;
+  animation: bodgeWiggle 10s linear infinite;
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.bodge-trigger:hover {
+  background-color: var(--bg-muted);
+  color: var(--text-color);
+}
+
+/* When it's open */
+.bodge-trigger.active {
+  border-bottom: none;
+  color: var(--text-color);
+  font-weight: bold;
+}
+
+/* The Hidden Content */
+div.bodge-reaction,
+span.bodge-reaction{
+  animation: revealFade 0.5s ease forwards;
+  font-weight: inherit;
+}
+
+.found {
+  border: inherit;
+  font-size: inherit;
+  font-family: inherit;
+  font-weight: inherit;
+  color: var(--border-color);
+  background: inherit;
+  background-color: inherit;
+  padding: inherit;
+}
+
+div.bodge-reaction {
+  font-family: var(--mono-font);
+}
+
+.bodge-reaction[hidden] {
+  display: none;
+}
+
+@keyframes revealFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* =========================================
+   15. THE PAPER PILE
+   ========================================= */
+.main-content {
+  /* Default State: Perfectly straight (0 rotation) */
+  transform: none; 
+  transform-origin: center 20%; /* Pivot from the top, like dropping it */
+  
+  /* The Animation */
+  /* We use a 'back-out' bezier (cubic-bezier) to give it a slight bounce/settle effect */
+  animation: paperDrop 0.4s cubic-bezier(0.6, 0.4, 0.5, 0.5) forwards;
+
+}
+
+@keyframes paperDrop {
+  0% {
+    opacity: 0.4;
+    /* START: Lifted up (-80px), Scaled up (1.1), and Rotated Randomly */
+    transform: translateY(-80px) scale(2) rotate(var(--start-rotation, 5deg));
+    filter: brightness(0);
+  }
+  100% {
+    opacity: 1;
+    /* LAND: Flat (0px), Normal Size (1), Perfectly Straight (0deg) */
+    transform: translateY(0) scale(1) rotate(0deg);
+    filter: brightness(1);
+  }
+}
+
+/* =========================================
+   16. LIGHTBOX (ZOOM)
+   ========================================= */
+
+/* The Overlay (Hidden by default) */
+.lightbox-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 20000; /* Sit on top of everything, including the sticky header */
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  opacity: 0;
+  pointer-events: none; /* Let clicks pass through when hidden */
+  transition: opacity 0.25s ease;
+  cursor: zoom-out;
+  
+  /* Modern blur effect */
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+/* Active State */
+.lightbox-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* The Zoomed Image */
+.lightbox-overlay img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  
+  transform: scale(0.95);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  border-radius: 4px;
+  user-select: none;
+}
+
+/* Animation on open */
+.lightbox-overlay.open img {
+  transform: scale(1);
+}
+
+/* Indicate that regular images can be clicked */
+.image-container img {
+  cursor: zoom-in;
+}
