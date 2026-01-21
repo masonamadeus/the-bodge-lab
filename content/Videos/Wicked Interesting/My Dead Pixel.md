@@ -1,7 +1,7 @@
 ---
 uid: my-dead-pixel-f492c
-contentHash: 356d2e7f
-date: '2026-01-21T22:27:24.956Z'
+contentHash: 2eb1d98c
+date: '2026-01-21T22:33:17.995Z'
 ---
 # My Dead Pixel (WIP)
 
@@ -715,7 +715,7 @@ We are gathered here today, bathed in the soft glow of the backlight, to bid a f
 
 We are here to honor the life and service of Pixel X: 488, Y: 582.
 
-To the unobservant eye, 488, 582 was merely a speck—one of two million siblings on a 1080p panel. But to us? To us, he was a soldier of the spectrum. A dedicated worker that resided in the upper-left quadrant, just slightly off-center. A prime location for displaying the first paragraph of an email, or the left eye of a protagonist in a movie close-up.
+To the unobservant eye, 488, 582 was merely a speck — one of two million siblings on a 1080p panel. But to us? To us, he was a soldier of the spectrum. A dedicated worker that resided in the upper-left quadrant, just slightly off-center. A prime location for displaying the first paragraph of an email, or the left eye of a protagonist in a movie close-up.
 
 Let us remember 488, 582 for how he lived, not how he died.
 
@@ -727,9 +727,9 @@ BLACK AND WHITE MONTAGE OF CLIPS
 
 He gave us Red: When we played games and the health bar was critical.
 
-He gave us Green: When we were trying to figure out how to compo
+He gave us Green: When we were trying to figure out how to touch grass online.
 
-And even in passing, he gave us Blue: When we stared at the default Windows wallpaper, contemplating our existence.
+He gave us Blue: When we stared at the default Windows wallpaper, contemplating our existence.
 
 For months, 488, 582 changed state sixty times a second. He never complained. He never asked for a break. He simply asked, "What hex code shall I render?" and he delivered that code with brightness and fidelity.
 
