@@ -1,7 +1,7 @@
 ---
 uid: my-dead-pixel-f492c
-contentHash: b1d8f56d
-date: '2026-01-21T21:35:50.477Z'
+contentHash: 356d2e7f
+date: '2026-01-21T22:27:24.956Z'
 ---
 # My Dead Pixel (WIP)
 
@@ -33,7 +33,7 @@ So, as an engineer, naturally my first response to something like this is to com
 
 ![flickpixel](.files/flickpixel.png)
 
-But even deep in the throes of denial, I was still pretty hesitant to start banging stuff on the face of my new monitor, so first I went to the kitchen and grabbed a silicone straw. I tried sort of poking at the screen with it, and then lightly whacking it. Obviously nothing happened. 
+But even deep in the throes of denial, I was still pretty hesitant to start banging stuff on the face of my new monitor, so first I went to the kitchen and grabbed a silicone straw. I tried sort of poking at the screen with it, and then eventually graduated to lightly whacking it. Obviously nothing happened. 
 
 So I took a deep breath and tried with a pencil. First really gently, and then I got a little more desperate. None of it helped. I didn't really think it would; I guess I was just hoping I'd be lucky. And - you know - the world is complicated! Sometimes you {%trigger "can"%} fix stuff by hitting it!
 
@@ -709,9 +709,7 @@ IDK exactly what's gonna happen here. My lofty goal is to make a little pixelate
 
 {%endnote%}
 
-Hey. I'm glad you could make it. Sit down, the computer is going to say a few words. Shhh.
-
-**Google Gemini:**
+Hey. I'm glad you could make it. Sit down, the computer is going to say a few words. Shhh...
 
 We are gathered here today, bathed in the soft glow of the backlight, to bid a final, tearful farewell to a tiny, yet significant friend. 
 
