@@ -1,7 +1,7 @@
 ---
 uid: my-dead-pixel-f492c
-contentHash: 853d96b8
-date: '2026-01-21T21:27:27.070Z'
+contentHash: b1d8f56d
+date: '2026-01-21T21:35:50.477Z'
 ---
 # My Dead Pixel (WIP)
 
@@ -15,7 +15,7 @@ A couple months ago I got a new computer monitor! I was really, really excited; 
 
 One, Because it’s a {%trigger "fancy" %} color-accurate monitor so that hopefully I can make my videos look less terrible. 
 
-{%react "fancy"%}(It's not that fancy, it's an ASUS PA248QV which is the cheapest Calmann-verified monitor I could find. Despite everything you're about to read, I would highly recommend it! It's been great.){%endreact%}
+{%react "fancy"%}(It's not that fancy, it's an ASUS PA248QV which is the cheapest Calman-verified monitor I could find. Despite everything you're about to read, I would highly recommend it! It's been great.){%endreact%}
 
 And two: Because my old monitor has *pee* in it.
 
@@ -59,7 +59,7 @@ Then I remembered that years ago, my engineering mentor Ira gave me an old USB m
 
 Wicked cool, right? You can see all the individual pixels — and the red, green, and blue subpixels that make them up. It reminds me of being a kid and getting way too close to the TV. And look—there's the dead pixel. I filmed this with the flashing software running, so the dead pixel is trying really hard to change colors.
 
-With the microscope, I could see specifically that the red and green bits were the problem. The blue subpixel still works! But the red and the green ones were just sort of... impotently flickering. And this is when the rabbit hole opened up underneath me. Because I realized that I don't actually know how this thing that I use every day works.
+With the microscope, I could see specifically that the red and green bits were almost completely dark, while the blue one *almost* still works! But they are all only sort of... impotently flickering. And this is when the rabbit hole opened up underneath me. Because I realized that I don't actually know how this thing that I use every day works.
 
 Like, what is *physically* going on inside the screen? Without knowing what is actually, physically happening how could I even begin to diagnose the issue? I needed to know what part of this system failed. 
 
@@ -97,7 +97,7 @@ The word **pixel** is short for "picture element". I can't believe I didn't know
 
 ![a single TFT IPS LCD pixel](.files/singlepixel.png)
 
-We were looking at these a minute ago! The **resolution** of a display is the number of pixels it has. A very common resolution is 1920 by 1080. There are 1,920 pixels across, and 1,080 pixels up and down—a bit over {%trigger "two million pixels"%} total. {%react "two million pixels"%}Which I guess is technically about 2 megapixels but nobody calls it that. {%endreact%}This is the resolution of 1080p (importantly, the "p" does not stand for pixel -- it stands for "progressive scan" and we're not getting into that). 
+We were looking at these a minute ago! The **resolution** of a display is the number of pixels it has. A very common resolution is 1920 by 1080. There are 1,920 pixels across, and 1,080 pixels up and down—a bit over {%trigger "two million pixels"%} total. {%react "two million pixels"%}Which I guess is technically about 2 megapixels but nobody calls it that. My monitor is actually 1920x1200, so techically it is 1200p? But far more common is 1920x1080. {%endreact%}This is the resolution of 1080p (importantly, the "p" does not stand for pixel -- it stands for "progressive scan" and we're not getting into that). 
 
 Each pixel is made up of three **sub-pixels**: red, green, and blue. Each subpixel can change brightness between fully on and fully off. And that's it! 
 
@@ -475,7 +475,7 @@ LOOK STERNLY AT BLOCK OF GLUE STICKS
 
 {%endnote%}
 
-Yup. Liquid crystal can behave a like a polarizing filter—the way it interacts with light is different based on whether the light’s vibration is along the rods or across them. It's a little bit weirder though. Unlike the polarizing filter, it's not able to absorb or block any light itself.
+Yup. Liquid crystal can behave sort of like a polarizing filter — the way it interacts with light is different based on whether the light’s vibration is along the rods or across them. It's a little bit weirder though. Unlike the polarizing filter, it's not able to absorb or block any light itself.
 
 The plastic filter *blocks* the light by converting the light's electric field into heat - because it's made of those long, conductive chains. Liquid crystal isn't electrically conductive in the same way.
 
@@ -621,7 +621,7 @@ This f**ks up the spiral, so now the light entering the bottom is horizontally p
 
 If we're really careful about how much voltage we apply, we can disturb the spiral a little bit less. This results in some of the light getting twisted, and some of it not. Which makes the brightness vary depending on how messed up the spiral is. The more you disturb the spiral, the less light gets through.
 
-Vary the voltage, you vary the spiral-ness, which varies the brightness, and hot diggity dog we've built ourselves a subpixel where the only moving parts are liquid! This is also why you see weird artifacts when you smush the screen. That phenomenon is actually called "viscous fingering" which I think is hilarious.
+Vary the voltage, you vary the spiral-ness, which varies the brightness, and hot diggity dog we've built ourselves a subpixel where the only moving parts are liquid! This is also why you see weird artifacts when you smush the screen. Part of that phenomenon is actually called "viscous fingering" which I think is hilarious.
 
 You might be wondering "okay so where's the bit that controls the voltage". There's a lot of infrastructure hiding in the black horizontal lines that you can see in between rows of pixels. That's called the "black matrix" and that's where they tuck the wires and a single transistor for each subpixel.
 
@@ -677,7 +677,7 @@ Anecdotally, people have sworn by both methods. In either case, they only really
 
 But what happens more often is that the control transistor breaks. No amount of squishing can fix that.
 
-In a twisted-nematic screen, when there's no voltage the pixel is white. Remember how the spiral, at rest, twists the light to let it through? IPS screens are the opposite. They're normally black at rest, and when the voltage is applied it aligns the crystals to let light through. Without voltage, they're closed.
+In a twisted-nematic screen, when there's no voltage the pixel is white. Remember how the spiral, at rest, twists the light to let it through? IPS screens are typically the opposite. They're normally black at rest, and when the voltage is applied it aligns the crystals to let light through. Without voltage, they're closed.
 
 Now, the transistor can fail in two ways. It can either fail "open", meaning it no longer conducts electricity and thus provides no voltage to the electrodes -- or it can fail "short", literally shorting out and *always* applying a voltage. Depending on your type of screen this would change whether your dead pixel is "hot" or not.
 
