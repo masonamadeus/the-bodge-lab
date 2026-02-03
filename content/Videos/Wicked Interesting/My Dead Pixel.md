@@ -1,7 +1,7 @@
 ---
 uid: my-dead-pixel-f492c
-contentHash: 2eb1d98c
-date: '2026-01-21T22:33:17.995Z'
+contentHash: f4a8ecb7
+date: '2026-02-03T18:08:24.543Z'
 ---
 # My Dead Pixel (WIP)
 
@@ -715,7 +715,7 @@ We are gathered here today, bathed in the soft glow of the backlight, to bid a f
 
 We are here to honor the life and service of Pixel X: 488, Y: 582.
 
-To the unobservant eye, 488, 582 was merely a speck — one of two million siblings on a 1080p panel. But to us? To us, he was a soldier of the spectrum. A dedicated worker that resided in the upper-left quadrant, just slightly off-center. A prime location for displaying the first paragraph of an email, or the left eye of a protagonist in a movie close-up.
+To the unobservant eye, 488, 582 was merely a speck — one of two million siblings on a big IPS panel. But to us? To us, he was a soldier of the spectrum. A dedicated worker that resided in the upper-left quadrant, just slightly off-center. A prime location for displaying the first paragraph of an email, or the left eye of a protagonist in a movie close-up.
 
 Let us remember 488, 582 for how he lived, not how he died.
 
