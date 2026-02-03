@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>Mason Amadeus Washer</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="**Creative Director, Broadcast Engineer, On-Air Talent, IT Manager, Content Creator** Winchester, Kentucky | Business@MasonAmadeus.com Key Points Co-Creato...">
+        <link
+        rel="canonical" href="https://bodgelab.com/About%20Me/Professional%20Resume/"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/About%20Me/Professional%20Resume/">
+        <meta property="og:title" content="Mason Amadeus Washer">
+        <meta
+        property="og:description" content="**Creative Director, Broadcast Engineer, On-Air Talent, IT Manager, Content Creator** Winchester, Kentucky | Business@MasonAmadeus.com Key Points Co-Creato..."> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/About Me/" class="breadcrumb">About Me</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/About Me/Professional Resume/" class="breadcrumb">Professional Resume</a>
+                                    
+                                
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/About Me/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: December 19, 2025</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+                        <h1>Mason Amadeus Washer</h1>
+<p><strong>Creative Director, Broadcast Engineer, On-Air Talent, IT Manager, Content Creator</strong></p>
+<p>Winchester, Kentucky | <a href="mailto:Business@MasonAmadeus.com">Business@MasonAmadeus.com</a></p>
+<hr>
+<h2>Key Points</h2>
+<div class="layout-row"><div class="layout-col layout-col-half"><ul>
+<li>Co-Creator of <em>Digital Folklore</em>, winner of multiple Signal Awards for production quality and hosting.</li>
+<li>Creative Director @ 8th Layer Media since 2022.</li>
+<li>8 years in terrestrial radio broadcasting, 3 years as sole assistant to Chief Engineer.</li>
+<li>Expert in audio post production; highly proficient in other creative software including video editing and 3D.</li>
+<li>1 Year as Regional IT Manager for six separate clusters throughout New England; sysadmin, inventory/logistics, helpdesk, scripting, etc.</li>
+</ul>
+</div><div class="layout-col layout-col-half"><ul>
+<li>Creator of 3 NHAB Award-winning radio commercials.</li>
+<li>Deep knowledge of audio technology, industry standards, and production workflows.</li>
+<li>Experience installing and maintaining AoIP (Dante &amp; Wheatnet) and SIP (Telos) networks.</li>
+<li>Advanced understanding of Windows-based computer systems and AD environment.</li>
+<li>Highly skilled in troubleshooting complex systems and creative problem solving.</li>
+<li>Proficient with C# and Javascript. Knowledgeable in Powershell, Batch, Lua, CSS, HTML.</li>
+</ul>
+</div></div>
+<hr>
+<h1>Professional History</h1>
+<h2>8th Layer Media - Remote (July 2022 - Present)</h2>
+<h4>Co-Creator / Executive Producer / Sound Designer for <a href="https://digitalfolklore.fm" target="_blank" rel="noopener noreferrer">Digital Folklore</a> Podcast</h4>
+<ul>
+<li>Achieved critical acclaim for <a href="https://digitalfolklore.fm" target="_blank" rel="noopener noreferrer">Digital Folklore</a> with multiple Signal Awards, winning Gold for <em>Best Co-Host Team</em> and <em>Best Trailer</em>, Silver for <em>Best Indie Podcast</em>, and Bronze for <em>Most Innovative Audio Experience</em>.</li>
+<li>Co-created and launched an audio-drama hybrid podcast that analyzes internet culture through the lens of academic folklore.</li>
+<li>Engineered highly complex, immersive soundscapes; pioneered a unique format blending non-fiction interviews with narrative audio drama.</li>
+<li>Conducted extensive academic research and high-level interviews with folklore experts, synthesizing dense academic theory into accessible, entertaining narratives for a general audience.</li>
+<li>Managed end-to-end production workflows, from interviews and scriptwriting to final mastering and distribution logistics.</li>
+</ul>
+<h4>Other 8LM Projects and Shows</h4>
+<ul>
+<li>Co-host and executive producer for The FAIK Files (on the <a href="https://thecyberwire.com/podcasts/the-faik-files" target="_blank" rel="noopener noreferrer">Cyberwire Network</a>).</li>
+<li>Creator, editor, and host of <a href="/Video/Wicked%20Interesting/">Wicked Interesting</a>.</li>
+</ul>
+<br>
+<h2>Monadnock Broadcasting Group - Keene, NH (April 2014 - July 2022)</h2>
+<h4>Regional IT Manager (Promoted in June 2021)</h4>
+<ul>
+<li>Managed all IT requirements for six separate clusters in NH, MA, and VT.</li>
+<li>Built/Installed/Maintained fileservers, HyperV Hosts, GPOs, VLANs, office machines, radio-specific software.</li>
+<li>Solely developed a windows application called “NewsJock” for use in small market newsrooms. Has been adopted in several markets.</li>
+<li>Supported critical live infrastructure with minimal downtime.</li>
+<li>Loved this role; only left so soon because of once-in-a-lifetime chance with 8LM!</li>
+</ul>
+<h4>Assistant Engineer (Promoted in June 2018)</h4>
+<ul>
+<li>Assisted C.E. in refitting our existing studios with new Wheatstone AoIP consoles and blades in 2018.</li>
+<li>Aided in commissioning new transmitters and HD importer/exporter systems in 2019.</li>
+<li>Acted as first point of contact to resolve major equipment failures including a loss of our main IPSTL relay point, tower site remote control failures, master antenna system combiner/filter failure, rebroadcast receiver signal path issues, etc.</li>
+<li>Covered other engineers' duties as needed across multiple states and markets.</li>
+<li>Recapped &amp; rebuilt multiple small transmitters and transmitter components.</li>
+</ul>
+<h4>On-Air / Production (Original hired position, April 2014)</h4>
+<ul>
+<li>Hosted a weekday afternoon drive program on a Hot AC music station.</li>
+<li>Filled in when necessary for other staff, including Production Director and morning show hosts.</li>
+<li>Wrote and produced radio commercials which won 3 NHAB awards for “Best Individual Radio Commercial” in 2016, 2017, and 2020.</li>
+</ul>
+<br>
+<h2>DeMoulas Market Basket - Swanzey, NH (February 2011 - April 2014)</h2>
+<h4>Full-Time Grocery Associate</h4>
+<ul>
+<li>Tracked/Ordered a single aisle of a mid-sized grocery store. (Peanut butter and candy; the best aisle.)</li>
+</ul>
+<br>
+<hr>
+<h2>Software Expertise</h2>
+<ul>
+<li>Mastery of REAPER, including advanced scripting and custom automation.</li>
+<li>Expert in Adobe Audition.</li>
+<li>Supported ProTools Studios professionally.</li>
+<li>Highly proficient with Blender 3D.</li>
+<li>Proficient with Davinci Resolve.</li>
+<li>Proficient with Descript.</li>
+<li>Proficient with Affinity graphic design suite.</li>
+</ul>
+<hr>
+<h2>Additional Skills</h2>
+<ul>
+<li>Performer and comedian, cast member and sound designer/producer of <a href="/s/podcube">PodCube™</a> (the funniest podcast on Human Earth)</li>
+<li>Voice Actor for various audiodrama podcasts including <em>Hemophobia</em>, <em>Inn Between</em>, <em>Something's Amiss at Juniper's House</em>, and more.</li>
+<li>Elaborate Live Streaming Event Designer. (Once built a face-spraying robot that raised over $700).</li>
+<li>Deep understanding of AI systems including transformer-based LLMs and diffusion models (I'm not an AI developer, though).</li>
+<li>Doesn't take self too seriously.</li>
+<li>Works well with others in high-intensity environments.</li>
+<li>Cheerful &amp; Positive.</li>
+<li>Calm Under Pressure.</li>
+<li>Voracious Learner.</li>
+</ul>
+
+                    
+                    
+                        <div class="page-meta">
+                            
+                            
+                                
+                                
+                            
+                            
+                            <hr>
+                                <p class="download-btn-container"> <a class="page-share-btn" href="/s/mason-resume/" title="Get permanent link">
+                                    SHARE⇗
+                                </a>
+                                <a class="page-download-btn nowrap" href="data:application/octet-stream;charset=utf-8,%0D%0A%23%20Mason%20Amadeus%20Washer%20%0D%0A%0D%0A**Creative%20Director%2C%20Broadcast%20Engineer%2C%20On-Air%20Talent%2C%20IT%20Manager%2C%20Content%20Creator**%20%0D%0A%0D%0AWinchester%2C%20Kentucky%20%7C%20Business%40MasonAmadeus.com%0D%0A%0D%0A___%0D%0A%0D%0A%23%23%20Key%20Points%20%0D%0A%0D%0A%7B%25%20grid%20%25%7D%0D%0A%0D%0A*%20Co-Creator%20of%20*Digital%20Folklore*%2C%20winner%20of%20multiple%20Signal%20Awards%20for%20production%20quality%20and%20hosting.%0D%0A*%20Creative%20Director%20%40%208th%20Layer%20Media%20since%202022.%0D%0A*%208%20years%20in%20terrestrial%20radio%20broadcasting%2C%203%20years%20as%20sole%20assistant%20to%20Chief%20Engineer.%0D%0A*%20Expert%20in%20audio%20post%20production%3B%20highly%20proficient%20in%20other%20creative%20software%20including%20video%20editing%20and%203D.%20%0D%0A*%201%20Year%20as%20Regional%20IT%20Manager%20for%20six%20separate%20clusters%20throughout%20New%20England%3B%20sysadmin%2C%20inventory%2Flogistics%2C%20helpdesk%2C%20scripting%2C%20etc.%20%0D%0A%0D%0A%60%60%0D%0A%0D%0A*%20Creator%20of%203%20NHAB%20Award-winning%20radio%20commercials.%0D%0A*%20Deep%20knowledge%20of%20audio%20technology%2C%20industry%20standards%2C%20and%20production%20workflows.%20%0D%0A*%20Experience%20installing%20and%20maintaining%20AoIP%20(Dante%20%26%20Wheatnet)%20and%20SIP%20(Telos)%20networks.%0D%0A*%20Advanced%20understanding%20of%20Windows-based%20computer%20systems%20and%20AD%20environment.%20%0D%0A*%20Highly%20skilled%20in%20troubleshooting%20complex%20systems%20and%20creative%20problem%20solving.%20%0D%0A*%20Proficient%20with%20C%23%20and%20Javascript.%20Knowledgeable%20in%20Powershell%2C%20Batch%2C%20Lua%2C%20CSS%2C%20HTML.%20%0D%0A%0D%0A%7B%25endgrid%25%7D%0D%0A%0D%0A___%0D%0A%0D%0A%23%20Professional%20History%20%0D%0A%0D%0A%23%23%208th%20Layer%20Media%20-%20Remote%20(July%202022%20-%20Present)%0D%0A%0D%0A%23%23%23%23%20Co-Creator%20%2F%20Executive%20Producer%20%2F%20Sound%20Designer%20for%20%5BDigital%20Folklore%5D(https%3A%2F%2Fdigitalfolklore.fm)%20Podcast%0D%0A*%20Achieved%20critical%20acclaim%20for%20%5BDigital%20Folklore%5D(https%3A%2F%2Fdigitalfolklore.fm)%20with%20multiple%20Signal%20Awards%2C%20winning%20Gold%20for%20*Best%20Co-Host%20Team*%20and%20*Best%20Trailer*%2C%20Silver%20for%20*Best%20Indie%20Podcast*%2C%20and%20Bronze%20for%20*Most%20Innovative%20Audio%20Experience*.%0D%0A*%20Co-created%20and%20launched%20an%20audio-drama%20hybrid%20podcast%20that%20analyzes%20internet%20culture%20through%20the%20lens%20of%20academic%20folklore.%0D%0A*%20Engineered%20highly%20complex%2C%20immersive%20soundscapes%3B%20pioneered%20a%20unique%20format%20blending%20non-fiction%20interviews%20with%20narrative%20audio%20drama.%0D%0A*%20Conducted%20extensive%20academic%20research%20and%20high-level%20interviews%20with%20folklore%20experts%2C%20synthesizing%20dense%20academic%20theory%20into%20accessible%2C%20entertaining%20narratives%20for%20a%20general%20audience.%0D%0A*%20Managed%20end-to-end%20production%20workflows%2C%20from%20interviews%20and%20scriptwriting%20to%20final%20mastering%20and%20distribution%20logistics.%0D%0A%0D%0A%23%23%23%23%20Other%208LM%20Projects%20and%20Shows%0D%0A*%20Co-host%20and%20executive%20producer%20for%20The%20FAIK%20Files%20(on%20the%20%5BCyberwire%20Network%5D(https%3A%2F%2Fthecyberwire.com%2Fpodcasts%2Fthe-faik-files)).%0D%0A*%20Creator%2C%20editor%2C%20and%20host%20of%20%5BWicked%20Interesting%5D(%2FVideo%2FWicked%2520Interesting%2F).%0D%0A%0D%0A%3Cbr%3E%0D%0A%0D%0A%23%23%20Monadnock%20Broadcasting%20Group%20-%20Keene%2C%20NH%20(April%202014%20-%20July%202022)%20%0D%0A%0D%0A%23%23%23%23%20Regional%20IT%20Manager%20(Promoted%20in%20June%202021)%20%0D%0A*%20Managed%20all%20IT%20requirements%20for%20six%20separate%20clusters%20in%20NH%2C%20MA%2C%20and%20VT.%20%0D%0A*%20Built%2FInstalled%2FMaintained%20fileservers%2C%20HyperV%20Hosts%2C%20GPOs%2C%20VLANs%2C%20office%20machines%2C%20radio-specific%20software.%20%0D%0A*%20Solely%20developed%20a%20windows%20application%20called%20%E2%80%9CNewsJock%E2%80%9D%20for%20use%20in%20small%20market%20newsrooms.%20Has%20been%20adopted%20in%20several%20markets.%20%0D%0A*%20Supported%20critical%20live%20infrastructure%20with%20minimal%20downtime.%0D%0A*%20Loved%20this%20role%3B%20only%20left%20so%20soon%20because%20of%20once-in-a-lifetime%20chance%20with%208LM!%0D%0A%0D%0A%23%23%23%23%20Assistant%20Engineer%20(Promoted%20in%20June%202018)%20%0D%0A*%20Assisted%20C.E.%20in%20refitting%20our%20existing%20studios%20with%20new%20Wheatstone%20AoIP%20consoles%20and%20blades%20in%202018.%20%0D%0A*%20Aided%20in%20commissioning%20new%20transmitters%20and%20HD%20importer%2Fexporter%20systems%20in%202019.%20%0D%0A*%20Acted%20as%20first%20point%20of%20contact%20to%20resolve%20major%20equipment%20failures%20including%20a%20loss%20of%20our%20main%20IPSTL%20relay%20point%2C%20tower%20site%20remote%20control%20failures%2C%20master%20antenna%20system%20combiner%2Ffilter%20failure%2C%20rebroadcast%20receiver%20signal%20path%20issues%2C%20etc.%20%0D%0A*%20Covered%20other%20engineers'%20duties%20as%20needed%20across%20multiple%20states%20and%20markets.%0D%0A*%20Recapped%20%26%20rebuilt%20multiple%20small%20transmitters%20and%20transmitter%20components.%0D%0A%0D%0A%23%23%23%23%20On-Air%20%2F%20Production%20(Original%20hired%20position%2C%20April%202014)%20%0D%0A*%20Hosted%20a%20weekday%20afternoon%20drive%20program%20on%20a%20Hot%20AC%20music%20station.%20%0D%0A*%20Filled%20in%20when%20necessary%20for%20other%20staff%2C%20including%20Production%20Director%20and%20morning%20show%20hosts.%20%0D%0A*%20Wrote%20and%20produced%20radio%20commercials%20which%20won%203%20NHAB%20awards%20for%20%E2%80%9CBest%20Individual%20Radio%20Commercial%E2%80%9D%20in%202016%2C%202017%2C%20and%202020.%0D%0A%0D%0A%3Cbr%3E%0D%0A%0D%0A%23%23%20DeMoulas%20Market%20Basket%20-%20Swanzey%2C%20NH%20(February%202011%20-%20April%202014)%20%0D%0A%0D%0A%23%23%23%23%20Full-Time%20Grocery%20Associate%20%0D%0A*%20Tracked%2FOrdered%20a%20single%20aisle%20of%20a%20mid-sized%20grocery%20store.%20(Peanut%20butter%20and%20candy%3B%20the%20best%20aisle.)%0D%0A%0D%0A%3Cbr%3E%0D%0A%0D%0A___%0D%0A%0D%0A%23%23%20Software%20Expertise%0D%0A%0D%0A*%20Mastery%20of%20REAPER%2C%20including%20advanced%20scripting%20and%20custom%20automation.%0D%0A*%20Expert%20in%20Adobe%20Audition.%0D%0A*%20Supported%20ProTools%20Studios%20professionally.%0D%0A*%20Highly%20proficient%20with%20Blender%203D.%0D%0A*%20Proficient%20with%20Davinci%20Resolve.%20%0D%0A*%20Proficient%20with%20Descript.%0D%0A*%20Proficient%20with%20Affinity%20graphic%20design%20suite.%0D%0A%0D%0A___%0D%0A%0D%0A%23%23%20Additional%20Skills%20%0D%0A%0D%0A*%20Performer%20and%20comedian%2C%20cast%20member%20and%20sound%20designer%2Fproducer%20of%20%5BPodCube%E2%84%A2%5D(%3C%2Fs%2Fpodcube%3E)%20(the%20funniest%20podcast%20on%20Human%20Earth)%0D%0A*%20Voice%20Actor%20for%20various%20audiodrama%20podcasts%20including%20*Hemophobia*%2C%20*Inn%20Between*%2C%20*Something's%20Amiss%20at%20Juniper's%20House*%2C%20and%20more.%0D%0A*%20Elaborate%20Live%20Streaming%20Event%20Designer.%20(Once%20built%20a%20face-spraying%20robot%20that%20raised%20over%20%24700).%0D%0A*%20Deep%20understanding%20of%20AI%20systems%20including%20transformer-based%20LLMs%20and%20diffusion%20models%20(I'm%20not%20an%20AI%20developer%2C%20though).%0D%0A*%20Doesn't%20take%20self%20too%20seriously.%0D%0A*%20Works%20well%20with%20others%20in%20high-intensity%20environments.%0D%0A*%20Cheerful%20%26%20Positive.%20%0D%0A*%20Calm%20Under%20Pressure.%20%0D%0A*%20Voracious%20Learner.%20%0D%0A%0D%0A" download="Mason Amadeus Washer.md" title='Download "Mason Amadeus Washer.md"'>
+                                    DOWNLOAD POST ⤓
+                                </a>
+                            </p>
+                        </div>
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                About Mason
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+                                    <li class="directory-index-in-list">
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/homeicon.svg');"></span>
+                                        
+                                            <a href="/About Me/">About Mason</a>
+                                        
+                                    </li>
+                                
+
+
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/About Me/Award-Winning Commercials/">Award-Winning Commercials\</a>
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <strong>Professional Resume</strong>
+                                        
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/About Me/aemyn-tweet.webp.html">aemyn-tweet.webp</a>
+                                        <a href="/About Me/aemyn-tweet.webp" download class="dir-download-icon" title="Download aemyn-tweet.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/About Me/Everything Reel.mp4.html">Everything Reel.mp4</a>
+                                        <a href="/About Me/Everything Reel.mp4" download class="dir-download-icon" title="Download Everything Reel.mp4"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/About Me/Josiah O&#39;Knight Demo (Prod. by Mason).mp3.html">Josiah O&#39;Knight Demo (Prod. by Mason).mp3</a>
+                                        <a href="/About Me/Josiah O&#39;Knight Demo (Prod. by Mason).mp3" download class="dir-download-icon" title="Download Josiah O&#39;Knight Demo (Prod. by Mason).mp3"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+                <script>/*
+                // REPLACE URL IN BAR WITH SHARELINK
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/s/mason-resume/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+                // */</script>
+        
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>
