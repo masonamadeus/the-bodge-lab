@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PodCube Stream Timer</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link id="dynamic-font" rel="stylesheet" href="">
+</head>
+<body>
+
+    <main id="app-container">
+        <h1 id="stream-title">Stream Starting</h1>
+        <div id="timer-display">00:00</div>
+        
+        <button id="main-start-btn" class="start-btn">▶ Start Timer</button>
+
+        <div id="now-playing" class="hidden">
+            <div class="meta-container">
+                <div class="brand-label"><em>You're Listening to PodCube™</em></div>
+                <div id="track-name">Loading audio...</div>
+            </div>
+        
+            <div id="progress-container">
+                <div id="progress-bar"></div>
+            </div>
+        </div>
+    </main>
+
+    <div id="settings-trigger" title="Open Settings">⚙️</div>
+
+    <div id="settings-modal" class="hidden">
+        <div class="settings-content">
+            <h2>Configuration</h2>
+            <p class="subtitle">Update settings here, then copy the link for OBS.</p>
+            
+            <div class="form-group">
+                <label>Title Text</label>
+                <input type="text" id="input-title" data-param="title">
+            </div>
+
+            <div class="form-group">
+                <label>Timer (Minutes)</label>
+                <input type="number" id="input-minutes" data-param="minutes" min="1" value="5">
+            </div>
+
+            <div class="form-group">
+                <label>Google Font Name</label>
+                <input type="text" id="input-font" data-param="font" placeholder="e.g. Roboto, Open Sans, Bangers">
+            </div>
+            
+            <div class="form-group">
+                <label>Colors</label>
+                <div class="color-row">
+                    <label>Text: <input type="color" id="input-color-text" data-param="colorText"></label>
+                    <label>Bg: <input type="color" id="input-color-bg" data-param="colorBg"></label>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="form-group">
+                <label>PodCube Integration</label>
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="input-audio-enabled" data-param="audioEnabled">
+                    <span>Play Episodes (Smart Fill)</span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                 <label>Volume</label>
+                 <input type="range" id="input-volume" data-param="volume" min="0" max="1" step="0.1">
+            </div>
+
+            <div class="actions">
+                <button id="copy-url-btn" class="primary-btn">Copy OBS Link</button>
+                <button id="stop-timer-btn" class="danger-btn">Stop Timer</button>
+            </div>
+            <div style="margin-top: 10px; text-align: right;">
+                <button id="close-settings" class="secondary-btn" style="width: auto;">Close Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
