@@ -433,7 +433,7 @@ export async function startExperience(state) {
         let delay = 0;
         let retries = 0;
         const MAX_RETRIES = 3;
-        const GAP_THRESHOLD = 90; // 1:30
+        const GAP_THRESHOLD = 60; // Seconds (can exceed 60). Used to be 90
 
         do {
             playlist = Audio.generatePlaylist(durationSec);

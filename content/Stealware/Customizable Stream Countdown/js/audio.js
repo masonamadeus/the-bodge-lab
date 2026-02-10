@@ -8,7 +8,7 @@ let currentTrackIndex = 0;
 let isSoftStopping = false;
 
 /* =========================================
-   PART 1: DATA INGESTION
+   DATA INGESTION
    ========================================= */
 export async function loadEpisodes() {
     if (allEpisodes.length > 0) return allEpisodes;
@@ -75,7 +75,7 @@ function parseDuration(raw) {
 }
 
 /* =========================================
-   PART 2: LOGIC (True Random Fill)
+   LOGIC (True Random Fill)
    ========================================= */
 
 export function generatePlaylist(totalTimeSeconds) {
@@ -149,7 +149,7 @@ function shuffleArray(array) {
 }
 
 /* =========================================
-   PART 3: PLAYBACK (With Gaps & Soft Stop)
+   PLAYBACK (With Gaps & Soft Stop)
    ========================================= */
 
 export function setVolume(vol) {
@@ -265,4 +265,27 @@ function swapPlayers() {
     prepareTrack(currentAudio, track);
     
     currentAudio.play().catch(e => console.error("[Audio] Gapless swap failed:", e));
+}
+
+/**
+ * Mobile Browser "Unlock" Trick
+ * Plays a silent track synchronously on user tap so the browser allows 
+ * programmatic playing later (e.g., after a setTimeout delay).
+ */
+export function unlockAudio() {
+    // A tiny, valid silent MP3 file in base64
+    const silentUrl = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU5LjI3LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIAD+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+AAAAAExhdmM1OS4zNyAAAAAAAAAAAAAAAAQAAAAALgAAAAAA//OEAEAAAMgAAAAAABIAAIAgAAAAAgAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//OEAEAAAMgAAAAAABIAAIAgAAAAAgAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//OEAEAAAMgAAAAAABIAAIAgAAAAAgAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
+    
+    [currentAudio, nextAudio].forEach(a => {
+        const originalSrc = a.src;
+        a.src = silentUrl;
+        
+        // Attempt to play and immediately pause
+        a.play().then(() => {
+            a.pause();
+            a.src = originalSrc; // Restore original source
+        }).catch(e => {
+            // It's normal for this to be rejected if already playing
+        });
+    });
 }

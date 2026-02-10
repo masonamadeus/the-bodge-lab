@@ -1,6 +1,7 @@
 /* js/main.js */
 import { getState } from './state.js';
 import * as UI from './ui.js'; 
+import * as Audio from './audio.js';
 
 async function init() {
     // Initial Render (Visuals)
@@ -35,6 +36,7 @@ async function init() {
             startBtn.addEventListener('click', () => {
                 // Fetch FRESH state in case the user edited the 
                 // timer minutes while the modal was open.
+                Audio.unlockAudio();
                 const currentState = getState(); 
                 UI.startExperience(currentState);
             });
