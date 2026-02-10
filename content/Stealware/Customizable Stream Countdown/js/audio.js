@@ -162,7 +162,7 @@ export function stopAudio() {
     [currentAudio, nextAudio].forEach(a => {
         a.pause();
         a.currentTime = 0;
-        a.src = "";
+        a.removeAttribute('src');
         a.onended = null;
         a.ontimeupdate = null;
         a.playbackRate = 1; // Reset speed
@@ -173,7 +173,7 @@ export function stopAudio() {
 export function finishCurrentQueue() {
     console.log("[Audio] Soft Stop triggered. Current track will be the last.");
     isSoftStopping = true; 
-    nextAudio.src = "";
+    nextAudio.removeAttribute('src');
 }
 
 export function preloadFirstTrack(queue) {
@@ -216,7 +216,9 @@ function attachTrackListeners(audioElement, track) {
         }
 
         const remaining = audioElement.duration - audioElement.currentTime;
-        if (remaining <= 10 && !isSoftStopping && !nextAudio.src) {
+        
+        // Check using hasAttribute so we don't get tripped up by absolute URLs
+        if (remaining <= 10 && !isSoftStopping && !nextAudio.hasAttribute('src')) {
             const nextIndex = currentTrackIndex + 1;
             if (nextIndex < playlistQueue.length) {
                 console.log(`[Audio] Preloading: ${playlistQueue[nextIndex].title}`);
@@ -248,7 +250,7 @@ function swapPlayers() {
 
     // Reset the old player
     nextAudio.pause();
-    nextAudio.src = "";
+    nextAudio.removeAttribute('src'); 
     nextAudio.ontimeupdate = null;
     nextAudio.onended = null;
     nextAudio.playbackRate = 1;
@@ -303,11 +305,27 @@ export function unlockAudio() {
     const silentUrl = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU5LjI3LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIAD+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+AAAAAExhdmM1OS4zNyAAAAAAAAAAAAAAAAQAAAAALgAAAAAA//OEAEAAAMgAAAAAABIAAIAgAAAAAgAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//OEAEAAAMgAAAAAABIAAIAgAAAAAgAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//OEAEAAAMgAAAAAABIAAIAgAAAAAgAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
     
     [currentAudio, nextAudio].forEach(a => {
-        const originalSrc = a.src;
+        // FIX: Save the exact attribute, not the resolved absolute URL property
+        const originalSrc = a.getAttribute('src');
+        
         a.src = silentUrl;
+        
+        const cleanup = () => {
+            // Protect against race conditions: only restore if it's still the silent URL
+            if (a.src && a.src.includes("data:audio/mpeg;base64")) {
+                if (originalSrc) {
+                    a.src = originalSrc;
+                } else {
+                    a.removeAttribute('src');
+                }
+            }
+        };
+
         a.play().then(() => {
             a.pause();
-            a.src = originalSrc;
-        }).catch(e => {});
+            cleanup();
+        }).catch(e => {
+            cleanup();
+        });
     });
 }

@@ -455,7 +455,6 @@ export async function startExperience(state) {
         console.log(`Playlist Total: ${playlistDuration}s`);
         console.log(`Gap to Fill:    ${delay}s`);
 
-        Audio.preloadFirstTrack(playlist);
         if (delay <= 10) {
             // If the delay is already short, preload immediately
             Audio.preloadFirstTrack(playlist);
