@@ -176,7 +176,7 @@ function renderFountainTokens(tokens) {
   let html = '';
   tokens.forEach(token => {
 
-    // 1. IGNORE Structural Tokens (which don't have text and are not for display)
+    // IGNORE Structural Tokens (which don't have text and are not for display)
     if ([
       'dialogue_begin',
       'dialogue_end',
@@ -190,13 +190,13 @@ function renderFountainTokens(tokens) {
       return; // Skip these tokens entirely
     }
 
-    // 2. Handle specific structural tokens that should be visual
+    // Handle specific structural tokens that should be visual
     if (token.type === 'page_break') {
       html += '<hr class="page-break">\n';
       return;
     }
 
-    // 3. Use textContent: ensure null/undefined text becomes an empty string
+    // Use textContent: ensure null/undefined text becomes an empty string
     const textContent = token.text || '';
 
     switch (token.type) {
@@ -487,7 +487,7 @@ module.exports = function (eleventyConfig) {
   // Embed Shortcode (Smart: Inlines Text/Code, Iframes Apps/HTML)
   eleventyConfig.addShortcode("embed", function (src, ratioOrClass) {
     
-    // 1. Resolve Paths (Web URL vs File System Path)
+    // Resolve Paths (Web URL vs File System Path)
     let webUrl = resolveSrc.call(this, src);
     let fileSystemPath;
 
@@ -505,7 +505,7 @@ module.exports = function (eleventyConfig) {
     const filename = path.basename(fileSystemPath);
     const ext = path.extname(filename).toLowerCase();
 
-    // 2. Define "Inline-able" Text Formats
+    // Define "Inline-able" Text Formats
     const textExtensions = [
       '.txt', '.md', '.json', '.js', '.css', '.html', 
       '.bat', '.sh', '.xml', '.yml', '.ini', '.cfg', '.csv', 
@@ -516,7 +516,7 @@ module.exports = function (eleventyConfig) {
     // Exception: We usually want to IFRAME .html "apps", but INLINE .html "snippets".
     const isText = textExtensions.includes(ext) && ext !== '.html'; 
 
-    // 3. Handle Custom Classes/Ratio
+    // Handle Custom Classes/Ratio
     let customStyle = "";
     let customClass = "";
     if (ratioOrClass) {
@@ -719,10 +719,10 @@ module.exports = function (eleventyConfig) {
   // Hide/Reveal Shortcode (Accordion)
   // Usage: {% toggle "Read More..." %} ...content... {% endtoggle %}
   eleventyConfig.addPairedShortcode("toggle", function(content, summary="Read More...") {
-    // 1. Render the Markdown inside the block
+    // Render the Markdown inside the block
     const renderedContent = mdLib.render(content, {page: this.page});
     
-    // 2. Return the <details> wrapper
+    // Return the <details> wrapper
     return `<details class="bodge-accordion"><summary>${summary}</summary><div class="bodge-accordion-content">${renderedContent}</div></details>`;
   });
 
@@ -731,7 +731,7 @@ module.exports = function (eleventyConfig) {
     const rendered = mdLib.render(content, {page: this.page}).trim();
     const style = `background-color:var(--${color})`;
     
-    // 2. Detect: Is this just simple text (one paragraph)?
+    // Detect: Is this just simple text (one paragraph)?
     // Logic: Starts with <p>, ends with </p>, and contains no other <p> tags.
     const isSinglePara = rendered.startsWith('<p>') && 
                          rendered.endsWith('</p>') && 
@@ -761,18 +761,18 @@ module.exports = function (eleventyConfig) {
       .replace(/-+$/, '');      // Trim - from end of text
   }
 
-  // 1. The Trigger
+  // The Trigger
   // Usage: I walked down the {% trigger "stinky, wet road" %}...
   eleventyConfig.addShortcode("trigger", function(text) {
-    // 1. Generate ID from the RAW text
+    // Generate ID from the RAW text
     const id = slugify(text);
     
-    // 2. FORCE Inline Rendering.
+    // FORCE Inline Rendering.
     // mdLib.renderInline() parses markdown but prevents <p> tags.
     // This ensures the button stays an inline element.
     const html = mdLib.renderInline(text, {page: this.page});
 
-    // 3. Generate random animation delay
+    // Generate random animation delay
     const randomDelay = (Math.random() * -10).toFixed(2);
 
     return `<button class="bodge-trigger notilt" 
@@ -781,7 +781,7 @@ module.exports = function (eleventyConfig) {
                     title="Reveal Note">${html}</button>`;
   });
 
-  // 2. The Reaction
+  // The Reaction
   // Usage: {% react "stinky, wet road" %} ...content... {% endreact %}
   eleventyConfig.addPairedShortcode("react", function(content, idOrText) {
     const id = slugify(idOrText);
@@ -862,9 +862,9 @@ module.exports = function (eleventyConfig) {
     return standardPages.concat(standaloneNodes);
   });
 
-  // --- BODGE OG INJECTOR ---
+  // --- BODGE OPENGRAPH INJECTOR ---
   // Runs after Eleventy finishes building the site.
-  // Finds standalone apps in the output folder and injects OG tags into their index.html!
+  // Finds standalone apps in the output folder and injects OG tags into their index.html
   eleventyConfig.on('eleventy.after', async ({ dir }) => {
     
     standaloneApps.forEach(app => {
@@ -876,10 +876,10 @@ module.exports = function (eleventyConfig) {
       if (fs.existsSync(indexPath)) {
         let html = fs.readFileSync(indexPath, 'utf8');
 
-        // Using a meta tag as our safety check
+        // Safety check using a meta tag
         if (!html.includes('<meta name="bodge-og-injected" content="true">')) {
 
-          // 1. Resolve Image URL
+          // Resolve Image URL
           let resolvedImage = "";
           if (app.meta.image) {
              if (app.meta.image.startsWith('http')) {
@@ -889,35 +889,38 @@ module.exports = function (eleventyConfig) {
              }
           }
 
-          // 2. Build the exact Meta Tags we want (WITH CONDITIONALS)
+          // Safely encode the URLs to handle spaces ---
+          const safeAppUrl = encodeURI(`https://bodgelab.com${app.url}`);
+          const safeImageUrl = resolvedImage ? encodeURI(resolvedImage) : "";
+
+          // Build the exact Meta Tags we want (WITH CONDITIONALS)
           let ogTags = `\n    <meta name="bodge-og-injected" content="true">\n`;
           ogTags += `    <meta property="og:type" content="website">\n`;
-          ogTags += `    <meta property="og:url" content="https://bodgelab.com${app.url}">\n`;
+          ogTags += `    <meta property="og:url" content="${safeAppUrl}">\n`;
           ogTags += `    <meta property="og:title" content="${app.meta.title}">\n`;
           
           if (app.meta.description) {
               ogTags += `    <meta property="og:description" content="${app.meta.description}">\n`;
           }
           
-          if (resolvedImage) {
-              ogTags += `    <meta property="og:image" content="${resolvedImage}">\n`;
-              ogTags += `    <meta name="twitter:image" content="${resolvedImage}">\n`;
+          if (safeImageUrl) {
+              ogTags += `    <meta property="og:image" content="${safeImageUrl}">\n`;
+              ogTags += `    <meta name="twitter:image" content="${safeImageUrl}">\n`;
           }
           
           ogTags += `    <meta name="twitter:card" content="summary_large_image">\n`;
           ogTags += `</head>`;
 
-          // 3. Inject them right before the closing </head> tag
+          // Inject them right before the closing </head> tag
           html = html.replace(/<\/head>/i, ogTags);
           
-          // 4. Save the file back to the _site directory
+          // Save the file back to the _site directory
           fs.writeFileSync(indexPath, html);
           console.log(`[BodgeLab] 💉 Injected OG tags into: ${app.destPath}/index.html`);
         }
       }
     });
   });
-
   return {
     dir: {
       input: "content",
