@@ -325,6 +325,7 @@ export function initEventListeners() {
             const m = parseInt(parts[1], 10);
             updateTimerDisplay((h * 60 + m), parts[2]);
         }
+        Audio.syncPlaybackRate(e.detail.seconds);
     });
 
     window.addEventListener('timerComplete', () => {
@@ -453,6 +454,21 @@ export async function startExperience(state) {
         console.log(`Target Timer:   ${durationSec}s`);
         console.log(`Playlist Total: ${playlistDuration}s`);
         console.log(`Gap to Fill:    ${delay}s`);
+
+        Audio.preloadFirstTrack(playlist);
+        if (delay <= 10) {
+            // If the delay is already short, preload immediately
+            Audio.preloadFirstTrack(playlist);
+        } else {
+            // Otherwise, wait until 10 seconds before playback to preload
+            const preloadWaitTime = delay - 10;
+            console.log(`[UI] Waiting ${preloadWaitTime}s to preload first track...`);
+            setTimeout(() => {
+                if (DOM.timerContainer.classList.contains('running')) {
+                    Audio.preloadFirstTrack(playlist);
+                }
+            }, preloadWaitTime * 1000);
+        }
 
         if (delay > 0) {
             updateSyncStatus(delay);

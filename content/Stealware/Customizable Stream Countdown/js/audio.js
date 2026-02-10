@@ -149,7 +149,7 @@ function shuffleArray(array) {
 }
 
 /* =========================================
-   PLAYBACK (With Gaps & Soft Stop)
+   PART 3: PLAYBACK (With Gaps & Soft Stop)
    ========================================= */
 
 export function setVolume(vol) {
@@ -157,9 +157,6 @@ export function setVolume(vol) {
     nextAudio.volume = vol;
 }
 
-/**
- * Immediate Hard Stop (User clicked Stop)
- */
 export function stopAudio() {
     isSoftStopping = false;
     [currentAudio, nextAudio].forEach(a => {
@@ -168,19 +165,23 @@ export function stopAudio() {
         a.src = "";
         a.onended = null;
         a.ontimeupdate = null;
+        a.playbackRate = 1; // Reset speed
     });
     playlistQueue = [];
 }
 
-/**
- * Soft Stop (Timer finished)
- * Clears the queue so no NEW tracks play, but lets current one finish.
- */
 export function finishCurrentQueue() {
     console.log("[Audio] Soft Stop triggered. Current track will be the last.");
     isSoftStopping = true; 
-    // We stop preloading the next track
     nextAudio.src = "";
+}
+
+export function preloadFirstTrack(queue) {
+    if (!queue || queue.length === 0) return;
+    console.log(`[Audio] Preloading first track: ${queue[0].title}`);
+    currentAudio.src = queue[0].url;
+    currentAudio.preload = "auto";
+    currentAudio.load();
 }
 
 export function playQueue(queue) {
@@ -193,28 +194,27 @@ export function playQueue(queue) {
         detail: { title: playlistQueue[currentTrackIndex].title } 
     }));
     
-    prepareTrack(currentAudio, playlistQueue[currentTrackIndex]);
+    // Safely check if src needs to be set, avoiding wiping out the preload!
+    const expectedUrl = queue[0].url;
+    if (!currentAudio.src || !currentAudio.src.includes(expectedUrl.substring(expectedUrl.length - 20))) {
+        currentAudio.src = expectedUrl;
+        currentAudio.preload = "auto";
+    }
+    
+    attachTrackListeners(currentAudio, playlistQueue[currentTrackIndex]);
     currentAudio.play().catch(e => console.warn("Autoplay failed:", e));
 }
 
 /**
- * Prepares an audio element with listeners and source
+ * Decoupled listener attachment so we don't accidentally wipe .src
  */
-function prepareTrack(audioElement, track) {
-    if (!track) return;
-
-    audioElement.src = track.url;
-    audioElement.preload = "auto";
-
+function attachTrackListeners(audioElement, track) {
     audioElement.ontimeupdate = () => {
-        // Dispatch progress for UI (only for the active player)
         if (audioElement === currentAudio && audioElement.duration) {
             const pct = (audioElement.currentTime / audioElement.duration) * 100;
             window.dispatchEvent(new CustomEvent('audioProgress', { detail: { percent: pct } }));
         }
 
-        // JUST-IN-TIME PRELOAD: 
-        // If 10s remain, and we aren't stopping, and nextAudio isn't ready
         const remaining = audioElement.duration - audioElement.currentTime;
         if (remaining <= 10 && !isSoftStopping && !nextAudio.src) {
             const nextIndex = currentTrackIndex + 1;
@@ -227,10 +227,7 @@ function prepareTrack(audioElement, track) {
     };
 
     audioElement.onended = () => {
-        if (isSoftStopping) {
-            console.log("[Audio] Soft stop: track ended, stopping playback.");
-            return;
-        }
+        if (isSoftStopping) return;
 
         const nextIndex = currentTrackIndex + 1;
         if (nextIndex < playlistQueue.length) {
@@ -241,51 +238,76 @@ function prepareTrack(audioElement, track) {
     };
 }
 
-/**
- * Swaps the background buffer to the foreground
- */
 function swapPlayers() {
     currentTrackIndex++;
     const track = playlistQueue[currentTrackIndex];
     
-    // Switch roles
     const temp = currentAudio;
     currentAudio = nextAudio;
     nextAudio = temp;
 
-    // The new nextAudio (which was the old currentAudio) needs its src cleared 
-    // so the preloader logic triggers again for the next-next track.
+    // Reset the old player
     nextAudio.pause();
     nextAudio.src = "";
+    nextAudio.ontimeupdate = null;
+    nextAudio.onended = null;
+    nextAudio.playbackRate = 1;
 
     console.log(`[Audio] Swapping to: ${track.title}`);
     window.dispatchEvent(new CustomEvent('trackChange', { detail: { title: track.title } }));
 
-    // Re-attach listeners to the new current player (since we need its ontimeupdate)
-    prepareTrack(currentAudio, track);
-    
+    // The new currentAudio ALREADY has its src loaded, just attach listeners!
+    attachTrackListeners(currentAudio, track);
     currentAudio.play().catch(e => console.error("[Audio] Gapless swap failed:", e));
 }
 
 /**
+ * Rubber-Band Sync: Dynamically calculates actual audio left vs timer left 
+ * and microscopically speeds up/slows down to guarantee a perfect 0:00 finish.
+ */
+export function syncPlaybackRate(timerSecondsLeft) {
+    if (!currentAudio || currentAudio.paused || isSoftStopping || playlistQueue.length === 0) {
+        return;
+    }
+    if (!currentAudio.duration) return; 
+
+    const currentRemaining = currentAudio.duration - currentAudio.currentTime;
+    
+    let futureRemaining = 0;
+    for (let i = currentTrackIndex + 1; i < playlistQueue.length; i++) {
+        futureRemaining += playlistQueue[i].duration;
+    }
+
+    const totalAudioRemaining = currentRemaining + futureRemaining;
+
+    // Return to normal speed for the final 3 seconds so the sentence sounds natural
+    if (timerSecondsLeft <= 3) {
+        currentAudio.playbackRate = 1;
+        return;
+    }
+
+    let idealRate = totalAudioRemaining / timerSecondsLeft;
+    
+    // Clamp to prevent chipmunk/slow-mo distortion (15% variance max)
+    idealRate = Math.max(0.85, Math.min(idealRate, 1.15));
+
+    if (Math.abs(currentAudio.playbackRate - idealRate) > 0.01) {
+        currentAudio.playbackRate = idealRate;
+    }
+}
+
+/**
  * Mobile Browser "Unlock" Trick
- * Plays a silent track synchronously on user tap so the browser allows 
- * programmatic playing later (e.g., after a setTimeout delay).
  */
 export function unlockAudio() {
-    // A tiny, valid silent MP3 file in base64
     const silentUrl = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU5LjI3LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIAD+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+AAAAAExhdmM1OS4zNyAAAAAAAAAAAAAAAAQAAAAALgAAAAAA//OEAEAAAMgAAAAAABIAAIAgAAAAAgAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//OEAEAAAMgAAAAAABIAAIAgAAAAAgAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//OEAEAAAMgAAAAAABIAAIAgAAAAAgAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
     
     [currentAudio, nextAudio].forEach(a => {
         const originalSrc = a.src;
         a.src = silentUrl;
-        
-        // Attempt to play and immediately pause
         a.play().then(() => {
             a.pause();
-            a.src = originalSrc; // Restore original source
-        }).catch(e => {
-            // It's normal for this to be rejected if already playing
-        });
+            a.src = originalSrc;
+        }).catch(e => {});
     });
 }

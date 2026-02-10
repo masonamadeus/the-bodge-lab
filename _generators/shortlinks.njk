@@ -4,9 +4,7 @@ eleventyExcludeFromCollections: true
 layout: false
 ---
 {
-{%- for page in collections.all %}
-  {%- if page.data.uid %}
+{%- for page in collections.permanent_pages %}
   "{{ page.data.uid }}": "{{ page.url | url }}"{% if not loop.last %},{% endif %}
-  {%- endif %}
 {%- endfor %}
 }

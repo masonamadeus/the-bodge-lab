@@ -16,6 +16,33 @@ const cleanPassthroughFormats = PASSTHROUGH_EXTENSIONS.map(ext => ext.substring(
 //#region UTILITIES
 
 // --- STANDALONE APP SCANNER ---
+
+// Helper to read simple frontmatter from the .standalone flag
+// Helper to read simple frontmatter from the .standalone flag
+function parseStandaloneFlag(filePath) {
+  const meta = { uid: null, title: path.basename(path.dirname(filePath)), description: "Standalone App", image: null };
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    
+    // Extract values (handles optional quotes and spacing)
+    const uidMatch = content.match(/^uid:\s*(.*)$/m);
+    if (uidMatch) meta.uid = uidMatch[1].trim().replace(/^['"](.*)['"]$/, '$1');
+    
+    const titleMatch = content.match(/^title:\s*(.*)$/m);
+    if (titleMatch) meta.title = titleMatch[1].trim().replace(/^['"](.*)['"]$/, '$1');
+
+    const descMatch = content.match(/^description:\s*(.*)$/m);
+    if (descMatch) meta.description = descMatch[1].trim().replace(/^['"](.*)['"]$/, '$1');
+
+    // NEW: Extract Image
+    const imgMatch = content.match(/^image:\s*(.*)$/m);
+    if (imgMatch) meta.image = imgMatch[1].trim().replace(/^['"](.*)['"]$/, '$1');
+
+  } catch (e) {}
+  return meta;
+}
+
+// Helper to find folders containing a ".standalone" file
 // Helper to find folders containing a ".standalone" file
 function findStandaloneApps(dir) {
   let results = [];
@@ -26,11 +53,23 @@ function findStandaloneApps(dir) {
     const fullPath = path.join(dir, file);
     const stat = fs.statSync(fullPath);
     if (stat.isDirectory()) {
-      if (fs.existsSync(path.join(fullPath, ".standalone"))) {
-        
-        // FIX: Convert to Relative Path (e.g., "content/PodCube/PocketPal")
+      const flagPath = path.join(fullPath, ".standalone");
+      
+      if (fs.existsSync(flagPath)) {
+        // Convert to Relative Path (e.g., "content/PodCube/PocketPal")
         const relativePath = path.relative(__dirname, fullPath).replace(/\\/g, '/');
-        results.push(relativePath); 
+        const destPath = relativePath.replace(/^content\//, '');
+        let webUrl = `/${destPath}/`.replace(/\/\//g, '/');
+
+        // Parse the .standalone file for metadata!
+        const meta = parseStandaloneFlag(flagPath);
+
+        results.push({
+          sourcePath: relativePath,
+          destPath: destPath,
+          url: webUrl,
+          meta: meta
+        }); 
         
       } else {
         results = results.concat(findStandaloneApps(fullPath));
@@ -247,19 +286,14 @@ module.exports = function (eleventyConfig) {
   // Automatically adds them to Passthrough AND Ignores.
   const standaloneApps = findStandaloneApps(contentDir);
   
-  standaloneApps.forEach(appPath => {
-    // Calculate Destination (Strip "content/" prefix)
-    // Source: "content/PodCube/PocketPal" -> Dest: "PodCube/PocketPal"
-    const destPath = appPath.replace(/^content\//, '');
-
+  standaloneApps.forEach(app => {
     // Copy with Mapping
-    // { "source": "destination" }
-    eleventyConfig.addPassthroughCopy({ [appPath]: destPath });
+    eleventyConfig.addPassthroughCopy({ [app.sourcePath]: app.destPath });
     
     // Ignore files inside so Eleventy doesn't process them
-    eleventyConfig.ignores.add(appPath + "/**");
+    eleventyConfig.ignores.add(app.sourcePath + "/**");
     
-    console.log(`[BodgeLab] 🕹️  Linked Standalone App: ${appPath} -> ${destPath}`);
+    console.log(`[BodgeLab] 🕹️  Linked Standalone App: ${app.sourcePath} -> ${app.destPath}`);
   });
 
   //#endregion
@@ -786,10 +820,46 @@ module.exports = function (eleventyConfig) {
 
   // Collection of "permanent" pages (with page_id in front matter)
   eleventyConfig.addCollection("permanent_pages", function (collectionApi) {
-    return collectionApi.getAll().filter(function (item) {
-      // Only include items where uid is actually set (not null/undefined)
+    // Get standard pages
+    const standardPages = collectionApi.getAll().filter(function (item) {
       return item.data.uid; 
     });
+
+    // Inject Standalone Apps that have a UID
+    // This allows share.njk to dynamically generate shortlink pages for them
+    const standaloneNodes = standaloneApps
+      .filter(app => app.meta.uid)
+      .map(app => {
+        // Build the Absolute Image URL
+        let resolvedImage = null;
+        if (app.meta.image) {
+           if (app.meta.image.startsWith('http')) {
+               resolvedImage = app.meta.image;
+           } else {
+               // Append the image filename to the absolute URL of the app
+               // Note: When I make this a universal site template, this needs to be dynamic based on the site's domain, not hardcoded.
+               const SITE_URL = "https://bodgelab.com"; 
+               resolvedImage = `${SITE_URL}${app.url}${app.meta.image}`;
+           }
+        }
+
+        return {
+          url: app.url,
+          data: {
+            uid: app.meta.uid,
+            title: app.meta.title,
+            seo: {
+              title: app.meta.title,
+              description: app.meta.description,
+              url: `https://bodgelab.com${app.url}`, // Full URL required for OG
+              type: "website",
+              image: resolvedImage 
+            }
+          }
+        };
+      });
+
+    return standardPages.concat(standaloneNodes);
   });
   
   return {
