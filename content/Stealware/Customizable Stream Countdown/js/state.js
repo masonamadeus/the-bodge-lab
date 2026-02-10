@@ -4,13 +4,27 @@
  */
 
 const DEFAULTS = {
-    title: "Stream Starting Soon",
+    title: "Click to Edit",
     minutes: 5,
+    seconds: 0, // <--- CRITICAL FIX: This was missing!
     font: "Roboto",
     colorText: "#ffffff",
     colorBg: "#000000",
-    audioEnabled: "false",
-    volume: 0.5
+    bgTransparent: "false",
+    audioEnabled: "true",
+    volume: 0.8,
+    autoplay:"true",
+
+    shadowEnabled: "true",
+    shadowColor: "#000000",
+    shadowX: 0.2,    // Horizontal offset (vmin)
+    shadowY: 0.2,    // Vertical offset (vmin)
+    shadowBlur: 0.4,  // Blur radius (vmin)
+
+    posTitle: "",      
+    posTimer: "",
+    posTrack: "",
+    layoutMode: "auto" // 'auto' (flex) or 'custom' (absolute)
 };
 
 /**
@@ -21,6 +35,7 @@ export function getState() {
     const params = new URLSearchParams(window.location.search);
     const state = {};
 
+    // Iterate over DEFAULTS keys to determine what to fetch
     for (const [key, defaultVal] of Object.entries(DEFAULTS)) {
         if (params.has(key)) {
             state[key] = params.get(key);
@@ -48,6 +63,5 @@ export function updateParam(key, value) {
  */
 export function getShareableURL() {
     const url = new URL(window.location.href);
-    url.searchParams.set('autoplay', '1'); // Ensure OBS knows to start automatically
     return url.toString();
 }

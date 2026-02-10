@@ -12,6 +12,7 @@ export const CONFIG = {
     ],
 
     // Audio Logic Settings
-    FADE_TIME: 2,         // Seconds to fade out audio when timer ends
-    BUFFER_SECONDS: 10,   // Safety buffer: Don't pick a track if it ends <10s before timer
+    FADE_TIME: 0,         // Seconds to fade out audio when timer ends
+    BUFFER_SECONDS: 0,   // Safety buffer: Don't pick a track if it ends <10s before timer
+    TRACK_GAP_SECONDS: 0, // Seconds of silence between tracks (to prevent abrupt cuts)
 };

@@ -1,27 +1,27 @@
 /* =========================================
-   TIMER ENGINE
+   TIMER ENGINE (Seconds-based)
    ========================================= */
 
 let countdownInterval = null;
-let totalSeconds = 0;
+let endTime = 0;
 let remainingSeconds = 0;
 
-export function startTimer(minutes) {
+export function startTimer(totalSeconds) {
     stopTimer(); 
-    totalSeconds = minutes * 60;
-    remainingSeconds = totalSeconds;
-    dispatchTick();
+    
+    const now = Date.now();
+    const durationMS = totalSeconds * 1000; // Direct seconds to MS
+    endTime = now + durationMS;
+    
+    updateTimer();
 
     countdownInterval = setInterval(() => {
-        remainingSeconds--;
-        if (remainingSeconds <= 0) {
+        const isFinished = updateTimer();
+        if (isFinished) {
             stopTimer();
-            dispatchTick(); 
             dispatchComplete();
-        } else {
-            dispatchTick();
         }
-    }, 1000);
+    }, 100);
 }
 
 export function stopTimer() {
@@ -29,7 +29,24 @@ export function stopTimer() {
     countdownInterval = null;
 }
 
-// Added 'export' here
+function updateTimer() {
+    const now = Date.now();
+    const diff = endTime - now;
+    const secondsLeft = Math.ceil(diff / 1000);
+
+    if (secondsLeft <= 0) {
+        remainingSeconds = 0;
+        dispatchTick(0);
+        return true; 
+    } else {
+        if (secondsLeft !== remainingSeconds) {
+            remainingSeconds = secondsLeft;
+            dispatchTick(remainingSeconds);
+        }
+        return false; 
+    }
+}
+
 export function formatTime(seconds) {
     if (seconds < 0) seconds = 0;
     const h = Math.floor(seconds / 3600);
@@ -43,12 +60,11 @@ export function formatTime(seconds) {
     return `${mStr}:${sStr}`;
 }
 
-// --- Internal Helpers ---
-function dispatchTick() {
+function dispatchTick(seconds) {
     window.dispatchEvent(new CustomEvent('timerTick', { 
         detail: { 
-            seconds: remainingSeconds, 
-            formatted: formatTime(remainingSeconds),
+            seconds: seconds, 
+            formatted: formatTime(seconds),
         } 
     }));
 }

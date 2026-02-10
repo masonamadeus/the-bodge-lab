@@ -1,4 +1,52 @@
-/* --- Reset & Layout --- */
+/* =========================================
+   1. THEME VARIABLES
+   ========================================= */
+:root {
+    /* --- Main Identity Colors --- */
+    --accent-color: #1768da; 
+    --accent-color-dim: rgba(23, 104, 218, 0.15); /* ~15% opacity */
+    --brand-text-color: #ffffff;
+
+    /* --- Shadows --- */
+    --shadow-color: #000000;
+    --shadow-x: 0.2vmin;
+    --shadow-y: 0.2vmin;
+    --shadow-blur: 0.4vmin;
+
+    /* --- Status Colors --- */
+    --danger-color: #d32f2f;
+    --danger-hover: #b71c1c;
+
+    /* --- UI Structure --- */
+    --main-bg-color: #000000;
+    --main-text-color: #ffffff;
+    
+    /* --- Modal & Settings --- */
+    --modal-overlay: rgba(0, 0, 0, 0.85);
+    --modal-bg: #222222;
+    --modal-border: #444444;
+    --modal-shadow: rgba(0, 0, 0, 0.5);
+    
+    /* --- Forms & Inputs --- */
+    --input-bg: #333333;
+    --input-border: #555555;
+    --input-text: #ffffff;
+    --label-text: #cccccc;
+    --subtext-color: #aaaaaa;
+
+    /* --- Buttons --- */
+    --btn-secondary-bg: #444444;
+    --btn-secondary-hover: #555555;
+    
+    /* --- Glassmorphism (Start Button) --- */
+    --glass-bg: rgba(255, 255, 255, 0.2);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-hover: rgba(255, 255, 255, 0.4);
+}
+
+/* =========================================
+   2. GLOBAL RESET & BASE LAYOUT
+   ========================================= */
 body, html {
     height: 100%;
     width: 100%;
@@ -6,207 +54,434 @@ body, html {
     padding: 0;
     font-family: sans-serif;
     overflow: hidden; 
+    background-color: var(--main-bg-color); 
+    color: var(--main-text-color); 
+    transition: background-color 0.3s, color 0.3s;
+    
+    /* Default centering layout */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background-color: #000; 
-    color: #fff; 
-    transition: background-color 0.3s, color 0.3s;
 }
 
 #app-container {
-    text-align: center;
     width: 100%;
-    padding: 0 40px; 
+    height: 100vh; /* Full height for absolute anchors */
+    position: relative; 
+    text-align: center;
+    padding: 0 4vmin; 
     box-sizing: border-box;
+    
+    /* Flexbox for default centering */
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centers the button */
+    align-items: center;
+    justify-content: center; 
 }
 
-/* --- Typography --- */
+/* =========================================
+   3. TYPOGRAPHY & EDITABLES
+   ========================================= */
 h1 {
     font-size: 8vmin; 
     margin: 0 0 2vh 0;
     line-height: 1.1;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     white-space: nowrap; 
 }
 
-#timer-display {
+/* Shadow utilities for text elements */
+h1, #timer-container, .meta-container, #track-name {
+    text-shadow: var(--shadow-x) var(--shadow-y) var(--shadow-blur) var(--shadow-color);
+}
+
+#stream-title { 
+    text-wrap: auto; 
+}
+
+/* Editable Field Styling */
+[contenteditable="true"] {
+    outline: none;
+    border-bottom: 0.3vmin solid transparent;
+    cursor: text;
+    transition: border-color 0.2s;
+}
+[contenteditable="true"]:hover {
+    border-bottom: 0.3vmin solid var(--glass-border);
+}
+[contenteditable="true"]:focus {
+    border-bottom: 0.3vmin solid var(--accent-color);
+}
+
+/* =========================================
+   4. COMPONENT: TIMER
+   ========================================= */
+#timer-container {
     font-size: 25vmin; 
     font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums; 
-    text-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* --- NEW: Main Start Button --- */
+#timer-container.running {
+    pointer-events: none; /* Prevents clicking while running */
+    user-select: none;
+}
+
+.colon {
+    margin: 0 1vmin;
+    padding-bottom: 2vmin; 
+}
+
+/* =========================================
+   5. COMPONENT: START BUTTON
+   ========================================= */
+/* The physical button placement */
+#main-start-btn {
+    position: absolute;
+    bottom: 20vh; 
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50; 
+    margin-top: 0; 
+}
+
+/* Visual Styling */
 .start-btn {
-    margin-top: 20px;
-    padding: 10px 20px;
-    font-size: 1.2rem;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    color: white;
-    border-radius: 50px;
+    padding: 1.5vmin 4vmin;
+    font-size: 2.5vmin; 
+    background: var(--glass-bg);
+    border: 0.2vmin solid currentColor;
+    color: currentColor;
+    border-radius: 0;
     cursor: pointer;
     transition: all 0.2s;
     backdrop-filter: blur(5px);
 }
 .start-btn:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: var(--glass-hover);
     transform: scale(1.05);
 }
 
-/* --- Now Playing Container --- */
+/* =========================================
+   6. COMPONENT: NOW PLAYING
+   ========================================= */
 #now-playing {
-    margin-top: 5vh;
+    margin-top: 6vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    width: 80%; 
-    max-width: 600px;
+    width: 80vw; 
     opacity: 0;
     animation: fadeIn 1s forwards; 
 }
 
-@keyframes fadeIn { to { opacity: 1; } }
-
-.meta-container {
-    text-align: center;
-    margin-bottom: 5px;
+.brand-row {
+    display: flex;
+    align-items: center;
+    gap: 3vmin; 
+    width: 100%;
+    justify-content: center;
 }
 
+/* Logos */
+.podcube-logo {
+    width: 12vmin;
+    height: 12vmin;
+    flex-shrink: 0;
+}
+.podcube-logo svg {
+    width: 100%;
+    height: 100%;
+    opacity: 0.5;
+    filter: drop-shadow(var(--shadow-x) var(--shadow-y) var(--shadow-blur) var(--shadow-color));
+}
+.podcube-logo img {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    object-fit: cover;
+    filter: drop-shadow(var(--shadow-x) var(--shadow-y) var(--shadow-blur) var(--shadow-color));
+}
+
+/* Track Metadata */
+.meta-container { 
+    text-align: left; 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
 .brand-label {
-    font-size: 1rem;
+    font-size: 1.8vmin; 
     text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #aaa; 
-    margin-bottom: 5px;
+    letter-spacing: 0.2vmin;
+    margin-bottom: 0.5vmin;
     font-weight: 600;
 }
-
 #track-name {
-    font-size: 1.5rem;
+    font-size: 3.5vmin; 
     font-weight: 400;
-    color: #fff;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    line-height: 1.2;
 }
 
-/* --- Progress Bar --- */
+/* Progress Bar */
 #progress-container {
     width: 100%;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
+    height: 0.8vmin; 
+    border-radius: 0;
     overflow: hidden;
+    margin-top: 2vmin;
+    background: transparent;
+    border: 1px solid currentColor;
 }
-
 #progress-bar {
     height: 100%;
     width: 0%; 
-    background: #6200ea; 
+    background: currentColor;
     transition: width 0.2s linear; 
-    box-shadow: 0 0 10px rgba(98, 0, 234, 0.5);
 }
 
-.hidden { display: none !important; }
+/* =========================================
+   SETTINGS MODAL OVERHAUL
+   ========================================= */
 
-/* --- Settings Trigger --- */
-#settings-trigger {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    font-size: 2rem;
-    opacity: 0.2;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.2s;
-    z-index: 10;
-}
-#settings-trigger:hover {
-    opacity: 1;
-    transform: rotate(90deg);
-}
-
-/* --- Settings Modal --- */
+/* The Modal Backdrop */
 #settings-modal {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.85);
-    z-index: 100;
+    z-index: 1000;
+    
+    /* Default: Align to right for desktop */
     display: flex;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(5px);
+    justify-content: flex-end; 
+    align-items: flex-start; /* Align top so scrolling works */
+    
+    background: transparent;
+    pointer-events: none; /* Let clicks pass through empty areas */
 }
 
+#settings-modal a{
+    color:white;
+    
+}
+
+/* The Modal Content Box */
 .settings-content {
-    background: #222;
-    color: #fff;
-    padding: 30px;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 450px; 
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    background: var(--modal-bg);
+    color: var(--main-text-color);
+    width: 400px;
+    max-width: 90vw;
+    height: auto;
+    max-height: 100vh;
+    overflow-y: auto; /* Enable scrolling if content is too tall */
+    
+    padding: 25px;
+    box-sizing: border-box;
+    pointer-events: auto; /* Re-enable clicks */
+    
+    border-left: 1px solid var(--modal-border);
+    box-shadow: -5px 0 20px rgba(0,0,0,0.5);
+    
+    /* NO ROUNDED CORNERS */
+    border-radius: 0 !important; 
+}
+
+/* Header */
+.settings-header h2 {
+    font-size: 1.5rem;
+    margin: 0 0 5px 0;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 10px;
+    display: inline-block;
+    cursor: grab; /* Drag handle */
+}
+.settings-header h2:active { cursor: grabbing; }
+
+.subtitle { margin: 0 0 20px 0; font-size: 0.85rem; color: var(--subtext-color); }
+.separator { border: 0; border-top: 1px solid var(--modal-border); margin: 20px 0; }
+
+/* --- Section 1: PodCube --- */
+.podcube-section {
+    border: 1px solid var(--accent-color);
+    background: var(--accent-color-dim);
+    padding: 15px;
+}
+.podcube-header { display: flex; gap: 15px; }
+.podcube-logo { width: 50px; height: 50px; flex-shrink: 0; }
+.podcube-controls { flex: 1; text-align: left; }
+.volume-control { margin-top: 10px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;}
+
+/* --- Section 2: Visuals --- */
+.visuals-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-top: 10px;
+}
+.color-picker-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+/* BIGGER SQUARES */
+.big-color-picker {
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    border: 2px solid var(--input-border);
+    cursor: pointer;
+    background: none;
+}
+.full-width-input { width: 100%; margin-bottom: 10px; }
+
+/* --- Section 3: Shadows --- */
+.shadow-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.medium-color-picker {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--input-border);
+    padding: 0;
+    background: none;
+}
+/* Helper class to vanish controls */
+.vanish { display: none !important; }
+
+/* --- Section 5: Rearrange --- */
+.highlight-section-subtle {
+    background: #333;
+    padding: 15px;
     border: 1px solid #444;
 }
-
-.settings-content h2 { margin-top: 0; }
-.subtitle { font-size: 0.85rem; color: #aaa; margin-bottom: 20px; }
-
-.form-group { margin-bottom: 20px; text-align: left; }
-.form-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #ccc; }
-
-input[type="text"], input[type="number"] {
-    width: 100%;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #555;
-    background: #333;
-    color: white;
-    font-size: 1rem;
-    box-sizing: border-box;
-}
-
-/* Checkbox Toggle Styling */
-.checkbox-wrapper {
+.rearrange-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
+}
+.small-btn { padding: 5px 10px; font-size: 0.8rem; width: auto; flex: unset;}
+
+/* --- Section 6: Actions --- */
+.actions-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+.big-btn {
     font-size: 1.1rem;
-    cursor: pointer;
+    padding: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
-input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    accent-color: #6200ea;
-    cursor: pointer;
+.centered-checkbox { justify-content: center; opacity: 0.8; font-size: 0.9rem; }
+
+/* --- Footer --- */
+.settings-footer {
+    margin-top: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--modal-border);
+    padding-top: 15px;
 }
-
-.color-row { display: flex; gap: 20px; }
-
-/* --- Buttons --- */
-.actions { display: flex; gap: 10px; margin-top: 25px; }
-button {
-    flex: 1;
-    padding: 12px;
+.text-btn {
+    background: none;
     border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 1rem;
-    transition: background 0.2s;
+    padding: 0;
+    color: #888;
+    text-decoration: underline;
+    font-size: 0.8rem;
 }
-.primary-btn { background: #6200ea; color: white; }
-.primary-btn:hover { background: #7c43bd; }
-.secondary-btn { background: #444; color: white; }
-.secondary-btn:hover { background: #555; }
-/* Danger Button (Stop) */
-.danger-btn { background: #d32f2f; color: white; }
-.danger-btn:hover { background: #b71c1c; }
+.danger-text:hover { color: var(--danger-color); }
+
+/* --- RESPONSIVE / MOBILE OVERRIDES --- */
+@media (max-width: 600px) {
+    #settings-modal {
+        justify-content: center; /* Center on screen */
+        align-items: flex-end; /* Anchor to bottom */
+        background: rgba(0,0,0,0.8); /* Add dimming background on mobile */
+        pointer-events: auto; /* Catch clicks on background */
+    }
+
+    .settings-content {
+        width: 100%;
+        max-width: 100%;
+        height: 85vh; /* Take up 85% of screen height */
+        border-radius: 0; /* Strict no rounded corners */
+        border-left: none;
+        border-top: 2px solid var(--accent-color);
+        animation: slideUp 0.3s ease-out;
+    }
+    
+    /* Make touch targets bigger */
+    input[type="checkbox"] { width: 25px; height: 25px; }
+    input[type="range"] { height: 20px; }
+    .big-btn { padding: 20px; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+/* =========================================
+   10. CUSTOM LAYOUT / FREE POSITIONING
+   ========================================= */
+/* Container Override */
+#app-container.custom-layout {
+    display: block; /* Disables flex centering */
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Draggable Items */
+.draggable-item {
+    position: absolute; 
+    transform: translate(-50%, -50%);
+    cursor: auto; /* Default to normal mouse when locked */
+    left: 50%;
+    top: 50%;
+    z-index: 10;
+    transition: color 0.3s, background 0.3s;
+    white-space: nowrap; 
+}
+
+/* Edit Mode Visual Cues */
+body.layout-editing .draggable-item {
+    outline: 2px dashed rgba(255, 255, 255, 0.3);
+    cursor: grab; 
+    background: rgba(0, 0, 0, 0.5);
+    user-select: none; 
+    z-index: 100;
+}
+body.layout-editing .draggable-item:active {
+    cursor: grabbing;
+    outline: 2px dashed var(--accent-color);
+    background: rgba(0, 0, 0, 0.7);
+}
+
+/* Force inherit cursor so text fields grab too */
+body.layout-editing [contenteditable="true"] {
+    cursor: inherit;
+}
+
+/* =========================================
+   11. UTILITIES
+   ========================================= */
+.hidden { display: none !important; }
+
+@keyframes fadeIn { 
+    to { opacity: 1; } 
+}

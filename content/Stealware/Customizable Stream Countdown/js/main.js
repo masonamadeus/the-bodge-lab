@@ -1,30 +1,46 @@
+/* js/main.js */
 import { getState } from './state.js';
 import * as UI from './ui.js'; 
 
-function init() {
+async function init() {
     // 1. Initial Render (Visuals)
     const initialState = getState();
     UI.applySettings(initialState);
     UI.initEventListeners();
+    
+    // 2. Load Branding (PodCube Logo)
+    await UI.loadBranding();
 
-    // 2. Check for Autoplay (OBS Mode)
+    // 3. Autoplay Determination
     const params = new URLSearchParams(window.location.search);
-    const isAutoplay = params.has('autoplay') && params.get('autoplay') === '1';
+    const isAutoplay = params.get('autoplay') === '1';
 
     if (isAutoplay) {
-        // OBS Mode: Start immediately
-        console.log("Autoplay detected. Starting experience...");
-        UI.startExperience(initialState);
+        // OBS/Autoplay Mode
+        console.log("[Main] Autoplay detected. Warming up audio...");
+        
+        /**
+         * Wait 1 second to ensure OBS Browser Source 
+         * has initialized its internal audio context.
+         */
+        setTimeout(() => {
+            UI.startExperience(initialState);
+        }, 1000);
+
     } else {
-        // Desktop Mode: Attach Listener to the static button
+        // Desktop Mode: Manual Start
         const startBtn = document.getElementById('main-start-btn');
         
-        startBtn.addEventListener('click', () => {
-            // Fetch FRESH state (in case user changed minutes/audio settings)
-            const currentState = getState(); 
-            UI.startExperience(currentState);
-        });
+        if (startBtn) {
+            startBtn.addEventListener('click', () => {
+                // Fetch FRESH state in case the user edited the 
+                // timer minutes while the modal was open.
+                const currentState = getState(); 
+                UI.startExperience(currentState);
+            });
+        }
     }
 }
 
+// Start the app
 init();

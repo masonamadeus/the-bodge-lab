@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,81 +8,170 @@
     <link rel="stylesheet" href="css/style.css">
     <link id="dynamic-font" rel="stylesheet" href="">
 </head>
+
 <body>
 
     <main id="app-container">
-        <h1 id="stream-title">Stream Starting</h1>
-        <div id="timer-display">00:00</div>
-        
-        <button id="main-start-btn" class="start-btn">▶ Start Timer</button>
+        <h1 id="stream-title" contenteditable="true" spellcheck="false">Stream Starting</h1>
+
+        <div id="timer-container">
+            <span id="timer-min" contenteditable="true" spellcheck="false" title="Click to edit minutes">05</span>
+            <span class="colon">:</span>
+            <span id="timer-sec" contenteditable="true" spellcheck="false" title="Click to edit seconds">00</span>
+        </div>
+
+        <button id="main-start-btn" class="start-btn">Start Timer</button>
 
         <div id="now-playing" class="hidden">
-            <div class="meta-container">
-                <div class="brand-label"><em>You're Listening to PodCube™</em></div>
-                <div id="track-name">Loading audio...</div>
+            <div class="brand-row">
+                <div class="podcube-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M4 11a9 9 0 0 1 9 9"></path>
+                        <path d="M4 4a16 16 0 0 1 16 16"></path>
+                        <circle cx="5" cy="19" r="1"></circle>
+                    </svg>
+                </div>
+                <div class="meta-container">
+                    <label>While you wait...</label>
+                    <div class="brand-label">You're Listening to PodCube™</div>
+                    <div id="track-name">Loading audio...</div>
+                    <div id="progress-container">
+                        <div id="progress-bar"></div>
+                    </div>
+                </div>
+
             </div>
-        
-            <div id="progress-container">
-                <div id="progress-bar"></div>
-            </div>
+
+
         </div>
     </main>
 
     <div id="settings-trigger" title="Open Settings">⚙️</div>
 
     <div id="settings-modal" class="hidden">
-        <div class="settings-content">
+    <div class="settings-content">
+        
+        <div class="settings-header">
             <h2>Configuration</h2>
-            <p class="subtitle">Update settings here, then copy the link for OBS.</p>
-            
-            <div class="form-group">
-                <label>Title Text</label>
-                <input type="text" id="input-title" data-param="title">
-            </div>
+            <p class="subtitle">Drag menu to move • Scroll for more</p>
+        </div>
 
-            <div class="form-group">
-                <label>Timer (Minutes)</label>
-                <input type="number" id="input-minutes" data-param="minutes" min="1" value="5">
-            </div>
+        <div class="highlight-section podcube-section">
+            <div class="podcube-header">
+                <div class="podcube-logo settings-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 11a9 9 0 0 1 9 9"></path>
+                        <path d="M4 4a16 16 0 0 1 16 16"></path>
+                        <circle cx="5" cy="19" r="1"></circle>
+                    </svg>
+                </div>
+                <div class="podcube-controls">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" id="input-audio-enabled" data-param="audioEnabled">
+                        <span class="enhanced-label"><b>PodCube™</b> Enhanced Fill</span>
+                    </label>
+                    <p class="tiny-note">Automatically plays <a href="https://poweredbypodcube.com/" target="_blank">PodCube™</a> episodes to fill time.</p>
 
-            <div class="form-group">
-                <label>Google Font Name</label>
-                <input type="text" id="input-font" data-param="font" placeholder="e.g. Roboto, Open Sans, Bangers">
-            </div>
-            
-            <div class="form-group">
-                <label>Colors</label>
-                <div class="color-row">
-                    <label>Text: <input type="color" id="input-color-text" data-param="colorText"></label>
-                    <label>Bg: <input type="color" id="input-color-bg" data-param="colorBg"></label>
+                    <div class="volume-control">
+                        <label>Volume</label>
+                        <input type="range" id="input-volume" data-param="volume" min="0" max="1" step="0.1">
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <hr>
+        <hr class="separator">
 
-            <div class="form-group">
-                <label>PodCube Integration</label>
-                <label class="checkbox-wrapper">
-                    <input type="checkbox" id="input-audio-enabled" data-param="audioEnabled">
-                    <span>Play Episodes (Smart Fill)</span>
-                </label>
-            </div>
-
-            <div class="form-group">
-                 <label>Volume</label>
-                 <input type="range" id="input-volume" data-param="volume" min="0" max="1" step="0.1">
-            </div>
-
-            <div class="actions">
-                <button id="copy-url-btn" class="primary-btn">Copy OBS Link</button>
-                <button id="stop-timer-btn" class="danger-btn">Stop Timer</button>
-            </div>
-            <div style="margin-top: 10px; text-align: right;">
-                <button id="close-settings" class="secondary-btn" style="width: auto;">Close Menu</button>
+        <div class="form-group">
+            <label class="section-label">Font (any font from <a href="https://fonts.google.com/" target="_blank">Google Fonts</a>)</label>
+            <input type="text" id="input-font" data-param="font" placeholder="Font Name (e.g. Roboto, Bangers)" class="full-width-input">
+            
+            <div class="visuals-row">
+                <div class="color-picker-group">
+                    <label>Text</label>
+                    <input type="color" id="input-color-text" data-param="colorText" class="big-color-picker" title="Text Color">
+                </div>
+                <div class="color-picker-group">
+                    <label>Bg</label>
+                    <input type="color" id="input-color-bg" data-param="colorBg" class="big-color-picker" title="Background Color">
+                </div>
+                <div class="checkbox-group-vertical">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" id="input-bg-transparent" data-param="bgTransparent">
+                        <span>Transparent Bg</span>
+                    </label>
+                </div>
             </div>
         </div>
+
+        <div class="form-group shadow-section">
+            <div class="shadow-header">
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="input-shadow-enabled" data-param="shadowEnabled">
+                    <span>Drop Shadow</span>
+                </label>
+                <input type="color" id="input-color-shadow" data-param="shadowColor" class="medium-color-picker" title="Shadow Color">
+            </div>
+
+            <div id="shadow-controls-container">
+                <div class="slider-row">
+                    <label>X</label>
+                    <input type="range" id="input-shadow-x" data-param="shadowX" min="-2" max="2" step="0.1">
+                </div>
+                <div class="slider-row">
+                    <label>Y</label>
+                    <input type="range" id="input-shadow-y" data-param="shadowY" min="-2" max="2" step="0.1">
+                </div>
+                <div class="slider-row">
+                    <label>Blur</label>
+                    <input type="range" id="input-shadow-blur" data-param="shadowBlur" min="0" max="5" step="0.1">
+                </div>
+            </div>
+        </div>
+
+        <hr class="separator">
+
+        <div class="form-group hidden">
+             <input type="text" id="input-title" data-param="title">
+            <input type="number" id="input-minutes" data-param="minutes">
+            <input type="number" id="input-seconds" data-param="seconds">
+            <input type="range" id="slider-minutes" class="hidden"> 
+            <input type="range" id="slider-seconds" class="hidden">
+        </div>
+
+        <div class="form-group rearrange-section highlight-section-subtle">
+            <div class="rearrange-header">
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="input-free-pos" data-param="layoutMode">
+                    <strong>Rearrange Mode</strong>
+                </label>
+                <button id="btn-reset-layout" class="secondary-btn small-btn">Reset</button>
+            </div>
+            <p class="tiny-note">Check to unlock and drag elements. Uncheck to lock positions and edit text.</p>
+        </div>
+
+        <div class="actions-group">
+            <button id="copy-url-btn" class="primary-btn big-btn">Copy OBS Link</button>
+            
+            <label class="checkbox-wrapper centered-checkbox">
+                <input type="checkbox" id="input-autoplay" data-param="autoplay">
+                <span>Autoplay on Load (Required for OBS)</span>
+            </label>
+
+            <button id="stop-timer-btn" class="danger-btn">Stop Timer</button>
+        </div>
+
+        <div class="settings-footer">
+            <button id="btn-reset-all" class="text-btn danger-text">⚠️ Factory Reset</button>
+            <button id="close-settings" class="secondary-btn">Close Menu</button>
+        </div>
+
     </div>
+</div>
 
     <script type="module" src="js/main.js"></script>
 </body>
+
 </html>
