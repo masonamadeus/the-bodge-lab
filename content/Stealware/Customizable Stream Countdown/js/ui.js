@@ -28,9 +28,12 @@ const DOM = {
     fontLink: document.getElementById('dynamic-font'),
     logoContainers: document.querySelectorAll('.podcube-logo'),
 
-    inputFreePos: document.getElementById('input-free-pos'),
+    btnToggleLayout: document.getElementById('btn-toggle-layout'),
     btnResetLayout: document.getElementById('btn-reset-layout'),
     btnResetAll: document.getElementById('btn-reset-all'),
+
+    shadowCheckbox: document.getElementById('input-shadow-enabled'),
+    shadowContainer: document.getElementById('shadow-controls-container'),
     
     // The draggable targets
     dragTargets: {
@@ -51,10 +54,25 @@ export async function loadBranding() {
 }
 
 export function applySettings(state) {
+    if (window.obsstudio) {
+        document.documentElement.classList.add('obs-environment');
+    }
     DOM.title.textContent = state.title;
-    const isTrans = (state.bgTransparent === 'true');
-    const finalBg = isTrans ? 'rgba(0,0,0,0)' : state.colorBg;
-    document.documentElement.style.setProperty('--main-bg-color', finalBg);
+
+
+   document.documentElement.style.setProperty('--main-bg-color', state.colorBg);
+    
+    //    Toggle a class indicating the User WANTS transparency.
+    //    Our CSS will decide whether to actually apply it (only if .obs-environment is also present).
+    if (state.bgTransparent === 'true') {
+        document.documentElement.classList.add('transparency-requested');
+    } else {
+        document.documentElement.classList.remove('transparency-requested');
+    }
+    
+    if (state.bgTransparent === 'true' && !window.obsstudio) {
+        // console.log("Transparency requested, but visible because not in OBS.");
+    }
     document.body.style.color = state.colorText;
 
     const shadowOn = (state.shadowEnabled === 'true');
@@ -75,6 +93,9 @@ export function applySettings(state) {
                 input.checked = (state[key] === 'true');
             } else {
                 input.value = state[key];
+                if (input.type === 'color') {
+                    updateColorSwatch(input);
+                }
             }
         }
     });
@@ -86,6 +107,14 @@ export function applySettings(state) {
 
     if (!DOM.timerContainer.classList.contains('running')) {
         updateTimerDisplay(state.minutes, state.seconds);
+    }
+
+    if (DOM.shadowContainer) {
+        if (state.shadowEnabled === 'true') {
+            DOM.shadowContainer.classList.remove('vanish');
+        } else {
+            DOM.shadowContainer.classList.add('vanish');
+        }
     }
 
     // --- Apply Layout Mode ---
@@ -104,15 +133,6 @@ export function applySettings(state) {
         if (state.posTimer) applyPos(DOM.dragTargets.timer, state.posTimer);
         if (state.posTrack) applyPos(DOM.dragTargets.track, state.posTrack);
 
-        // SYNC THE CHECKBOX:
-        // Only check the box if we are actively "editing" (which we don't persist usually),
-        // OR just leave it unchecked so the user defaults to "Locked" mode.
-        // Let's leave it unchecked by default on load to protect the layout.
-        // The user must click "Enable" to start moving things again.
-        if (DOM.inputFreePos.checked) {
-            manageGhostBox(true);
-            toggleLayoutEditing(true);
-        }
     } else {
         DOM.app.classList.remove('custom-layout');
         Object.values(DOM.dragTargets).forEach(el => el.classList.remove('draggable-item'));
@@ -120,6 +140,7 @@ export function applySettings(state) {
 }
 
 export function initEventListeners() {
+
     DOM.settingsTrigger.addEventListener('click', () => DOM.settingsModal.classList.remove('hidden'));
     DOM.closeSettings.addEventListener('click', () => DOM.settingsModal.classList.add('hidden'));
 
@@ -132,6 +153,16 @@ export function initEventListeners() {
                 
                 // 2. Reload the page to load defaults
                 window.location.reload();
+            }
+        });
+    }
+
+    if (DOM.shadowCheckbox && DOM.shadowContainer) {
+        DOM.shadowCheckbox.addEventListener('change', () => {
+            if (DOM.shadowCheckbox.checked) {
+                DOM.shadowContainer.classList.remove('vanish');
+            } else {
+                DOM.shadowContainer.classList.add('vanish');
             }
         });
     }
@@ -181,6 +212,9 @@ export function initEventListeners() {
             input.addEventListener('input', (e) => {
                 const key = e.target.dataset.param;
                 updateParam(key, e.target.value);
+                if (e.target.type === 'color') {
+                    updateColorSwatch(e.target);
+                }
             });
         }
     });
@@ -287,42 +321,45 @@ export function initEventListeners() {
         DOM.progressBar.style.width = `${e.detail.percent}%`;
     });
 
-    DOM.inputFreePos.addEventListener('change', (e) => {
-        const isEditing = e.target.checked;
-        
-        if (isEditing) {
-            // 1. REVEAL FIRST: Ensure elements are visible so we can measure them.
-            manageGhostBox(true);
+    if (DOM.btnToggleLayout) {
+        DOM.btnToggleLayout.addEventListener('click', () => {
+            // Check current state by looking at the body class
+            const isCurrentlyEditing = document.body.classList.contains('layout-editing');
 
-            // 2. FREEZE SECOND: Now that dimensions are valid, capture positions.
-            if (!DOM.app.classList.contains('custom-layout')) {
-                freezeCurrentPositions();
+            if (!isCurrentlyEditing) {
+                // TURN ON
+                manageGhostBox(true);
+                
+                // If we aren't already in custom mode, freeze current positions so they don't jump
+                if (!DOM.app.classList.contains('custom-layout')) {
+                    freezeCurrentPositions();
+                }
+
+                toggleLayoutEditing(true);
+                updateParam('layoutMode', 'custom');
+            } else {
+                // TURN OFF
+                toggleLayoutEditing(false);
+                manageGhostBox(false);
+                // We leave 'layoutMode' as custom so positions persist
             }
-            
-            // 3. ENABLE EDITING: Turn on outlines/cursors
-            toggleLayoutEditing(true);
-            updateParam('layoutMode', 'custom');
-        } else {
-            // Turning off
-            toggleLayoutEditing(false);
-            manageGhostBox(false); // Hide the ghost box if needed
-        }
-    });
+        });
+    }
 
     DOM.btnResetLayout.addEventListener('click', () => {
         if(confirm("Reset all elements to center?")) {
-            // 1. Clear State
+            // Clear State
             updateParam('posTitle', '');
             updateParam('posTimer', '');
             updateParam('posTrack', '');
-            updateParam('layoutMode', 'auto'); 
+            updateParam('layoutMode', 'auto');
             
-            // 2. Clear UI
-            DOM.inputFreePos.checked = false;
-            toggleLayoutEditing(false); // Turn off outlines
-            DOM.app.classList.remove('custom-layout'); // Revert to flex
+            toggleLayoutEditing(false); // This now handles the button text reset
+            manageGhostBox(false);
             
-            // 3. Clear Inline Styles (Crucial for Flexbox to work again)
+            DOM.app.classList.remove('custom-layout'); 
+
+            // Clear Inline Styles
             Object.values(DOM.dragTargets).forEach(el => {
                 el.style.left = '';
                 el.style.top = '';
@@ -537,18 +574,37 @@ function freezeCurrentPositions() {
     });
 }
 
+
 function toggleLayoutEditing(enabled) {
     if (enabled) {
+        // --- STATE: EDITING ---
         document.body.classList.add('layout-editing');
         DOM.app.classList.add('custom-layout'); 
         Object.values(DOM.dragTargets).forEach(el => el.classList.add('draggable-item'));
-        // Note: Ghost box logic moved to manageGhostBox()
+        
+        if (DOM.startBtn) DOM.startBtn.classList.add('hidden');
+
+        // Update Button State
+        if (DOM.btnToggleLayout) {
+            DOM.btnToggleLayout.textContent = "Done";
+            DOM.btnToggleLayout.classList.add('active-state'); // We will style this green
+        }
+
     } else {
+        // --- STATE: LOCKED ---
         document.body.classList.remove('layout-editing');
-        // Note: We leave 'custom-layout' class ON so positions stick.
+        
+        if (DOM.startBtn && !DOM.timerContainer.classList.contains('running')) {
+            DOM.startBtn.classList.remove('hidden');
+        }
+
+        // Update Button State
+        if (DOM.btnToggleLayout) {
+            DOM.btnToggleLayout.textContent = "Unlock";
+            DOM.btnToggleLayout.classList.remove('active-state');
+        }
     }
 }
-
 function makeElementDraggable(element, paramKey) {
     let isDragging = false;
     let startX, startY;
@@ -623,4 +679,10 @@ function loadGoogleFont(fontName) {
     const formatted = fontName.trim().replace(/\s+/g, '+');
     DOM.fontLink.href = `https://fonts.googleapis.com/css2?family=${formatted}&display=swap`;
     document.body.style.fontFamily = `'${fontName}', sans-serif`;
+}
+
+function updateColorSwatch(input) {
+    if (input && input.parentElement && input.parentElement.classList.contains('color-swatch-wrapper')) {
+        input.parentElement.style.backgroundColor = input.value;
+    }
 }

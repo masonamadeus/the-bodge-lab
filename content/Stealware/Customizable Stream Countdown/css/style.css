@@ -1,4 +1,29 @@
 /* =========================================
+   OBS ENVIRONMENT OVERRIDES
+   ========================================= */
+
+/* 1. Smart Transparency:
+   Only apply transparent background if:
+   (a) We are in OBS (.obs-environment) AND
+   (b) The user checked the box (.transparency-requested)
+*/
+html.obs-environment.transparency-requested {
+    --main-bg-color: transparent !important;
+}
+
+/* 2. Settings Cog Visibility:
+   Default to invisible in OBS, but show on hover.
+   (Updated selector to match <html> class)
+*/
+html.obs-environment #settings-trigger {
+    opacity: 0;
+}
+
+html.obs-environment #settings-trigger:hover {
+    opacity: 1;
+}
+
+/* =========================================
    1. THEME VARIABLES
    ========================================= */
 :root {
@@ -41,7 +66,7 @@
     /* --- Glassmorphism (Start Button) --- */
     --glass-bg: rgba(255, 255, 255, 0.2);
     --glass-border: rgba(255, 255, 255, 0.4);
-    --glass-hover: rgba(255, 255, 255, 0.4);
+    --glass-hover: rgba(0, 0, 0, 0.2);
 }
 
 /* =========================================
@@ -152,8 +177,8 @@ h1, #timer-container, .meta-container, #track-name {
 /* Visual Styling */
 .start-btn {
     padding: 1.5vmin 4vmin;
-    font-size: 2.5vmin; 
-    background: var(--glass-bg);
+    font-size: 2.5vmin;
+    background: transparent;
     border: 0.2vmin solid currentColor;
     color: currentColor;
     border-radius: 0;
@@ -245,194 +270,272 @@ h1, #timer-container, .meta-container, #track-name {
 }
 
 /* =========================================
-   SETTINGS MODAL OVERHAUL
+   SETTINGS MODAL
    ========================================= */
 
-/* The Modal Backdrop */
+#settings-trigger {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-size: 3rem;
+    opacity: 0.2; 
+    cursor: pointer;
+    z-index: 10;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+
+#settings-trigger:hover {
+    opacity: 1;
+    transform: rotate(3deg); 
+}
+
+/* Backdrop */
 #settings-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0; width: 100%; height: 100%;
     z-index: 1000;
-    
-    /* Default: Align to right for desktop */
     display: flex;
-    justify-content: flex-end; 
-    align-items: flex-start; /* Align top so scrolling works */
-    
-    background: transparent;
-    pointer-events: none; /* Let clicks pass through empty areas */
+    justify-content: flex-end; /* Drawer style on desktop */
+    background: rgba(0,0,0,0.4); /* Slight dim for focus */
+    color: rgba(190, 190, 190, 255);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
 }
 
-#settings-modal a{
-    color:white;
-    
+#settings-modal a {
+    color: white;
 }
 
-/* The Modal Content Box */
+#settings-modal:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Content Drawer */
 .settings-content {
-    background: var(--modal-bg);
-    color: var(--main-text-color);
-    width: 400px;
-    max-width: 90vw;
-    height: auto;
-    max-height: 100vh;
-    overflow-y: auto; /* Enable scrolling if content is too tall */
-    
-    padding: 25px;
-    box-sizing: border-box;
-    pointer-events: auto; /* Re-enable clicks */
-    
-    border-left: 1px solid var(--modal-border);
-    box-shadow: -5px 0 20px rgba(0,0,0,0.5);
-    
-    /* NO ROUNDED CORNERS */
-    border-radius: 0 !important; 
-}
-
-/* Header */
-.settings-header h2 {
-    font-size: 1.5rem;
-    margin: 0 0 5px 0;
-    border-bottom: 2px solid var(--accent-color);
-    padding-bottom: 10px;
-    display: inline-block;
-    cursor: grab; /* Drag handle */
-}
-.settings-header h2:active { cursor: grabbing; }
-
-.subtitle { margin: 0 0 20px 0; font-size: 0.85rem; color: var(--subtext-color); }
-.separator { border: 0; border-top: 1px solid var(--modal-border); margin: 20px 0; }
-
-/* --- Section 1: PodCube --- */
-.podcube-section {
-    border: 1px solid var(--accent-color);
-    background: var(--accent-color-dim);
-    padding: 15px;
-}
-.podcube-header { display: flex; gap: 15px; }
-.podcube-logo { width: 50px; height: 50px; flex-shrink: 0; }
-.podcube-controls { flex: 1; text-align: left; }
-.volume-control { margin-top: 10px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;}
-
-/* --- Section 2: Visuals --- */
-.visuals-row {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    margin-top: 10px;
-}
-.color-picker-group {
+    background: #1a1a1a;
+    width: 420px;
+    max-width: 100vw;
+    height: 100%;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    border-left: 1px solid #333;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 5px;
+    
+    /* NO ROUNDED CORNERS GLOBAL RULE */
+    border-radius: 0 !important;
 }
-/* BIGGER SQUARES */
-.big-color-picker {
-    width: 50px;
-    height: 50px;
-    padding: 0;
-    border: 2px solid var(--input-border);
-    cursor: pointer;
-    background: none;
-}
-.full-width-input { width: 100%; margin-bottom: 10px; }
 
-/* --- Section 3: Shadows --- */
-.shadow-header {
+/* --- Header --- */
+.settings-header {
+    padding: 20px;
+    background: #222;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.settings-header h2 { margin: 0; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; color: #fff; }
+.icon-btn {
+    background: none; border: none; color: #888; font-size: 1.5rem; cursor: pointer;
+    padding: 0 10px;
+}
+.icon-btn:hover { color: #fff; }
+
+/* --- Scroll Area --- */
+.settings-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* --- Sections --- */
+.config-section {
+    margin-bottom: 30px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 20px;
+}
+.config-section:last-child { border-bottom: none; }
+.config-section h3 {
+    font-size: 0.9rem;
+    color: #888;
+    text-transform: uppercase;
+    margin: 0 0 15px 0;
+    letter-spacing: 1px;
+}
+
+/* --- Hero Card (PodCube) --- */
+.hero-card {
+    background: var(--accent-color-dim);
+    border: 1px solid var(--accent-color);
+    padding: 20px;
+    margin-bottom: 30px;
+}
+.card-header-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
 }
-.medium-color-picker {
-    width: 30px;
-    height: 30px;
-    border: 1px solid var(--input-border);
-    padding: 0;
-    background: none;
+.podcube-icon-small svg { width: 24px; height: 24px; color: var(--accent-color); }
+
+.settings-logo {
+    width: 60px !important;
+    height: 60px !important;
+    margin-right: 15px; /* Spacing between logo and text */
 }
-/* Helper class to vanish controls */
+
+/* Ensure the image inside fills the square */
+.settings-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* --- Toggles --- */
+.toggle-wrapper { display: flex; align-items: center; gap: 10px; }
+.toggle-label { font-weight: bold; color: #fff; }
+.toggle-switch {
+    width: 40px; height: 20px; 
+    accent-color: var(--accent-color);
+    cursor: pointer;
+}
+.toggle-switch-small {
+    width: 30px; height: 16px;
+    accent-color: var(--accent-color);
+}
+.section-header-toggle {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+}
+.section-header-toggle h3 { margin: 0; }
+
+/* The Layout Toggle Button */
+#btn-toggle-layout {
+    min-width: 80px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+/* Active State (When "Done" is showing) */
+#btn-toggle-layout.active-state {
+    background-color: var(--accent-color); /* Bright Blue */
+    color: white;
+    border-color: var(--accent-color);
+}
+
+/* Hover state for active button */
+#btn-toggle-layout.active-state:hover {
+    filter: brightness(1.1);
+}
+
+/* --- Helper Text --- */
+.helper-text { font-size: 0.85rem; color: #aaa; margin: 5px 0 15px 0; line-height: 1.4; }
+.helper-text a { color: #fff; text-decoration: underline; }
+
+/* --- Grid Layouts --- */
+.input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+.grid-item.full-width { grid-column: span 2; }
+.grid-item label { display: block; font-size: 0.8rem; color: #ccc; margin-bottom: 5px; }
+
+/* --- Inputs --- */
+input[type="text"] {
+    width: 100%;
+    background: #333;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 10px;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+input[type="text"]:focus { border-color: var(--accent-color); outline: none; }
+
+/* --- Color Swatches --- */
+.color-swatch-wrapper {
+    width: 100%;
+    height: 40px;
+    background: #333;
+    border: 1px solid #444;
+    position: relative;
+    cursor: pointer;
+}
+
+.color-swatch-wrapper input[type="color"] {
+    width: 100%; 
+    height: 100%; 
+    opacity: 0; /* Invisible, so we see the wrapper background */
+    cursor: pointer;
+    position: absolute; 
+    top: 0; 
+    left: 0;
+    padding: 0; margin: 0; border: none;
+}
+/* We can use JS to update the wrapper bg, OR just let the native picker handle it. 
+   Native pickers are tricky to style perfectly "square". 
+   Let's stick to a clean standardized look: */
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: none; }
+
+/* --- Sliders --- */
+.control-row { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+.control-row input{ width: 100%;}
+.slider-stack { display: flex; flex-direction: column; gap: 8px; }
+.slider-row-compact { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: #aaa; }
+.slider-row-compact input { flex: 1; }
+
+.mini-color { width: 30px; height: 30px; padding: 0; border: 1px solid #555; background: none; }
 .vanish { display: none !important; }
 
-/* --- Section 5: Rearrange --- */
-.highlight-section-subtle {
-    background: #333;
-    padding: 15px;
-    border: 1px solid #444;
+/* --- Footer Actions --- */
+.settings-actions {
+    background: #222;
+    padding: 20px;
+    border-top: 1px solid #333;
 }
-.rearrange-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.autoplay-row {
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+    margin-bottom: 20px;
+    font-size: 0.9rem; color: #ccc;
 }
-.small-btn { padding: 5px 10px; font-size: 0.8rem; width: auto; flex: unset;}
+.block-btn {
+    display: block; width: 100%; padding: 15px;
+    font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+    border: none; cursor: pointer;
+}
+.primary-btn { background: var(--accent-color); color: #fff; }
+.primary-btn:hover { filter: brightness(1.1); }
+.danger-btn { background: #333; color: var(--danger-color); border: 1px solid var(--danger-color); }
+.danger-btn:hover { background: var(--danger-color); color: #fff; }
 
-/* --- Section 6: Actions --- */
-.actions-group {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-top: 20px;
-}
-.big-btn {
-    font-size: 1.1rem;
-    padding: 15px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-.centered-checkbox { justify-content: center; opacity: 0.8; font-size: 0.9rem; }
+.subtle-btn {
+    background: none; border: none; color: #666;
+    font-size: 0.8rem; cursor: pointer; margin-top: 5px;
 
-/* --- Footer --- */
-.settings-footer {
-    margin-top: 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 1px solid var(--modal-border);
-    padding-top: 15px;
 }
-.text-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    color: #888;
-    text-decoration: underline;
-    font-size: 0.8rem;
-}
-.danger-text:hover { color: var(--danger-color); }
+.subtle-btn:hover { color: #aaa; }
+.text-btn { background: none; border: none; color: var(--accent-color); text-decoration: underline; cursor: pointer; }
 
-/* --- RESPONSIVE / MOBILE OVERRIDES --- */
+/* --- Spacer --- */
+.spacer { height: 20px; }
+
+/* --- MOBILE --- */
 @media (max-width: 600px) {
     #settings-modal {
-        justify-content: center; /* Center on screen */
-        align-items: flex-end; /* Anchor to bottom */
-        background: rgba(0,0,0,0.8); /* Add dimming background on mobile */
-        pointer-events: auto; /* Catch clicks on background */
+        align-items: flex-end; /* Bottom sheet on mobile */
     }
-
     .settings-content {
         width: 100%;
-        max-width: 100%;
-        height: 85vh; /* Take up 85% of screen height */
-        border-radius: 0; /* Strict no rounded corners */
+        height: 85vh; /* Partial height */
         border-left: none;
-        border-top: 2px solid var(--accent-color);
-        animation: slideUp 0.3s ease-out;
+        border-top: 1px solid #333;
     }
-    
-    /* Make touch targets bigger */
-    input[type="checkbox"] { width: 25px; height: 25px; }
-    input[type="range"] { height: 20px; }
-    .big-btn { padding: 20px; }
-}
-
-@keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
 }
 
 /* =========================================

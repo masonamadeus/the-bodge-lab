@@ -50,126 +50,124 @@
     <div id="settings-trigger" title="Open Settings">⚙️</div>
 
     <div id="settings-modal" class="hidden">
-    <div class="settings-content">
-        
-        <div class="settings-header">
-            <h2>Configuration</h2>
-            <p class="subtitle">Drag menu to move • Scroll for more</p>
-        </div>
+        <div class="settings-content">
+            
+            <div class="settings-header">
+                <h2>Stream Settings</h2>
+                <button id="close-settings" class="icon-btn" title="Close">✕</button>
+            </div>
 
-        <div class="highlight-section podcube-section">
-            <div class="podcube-header">
-                <div class="podcube-logo settings-logo">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 11a9 9 0 0 1 9 9"></path>
-                        <path d="M4 4a16 16 0 0 1 16 16"></path>
-                        <circle cx="5" cy="19" r="1"></circle>
-                    </svg>
-                </div>
-                <div class="podcube-controls">
-                    <label class="checkbox-wrapper">
-                        <input type="checkbox" id="input-audio-enabled" data-param="audioEnabled">
-                        <span class="enhanced-label"><b>PodCube™</b> Enhanced Fill</span>
-                    </label>
-                    <p class="tiny-note">Automatically plays <a href="https://poweredbypodcube.com/" target="_blank">PodCube™</a> episodes to fill time.</p>
-
-                    <div class="volume-control">
+            <div class="settings-scroll-area">
+                
+                <section class="config-card hero-card">
+                    <div class="card-header-row">
+                        <div class="podcube-logo settings-logo">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg>
+                        </div>
+                        <div class="toggle-wrapper">
+                            <label for="input-audio-enabled" class="toggle-label">PodCube™ Enhanced Experience [P.E.E.]</label>
+                            <input type="checkbox" id="input-audio-enabled" data-param="audioEnabled" class="toggle-switch">
+                        </div>
+                    </div>
+                    <p class="helper-text">Auto-plays hilarious, high quality <a href="https://poweredbypodcube.com/" target="_blank">PodCube™</a> episodes to fill time until the countdown ends.</p>
+                    
+                    <div class="control-row">
                         <label>Volume</label>
                         <input type="range" id="input-volume" data-param="volume" min="0" max="1" step="0.1">
                     </div>
-                </div>
-            </div>
-        </div>
+                </section>
 
-        <hr class="separator">
+                <section class="config-section">
+                    <h3>Visual Style</h3>
+                    
+                    <div class="input-grid">
+                        <div class="grid-item full-width">
+                            <label>Type the name of any font from <a href="https://fonts.google.com/">Google Fonts</a>.</label>
+                            <input type="text" id="input-font" data-param="font" placeholder="e.g. Roboto, Bangers">
+                        </div>
 
-        <div class="form-group">
-            <label class="section-label">Font (any font from <a href="https://fonts.google.com/" target="_blank">Google Fonts</a>)</label>
-            <input type="text" id="input-font" data-param="font" placeholder="Font Name (e.g. Roboto, Bangers)" class="full-width-input">
-            
-            <div class="visuals-row">
-                <div class="color-picker-group">
-                    <label>Text</label>
-                    <input type="color" id="input-color-text" data-param="colorText" class="big-color-picker" title="Text Color">
-                </div>
-                <div class="color-picker-group">
-                    <label>Bg</label>
-                    <input type="color" id="input-color-bg" data-param="colorBg" class="big-color-picker" title="Background Color">
-                </div>
-                <div class="checkbox-group-vertical">
-                    <label class="checkbox-wrapper">
+                        <div class="grid-item">
+                            <label>Text Color</label>
+                            <div class="color-swatch-wrapper">
+                                <input type="color" id="input-color-text" data-param="colorText">
+                            </div>
+                        </div>
+
+                        <div class="grid-item">
+                            <label>Background</label>
+                            <div class="color-swatch-wrapper">
+                                <input type="color" id="input-color-bg" data-param="colorBg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row-option">
                         <input type="checkbox" id="input-bg-transparent" data-param="bgTransparent">
-                        <span>Transparent Bg</span>
-                    </label>
+                        <label for="input-bg-transparent">Transparent Background (OBS)</label>
+                    </div>
+                </section>
+
+                <section class="config-section">
+                    <div class="section-header-toggle">
+                        <h3>Drop Shadow</h3>
+                        <input type="checkbox" id="input-shadow-enabled" data-param="shadowEnabled" class="toggle-switch-small">
+                    </div>
+                    
+                    <div id="shadow-controls-container">
+                        <div class="control-row">
+                            <label>Color</label>
+                            <input type="color" id="input-color-shadow" data-param="shadowColor" class="mini-color">
+                        </div>
+                        <div class="slider-stack">
+                            <div class="slider-row-compact">
+                                <span>X</span>
+                                <input type="range" id="input-shadow-x" data-param="shadowX" min="-2" max="2" step="0.1">
+                            </div>
+                            <div class="slider-row-compact">
+                                <span>Y</span>
+                                <input type="range" id="input-shadow-y" data-param="shadowY" min="-2" max="2" step="0.1">
+                            </div>
+                            <div class="slider-row-compact">
+                                <span>Blur</span>
+                                <input type="range" id="input-shadow-blur" data-param="shadowBlur" min="0" max="5" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="config-section">
+                    <div class="section-header-toggle">
+                        <h3>Rearrange Layout</h3>
+                        <button id="btn-toggle-layout" class="secondary-btn small-btn">Unlock</button>
+                    </div>
+                    <p class="helper-text">Unlock to drag elements. Click Done to save & lock.</p>
+                
+                    <button id="btn-reset-layout" class="text-btn" style="font-size: 0.8rem;">Reset Positions</button>
+                </section>
+
+                <div class="hidden">
+                    <input type="text" id="input-title" data-param="title">
+                    <input type="number" id="input-minutes" data-param="minutes">
+                    <input type="number" id="input-seconds" data-param="seconds">
+                    <input type="range" id="slider-minutes"> 
+                    <input type="range" id="slider-seconds">
                 </div>
-            </div>
-        </div>
 
-        <div class="form-group shadow-section">
-            <div class="shadow-header">
-                <label class="checkbox-wrapper">
-                    <input type="checkbox" id="input-shadow-enabled" data-param="shadowEnabled">
-                    <span>Drop Shadow</span>
-                </label>
-                <input type="color" id="input-color-shadow" data-param="shadowColor" class="medium-color-picker" title="Shadow Color">
+                <div class="spacer"></div>
             </div>
 
-            <div id="shadow-controls-container">
-                <div class="slider-row">
-                    <label>X</label>
-                    <input type="range" id="input-shadow-x" data-param="shadowX" min="-2" max="2" step="0.1">
+            <div class="settings-actions">
+                <div class="autoplay-row">
+                    <button id="copy-url-btn" class="primary-btn block-btn">Copy OBS Link</button>
+                    <input type="checkbox" id="input-autoplay" data-param="autoplay">
+                    <label for="input-autoplay">Autoplay on Load</label>
                 </div>
-                <div class="slider-row">
-                    <label>Y</label>
-                    <input type="range" id="input-shadow-y" data-param="shadowY" min="-2" max="2" step="0.1">
-                </div>
-                <div class="slider-row">
-                    <label>Blur</label>
-                    <input type="range" id="input-shadow-blur" data-param="shadowBlur" min="0" max="5" step="0.1">
-                </div>
+                <button id="stop-timer-btn" class="danger-btn block-btn">Stop Timer</button>
+                <button id="btn-reset-all" class="subtle-btn">Factory Reset</button>
             </div>
+
         </div>
-
-        <hr class="separator">
-
-        <div class="form-group hidden">
-             <input type="text" id="input-title" data-param="title">
-            <input type="number" id="input-minutes" data-param="minutes">
-            <input type="number" id="input-seconds" data-param="seconds">
-            <input type="range" id="slider-minutes" class="hidden"> 
-            <input type="range" id="slider-seconds" class="hidden">
-        </div>
-
-        <div class="form-group rearrange-section highlight-section-subtle">
-            <div class="rearrange-header">
-                <label class="checkbox-wrapper">
-                    <input type="checkbox" id="input-free-pos" data-param="layoutMode">
-                    <strong>Rearrange Mode</strong>
-                </label>
-                <button id="btn-reset-layout" class="secondary-btn small-btn">Reset</button>
-            </div>
-            <p class="tiny-note">Check to unlock and drag elements. Uncheck to lock positions and edit text.</p>
-        </div>
-
-        <div class="actions-group">
-            <button id="copy-url-btn" class="primary-btn big-btn">Copy OBS Link</button>
-            
-            <label class="checkbox-wrapper centered-checkbox">
-                <input type="checkbox" id="input-autoplay" data-param="autoplay">
-                <span>Autoplay on Load (Required for OBS)</span>
-            </label>
-
-            <button id="stop-timer-btn" class="danger-btn">Stop Timer</button>
-        </div>
-
-        <div class="settings-footer">
-            <button id="btn-reset-all" class="text-btn danger-text">⚠️ Factory Reset</button>
-            <button id="close-settings" class="secondary-btn">Close Menu</button>
-        </div>
-
     </div>
-</div>
 
     <script type="module" src="js/main.js"></script>
 </body>
