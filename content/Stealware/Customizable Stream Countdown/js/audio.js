@@ -207,13 +207,13 @@ function prepareTrack(audioElement, track) {
     audioElement.preload = "auto";
 
     audioElement.ontimeupdate = () => {
-        // 1. Dispatch progress for UI (only for the active player)
+        // Dispatch progress for UI (only for the active player)
         if (audioElement === currentAudio && audioElement.duration) {
             const pct = (audioElement.currentTime / audioElement.duration) * 100;
             window.dispatchEvent(new CustomEvent('audioProgress', { detail: { percent: pct } }));
         }
 
-        // 2. JUST-IN-TIME PRELOAD: 
+        // JUST-IN-TIME PRELOAD: 
         // If 10s remain, and we aren't stopping, and nextAudio isn't ready
         const remaining = audioElement.duration - audioElement.currentTime;
         if (remaining <= 10 && !isSoftStopping && !nextAudio.src) {

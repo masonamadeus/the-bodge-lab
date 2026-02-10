@@ -3,17 +3,17 @@ import { getState } from './state.js';
 import * as UI from './ui.js'; 
 
 async function init() {
-    // 1. Initial Render (Visuals)
+    // Initial Render (Visuals)
     const initialState = getState();
     UI.applySettings(initialState);
     UI.initEventListeners();
     
-    // 2. Load Branding (PodCube Logo)
+    // Load Branding (PodCube Logo)
     await UI.loadBranding();
 
-    // 3. Autoplay Determination
+    // Autoplay Determination
     const params = new URLSearchParams(window.location.search);
-    const isAutoplay = params.get('autoplay') === '1';
+    const isAutoplay = (initialState.autoplay === 'true') && !!window.obsstudio;
 
     if (isAutoplay) {
         // OBS/Autoplay Mode

@@ -1,4 +1,4 @@
-import { updateParam, getShareableURL } from './state.js';
+import { updateParam, getShareableURL, getState } from './state.js';
 import { startTimer, stopTimer, formatTime } from './timer.js';
 import * as Audio from './audio.js';
 
@@ -57,7 +57,7 @@ export function applySettings(state) {
     if (window.obsstudio) {
         document.documentElement.classList.add('obs-environment');
     }
-    DOM.title.textContent = state.title;
+    DOM.title.innerText = state.title;
 
 
    document.documentElement.style.setProperty('--main-bg-color', state.colorBg);
@@ -84,6 +84,13 @@ export function applySettings(state) {
     document.documentElement.style.setProperty('--shadow-blur', state.shadowBlur + 'vmin');
 
     if (state.font) loadGoogleFont(state.font);
+
+    if (state.audioEnabled === 'true') {
+        DOM.nowPlaying.classList.remove('hidden');
+    } else {
+        DOM.nowPlaying.classList.add('hidden');
+    }
+
     Audio.setVolume(state.volume);
 
     DOM.inputs.forEach(input => {
@@ -147,11 +154,11 @@ export function initEventListeners() {
     if (DOM.btnResetAll) {
         DOM.btnResetAll.addEventListener('click', () => {
             if (confirm("Are you sure? This will reset ALL settings, colors, and text to default.")) {
-                // 1. Wipe the URL parameters
+                // Wipe the URL parameters
                 const cleanURL = window.location.protocol + "//" + window.location.host + window.location.pathname;
                 window.history.replaceState({}, document.title, cleanURL);
                 
-                // 2. Reload the page to load defaults
+                // Reload the page to load defaults
                 window.location.reload();
             }
         });
@@ -182,6 +189,12 @@ export function initEventListeners() {
     [DOM.title, DOM.timerMin, DOM.timerSec].forEach(el => {
         el.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
+                // If it's the title and they are holding Shift, do nothing (allow newline)
+                if (e.shiftKey && el === DOM.title) {
+                    return; 
+                }
+                
+                // Otherwise, prevent default Enter behavior and blur (save)
                 e.preventDefault();
                 el.blur();
             }
@@ -225,7 +238,11 @@ export function initEventListeners() {
         if (syncInterval) { clearInterval(syncInterval); };
         DOM.startBtn.classList.remove('hidden');
         DOM.timerContainer.classList.remove('running');
-        DOM.nowPlaying.classList.add('hidden');
+
+        if (!document.getElementById('input-audio-enabled').checked) {
+            DOM.nowPlaying.classList.add('hidden');
+        }
+
         DOM.timerContainer.classList.remove('blink');
         DOM.settingsModal.classList.add('hidden');
 
@@ -245,6 +262,14 @@ export function initEventListeners() {
     window.addEventListener('stateChange', (e) => {
         const { key, value } = e.detail;
         if (key === 'title') DOM.title.textContent = value;
+
+        if (key === 'audioEnabled') {
+            if (value === 'true') {
+                DOM.nowPlaying.classList.remove('hidden');
+            } else {
+                DOM.nowPlaying.classList.add('hidden');
+            }
+        }
         if (key === 'volume') Audio.setVolume(value);
 
         if (key === 'minutes') { DOM.inputMin.value = value; DOM.sliderMin.value = value; }
@@ -275,7 +300,17 @@ export function initEventListeners() {
 
         if (key === 'colorBg' || key === 'bgTransparent') {
             const isTrans = document.getElementById('input-bg-transparent').checked;
-            document.body.style.backgroundColor = isTrans ? 'rgba(0,0,0,0)' : document.getElementById('input-color-bg').value;
+            const bgColor = document.getElementById('input-color-bg').value;
+            
+            // Always update the underlying color variable
+            document.documentElement.style.setProperty('--main-bg-color', bgColor);
+            
+            // Toggle the transparency class live
+            if (isTrans) {
+                document.documentElement.classList.add('transparency-requested');
+            } else {
+                document.documentElement.classList.remove('transparency-requested');
+            }
         }
 
 
@@ -327,8 +362,7 @@ export function initEventListeners() {
             const isCurrentlyEditing = document.body.classList.contains('layout-editing');
 
             if (!isCurrentlyEditing) {
-                // TURN ON
-                manageGhostBox(true);
+               
                 
                 // If we aren't already in custom mode, freeze current positions so they don't jump
                 if (!DOM.app.classList.contains('custom-layout')) {
@@ -340,7 +374,6 @@ export function initEventListeners() {
             } else {
                 // TURN OFF
                 toggleLayoutEditing(false);
-                manageGhostBox(false);
                 // We leave 'layoutMode' as custom so positions persist
             }
         });
@@ -355,7 +388,6 @@ export function initEventListeners() {
             updateParam('layoutMode', 'auto');
             
             toggleLayoutEditing(false); // This now handles the button text reset
-            manageGhostBox(false);
             
             DOM.app.classList.remove('custom-layout'); 
 
@@ -434,8 +466,6 @@ export async function startExperience(state) {
         }
         console.groupEnd();
 
-    } else {
-        DOM.nowPlaying.classList.add('hidden');
     }
 }
 
@@ -480,50 +510,71 @@ function updateSyncStatus(secondsRemaining) {
 
 function initDraggableModal() {
     const modal = document.querySelector('.settings-content');
-    const header = modal.querySelector('h2'); // The "Handle"
+    const header = modal.querySelector('.settings-header'); // Grab the whole header
     
     let isDragging = false;
     let startX, startY, initialTranslateX, initialTranslateY;
 
-    // Helper to get current transform values
+    // Helper for coordinates
+    const getCoords = (e) => {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    };
+
     const getTranslateValues = (element) => {
         const style = window.getComputedStyle(element);
         const matrix = new WebKitCSSMatrix(style.transform);
         return { x: matrix.m41, y: matrix.m42 };
     };
 
-    header.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        startX = e.clientX;
-        startY = e.clientY;
+    const onStart = (e) => {
+        // Only allow dragging from the header area
+        // (optional check if you want to be strict)
         
-        // Get current transform position (or 0 if not set yet)
+        isDragging = true;
+        const coords = getCoords(e);
+        startX = coords.x;
+        startY = coords.y;
+        
         const currentPos = getTranslateValues(modal);
         initialTranslateX = currentPos.x;
         initialTranslateY = currentPos.y;
         
         header.style.cursor = 'grabbing';
-    });
+        
+        if(e.type === 'touchstart') document.body.style.overflow = 'hidden';
+    };
 
-    window.addEventListener('mousemove', (e) => {
+    const onMove = (e) => {
         if (!isDragging) return;
+        e.preventDefault(); // Stop scrolling
 
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
+        const coords = getCoords(e);
+        const dx = coords.x - startX;
+        const dy = coords.y - startY;
 
-        // Apply the difference to the initial transform
-        const newX = initialTranslateX + dx;
-        const newY = initialTranslateY + dy;
+        modal.style.transform = `translate(${initialTranslateX + dx}px, ${initialTranslateY + dy}px)`;
+    };
 
-        modal.style.transform = `translate(${newX}px, ${newY}px)`;
-    });
-
-    window.addEventListener('mouseup', () => {
+    const onEnd = () => {
         if (isDragging) {
             isDragging = false;
             header.style.cursor = 'grab';
+            document.body.style.overflow = '';
         }
-    });
+    };
+
+    // Mouse
+    header.addEventListener('mousedown', onStart);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+
+    // Touch
+    header.addEventListener('touchstart', onStart, { passive: false });
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
 }
 
 function applyPos(element, posString) {
@@ -605,74 +656,78 @@ function toggleLayoutEditing(enabled) {
         }
     }
 }
+
 function makeElementDraggable(element, paramKey) {
     let isDragging = false;
-    let startX, startY;
     
-    // We need to calculate % based positions
-    const onMouseDown = (e) => {
+    // Helper to get X/Y from either Mouse or Touch
+    const getCoords = (e) => {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    };
+
+    const onStart = (e) => {
         if (!document.body.classList.contains('layout-editing')) return;
         
         isDragging = true;
         element.style.cursor = 'grabbing';
         
-        // Prevent default browser drag
-        e.preventDefault();
+        // Prevent scrolling while dragging on mobile
+        if (e.type === 'touchstart') document.body.style.overflow = 'hidden';
+
+        // Prevent default browser drag/selection
+        // (We don't preventDefault on touchstart immediately, or click events might break.
+        // We do it on move.)
+        if (e.type === 'mousedown') e.preventDefault();
         
-        // Optional: Bring to front
         element.style.zIndex = 1000;
     };
 
-    const onMouseMove = (e) => {
+    const onMove = (e) => {
         if (!isDragging) return;
+        
+        e.preventDefault(); // Stop screen scrolling
 
+        const coords = getCoords(e);
+        
         // Calculate position as percentage of window width/height
-        const xPct = (e.clientX / window.innerWidth) * 100;
-        const yPct = (e.clientY / window.innerHeight) * 100;
+        const xPct = (coords.x / window.innerWidth) * 100;
+        const yPct = (coords.y / window.innerHeight) * 100;
 
         element.style.left = `${xPct}%`;
         element.style.top = `${yPct}%`;
     };
 
-    const onMouseUp = () => {
+    const onEnd = () => {
         if (!isDragging) return;
         isDragging = false;
         element.style.cursor = 'grab';
         element.style.zIndex = '';
+        
+        // Re-enable scrolling
+        document.body.style.overflow = '';
 
         // Save state
         const x = parseFloat(element.style.left).toFixed(2);
         const y = parseFloat(element.style.top).toFixed(2);
         
-        // Map paramKey to state key
         const stateKey = `pos${paramKey.charAt(0).toUpperCase() + paramKey.slice(1)}`;
         updateParam(stateKey, `${x},${y}`);
     };
 
-    element.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+    // Mouse Listeners
+    element.addEventListener('mousedown', onStart);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+
+    // Touch Listeners (Passive: false allows us to call preventDefault)
+    element.addEventListener('touchstart', onStart, { passive: false });
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
 }
 
-/**
- * Manages the "Ghost" visibility of the Now Playing box during editing.
- * If audio is disabled, we temporarily show the box so the user can move it.
- */
-function manageGhostBox(shouldShow) {
-    if (shouldShow) {
-        if (DOM.nowPlaying.classList.contains('hidden')) {
-             DOM.nowPlaying.dataset.wasHidden = "true";
-             DOM.nowPlaying.classList.remove('hidden');
-             DOM.nowPlaying.style.opacity = "0.5"; 
-        }
-    } else {
-        if (DOM.nowPlaying.dataset.wasHidden === "true") {
-            DOM.nowPlaying.classList.add('hidden');
-            DOM.nowPlaying.style.opacity = "";
-            delete DOM.nowPlaying.dataset.wasHidden;
-        }
-    }
-}
 
 function loadGoogleFont(fontName) {
     if (!fontName) return;

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PodCube Stream Timer</title>
+    <title>Really Simple Custom Countdown (with PodCube™)</title>
     <link rel="stylesheet" href="css/style.css">
     <link id="dynamic-font" rel="stylesheet" href="">
 </head>
@@ -12,15 +12,15 @@
 <body>
 
     <main id="app-container">
-        <h1 id="stream-title" contenteditable="true" spellcheck="false">Stream Starting</h1>
+        <h1 id="stream-title" contenteditable="true" spellcheck="false">Click to Edit</h1>
 
         <div id="timer-container">
-            <span id="timer-min" contenteditable="true" spellcheck="false" title="Click to edit minutes">05</span>
+            <span id="timer-min" contenteditable="true" spellcheck="false" title="Click to edit minutes">15</span>
             <span class="colon">:</span>
             <span id="timer-sec" contenteditable="true" spellcheck="false" title="Click to edit seconds">00</span>
         </div>
 
-        <button id="main-start-btn" class="start-btn">Start Timer</button>
+        
 
         <div id="now-playing" class="hidden">
             <div class="brand-row">
@@ -35,7 +35,7 @@
                 <div class="meta-container">
                     <label>While you wait...</label>
                     <div class="brand-label">You're Listening to PodCube™</div>
-                    <div id="track-name">Loading audio...</div>
+                    <div id="track-name"></div>
                     <div id="progress-container">
                         <div id="progress-bar"></div>
                     </div>
@@ -45,6 +45,8 @@
 
 
         </div>
+
+        <button id="main-start-btn" class="start-btn">Start Timer</button>
     </main>
 
     <div id="settings-trigger" title="Open Settings">⚙️</div>
@@ -53,7 +55,7 @@
         <div class="settings-content">
             
             <div class="settings-header">
-                <h2>Stream Settings</h2>
+                <h2>CUSTOMIZATION</h2>
                 <button id="close-settings" class="icon-btn" title="Close">✕</button>
             </div>
 
@@ -75,10 +77,11 @@
                         <label>Volume</label>
                         <input type="range" id="input-volume" data-param="volume" min="0" max="1" step="0.1">
                     </div>
+                    
                 </section>
 
                 <section class="config-section">
-                    <h3>Visual Style</h3>
+                    <h3>FONT && COLOR</h3>
                     
                     <div class="input-grid">
                         <div class="grid-item full-width">
@@ -137,10 +140,13 @@
 
                 <section class="config-section">
                     <div class="section-header-toggle">
-                        <h3>Rearrange Layout</h3>
+                        <div>
+                            <h3>Rearrange Layout</h3>
+                            <p class="helper-text">Unlock to drag elements.<br>Click Done to save & lock.</p>
+                        </div>
                         <button id="btn-toggle-layout" class="secondary-btn small-btn">Unlock</button>
                     </div>
-                    <p class="helper-text">Unlock to drag elements. Click Done to save & lock.</p>
+                    
                 
                     <button id="btn-reset-layout" class="text-btn" style="font-size: 0.8rem;">Reset Positions</button>
                 </section>
@@ -153,7 +159,21 @@
                     <input type="range" id="slider-seconds">
                 </div>
 
-                <div class="spacer"></div>
+                <section class="config-section helper-text">
+                    <h3>Info:</h3>
+                    <ul>
+                        <li>
+                    <b>The settings cog will not appear when this site is used as a browser source in OBS!</b> You can still access settings menu by clicking "Interact" 
+                    on the browser source and hovering over the bottom right corner (where the cog normally is).</li>
+                    <li><b>The transparent background setting will only apply inside of OBS.</b></li>
+                    <li><b>Please consider leaving the PodCube™ integration enabled!</b> It will fill your countdown with hilarious, high-quality audio sketch comedy.
+                        The show is <b>PG-13</b> at most (but still hilarious) so it should be acceptable for even family-friendly streams.
+                    </li>
+                    <li><b>You can move this settings window around</b> by dragging its title bar, and resize it by dragging the bottom right corner.</li>
+                    <li>Created with love by <b>Mason Amadeus</b>, keeper of <a href="https://bodgelab.com">The Bodge Lab</a>, and co-creator of PodCube™</li>
+                </ul>
+                </section>
+
             </div>
 
             <div class="settings-actions">

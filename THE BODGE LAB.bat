@@ -141,7 +141,7 @@ echo ========================================================
 echo.
 if !BEHIND! GTR 0 (
     color 4F
-    echo  [!] STATUS: BEHIND BY !BEHIND! COMMITS (PULL REQUIRED)
+    echo  [!] STATUS: BEHIND BY !BEHIND! COMMITS ^(PULL REQUIRED^)
 ) else (
     color 07
     echo  [OK] STATUS: SYNCED
@@ -299,7 +299,7 @@ git init >nul
 echo. > .nojekyll
 git add . >nul
 git commit -m "!commit_msg!" >nul
-git push --force "https://github.com/masonamadeus/the-bodge-lab.git" HEAD:gh-pages
+git push --force "https://github.com/masonamadeus/the-bodge-lab.git" master:gh-pages
 cd ..
 rmdir /s /q "_site\.git"
 

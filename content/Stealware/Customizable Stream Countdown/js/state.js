@@ -5,8 +5,8 @@
 
 const DEFAULTS = {
     title: "Click to Edit",
-    minutes: 5,
-    seconds: 0, // <--- CRITICAL FIX: This was missing!
+    minutes: 15,
+    seconds: 0,
     font: "Roboto",
     colorText: "#ffffff",
     colorBg: "#000000",
