@@ -861,6 +861,63 @@ module.exports = function (eleventyConfig) {
 
     return standardPages.concat(standaloneNodes);
   });
+
+  // --- BODGE OG INJECTOR ---
+  // Runs after Eleventy finishes building the site.
+  // Finds standalone apps in the output folder and injects OG tags into their index.html!
+  eleventyConfig.on('eleventy.after', async ({ dir }) => {
+    
+    standaloneApps.forEach(app => {
+      // We only care about apps that have a UID and an index.html
+      if (!app.meta.uid) return;
+
+      // Calculate where the copied index.html is sitting in the _site directory
+      const indexPath = path.join(dir.output, app.destPath, 'index.html');
+
+      if (fs.existsSync(indexPath)) {
+        let html = fs.readFileSync(indexPath, 'utf8');
+
+        // Safety check: Don't inject twice if Eleventy is running in --watch mode
+        if (!html.includes('')) {
+
+          // 1. Resolve Image URL
+          let resolvedImage = "";
+          if (app.meta.image) {
+             if (app.meta.image.startsWith('http')) {
+                 resolvedImage = app.meta.image;
+             } else {
+                 resolvedImage = `https://bodgelab.com${app.url}${app.meta.image}`;
+             }
+          }
+
+          // 2. Build the exact Meta Tags we want (WITH CONDITIONALS)
+          let ogTags = `\n    \n`;
+          ogTags += `    <meta property="og:type" content="website">\n`;
+          ogTags += `    <meta property="og:url" content="https://bodgelab.com${app.url}">\n`;
+          ogTags += `    <meta property="og:title" content="${app.meta.title}">\n`;
+          
+          if (app.meta.description) {
+              ogTags += `    <meta property="og:description" content="${app.meta.description}">\n`;
+          }
+          
+          if (resolvedImage) {
+              ogTags += `    <meta property="og:image" content="${resolvedImage}">\n`;
+              ogTags += `    <meta name="twitter:image" content="${resolvedImage}">\n`;
+          }
+          
+          ogTags += `    <meta name="twitter:card" content="summary_large_image">\n`;
+          ogTags += `    \n</head>`;
+
+          // 3. Inject them right before the closing </head> tag
+          html = html.replace(/<\/head>/i, ogTags);
+          
+          // 4. Save the file back to the _site directory
+          fs.writeFileSync(indexPath, html);
+          console.log(`[BodgeLab] 💉 Injected OG tags into: ${app.destPath}/index.html`);
+        }
+      }
+    });
+  });
   
   return {
     dir: {
