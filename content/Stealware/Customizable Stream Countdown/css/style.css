@@ -122,10 +122,6 @@ h1 {
     white-space: pre-wrap; 
 }
 
-/* Shadow utilities for text elements */
-#stream-title, #timer-container, #now-playing {
-
-}
 
 
 /* Editable Field Styling */
@@ -259,6 +255,7 @@ h1 {
     letter-spacing: 0.2vmin;
     margin-bottom: 0.5vmin;
     font-weight: 600;
+    cursor: default;
 }
 #track-name {
     font-size: 3.5vmin; 
@@ -572,7 +569,6 @@ input[type="color"]::-webkit-color-swatch { border: none; }
 .draggable-item {
     position: absolute; 
     transform: translate(-50%, -50%);
-    cursor: auto; /* Default to normal mouse when locked */
     left: 50%;
     top: 50%;
     z-index: 100;
@@ -580,16 +576,21 @@ input[type="color"]::-webkit-color-swatch { border: none; }
     white-space: nowrap; 
 }
 
+
+body.layout-editing .draggable-item * {
+    cursor: inherit;
+}
+
 /* Edit Mode Visual Cues */
 body.layout-editing .draggable-item {
     outline: 2px dashed rgba(255, 255, 255, 0.3);
-    cursor: grab; 
+    cursor: grab!important; 
     background: rgba(0, 0, 0, 0.5);
     user-select: none; 
     z-index: 100;
 }
 body.layout-editing .draggable-item:active {
-    cursor: grabbing;
+    cursor: grabbing!important;
     outline: 2px dashed var(--accent-color);
     background: rgba(0, 0, 0, 0.7);
 }
@@ -650,7 +651,7 @@ body.layout-editing .edit-handle:hover {
 .handle-rotate {
     top: -12px;
     right: -12px;
-    cursor: grab;
+    cursor:crosshair;
     background-color: #ff9800; 
     /* NEW: Circular arrow SVG */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/%3E%3Cpath d='M3 3v5h5'/%3E%3C/svg%3E");

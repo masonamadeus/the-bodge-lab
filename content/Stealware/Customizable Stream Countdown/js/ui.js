@@ -743,10 +743,12 @@ function makeElementDraggable(element, paramKey) {
     const scaleHandle = document.createElement('div');
     scaleHandle.className = 'edit-handle handle-scale';
     scaleHandle.title = "Drag to Scale";
-    
+    scaleHandle.setAttribute('contenteditable', 'false');
+
     const rotHandle = document.createElement('div');
     rotHandle.className = 'edit-handle handle-rotate';
     rotHandle.title = "Drag to Rotate";
+    rotHandle.setAttribute('contenteditable', 'false');
 
     element.appendChild(scaleHandle);
     element.appendChild(rotHandle);
