@@ -638,37 +638,35 @@ function initDraggableModal() {
 // HELPER FUNCTIONS
 // ---------------------------------------------------------
 
+
 /**
- * Calculates where the elements currently are (in Flexbox) 
- * and applies those coordinates as percentages so they don't jump.
+ * Calculates where the elements currently are in their natural layout 
+ * and applies those coordinates as percentages to "lock" them for dragging.
  */
+
 function freezeCurrentPositions() {
     Object.entries(DOM.dragTargets).forEach(([key, element]) => {
-        // Get current visual rectangle
         const rect = element.getBoundingClientRect();
         
-        let xPct, yPct;
+        // Calculate center relative to viewport
+        const centerX = rect.left + (rect.width / 2);
+        const centerY = rect.top + (rect.height / 2);
+        
+        const xPct = (centerX / window.innerWidth) * 100;
+        const yPct = (centerY / window.innerHeight) * 100;
+        
+        // Maybe Delete? Ensures the dataset has the defaults 
+        // before applyPos is called, or the transform will be incomplete.
+        if (!element.dataset.scale) element.dataset.scale = "1.0";
+        if (!element.dataset.rot) element.dataset.rot = "0";
 
-        // Check if element is hidden or has 0 dimensions (like Now Playing)
-        // If so, default it to the center (50, 50) so it doesn't jump to top-left.
-        if (rect.width === 0 && rect.height === 0) {
-            xPct = 50;
-            yPct = 50;
-        } else {
-            // Calculate center point relative to viewport
-            const centerX = rect.left + (rect.width / 2);
-            const centerY = rect.top + (rect.height / 2);
-            
-            // Convert to percentages
-            xPct = (centerX / window.innerWidth) * 100;
-            yPct = (centerY / window.innerHeight) * 100;
-        }
-        
         // Apply immediately
-        element.style.left = `${xPct}%`;
-        element.style.top = `${yPct}%`;
+        element.style.left = `${xPct.toFixed(2)}%`;
+        element.style.top = `${yPct.toFixed(2)}%`;
         
-        // Save to URL
+        // Force the transform to exist immediately so there's no frame-jump
+        element.style.transform = `translate(-50%, -50%) scale(${element.dataset.scale}) rotate(${element.dataset.rot}deg)`;
+        
         const stateKey = `pos${key.charAt(0).toUpperCase() + key.slice(1)}`;
         updateParam(stateKey, `${xPct.toFixed(2)},${yPct.toFixed(2)}`);
     });
@@ -738,8 +736,6 @@ function applyPos(element, posString, scaleString = "1.0", rotString = "0") {
         });
     }
 }
-
-/* js/ui.js - inside Helper Functions */
 
 function makeElementDraggable(element, paramKey) {
     
@@ -839,6 +835,7 @@ function makeElementDraggable(element, paramKey) {
         if (!document.body.classList.contains('layout-editing')) return;
         e.stopPropagation(); // Prevent triggering main drag
         isScaling = true;
+        if (e.cancelable) e.preventDefault();
         startScale = parseFloat(element.dataset.scale) || 1.0;
         
         const rect = element.getBoundingClientRect();
@@ -900,6 +897,7 @@ function makeElementDraggable(element, paramKey) {
         if (!document.body.classList.contains('layout-editing')) return;
         e.stopPropagation();
         isRotating = true;
+        if (e.cancelable) e.preventDefault();
         startRot = parseFloat(element.dataset.rot) || 0;
         
         const centerX = window.innerWidth * (parseFloat(element.style.left) / 100);
