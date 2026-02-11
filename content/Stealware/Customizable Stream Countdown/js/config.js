@@ -13,6 +13,15 @@ export const CONFIG = {
         }
     ],
 
+    // Add strings here to match against track titles or URLs.
+    // E.g., if the track is called "Episode 42: The 54 Second One"
+    BLACKLIST: [
+        "https://op3.dev/e/pinecast.com/listen/dbd4765e-66dd-4e70-b69a-d559ba4dc136.mp3?source=rss&ext=asset.mp3", // 🅿 04.01.2050_STOVE'S_DESK⚠️UNINTENTIONAL_TRANSMISSION⚠️
+        "🔸😃🔸 Hello and Welcome to 🅿️odCube™ 🔸😃🔸",
+        "HEAVY PETTING ZOO", "SIN ATRA", "WARONXMAS", "WHITE HOUSE HIRING", "ARTESINAL CRACK",
+
+    ],
+
     // Audio Logic Settings
     FADE_TIME: 0,         
     BUFFER_SECONDS: 0,   

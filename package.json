@@ -18,6 +18,7 @@
     "gray-matter": "^4.0.3",
     "luxon": "^3.7.2",
     "mime-types": "^3.0.1",
-    "minisearch": "^7.2.0"
+    "minisearch": "^7.2.0",
+    "music-metadata": "^11.12.0"
   }
 }

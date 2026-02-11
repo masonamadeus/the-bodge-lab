@@ -47,9 +47,13 @@ async function init() {
 }
 
 // Helper to fire the start sequence safely
+// Helper to fire the start sequence safely
 function triggerStart() {
-    if (hasStarted) return; // Prevent double-firing
-    hasStarted = true;
+    // Check if the timer container already has the 'running' class
+    const timerContainer = document.getElementById('timer-container');
+    if (timerContainer && timerContainer.classList.contains('running')) {
+        return; // Prevent double-firing
+    }
     
     // Unlock audio context and fetch fresh state
     Audio.unlockAudio();

@@ -36,7 +36,8 @@ const DEFAULTS = {
     rotTimer: "0",
     rotTrack: "0",
 
-    layoutMode: "auto"
+    layoutMode: "auto",
+    presetName: ""  // Name of the currently loaded preset (if any)
 };
 
 /**
@@ -71,23 +72,30 @@ export function getState() {
 let debounceTimer = null;
 
 export function updateParam(key, value) {
-    // 1. Update the pending URL object immediately so getState() is always accurate
     const url = new URL(window.location);
     url.searchParams.set(key, value);
-    pendingUrl = url;
 
-    // 2. Fire stateChange event IMMEDIATELY for snappy UI response
+    
+    pendingUrl = url;
     window.dispatchEvent(new CustomEvent('stateChange', { detail: { key, value } }));
 
-    // 3. Clear the timer to reset the debounce window
     if (debounceTimer) clearTimeout(debounceTimer);
-
-    // 4. Debounce only the browser history update (to stop spamming the address bar)
-    // Use a closure to capture the current URL, preventing stale data
-    const urlToApply = url;
     debounceTimer = setTimeout(() => {
-        window.history.replaceState({}, '', urlToApply);
+        window.history.replaceState({}, '', url);
     }, 250);
+}
+
+/**
+ * Removes the presetName parameter from the URL
+ * Called when user makes manual changes to settings
+ */
+export function clearPresetName() {
+    const url = new URL(window.location);
+    if (url.searchParams.has('presetName')) {
+        url.searchParams.delete('presetName');
+        pendingUrl = url;
+        window.history.replaceState({}, '', url);
+    }
 }
 
 /**

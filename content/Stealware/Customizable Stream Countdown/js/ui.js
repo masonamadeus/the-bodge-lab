@@ -23,6 +23,62 @@ function validateDOM() {
     }
 }
 
+const DOM = {
+    app: document.getElementById('app-container'),
+    title: document.getElementById('stream-title'),
+    timerContainer: document.getElementById('timer-container'),
+    timerMin: document.getElementById('timer-min'),
+    timerSec: document.getElementById('timer-sec'),
+
+    startBtn: document.getElementById('main-start-btn'),
+    nowPlaying: document.getElementById('now-playing'),
+    trackName: document.getElementById('track-name'),
+    brandLabel: document.getElementById('brand-label'),
+    progressBar: document.getElementById('progress-bar'),
+    settingsModal: document.getElementById('settings-modal'),
+    settingsTrigger: document.getElementById('settings-trigger'),
+
+    inputs: document.querySelectorAll('[data-param]'),
+    sliderMin: document.getElementById('slider-minutes'),
+    inputMin: document.getElementById('input-minutes'),
+    sliderSec: document.getElementById('slider-seconds'),
+    inputSec: document.getElementById('input-seconds'),
+
+    closeSettings: document.getElementById('close-settings'),
+    copyBtn: document.getElementById('copy-url-btn'),
+    stopBtn: document.getElementById('stop-timer-btn'),
+    fontLink: document.getElementById('dynamic-font'),
+    logoContainers: document.querySelectorAll('.podcube-logo'),
+
+    btnToggleLayout: document.getElementById('btn-toggle-layout'),
+    btnResetLayout: document.getElementById('btn-reset-layout'),
+    btnResetAll: document.getElementById('btn-reset-all'),
+
+    shadowCheckbox: document.getElementById('input-shadow-enabled'),
+    shadowContainer: document.getElementById('shadow-controls-container'),
+    svgFilter: document.getElementById('svg-filter-container'),
+    dropShadowNode: document.getElementById('dynamic-drop-shadow'),
+    shadowKnob: document.getElementById('input-shadow-knob'),
+    shadowPointer: document.querySelector('.knob-pointer'),
+    shadowDist: document.getElementById('input-shadow-dist'),
+    shadowBlur: document.getElementById('input-shadow-blur'),
+
+    btnUpdate: document.getElementById('btn-preset-update'),
+    presetStatus: document.getElementById('preset-modified-status'),
+    presetSelect: document.getElementById('preset-select'),
+    btnLoad: document.getElementById('btn-preset-load'),
+    btnSave: document.getElementById('btn-preset-save'),
+    btnRename: document.getElementById('btn-preset-rename'),
+    btnDelete: document.getElementById('btn-preset-delete'),
+    
+    // The draggable targets
+    dragTargets: {
+        title: document.getElementById('stream-title'),
+        timer: document.getElementById('timer-container'),
+        track: document.getElementById('now-playing')
+    }
+};
+
 /**
  * Validates user input values
  */
@@ -93,51 +149,63 @@ function showConfirmDialog(title, message) {
     });
 }
 
-const DOM = {
-    app: document.getElementById('app-container'),
-    title: document.getElementById('stream-title'),
-    timerContainer: document.getElementById('timer-container'),
-    timerMin: document.getElementById('timer-min'),
-    timerSec: document.getElementById('timer-sec'),
+/**
+ * Shows a custom prompt dialog with keyboard support
+ * @returns {Promise<string|null>} - The text entered, or null if cancelled
+ */
+function showPromptDialog(title, message, defaultValue = '') {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('prompt-modal');
+        const titleEl = document.getElementById('prompt-title');
+        const messageEl = document.getElementById('prompt-message');
+        const inputEl = document.getElementById('prompt-input');
+        const okBtn = document.getElementById('prompt-ok');
+        const cancelBtn = document.getElementById('prompt-cancel');
 
-    startBtn: document.getElementById('main-start-btn'),
-    nowPlaying: document.getElementById('now-playing'),
-    trackName: document.getElementById('track-name'),
-    brandLabel: document.getElementById('brand-label'),
-    progressBar: document.getElementById('progress-bar'),
-    settingsModal: document.getElementById('settings-modal'),
-    settingsTrigger: document.getElementById('settings-trigger'),
-    inputs: document.querySelectorAll('[data-param]'),
-    sliderMin: document.getElementById('slider-minutes'),
-    inputMin: document.getElementById('input-minutes'),
-    sliderSec: document.getElementById('slider-seconds'),
-    inputSec: document.getElementById('input-seconds'),
-    closeSettings: document.getElementById('close-settings'),
-    copyBtn: document.getElementById('copy-url-btn'),
-    stopBtn: document.getElementById('stop-timer-btn'),
-    fontLink: document.getElementById('dynamic-font'),
-    logoContainers: document.querySelectorAll('.podcube-logo'),
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+        inputEl.value = defaultValue;
 
-    btnToggleLayout: document.getElementById('btn-toggle-layout'),
-    btnResetLayout: document.getElementById('btn-reset-layout'),
-    btnResetAll: document.getElementById('btn-reset-all'),
+        const cleanup = () => {
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+            document.removeEventListener('keydown', onKeyDown);
+            modal.classList.add('hidden');
+        };
 
-    shadowCheckbox: document.getElementById('input-shadow-enabled'),
-    shadowContainer: document.getElementById('shadow-controls-container'),
-    svgFilter: document.getElementById('svg-filter-container'),
-    dropShadowNode: document.getElementById('dynamic-drop-shadow'),
-    shadowKnob: document.getElementById('input-shadow-knob'),
-    shadowPointer: document.querySelector('.knob-pointer'),
-    shadowDist: document.getElementById('input-shadow-dist'),
-    shadowBlur: document.getElementById('input-shadow-blur'),
-    
-    // The draggable targets
-    dragTargets: {
-        title: document.getElementById('stream-title'),
-        timer: document.getElementById('timer-container'),
-        track: document.getElementById('now-playing')
-    }
-};
+        const onOk = () => {
+            const val = inputEl.value;
+            cleanup();
+            resolve(val);
+        };
+
+        const onCancel = () => {
+            cleanup();
+            resolve(null);
+        };
+
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                onCancel();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                onOk();
+            }
+        };
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        document.addEventListener('keydown', onKeyDown);
+        modal.classList.remove('hidden');
+        
+        // Focus the input box and select the text automatically
+        setTimeout(() => {
+            inputEl.focus();
+            inputEl.select();
+        }, 0);
+    });
+}
 
 
 export async function loadBranding() {
@@ -300,7 +368,8 @@ export function initEventListeners() {
 
     if (DOM.btnResetAll) {
         DOM.btnResetAll.addEventListener('click', async () => {
-            if (await showConfirmDialog("Reset All Settings", "Are you sure? This will reset ALL settings, colors, and text to default.")) {
+            // Updated title and message to be clearer about what is resetting
+            if (await showConfirmDialog("Reset Current Layout", "Are you sure? This will reset the active layout, colors, and text to default. (Any saved presets will NOT be affected).")) {
                 // Wipe the URL parameters
                 const cleanURL = window.location.protocol + "//" + window.location.host + window.location.pathname;
                 window.history.replaceState({}, document.title, cleanURL);
@@ -313,8 +382,8 @@ export function initEventListeners() {
 
 
     DOM.title.addEventListener('blur', () => {
-        const cleanTitle = validateInput('title', DOM.title.textContent);
-        DOM.title.textContent = cleanTitle;
+        const cleanTitle = validateInput('title', DOM.title.innerText);
+        DOM.title.innerText = cleanTitle;
         updateParam('title', cleanTitle);
     });
 
@@ -330,6 +399,20 @@ export function initEventListeners() {
 
     [DOM.title, DOM.timerMin, DOM.timerSec].forEach(el => {
         el.addEventListener('keydown', (e) => {
+            
+            // --- Block non-numbers for the timer fields ---
+            if (el === DOM.timerMin || el === DOM.timerSec) {
+                // Allow control keys (Backspace, Tab, Arrows, etc) or Ctrl/Cmd shortcuts
+                const isControlKey = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key);
+                const isShortcut = e.ctrlKey || e.metaKey;
+                
+                // If it's a single typed character, not a number, and not a control key... block it!
+                if (e.key.length === 1 && /\D/.test(e.key) && !isControlKey && !isShortcut) {
+                    e.preventDefault();
+                }
+            }
+
+            // --- EXISTING ENTER KEY LOGIC ---
             if (e.key === 'Enter') {
                 // If it's the title and they are holding Shift, do nothing (allow newline)
                 if (e.shiftKey && el === DOM.title) {
@@ -547,7 +630,16 @@ export function initEventListeners() {
 
         // This tells audio to empty the queue but let the speaker finish their sentence
         Audio.finishCurrentQueue();
+
+        // AUTO-RESET AFTER 5 MINUTES (300,000 milliseconds)
+        setTimeout(() => {
+            // Programmatically click the hidden Stop button to run its exact reset logic!
+            DOM.stopBtn.click();
+            
+        }, 5 * 60 * 1000);
+
     });
+
 
     window.addEventListener('trackChange', (e) => {
         // Show the container if it was hidden
@@ -691,6 +783,7 @@ export function initEventListeners() {
     });
 
     initDraggableModal();
+    initPresets();
 }
 
 export async function startExperience(state) {
@@ -1290,6 +1383,243 @@ function applyShadowTransformation(state) {
     // Apply CSS drop-shadow to all draggable target elements
     Object.values(DOM.dragTargets).forEach(el => {
         applyCSSDropShadow(el, angle, dist, blur, sColor, state.shadowEnabled);
+    });
+}
+
+function isPresetModified(presetName) {
+    const presets = JSON.parse(localStorage.getItem('countdown_presets')) || {};
+    const savedState = presets[presetName];
+    if (!savedState) return false;
+
+    const currentState = getState();
+    const keysToCompare = Object.keys(currentState).filter(k => k !== 'presetName');
+    
+    for (const key of keysToCompare) {
+        // Coerce both to strings for safe comparison (e.g., 1 vs "1")
+        const savedVal = savedState[key] !== undefined ? String(savedState[key]) : "";
+        const currentVal = currentState[key] !== undefined ? String(currentState[key]) : "";
+        
+        if (savedVal !== currentVal) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function updatePresetUI() {
+    const dropdownValue = DOM.presetSelect.value;
+    const activePresetInUrl = getState().presetName;
+    
+    // Reset base states to avoid lingering classes
+    DOM.presetStatus.classList.add('hidden');
+    DOM.btnUpdate.classList.add('hidden');
+    DOM.settingsTrigger.classList.remove('preset-modified');
+    DOM.btnLoad.classList.remove('primary-btn');
+    DOM.btnLoad.classList.add('secondary-btn');
+
+    // STATE 1: Nothing Selected
+    if (!dropdownValue) {
+        return; 
+    }
+
+    // STATE 2: Dropdown does NOT match the active loaded preset
+    if (dropdownValue !== activePresetInUrl) {
+        // Highlight the Load button to say "Hey, click me to load this!"
+        DOM.btnLoad.classList.remove('secondary-btn');
+        DOM.btnLoad.classList.add('primary-btn');
+
+        // Show the update button, but make it clear this is an OVERWRITE
+        DOM.btnUpdate.classList.remove('hidden');
+        DOM.btnUpdate.textContent = "Overwrite Preset";
+        
+        // We DO NOT show the "Modified" dot because they aren't modifying 
+        // the selected preset, they just haven't loaded it yet.
+        return;
+    }
+
+    // STATE 3: Dropdown matches the active loaded preset
+    if (isPresetModified(dropdownValue)) {
+        // The user is actively tweaking the loaded preset
+        DOM.presetStatus.classList.remove('hidden');
+        DOM.btnUpdate.classList.remove('hidden');
+        DOM.btnUpdate.textContent = "Save Changes"; // Clear context
+        DOM.settingsTrigger.classList.add('preset-modified');
+    }
+}
+
+function initPresets() {
+    const PRESETS_KEY = 'countdown_presets';
+    if (!DOM.presetSelect) return;
+
+    function getPresets() {
+        try { return JSON.parse(localStorage.getItem(PRESETS_KEY)) || {}; } 
+        catch { return {}; }
+    }
+
+    function savePresets(presets) {
+        localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
+        renderDropdown();
+    }
+
+    function renderDropdown() {
+        const presets = getPresets();
+        const currentVal = DOM.presetSelect.value;
+        DOM.presetSelect.innerHTML = '<option value="">== No Preset ==</option>';
+        
+        for (const name in presets) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            DOM.presetSelect.appendChild(opt);
+        }
+        if (presets[currentVal]) DOM.presetSelect.value = currentVal;
+    }
+
+    // Initial Render & Import Logic
+    renderDropdown();
+    const currentState = getState();
+    const activePresetInUrl = currentState.presetName;
+
+    if (activePresetInUrl) {
+        const presets = getPresets();
+        // Silent import if missing
+        if (!presets[activePresetInUrl]) {
+            presets[activePresetInUrl] = currentState;
+            savePresets(presets);
+        }
+        DOM.presetSelect.value = activePresetInUrl;
+    }
+
+    // Set Initial Status
+    updatePresetUI();
+
+    // EVENT LISTENERS
+
+    // SAVE AS PRESET
+    DOM.btnSave.addEventListener('click', async () => {
+        const name = await showPromptDialog("Save Preset", "Enter a name for this layout:");
+        if (!name || name.trim() === "") return;
+        const trimmedName = name.trim();
+
+        const presets = getPresets();
+        if (presets[trimmedName]) {
+            const confirmed = await showConfirmDialog("Overwrite Preset?", `Replace "${trimmedName}"?`);
+            if (!confirmed) return;
+        }
+
+        presets[trimmedName] = getState();
+        savePresets(presets);
+        
+        DOM.presetSelect.value = trimmedName;
+        updateParam('presetName', trimmedName);
+        updatePresetUI(); // Sync UI
+    });
+
+    // LOAD PRESET
+    DOM.btnLoad.addEventListener('click', () => {
+        const name = DOM.presetSelect.value;
+        if (!name) return;
+        
+        const presets = getPresets();
+        if (presets[name]) {
+            const params = new URLSearchParams();
+            for (const [k, v] of Object.entries(presets[name])) {
+                params.set(k, v);
+            }
+            params.set('presetName', name);
+            window.location.search = params.toString(); 
+        }
+    });
+
+    // RENAME PRESET
+    DOM.btnRename.addEventListener('click', async () => {
+        const name = DOM.presetSelect.value;
+        if (!name) return;
+        
+        const newName = await showPromptDialog("Rename Preset", `Rename "${name}" to:`, name);
+        if (!newName || newName.trim() === "" || newName === name) return;
+        
+        const presets = getPresets();
+        presets[newName.trim()] = presets[name];
+        delete presets[name];
+        savePresets(presets);
+        
+        DOM.presetSelect.value = newName.trim();
+        if (getState().presetName === name) {
+            updateParam('presetName', newName.trim());
+        }
+    });
+
+    // DELETE PRESET
+    DOM.btnDelete.addEventListener('click', async () => {
+        const name = DOM.presetSelect.value;
+        if (!name) return alert("Please select a preset to delete.");
+        
+        if (await showConfirmDialog("Delete Preset", `Delete the preset "${name}"?`)) {
+            const presets = getPresets();
+            delete presets[name];
+            savePresets(presets);
+            
+            DOM.presetSelect.value = '';
+            if (getState().presetName === name) {
+                updateParam('presetName', '');
+            }
+            updatePresetUI();
+        }
+    });
+    
+    // SAVE CHANGES / OVERWRITE BUTTON
+    DOM.btnUpdate.addEventListener('click', async () => {
+        const name = DOM.presetSelect.value;
+        if (!name) return;
+
+        const currentState = getState();
+        const activePresetInUrl = currentState.presetName;
+
+        // If this is an Overwrite (names don't match)
+        if (name !== activePresetInUrl) {
+            const confirmed = await showConfirmDialog(
+                "Overwrite Preset?", 
+                `You are about to overwrite the saved settings for "${name}" with your current layout. Are you sure?`
+            );
+            if (!confirmed) return; // Stop if they click Cancel
+        }
+
+        const presets = getPresets();
+        presets[name] = getState(); // Capture current state
+        savePresets(presets);
+        
+        // Lock the URL to the newly saved preset name
+        updateParam('presetName', name);
+        updatePresetUI(); 
+        
+        // Provide visual feedback
+        const originalText = DOM.btnUpdate.textContent;
+        DOM.btnUpdate.textContent = "Saved!";
+        setTimeout(() => {
+            // Re-run the UI check after the timeout to restore the correct button text
+            updatePresetUI(); 
+        }, 1500);
+    });
+
+
+    //  WATCH FOR CHANGES
+    window.addEventListener('stateChange', (e) => {
+        if (e.detail.key === 'presetName') return;
+        updatePresetUI();
+    });
+
+    // MANUAL DROPDOWN UPDATES
+    DOM.presetSelect.addEventListener('change', () => {
+        const selectedValue = DOM.presetSelect.value;
+        
+        if (selectedValue === "") {
+            // User explicitly chose "no preset".
+            // Detach the current settings from the preset by clearing the URL param.
+            updateParam('presetName', '');
+        }
+        
+        updatePresetUI();
     });
 }
 

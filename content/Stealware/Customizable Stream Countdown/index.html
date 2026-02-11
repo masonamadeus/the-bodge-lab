@@ -13,13 +13,12 @@
     <link rel="stylesheet" href="css/style.css">
     <link id="dynamic-font" rel="stylesheet" href="">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=SN+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=SN+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
 </head>
 
 <body>
-    <svg id="svg-filter-container" style="width:0; height:0; position:fixed; top:0; left:0;" aria-hidden="true"
-        focusable="false">
+    <svg id="svg-filter-container" class="svg-filter-hidden" aria-hidden="true" focusable="false">
         <defs>
             <filter id="global-drop-shadow" filterUnits="objectBoundingBox" x="-50%" y="-50%" width="200%"
                 height="200%">
@@ -33,12 +32,12 @@
         <h1 id="stream-title" contenteditable="true" spellcheck="false">Click to Edit</h1>
 
         <div id="timer-container">
-            <span id="timer-min" contenteditable="true" spellcheck="false" title="Click to edit minutes">15</span>
+            <span id="timer-min" contenteditable="true" inputmode="numeric" spellcheck="false"
+                title="Click to edit minutes">15</span>
             <span class="colon">:</span>
-            <span id="timer-sec" contenteditable="true" spellcheck="false" title="Click to edit seconds">00</span>
+            <span id="timer-sec" contenteditable="true" inputmode="numeric" spellcheck="false"
+                title="Click to edit seconds">00</span>
         </div>
-
-
 
         <div id="now-playing">
             <div class="brand-row">
@@ -58,13 +57,8 @@
                         <div id="progress-bar"></div>
                     </div>
                 </div>
-
             </div>
-
-
         </div>
-
-
     </main>
 
     <button id="main-start-btn" class="start-btn">Start Timer</button>
@@ -76,6 +70,18 @@
             <div class="confirm-buttons">
                 <button id="confirm-cancel" class="btn-secondary">Cancel</button>
                 <button id="confirm-ok" class="btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="prompt-modal" class="hidden modal-overlay">
+        <div class="confirm-dialog">
+            <h3 id="prompt-title">Prompt</h3>
+            <p id="prompt-message" class="prompt-message"></p>
+            <input type="text" id="prompt-input" class="prompt-input">
+            <div class="confirm-buttons">
+                <button id="prompt-cancel" class="btn-secondary">Cancel</button>
+                <button id="prompt-ok" class="primary-btn prompt-save-btn">Save</button>
             </div>
         </div>
     </div>
@@ -113,17 +119,15 @@
                         </div>
                     </div>
                     <p class="helper-text">Auto-plays hilarious, high quality <a href="https://bodgelab.com/s/podcube/"
-                            target="_blank">PodCube™</a> episodes to fill time until the countdown ends. (PG-13)</p>
+                            target="_blank">PodCube™</a> episodes to fill time until the countdown ends.<br>(PG-13)</p>
 
-                    <div class="card-header-row"
-                        style="margin-top: 15px; border-top: 1px solid #444; padding-top: 15px;">
+                    <div class="card-header-row card-divider">
                         <div class="toggle-wrapper">
                             <input type="checkbox" id="input-ads-enabled" data-param="nsfw" class="toggle-switch">
-                            <label for="input-ads-enabled" class="toggle-label"
-                                style="font-size: 0.9rem; color: #ccc;">Include <a
+                            <label for="input-ads-enabled" class="toggle-label ads-label">Include <a
                                     href="https://bodgelab.com/s/widk-ads" target="_blank">WIDK Commercials</a></label>
 
-                            <p class="helper-text"><b style="color:var(--danger-color);">Commercials may contain NSFW
+                            <p class="helper-text"><b class="danger-text">Commercials may contain NSFW
                                     language/themes.</b></p>
                         </div>
                     </div>
@@ -140,8 +144,8 @@
 
                     <div class="input-grid">
                         <div class="grid-item full-width">
-                            <label>Type the name of any font from <a href="https://fonts.google.com/">Google
-                                    Fonts</a>.</label>
+                            <label> Type the name of any font from <a href="https://fonts.google.com" target="_blank">Google
+                                    Fonts</a>.)</label>
                             <input type="text" id="input-font" data-param="font" placeholder="e.g. Roboto, Bangers">
                         </div>
 
@@ -201,23 +205,41 @@
                         <div>
                             <h3>Rearrange Layout</h3>
                             <p class="helper-text">Unlock to drag elements.<br>Click Done to save & lock.</p>
-                            <button id="btn-reset-layout" class="text-btn" style="font-size: 0.8rem;">Reset
-                                Positions</button>
+                            <button id="btn-reset-layout" class="text-btn btn-small">Reset Positions</button>
                         </div>
                         <button id="btn-toggle-layout" class="secondary-btn">Unlock</button>
                     </div>
-
-
-
                 </section>
 
-                <div class="hidden">
-                    <input type="text" id="input-title" data-param="title">
-                    <input type="number" id="input-minutes" data-param="minutes">
-                    <input type="number" id="input-seconds" data-param="seconds">
-                    <input type="range" id="slider-minutes">
-                    <input type="range" id="slider-seconds">
-                </div>
+                <section class="config-section" id="preset-section">
+                    <h3>PRESETS && RESET</h3>
+                    
+                    <div class="preset-select-row">
+                        <div class="select-wrapper-with-status">
+                            <select id="preset-select" class="preset-select">
+                                <option value="">-- Select Preset --</option>
+                            </select>
+                            <span id="preset-modified-status" class="hidden">● Modified</span>
+                        </div>
+                        <button id="btn-preset-load" class="secondary-btn">Load</button>
+                    </div>
+                    
+                    <div class="preset-action-row">
+                        <button id="btn-preset-update" class="primary-btn preset-action-btn hidden">Save Changes</button>
+                    
+                        <button id="btn-preset-save" class="secondary-btn preset-action-btn">Save As...</button>
+                        <button id="btn-preset-rename" class="secondary-btn preset-action-btn">Rename</button>
+                        <button id="btn-preset-delete" class="danger-btn preset-action-btn preset-delete-btn">Delete</button>
+                    </div>
+
+                    <div class="helper-text preset-help-text">Save your current layout and settings to a preset <b>in this browser</b>. 
+                        Use "Copy Link" to transfer between browsers/OBS.</div>
+                    
+                    
+                    <div class="preset-reset-row">
+                        <button id="btn-reset-all" class="reset-btn">Reset Current Layout</button>
+                    </div>
+                </section>
 
                 <section class="config-section helper-text">
                     <h3>Info:</h3>
@@ -247,11 +269,9 @@
                 <div class="autoplay-row">
                     <button id="copy-url-btn" class="primary-btn block-btn">Copy OBS Link</button>
 
-                    <div style="display: flex; flex-direction: column; width: 100%;">
-                        <label for="select-autoplay" style="font-size: 0.8rem; margin-bottom: 5px;">Autoplay
-                            Mode:</label>
-                        <select id="select-autoplay" data-param="autoplay"
-                            style="width: 100%; background: #333; color: white; border: 1px solid #555; padding: 5px;">
+                    <div class="autoplay-select-wrapper">
+                        <label for="select-autoplay" class="autoplay-label">Autoplay Mode:</label>
+                        <select id="select-autoplay" data-param="autoplay" class="autoplay-select">
                             <option value="off">Off (Manual Start)</option>
                             <option value="onload">On Load</option>
                             <option value="onstream">On Stream Start (OBS)</option>
@@ -260,7 +280,14 @@
 
                 </div>
                 <button id="stop-timer-btn" class="danger-btn block-btn">Stop Timer</button>
-                <button id="btn-reset-all" class="subtle-btn">Factory Reset</button>
+            </div>
+
+            <div class="hidden">
+                    <input type="text" id="input-title" data-param="title">
+                    <input type="number" id="input-minutes" data-param="minutes">
+                    <input type="number" id="input-seconds" data-param="seconds">
+                    <input type="range" id="slider-minutes">
+                    <input type="range" id="slider-seconds">
             </div>
 
         </div>

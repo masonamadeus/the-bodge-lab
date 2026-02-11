@@ -31,7 +31,18 @@ export async function loadEpisodes(allowNSFW) {
         const results = await Promise.allSettled(promises);
         const newEpisodes = results.filter(r => r.status === 'fulfilled').map(r => r.value).flat();
         
-        allEpisodes = allEpisodes.concat(newEpisodes);
+        // --- NEW: Blacklist Filtering ---
+        const blacklist = CONFIG.BLACKLIST || [];
+        const safeEpisodes = newEpisodes.filter(ep => {
+            // Check if the track title or URL contains any of the blacklisted strings
+            const isBlacklisted = blacklist.some(badString => 
+                ep.title.toLowerCase().includes(badString.toLowerCase()) || 
+                (ep.url && ep.url.toLowerCase().includes(badString.toLowerCase()))
+            );
+            return !isBlacklisted; // Keep it if it's NOT blacklisted
+        });
+        
+        allEpisodes = allEpisodes.concat(safeEpisodes);
         urlsToFetch.forEach(feed => loadedFeeds.add(feed.url));
     }
     
@@ -133,10 +144,16 @@ function measureDuration(item, feedObj) {
                 source_feed: feedObj.url,
                 isNSFW: feedObj.isNSFW // Attach the flag!
             });
+
+            // Sever the connection to avoid overloading
+            audio.removeAttribute('src');
+            audio.load();
         });
         
         audio.addEventListener('error', () => {
             resolve({ title: item.title, url: item.url, duration: 0 }); 
+            audio.removeAttribute('src');
+            audio.load();
         });
         
         audio.preload = "metadata";
@@ -148,14 +165,12 @@ function measureDuration(item, feedObj) {
    LOGIC (True Random Fill)
    ========================================= */
 
-/* js/audio.js - inside generatePlaylist */
-
 export function generatePlaylist(totalTimeSeconds, allowNSFW) {
     if (allEpisodes.length === 0) return [];
 
     let pool = [...allEpisodes];
 
-    // 1. Filter out NSFW tracks if the user disabled them
+    //  Filter out NSFW tracks if the user disabled them
     if (!allowNSFW) {
         pool = pool.filter(ep => ep.isNSFW === false);
     }
@@ -211,7 +226,10 @@ export function generatePlaylist(totalTimeSeconds, allowNSFW) {
     shuffleArray(queue);
 
     console.log(`[Audio] Generated playlist with ${queue.length} tracks. Total: ${currentFill}s`);
-    console.log(queue.map((t, i) => `  ${i+1}. ${t.title} (${t.duration}s)`).join('\n'));
+    // log the queue with the order, the urls, and the durations for debugging
+    queue.forEach((track, index) => {
+        console.log(`  ${index + 1}. ${track.title} (${track.duration}s) [${track.url}]`);
+    });
     return queue;
 }
 
@@ -307,8 +325,8 @@ function attachTrackListeners(audioElement, track) {
             const nextIndex = currentTrackIndex + 1;
             if (nextIndex < playlistQueue.length) {
                 console.log(`[Audio] Preloading: ${playlistQueue[nextIndex].title}`);
+                nextAudio.preload = "auto";
                 nextAudio.src = playlistQueue[nextIndex].url;
-                nextAudio.load();
             }
         }
     };
@@ -336,6 +354,7 @@ function swapPlayers() {
     // Reset the old player
     nextAudio.pause();
     nextAudio.removeAttribute('src'); 
+    nextAudio.load(); // to dump it
     nextAudio.ontimeupdate = null;
     nextAudio.onended = null;
     nextAudio.playbackRate = 1;
