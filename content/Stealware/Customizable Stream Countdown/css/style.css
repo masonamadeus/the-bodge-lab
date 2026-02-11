@@ -986,7 +986,7 @@ body.layout-editing [contenteditable="true"] {
     pointer-events: none; /* Ignore clicks when locked */
     box-shadow: 0 2px 5px rgba(0,0,0,0.5);
     transition: opacity 0.2s, transform 0.1s;
-    
+    display: none;
     /* Shared SVG background properties */
     background-position: center;
     background-repeat: no-repeat;
@@ -997,6 +997,7 @@ body.layout-editing [contenteditable="true"] {
 
 /* Show handles only in Edit Mode */
 body.layout-editing .edit-handle {
+    display: block;
     opacity: 1;
     pointer-events: auto;
 }
