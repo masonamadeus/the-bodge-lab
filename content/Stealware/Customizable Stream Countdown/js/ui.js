@@ -23,6 +23,76 @@ function validateDOM() {
     }
 }
 
+/**
+ * Validates user input values
+ */
+function validateInput(key, value) {
+    if (key === 'title') {
+        // Title must not be empty or just whitespace
+        return String(value).trim().length > 0 ? String(value).trim() : 'Click to Edit';
+    }
+    if (key === 'font') {
+        // Font names must be valid (alphanumeric, spaces, hyphens)
+        const sanitized = String(value).trim().replace(/[^a-zA-Z0-9\s\-]/g, '');
+        return sanitized.length > 0 ? sanitized : 'sans-serif';
+    }
+    return value;
+}
+
+/**
+ * Shows a custom confirmation dialog with keyboard support
+ * @param {string} title - The dialog title
+ * @param {string} message - The confirmation message
+ * @returns {Promise<boolean>} - True if confirmed, false if cancelled
+ */
+function showConfirmDialog(title, message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        const titleEl = document.getElementById('confirm-title');
+        const messageEl = document.getElementById('confirm-message');
+        const okBtn = document.getElementById('confirm-ok');
+        const cancelBtn = document.getElementById('confirm-cancel');
+
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+
+        const cleanup = () => {
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+            document.removeEventListener('keydown', onKeyDown);
+            modal.classList.add('hidden');
+        };
+
+        const onOk = () => {
+            cleanup();
+            resolve(true);
+        };
+
+        const onCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                onCancel();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                onOk();
+            }
+        };
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        document.addEventListener('keydown', onKeyDown);
+        modal.classList.remove('hidden');
+        
+        // Focus the cancel button (safer default)
+        setTimeout(() => cancelBtn.focus(), 0);
+    });
+}
+
 const DOM = {
     app: document.getElementById('app-container'),
     title: document.getElementById('stream-title'),
@@ -80,6 +150,7 @@ export async function loadBranding() {
 }
 
 export function applySettings(state) {
+    try {
         // Validate DOM on first run
         validateDOM();
         
@@ -112,27 +183,9 @@ export function applySettings(state) {
 
 
 
-    // SHADOW (Angle/Distance/Blur)
-    const shadowOn = (state.shadowEnabled === 'true');
-    const sColor = shadowOn ? state.shadowColor : 'transparent';
-    document.documentElement.style.setProperty('--shadow-color', sColor);
-    if (DOM.dropShadowNode) {
-        let angle = Number(state.shadowAngle);
-        let distance = Number(state.shadowDistance);
-        let blur = Number(state.shadowBlur);
-        if (!isFinite(angle)) angle = 90;
-        if (!isFinite(distance)) distance = 0;
-        if (!isFinite(blur)) blur = 0;
-        const rad = (angle - 90) * (Math.PI / 180);
-        let dx = Math.cos(rad) * distance * 10;
-        let dy = Math.sin(rad) * distance * 10;
-        if (!isFinite(dx)) dx = 0;
-        if (!isFinite(dy)) dy = 0;
-        DOM.dropShadowNode.setAttribute('dx', dx);
-        DOM.dropShadowNode.setAttribute('dy', dy);
-        DOM.dropShadowNode.setAttribute('stdDeviation', blur * 10);
-        DOM.dropShadowNode.setAttribute('flood-color', sColor);
-    }
+    // SHADOW - will be fully applied by applyShadowTransformation() below
+    document.documentElement.style.setProperty('--shadow-color', 
+        (state.shadowEnabled === 'true') ? state.shadowColor : 'transparent');
 
     // Sync UI controls to state (robust)
     if (DOM.shadowDist) DOM.shadowDist.value = String(Number(state.shadowDistance) || 0);
@@ -143,7 +196,13 @@ export function applySettings(state) {
         DOM.shadowPointer.style.transform = `rotate(${angle}deg)`;
     }
 
-    if (state.font) loadGoogleFont(state.font);
+    // Apply complete shadow transformation including opacity and container visibility
+    applyShadowTransformation(state);
+
+    if (state.font) {
+        const cleanFont = validateInput('font', state.font);
+        loadGoogleFont(cleanFont);
+    }
 
     if (state.audioEnabled === 'true') {
         DOM.nowPlaying.classList.remove('hidden');
@@ -186,36 +245,68 @@ export function applySettings(state) {
         }
     }
 
-    // --- Apply Layout Mode ---
-    // We are in custom mode if the state says so, OR if we have saved positions.
-    const hasSavedPositions = (state.posTitle || state.posTimer || state.posTrack);
-    const isCustom = (state.layoutMode === 'custom') || hasSavedPositions;
-    
-    if (isCustom) {
-        DOM.app.classList.add('custom-layout');
+        // --- Apply Layout Mode ---
+        // We are in custom mode if the state says so, OR if we have saved positions.
+        const hasSavedPositions = (state.posTitle || state.posTimer || state.posTrack);
+        const isCustom = (state.layoutMode === 'custom') || hasSavedPositions;
         
-        // Ensure they have the class that makes them absolute
-        Object.values(DOM.dragTargets).forEach(el => el.classList.add('draggable-item'));
+        if (isCustom) {
+            DOM.app.classList.add('custom-layout');
+            
+            // Ensure they have the class that makes them absolute
+            Object.values(DOM.dragTargets).forEach(el => el.classList.add('draggable-item'));
 
-        // Apply saved positions
-        if (state.posTitle) applyPos(DOM.dragTargets.title, state.posTitle, state.scaleTitle, state.rotTitle);
-        if (state.posTimer) applyPos(DOM.dragTargets.timer, state.posTimer, state.scaleTimer, state.rotTimer);
-        if (state.posTrack) applyPos(DOM.dragTargets.track, state.posTrack, state.scaleTrack, state.rotTrack);
+            // Apply saved positions
+            if (state.posTitle) applyPos(DOM.dragTargets.title, state.posTitle, state.scaleTitle, state.rotTitle);
+            if (state.posTimer) applyPos(DOM.dragTargets.timer, state.posTimer, state.scaleTimer, state.rotTimer);
+            if (state.posTrack) applyPos(DOM.dragTargets.track, state.posTrack, state.scaleTrack, state.rotTrack);
+            
+        } else {
+            DOM.app.classList.remove('custom-layout');
+            Object.values(DOM.dragTargets).forEach(el => el.classList.remove('draggable-item'));
+        }
+    } catch (err) {
+        console.error('[UI] Error applying settings:', err);
+        // Continue with defaults rather than crashing
+    }
+}
+
+/**
+ * Handles stateChange events from state.js
+ * Applies UI updates when state changes
+ */
+function handleStateChange(e) {
+    const { key, value } = e.detail;
+    
+    // Update specific UI elements based on which state changed
+    if (key === 'shadowAngle' || key === 'shadowDistance' || key === 'shadowBlur' || key === 'shadowEnabled' || key === 'shadowColor') {
+        const state = getState();
+        applyShadowTransformation(state);
         
-    } else {
-        DOM.app.classList.remove('custom-layout');
-        Object.values(DOM.dragTargets).forEach(el => el.classList.remove('draggable-item'));
+        // Update container visibility if shadowEnabled changed
+        if (key === 'shadowEnabled') {
+            if (DOM.shadowContainer) {
+                if (state.shadowEnabled === 'true') {
+                    DOM.shadowContainer.classList.remove('vanish');
+                } else {
+                    DOM.shadowContainer.classList.add('vanish');
+                }
+            }
+        }
     }
 }
 
 export function initEventListeners() {
+    // Remove existing stateChange listener to prevent stacking on reinit
+    window.removeEventListener('stateChange', handleStateChange);
+    window.addEventListener('stateChange', handleStateChange);
 
     DOM.settingsTrigger.addEventListener('click', () => DOM.settingsModal.classList.remove('hidden'));
     DOM.closeSettings.addEventListener('click', () => DOM.settingsModal.classList.add('hidden'));
 
     if (DOM.btnResetAll) {
-        DOM.btnResetAll.addEventListener('click', () => {
-            if (confirm("Are you sure? This will reset ALL settings, colors, and text to default.")) {
+        DOM.btnResetAll.addEventListener('click', async () => {
+            if (await showConfirmDialog("Reset All Settings", "Are you sure? This will reset ALL settings, colors, and text to default.")) {
                 // Wipe the URL parameters
                 const cleanURL = window.location.protocol + "//" + window.location.host + window.location.pathname;
                 window.history.replaceState({}, document.title, cleanURL);
@@ -226,17 +317,12 @@ export function initEventListeners() {
         });
     }
 
-    if (DOM.shadowCheckbox && DOM.shadowContainer) {
-        DOM.shadowCheckbox.addEventListener('change', () => {
-            if (DOM.shadowCheckbox.checked) {
-                DOM.shadowContainer.classList.remove('vanish');
-            } else {
-                DOM.shadowContainer.classList.add('vanish');
-            }
-        });
-    }
 
-    DOM.title.addEventListener('blur', () => updateParam('title', DOM.title.textContent));
+    DOM.title.addEventListener('blur', () => {
+        const cleanTitle = validateInput('title', DOM.title.textContent);
+        DOM.title.textContent = cleanTitle;
+        updateParam('title', cleanTitle);
+    });
 
     DOM.timerMin.addEventListener('blur', () => {
         const val = sanitizeInt(DOM.timerMin.textContent, 0, 999);
@@ -281,6 +367,16 @@ export function initEventListeners() {
         input.addEventListener('change', (e) => {
             const key = e.target.dataset.param;
             let val = e.target.type === 'checkbox' ? (e.target.checked ? 'true' : 'false') : e.target.value;
+            
+            // Special handling for shadow toggle to ensure immediate UI update
+            if (key === 'shadowEnabled' && DOM.shadowContainer) {
+                if (val === 'true') {
+                    DOM.shadowContainer.classList.remove('vanish');
+                } else {
+                    DOM.shadowContainer.classList.add('vanish');
+                }
+            }
+            
             updateParam(key, val);
         });
         if (input.type !== 'checkbox') {
@@ -351,6 +447,8 @@ export function initEventListeners() {
 
         if (key === 'font') loadGoogleFont(value);
         if (key === 'colorText') document.body.style.color = value;
+        if (key === 'colorBg') document.documentElement.style.setProperty('--main-bg-color', value);
+        if (key === 'shadowColor') document.documentElement.style.setProperty('--shadow-color', value);
         
         // Handle shadow changes efficiently
         if (key === 'shadowAngle') {
@@ -544,8 +642,8 @@ export function initEventListeners() {
 
     initKnobLogic();
 
-    DOM.btnResetLayout.addEventListener('click', () => {
-        if(confirm("Reset all elements to center?")) {
+    DOM.btnResetLayout.addEventListener('click', async () => {
+        if(await showConfirmDialog("Reset Layout", "Reset all elements to their default positions?")) {
 
            // Clear State
             updateParam('posTitle', '');
@@ -1099,6 +1197,7 @@ function applyShadowTransformation(state) {
     let blur = Number(state.shadowBlur);
     const shadowOn = (state.shadowEnabled === 'true');
     const sColor = shadowOn ? state.shadowColor : 'transparent';
+    const sOpacity = shadowOn ? '1' : '0';
 
     if (!isFinite(angle)) angle = 90;
     if (!isFinite(dist)) dist = 0;
@@ -1116,6 +1215,7 @@ function applyShadowTransformation(state) {
         DOM.dropShadowNode.setAttribute('dy', dy);
         DOM.dropShadowNode.setAttribute('stdDeviation', blur * 10);
         DOM.dropShadowNode.setAttribute('flood-color', sColor);
+        DOM.dropShadowNode.setAttribute('flood-opacity', sOpacity);
     }
 
     if (DOM.shadowPointer) {

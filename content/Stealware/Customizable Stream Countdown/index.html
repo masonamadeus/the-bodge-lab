@@ -12,12 +12,17 @@
 
     <link rel="stylesheet" href="css/style.css">
     <link id="dynamic-font" rel="stylesheet" href="">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=SN+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
 </head>
 
 <body>
-    <svg id="svg-filter-container" style="width:0; height:0; position:fixed; top:0; left:0;" aria-hidden="true" focusable="false">
+    <svg id="svg-filter-container" style="width:0; height:0; position:fixed; top:0; left:0;" aria-hidden="true"
+        focusable="false">
         <defs>
-            <filter id="global-drop-shadow" filterUnits="objectBoundingBox" x="-50%" y="-50%" width="200%" height="200%">
+            <filter id="global-drop-shadow" filterUnits="objectBoundingBox" x="-50%" y="-50%" width="200%"
+                height="200%">
                 <feDropShadow id="dynamic-drop-shadow" dx="0.02" dy="0.02" stdDeviation="0.04" flood-color="#000000"
                     flood-opacity="1" />
             </filter>
@@ -64,7 +69,23 @@
 
     <button id="main-start-btn" class="start-btn">Start Timer</button>
 
-    <div id="settings-trigger" title="Open Settings">⚙️</div>
+    <div id="confirm-modal" class="hidden modal-overlay">
+        <div class="confirm-dialog">
+            <h3 id="confirm-title">Confirm Action</h3>
+            <p id="confirm-message"></p>
+            <div class="confirm-buttons">
+                <button id="confirm-cancel" class="btn-secondary">Cancel</button>
+                <button id="confirm-ok" class="btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-trigger" title="Open Settings">
+        <svg viewBox="0 0 24 24" width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+            <path fill="currentColor"
+                d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7zm7.43-2.52c.04-.32.07-.65.07-.98 0-.33-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65A.488.488 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.31.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.22.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z" />
+        </svg>
+    </div>
 
     <div id="settings-modal" class="hidden">
         <div class="settings-content">
@@ -86,8 +107,7 @@
                             </svg>
                         </div>
                         <div class="toggle-wrapper">
-                            <label for="input-audio-enabled" class="toggle-label">PodCube™ Enhanced Experience
-                                [P.E.E.]</label>
+                            <label for="input-audio-enabled" class="toggle-label">PodCube™ Enhanced Experience</label>
                             <input type="checkbox" id="input-audio-enabled" data-param="audioEnabled"
                                 class="toggle-switch">
                         </div>
@@ -159,17 +179,19 @@
                             <input type="color" id="input-color-shadow" data-param="shadowColor" class="mini-color">
                         </div>
                         <div class="control-row">
-                            <label>Angle & Distance</label>
+                            <label>Angle && Distance</label>
                             <div class="knob-container">
                                 <div id="input-shadow-knob" class="knob">
                                     <div class="knob-pointer"></div>
                                 </div>
                             </div>
-                            <input type="range" id="input-shadow-dist" data-param="shadowDistance" min="0" max="2" step="0.05">
+                            <input type="range" id="input-shadow-dist" data-param="shadowDistance" min="0" max="2"
+                                step="0.05">
                         </div>
                         <div class="control-row">
                             <label>Blur</label>
-                            <input type="range" id="input-shadow-blur" data-param="shadowBlur" min="0" max="2" step="0.05">
+                            <input type="range" id="input-shadow-blur" data-param="shadowBlur" min="0" max="2"
+                                step="0.05">
                         </div>
                     </div>
                 </section>

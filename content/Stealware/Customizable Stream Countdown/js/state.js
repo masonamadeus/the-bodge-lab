@@ -41,10 +41,15 @@ const DEFAULTS = {
 
 /**
  * Returns the current state object derived from URL params + Defaults
+ * Always reads from the most recent state (either pending or applied)
  * @returns {Object}
  */
+let pendingUrl = null;
+
 export function getState() {
-    const params = new URLSearchParams(window.location.search);
+    // Use pendingUrl if available (has pending changes), otherwise read from actual URL
+    const urlSource = pendingUrl || window.location;
+    const params = new URLSearchParams(urlSource.search);
     const state = {};
 
     // Iterate over DEFAULTS keys to determine what to fetch
@@ -64,7 +69,6 @@ export function getState() {
  * The URL history is debounced to prevent spamming the address bar.
  */
 let debounceTimer = null;
-let pendingUrl = null;
 
 export function updateParam(key, value) {
     // 1. Update the pending URL object immediately so getState() is always accurate
