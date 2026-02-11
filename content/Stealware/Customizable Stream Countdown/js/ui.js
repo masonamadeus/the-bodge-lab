@@ -181,12 +181,6 @@ export function applySettings(state) {
     }
     document.body.style.color = state.colorText;
 
-
-
-    // SHADOW - will be fully applied by applyShadowTransformation() below
-    document.documentElement.style.setProperty('--shadow-color', 
-        (state.shadowEnabled === 'true') ? state.shadowColor : 'transparent');
-
     // Sync UI controls to state (robust)
     if (DOM.shadowDist) DOM.shadowDist.value = String(Number(state.shadowDistance) || 0);
     if (DOM.shadowBlur) DOM.shadowBlur.value = String(Number(state.shadowBlur) || 0);
@@ -196,7 +190,7 @@ export function applySettings(state) {
         DOM.shadowPointer.style.transform = `rotate(${angle}deg)`;
     }
 
-    // Apply complete shadow transformation including opacity and container visibility
+    // Apply CSS drop-shadow to all elements
     applyShadowTransformation(state);
 
     if (state.font) {
@@ -447,57 +441,74 @@ export function initEventListeners() {
 
         if (key === 'font') loadGoogleFont(value);
         if (key === 'colorText') document.body.style.color = value;
-        if (key === 'colorBg') document.documentElement.style.setProperty('--main-bg-color', value);
-        if (key === 'shadowColor') document.documentElement.style.setProperty('--shadow-color', value);
         
-        // Handle shadow changes efficiently
+        // Handle shadow changes - update CSS drop-shadow on all elements
         if (key === 'shadowAngle') {
-            // Only angle changed - update pointer and dx/dy calculations
             let angle = Number(value);
             if (!isFinite(angle)) angle = 90;
             const state = getState();
-            const dist = Number(state.shadowDistance);
-            const rad = (angle - 90) * (Math.PI / 180);
-            let dx = Math.cos(rad) * dist * 10;
-            let dy = Math.sin(rad) * dist * 10;
-            if (!isFinite(dx)) dx = 0;
-            if (!isFinite(dy)) dy = 0;
             
-            if (DOM.dropShadowNode) {
-                DOM.dropShadowNode.setAttribute('dx', dx);
-                DOM.dropShadowNode.setAttribute('dy', dy);
-            }
+            // Update knob pointer
             if (DOM.shadowPointer) {
                 DOM.shadowPointer.style.transform = `rotate(${angle}deg)`;
             }
+            
+            // Update CSS shadows on all draggable elements
+            Object.values(DOM.dragTargets).forEach(el => {
+                applyCSSDropShadow(
+                    el, 
+                    angle, 
+                    Number(state.shadowDistance) || 0, 
+                    Number(state.shadowBlur) || 0, 
+                    state.shadowColor, 
+                    state.shadowEnabled
+                );
+            });
         } else if (key === 'shadowDistance') {
-            // Only distance changed - recalculate dx/dy with current angle
             let distance = Number(value);
             if (!isFinite(distance)) distance = 0;
             const state = getState();
-            const angle = Number(state.shadowAngle);
-            const rad = (angle - 90) * (Math.PI / 180);
-            let dx = Math.cos(rad) * distance * 10;
-            let dy = Math.sin(rad) * distance * 10;
-            if (!isFinite(dx)) dx = 0;
-            if (!isFinite(dy)) dy = 0;
             
-            if (DOM.dropShadowNode) {
-                DOM.dropShadowNode.setAttribute('dx', dx);
-                DOM.dropShadowNode.setAttribute('dy', dy);
-            }
+            // Update CSS shadows on all draggable elements
+            Object.values(DOM.dragTargets).forEach(el => {
+                applyCSSDropShadow(
+                    el, 
+                    Number(state.shadowAngle) || 90, 
+                    distance, 
+                    Number(state.shadowBlur) || 0, 
+                    state.shadowColor, 
+                    state.shadowEnabled
+                );
+            });
         } else if (key === 'shadowBlur') {
-            // Only blur changed - update stdDeviation only
             let blur = Number(value);
             if (!isFinite(blur)) blur = 0;
+            const state = getState();
             
-            if (DOM.dropShadowNode) {
-                DOM.dropShadowNode.setAttribute('stdDeviation', blur * 10);
-            }
+            // Update CSS shadows on all draggable elements
+            Object.values(DOM.dragTargets).forEach(el => {
+                applyCSSDropShadow(
+                    el, 
+                    Number(state.shadowAngle) || 90, 
+                    Number(state.shadowDistance) || 0, 
+                    blur, 
+                    state.shadowColor, 
+                    state.shadowEnabled
+                );
+            });
         } else if (['shadowColor', 'shadowEnabled'].includes(key)) {
-            // Color/enabled changed - run full transformation
+            // Color/enabled changed - update all shadows
             const state = getState();
             applyShadowTransformation(state);
+            
+            // Update container visibility when shadowEnabled changes
+            if (key === 'shadowEnabled' && DOM.shadowContainer) {
+                if (state.shadowEnabled === 'true') {
+                    DOM.shadowContainer.classList.remove('vanish');
+                } else {
+                    DOM.shadowContainer.classList.add('vanish');
+                }
+            }
         }
 
         if (key === 'colorBg' || key === 'bgTransparent') {
@@ -871,6 +882,31 @@ function initDraggableModal() {
 // HELPER FUNCTIONS
 // ---------------------------------------------------------
 
+/**
+ * Applies drop shadow using CSS filter instead of SVG
+ * Compensates for element rotation to keep shadow angle consistent
+ */
+function applyCSSDropShadow(element, shadowAngle, shadowDistance, shadowBlur, shadowColor, shadowEnabled) {
+    if (shadowEnabled !== 'true') {
+        element.style.filter = 'none';
+        return;
+    }
+    
+    // Get current element rotation
+    const elementRotation = parseFloat(element.dataset.rot) || 0;
+    
+    // Compensate for element rotation to keep shadow direction consistent
+    const compensatedAngle = shadowAngle - elementRotation;
+    
+    // Convert to radians and calculate offset
+    const rad = (compensatedAngle - 90) * (Math.PI / 180);
+    const dx = Math.cos(rad) * shadowDistance * 10;
+    const dy = Math.sin(rad) * shadowDistance * 10;
+    
+    // Apply CSS drop-shadow filter
+    element.style.filter = `drop-shadow(${dx}px ${dy}px ${shadowBlur * 10}px ${shadowColor})`;
+}
+
 
 /**
  * Calculates where the elements currently are in their natural layout 
@@ -898,6 +934,17 @@ function freezeCurrentPositions() {
         
         // Force the transform to exist immediately so there's no frame-jump
         element.style.transform = `translate(-50%, -50%) scale(${element.dataset.scale}) rotate(${element.dataset.rot}deg)`;
+        
+        // Apply CSS drop-shadow with rotation compensation for Safari compatibility
+        const state = getState();
+        applyCSSDropShadow(
+            element,
+            Number(state.shadowAngle) || 90,
+            Number(state.shadowDistance) || 0,
+            Number(state.shadowBlur) || 0,
+            state.shadowColor || '#000000',
+            state.shadowEnabled
+        );
         
         const stateKey = `pos${key.charAt(0).toUpperCase() + key.slice(1)}`;
         updateParam(stateKey, `${xPct.toFixed(2)},${yPct.toFixed(2)}`);
@@ -959,6 +1006,17 @@ function applyPos(element, posString, scaleString = "1.0", rotString = "0") {
         // Store current values on the element for the math to read later
         element.dataset.scale = scaleString; 
         element.dataset.rot = rotString;
+        
+        // Apply CSS drop-shadow with rotation compensation for Safari compatibility
+        const state = getState();
+        applyCSSDropShadow(
+            element,
+            Number(state.shadowAngle) || 90,
+            Number(state.shadowDistance) || 0,
+            Number(state.shadowBlur) || 0,
+            state.shadowColor || '#000000',
+            state.shadowEnabled
+        );
 
         // Scale the handles by the inverse so they stay the same size visually
         const inverseScale = 1 / parseFloat(scaleString);
@@ -1166,6 +1224,17 @@ function makeElementDraggable(element, paramKey) {
         const scale = element.dataset.scale || "1.0";
         element.style.transform = `translate(-50%, -50%) scale(${scale}) rotate(${newRot}deg)`;
         element.dataset.rot = newRot;
+        
+        // Live-update CSS shadow during rotation for smooth feedback
+        const state = getState();
+        applyCSSDropShadow(
+            element,
+            Number(state.shadowAngle) || 90,
+            Number(state.shadowDistance) || 0,
+            Number(state.shadowBlur) || 0,
+            state.shadowColor || '#000000',
+            state.shadowEnabled
+        );
     };
 
     const onRotateEnd = () => {
@@ -1175,6 +1244,17 @@ function makeElementDraggable(element, paramKey) {
         document.body.style.overflow = '';
         const stateKey = `rot${paramKey.charAt(0).toUpperCase() + paramKey.slice(1)}`;
         updateParam(stateKey, Math.round(parseFloat(element.dataset.rot)));
+        
+        // Reapply CSS shadow with new rotation compensation
+        const state = getState();
+        applyCSSDropShadow(
+            element,
+            Number(state.shadowAngle) || 90,
+            Number(state.shadowDistance) || 0,
+            Number(state.shadowBlur) || 0,
+            state.shadowColor || '#000000',
+            state.shadowEnabled
+        );
     };
 
     window.addEventListener('mousemove', onRotateMove);
@@ -1196,31 +1276,21 @@ function applyShadowTransformation(state) {
     let dist = Number(state.shadowDistance);
     let blur = Number(state.shadowBlur);
     const shadowOn = (state.shadowEnabled === 'true');
-    const sColor = shadowOn ? state.shadowColor : 'transparent';
-    const sOpacity = shadowOn ? '1' : '0';
+    const sColor = state.shadowColor || '#000000';
 
     if (!isFinite(angle)) angle = 90;
     if (!isFinite(dist)) dist = 0;
     if (!isFinite(blur)) blur = 0;
 
-    // Convert Polar to Cartesian
-    const rad = (angle - 90) * (Math.PI / 180);
-    let dx = Math.cos(rad) * dist * 10;
-    let dy = Math.sin(rad) * dist * 10;
-    if (!isFinite(dx)) dx = 0;
-    if (!isFinite(dy)) dy = 0;
-
-    if (DOM.dropShadowNode) {
-        DOM.dropShadowNode.setAttribute('dx', dx);
-        DOM.dropShadowNode.setAttribute('dy', dy);
-        DOM.dropShadowNode.setAttribute('stdDeviation', blur * 10);
-        DOM.dropShadowNode.setAttribute('flood-color', sColor);
-        DOM.dropShadowNode.setAttribute('flood-opacity', sOpacity);
-    }
-
+    // Update the knob pointer visual
     if (DOM.shadowPointer) {
         DOM.shadowPointer.style.transform = `rotate(${angle}deg)`;
     }
+    
+    // Apply CSS drop-shadow to all draggable target elements
+    Object.values(DOM.dragTargets).forEach(el => {
+        applyCSSDropShadow(el, angle, dist, blur, sColor, state.shadowEnabled);
+    });
 }
 
 function loadGoogleFont(fontName) {
