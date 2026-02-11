@@ -105,6 +105,11 @@ button {border-radius:0;}
     flex-direction: column;
     align-items: center;
     justify-content: center; 
+    filter: url(#global-drop-shadow);
+}
+
+#app-container .start-btn {
+    filter: none;
 }
 
 /* =========================================
@@ -118,13 +123,10 @@ h1 {
 }
 
 /* Shadow utilities for text elements */
-h1, #timer-container, .meta-container, #track-name {
-    text-shadow: var(--shadow-x) var(--shadow-y) var(--shadow-blur) var(--shadow-color);
+#stream-title, #timer-container, #now-playing {
+
 }
 
-#stream-title { 
-    text-wrap: auto; 
-}
 
 /* Editable Field Styling */
 [contenteditable="true"] {
@@ -224,14 +226,12 @@ h1, #timer-container, .meta-container, #track-name {
     width: 100%;
     height: 100%;
     opacity: 0.5;
-    filter: drop-shadow(var(--shadow-x) var(--shadow-y) var(--shadow-blur) var(--shadow-color));
 }
 .podcube-logo img {
     width: 100%;
     height: 100%;
     border-radius: 0;
     object-fit: cover;
-    filter: drop-shadow(var(--shadow-x) var(--shadow-y) var(--shadow-blur) var(--shadow-color));
 }
 
 /* Track Metadata */
@@ -450,7 +450,7 @@ h1, #timer-container, .meta-container, #track-name {
 }
 
 /* --- Helper Text --- */
-.helper-text { font-size: 0.85rem; color: #aaa; margin: 5px 0 15px 0; line-height: 1.4; }
+.helper-text { font-size: 0.85rem; color: #aaa; margin: 5px 0 5px 0; line-height: 1.4; }
 .helper-text a { color: #fff; text-decoration: underline; }
 
 /* --- Grid Layouts --- */
@@ -563,7 +563,7 @@ input[type="color"]::-webkit-color-swatch { border: none; }
     cursor: auto; /* Default to normal mouse when locked */
     left: 50%;
     top: 50%;
-    z-index: 10;
+    z-index: 100;
     transition: color 0.3s, background 0.3s;
     white-space: nowrap; 
 }
@@ -588,7 +588,68 @@ body.layout-editing [contenteditable="true"] {
 }
 
 /* =========================================
-   11. UTILITIES
+   ON-ELEMENT HANDLES (Scale & Rotate)
+   ========================================= */
+
+/* The handles are injected into the draggable items */
+.edit-handle {
+    position: absolute;
+    /* Bumped size slightly to fit the icons */
+    width: 24px; 
+    height: 24px;
+    background-color: var(--accent-color); /* Changed from 'background' to 'background-color' */
+    border: 2px solid white;
+    border-radius: 50%;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none; /* Ignore clicks when locked */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    transition: opacity 0.2s, transform 0.1s;
+    
+    /* Shared SVG background properties */
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 60%; 
+
+    transform-origin: center center;
+}
+
+/* Show handles only in Edit Mode */
+body.layout-editing .edit-handle {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Hover effects for handles */
+body.layout-editing .edit-handle:hover {
+    transform: scale(1.2);
+}
+
+/* Scale Handle (Bottom Right) */
+.handle-scale {
+    bottom: -12px;
+    right: -12px;
+    cursor: nwse-resize;
+    /* Diagonal arrow SVG */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v6h-6M21 21l-7-7M3 9V3h6M3 3l7 7'/%3E%3C/svg%3E");
+}
+
+/* Rotate Handle (Top Right) */
+.handle-rotate {
+    top: -12px;
+    right: -12px;
+    cursor: grab;
+    background-color: #ff9800; 
+    /* NEW: Circular arrow SVG */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/%3E%3Cpath d='M3 3v5h5'/%3E%3C/svg%3E");
+}
+
+body.layout-editing .handle-rotate:active {
+    cursor: grabbing;
+}
+
+/* =========================================
+   UTILITIES
    ========================================= */
 .hidden { display: none !important; }
 

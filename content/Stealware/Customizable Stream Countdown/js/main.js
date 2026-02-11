@@ -3,6 +3,8 @@ import { getState } from './state.js';
 import * as UI from './ui.js'; 
 import * as Audio from './audio.js';
 
+let hasStarted = false;
+
 async function init() {
     // Initial Render (Visuals)
     const initialState = getState();
@@ -12,35 +14,56 @@ async function init() {
     // Load Branding (PodCube Logo)
     await UI.loadBranding();
 
-    // Autoplay Determination
-    const params = new URLSearchParams(window.location.search);
-    const isAutoplay = (initialState.autoplay === 'true') && !!window.obsstudio;
+    // Check Autoplay Mode
+    const autoplayMode = initialState.autoplay;
+    const isOBS = !!window.obsstudio;
 
-    if (isAutoplay) {
-        // OBS/Autoplay Mode
-        console.log("[Main] Autoplay detected. Warming up audio...");
-        
-        /**
-         * Wait 1 second to ensure OBS Browser Source 
-         * has initialized its internal audio context.
-         */
+    // SCENARIO 1: Autoplay On Load
+    // (Only triggers if we are actually in OBS, to prevent annoying desktop users)
+    if (autoplayMode === 'onload' && isOBS) {
+        console.log("[Main] Autoplay On Load detected. Warming up audio...");
         setTimeout(() => {
-            UI.startExperience(initialState);
+            triggerStart();
         }, 1000);
-
-    } else {
-        // Desktop Mode: Manual Start
-        const startBtn = document.getElementById('main-start-btn');
+    } 
+    // SCENARIO 2: Autoplay On Stream Start
+    // (We listen for the OBS event)
+    else if (autoplayMode === 'onstream' && isOBS) {
+        console.log("[Main] Waiting for OBS Stream Start event...");
         
-        if (startBtn) {
-            startBtn.addEventListener('click', () => {
-                // Fetch FRESH state in case the user edited the 
-                // timer minutes while the modal was open.
-                Audio.unlockAudio();
-                const currentState = getState(); 
-                UI.startExperience(currentState);
-            });
-        }
+        // This is the magical OBS event listener!
+        window.addEventListener('obsStreamingStarted', () => {
+            console.log("[Main] OBS Stream Started! Launching countdown.");
+            triggerStart();
+        });
+
+        // Also allow manual start just in case they change their mind
+        setupManualStart();
+    } 
+    // SCENARIO 3: Manual Start (or not in OBS)
+    else {
+        setupManualStart();
+    }
+}
+
+// Helper to fire the start sequence safely
+function triggerStart() {
+    if (hasStarted) return; // Prevent double-firing
+    hasStarted = true;
+    
+    // Unlock audio context and fetch fresh state
+    Audio.unlockAudio();
+    const currentState = getState(); 
+    UI.startExperience(currentState);
+}
+
+// Helper to attach the click listener to the big start button
+function setupManualStart() {
+    const startBtn = document.getElementById('main-start-btn');
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            triggerStart();
+        });
     }
 }
 

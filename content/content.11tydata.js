@@ -410,7 +410,6 @@ module.exports = {
 
       // 2. PARSE CONTENT (Get what we know exists)
       const parsed = data._pageData 
-        || parseMarkdownData(data.page.rawInput, data.page) 
         || { h1: null, excerpt: null, assets: { images: [], videos: [], audio: [] } };
 
       // 3. DETECT STRATEGY (Find the best specific candidate, if any)

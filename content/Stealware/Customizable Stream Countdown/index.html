@@ -14,6 +14,19 @@
 </head>
 
 <body>
+<svg id="svg-filter-container" style="width:0; height:0; position:absolute;" aria-hidden="true" focusable="false">
+        <defs>
+            <filter id="global-drop-shadow" x="-100%" y="-100%" width="300%" height="300%">
+                <feDropShadow 
+                    id="dynamic-drop-shadow"
+                    dx="2" 
+                    dy="2" 
+                    stdDeviation="4" 
+                    flood-color="#000000" 
+                    flood-opacity="1"/>
+            </filter>
+        </defs>
+    </svg>
 
     <main id="app-container">
         <h1 id="stream-title" contenteditable="true" spellcheck="false">Click to Edit</h1>
@@ -38,7 +51,7 @@
                 </div>
                 <div class="meta-container">
                     <label>While you wait...</label>
-                    <div class="brand-label">You're Listening to PodCube™</div>
+                    <div id="brand-label" class="brand-label">You're Listening to PodCube™</div>
                     <div id="track-name"></div>
                     <div id="progress-container">
                         <div id="progress-bar"></div>
@@ -50,8 +63,10 @@
 
         </div>
 
-        <button id="main-start-btn" class="start-btn">Start Timer</button>
+        
     </main>
+
+    <button id="main-start-btn" class="start-btn">Start Timer</button>
 
     <div id="settings-trigger" title="Open Settings">⚙️</div>
 
@@ -75,8 +90,17 @@
                             <input type="checkbox" id="input-audio-enabled" data-param="audioEnabled" class="toggle-switch">
                         </div>
                     </div>
-                    <p class="helper-text">Auto-plays hilarious, high quality <a href="https://poweredbypodcube.com/" target="_blank">PodCube™</a> episodes to fill time until the countdown ends.</p>
+                    <p class="helper-text">Auto-plays hilarious, high quality <a href="https://poweredbypodcube.com/" target="_blank">PodCube™</a> episodes to fill time until the countdown ends. (PG-13)</p>
                     
+                    <div class="card-header-row" style="margin-top: 15px; border-top: 1px solid #444; padding-top: 15px;">
+                        <div class="toggle-wrapper">
+                            <input type="checkbox" id="input-ads-enabled" data-param="nsfw" class="toggle-switch">
+                            <label for="input-ads-enabled" class="toggle-label" style="font-size: 0.9rem; color: #ccc;">Include <a href="https://bodgelab.com/s/widk-ads" target="_blank">WIDK Commercials</a></label>
+                            
+                    <p class="helper-text"><b style="color:var(--danger-color);">Commercials may contain NSFW language/themes.</b></p>
+                        </div>
+                    </div>
+
                     <div class="control-row">
                         <label>Volume</label>
                         <input type="range" id="input-volume" data-param="volume" min="0" max="1" step="0.1">
@@ -174,7 +198,7 @@
                         The show is <b>PG-13</b> at most (but still hilarious) so it should be acceptable for even family-friendly streams.
                     </li>
                     <li><b>You can move this settings window around</b> by dragging its title bar, and resize it by dragging the bottom right corner.</li>
-                    <li>Created with love by <b>Mason Amadeus</b>, keeper of <a href="https://bodgelab.com">The Bodge Lab</a>, and co-creator of PodCube™</li>
+                    <li>Created with love by <b>Mason Amadeus</b>, keeper of <a href="https://bodgelab.com" target="_blank">The Bodge Lab</a>, and co-creator of <a href="https://poweredbypodcube.com/" target="_blank">PodCube™</a></li>
                 </ul>
                 </section>
 
@@ -183,8 +207,16 @@
             <div class="settings-actions">
                 <div class="autoplay-row">
                     <button id="copy-url-btn" class="primary-btn block-btn">Copy OBS Link</button>
-                    <input type="checkbox" id="input-autoplay" data-param="autoplay">
-                    <label for="input-autoplay">Autoplay on Load</label>
+                    
+                    <div style="display: flex; flex-direction: column; width: 100%;">
+                        <label for="select-autoplay" style="font-size: 0.8rem; margin-bottom: 5px;">Autoplay Mode:</label>
+                        <select id="select-autoplay" data-param="autoplay" style="width: 100%; background: #333; color: white; border: 1px solid #555; padding: 5px;">
+                            <option value="off">Off (Manual Start)</option>
+                            <option value="onload">On Load</option>
+                            <option value="onstream">On Stream Start (OBS)</option>
+                        </select>
+                    </div>
+
                 </div>
                 <button id="stop-timer-btn" class="danger-btn block-btn">Stop Timer</button>
                 <button id="btn-reset-all" class="subtle-btn">Factory Reset</button>

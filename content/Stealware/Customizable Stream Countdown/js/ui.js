@@ -14,6 +14,7 @@ const DOM = {
     startBtn: document.getElementById('main-start-btn'),
     nowPlaying: document.getElementById('now-playing'),
     trackName: document.getElementById('track-name'),
+    brandLabel: document.getElementById('brand-label'),
     progressBar: document.getElementById('progress-bar'),
     settingsModal: document.getElementById('settings-modal'),
     settingsTrigger: document.getElementById('settings-trigger'),
@@ -34,6 +35,8 @@ const DOM = {
 
     shadowCheckbox: document.getElementById('input-shadow-enabled'),
     shadowContainer: document.getElementById('shadow-controls-container'),
+    svgFilter: document.getElementById('svg-filter-container'),
+    dropShadowNode: document.getElementById('dynamic-drop-shadow'),
     
     // The draggable targets
     dragTargets: {
@@ -75,13 +78,18 @@ export function applySettings(state) {
     }
     document.body.style.color = state.colorText;
 
+
+    // SHADOW
     const shadowOn = (state.shadowEnabled === 'true');
-    const sColor = shadowOn ? state.shadowColor : 'transparent'; // Hide if off
+    const sColor = shadowOn ? state.shadowColor : 'transparent'; 
 
     document.documentElement.style.setProperty('--shadow-color', sColor);
-    document.documentElement.style.setProperty('--shadow-x', state.shadowX + 'vmin');
-    document.documentElement.style.setProperty('--shadow-y', state.shadowY + 'vmin');
-    document.documentElement.style.setProperty('--shadow-blur', state.shadowBlur + 'vmin');
+   if (DOM.dropShadowNode) {
+        DOM.dropShadowNode.setAttribute('dx', parseFloat(state.shadowX) * 10);
+        DOM.dropShadowNode.setAttribute('dy', parseFloat(state.shadowY) * 10);
+        DOM.dropShadowNode.setAttribute('stdDeviation', parseFloat(state.shadowBlur) * 10);
+        DOM.dropShadowNode.setAttribute('flood-color', sColor);
+    }
 
     if (state.font) loadGoogleFont(state.font);
 
@@ -98,6 +106,8 @@ export function applySettings(state) {
         if (state[key] !== undefined) {
             if (input.type === 'checkbox') {
                 input.checked = (state[key] === 'true');
+            } else if (input.tagName === 'SELECT') {
+                input.value = state[key];
             } else {
                 input.value = state[key];
                 if (input.type === 'color') {
@@ -136,10 +146,10 @@ export function applySettings(state) {
         Object.values(DOM.dragTargets).forEach(el => el.classList.add('draggable-item'));
 
         // Apply saved positions
-        if (state.posTitle) applyPos(DOM.dragTargets.title, state.posTitle);
-        if (state.posTimer) applyPos(DOM.dragTargets.timer, state.posTimer);
-        if (state.posTrack) applyPos(DOM.dragTargets.track, state.posTrack);
-
+        if (state.posTitle) applyPos(DOM.dragTargets.title, state.posTitle, state.scaleTitle, state.rotTitle);
+        if (state.posTimer) applyPos(DOM.dragTargets.timer, state.posTimer, state.scaleTimer, state.rotTimer);
+        if (state.posTrack) applyPos(DOM.dragTargets.track, state.posTrack, state.scaleTrack, state.rotTrack);
+        
     } else {
         DOM.app.classList.remove('custom-layout');
         Object.values(DOM.dragTargets).forEach(el => el.classList.remove('draggable-item'));
@@ -261,7 +271,14 @@ export function initEventListeners() {
 
     window.addEventListener('stateChange', (e) => {
         const { key, value } = e.detail;
-        if (key === 'title') DOM.title.textContent = value;
+        if (key === 'title') {
+            DOM.title.textContent = value;
+
+            // Put the handles back if this element has them!
+            if (DOM.title._editHandles) {
+                DOM.title._editHandles.forEach(h => DOM.title.appendChild(h));
+            }
+        }
 
         if (key === 'audioEnabled') {
             if (value === 'true') {
@@ -283,7 +300,6 @@ export function initEventListeners() {
         if (key === 'font') loadGoogleFont(value);
         if (key === 'colorText') document.body.style.color = value;
         if (['shadowColor', 'shadowEnabled', 'shadowX', 'shadowY', 'shadowBlur'].includes(key)) {
-            // Re-read current state values for the composite shadow property
             const sEnabled = document.getElementById('input-shadow-enabled').checked;
             const sColor = document.getElementById('input-color-shadow').value;
             const sX = document.getElementById('input-shadow-x').value;
@@ -292,10 +308,16 @@ export function initEventListeners() {
 
             const finalColor = sEnabled ? sColor : 'transparent';
 
+            // Set the color (Standard CSS var)
             document.documentElement.style.setProperty('--shadow-color', finalColor);
-            document.documentElement.style.setProperty('--shadow-x', sX + 'vmin');
-            document.documentElement.style.setProperty('--shadow-y', sY + 'vmin');
-            document.documentElement.style.setProperty('--shadow-blur', sBlur + 'vmin');
+            
+            // Set the SVG attributes (Raw numbers, multiplying by 10 to convert vmin scale to roughly pixels)
+            if (DOM.dropShadowNode) {
+                DOM.dropShadowNode.setAttribute('dx', parseFloat(sX) * 10);
+                DOM.dropShadowNode.setAttribute('dy', parseFloat(sY) * 10);
+                DOM.dropShadowNode.setAttribute('stdDeviation', parseFloat(sBlur) * 10);
+                DOM.dropShadowNode.setAttribute('flood-color', finalColor);
+            }
         }
 
         if (key === 'colorBg' || key === 'bgTransparent') {
@@ -343,6 +365,13 @@ export function initEventListeners() {
         // Smoothly update the title
         DOM.trackName.textContent = e.detail.title;
 
+        // Update "You're Listening To" based on source feed
+        if (e.detail.sourceFeed && e.detail.sourceFeed.includes('.json')) {
+            DOM.brandLabel.textContent = "YOU'RE LISTENING TO WIDK COMMERCIALS";
+        } else {
+            DOM.brandLabel.textContent = "YOU'RE LISTENING TO PODCUBE™";
+        }
+
         // Reset progress bar immediately to 0 to avoid "snapping" from 100%
         DOM.progressBar.style.transition = 'none';
         DOM.progressBar.style.width = '0%';
@@ -382,10 +411,21 @@ export function initEventListeners() {
 
     DOM.btnResetLayout.addEventListener('click', () => {
         if(confirm("Reset all elements to center?")) {
-            // Clear State
+
+           // Clear State
             updateParam('posTitle', '');
             updateParam('posTimer', '');
             updateParam('posTrack', '');
+            
+            updateParam('scaleTitle', '1.0');
+            updateParam('scaleTimer', '1.0');
+            updateParam('scaleTrack', '1.0');
+
+            // Reset rotations
+            updateParam('rotTitle', '0');
+            updateParam('rotTimer', '0');
+            updateParam('rotTrack', '0');
+            
             updateParam('layoutMode', 'auto');
             
             toggleLayoutEditing(false); // This now handles the button text reset
@@ -411,6 +451,7 @@ export function initEventListeners() {
 
 export async function startExperience(state) {
     const isAudioEnabled = (state.audioEnabled === 'true');
+    const isNSFW = (state.nsfw === 'true');
 
     DOM.startBtn.classList.add('hidden');
     DOM.timerContainer.classList.add('running');
@@ -426,7 +467,7 @@ export async function startExperience(state) {
         DOM.nowPlaying.classList.remove('hidden');
         DOM.trackName.textContent = "Loading PodCube...";
 
-        await Audio.loadEpisodes();
+        await Audio.loadEpisodes(isNSFW);
 
         // --- RETRY LOGIC FOR LONG GAPS ---
         let playlist = [];
@@ -437,7 +478,7 @@ export async function startExperience(state) {
         const GAP_THRESHOLD = 60; // Seconds (can exceed 60). Used to be 90
 
         do {
-            playlist = Audio.generatePlaylist(durationSec);
+            playlist = Audio.generatePlaylist(durationSec, isNSFW);
             playlistDuration = Audio.getQueueDuration(playlist);
             delay = durationSec - playlistDuration;
             retries++;
@@ -592,13 +633,6 @@ function initDraggableModal() {
     window.addEventListener('touchend', onEnd);
 }
 
-function applyPos(element, posString) {
-    const [x, y] = posString.split(',');
-    if (x && y) {
-        element.style.left = `${x}%`;
-        element.style.top = `${y}%`;
-    }
-}
 
 // ---------------------------------------------------------
 // HELPER FUNCTIONS
@@ -615,7 +649,7 @@ function freezeCurrentPositions() {
         
         let xPct, yPct;
 
-        // FIX: Check if element is hidden or has 0 dimensions (like Now Playing)
+        // Check if element is hidden or has 0 dimensions (like Now Playing)
         // If so, default it to the center (50, 50) so it doesn't jump to top-left.
         if (rect.width === 0 && rect.height === 0) {
             xPct = 50;
@@ -650,10 +684,15 @@ function toggleLayoutEditing(enabled) {
         
         if (DOM.startBtn) DOM.startBtn.classList.add('hidden');
 
+        // Disable contenteditable so the text cursor doesn't fight dragging!
+        DOM.title.setAttribute('contenteditable', 'false');
+        DOM.timerMin.setAttribute('contenteditable', 'false');
+        DOM.timerSec.setAttribute('contenteditable', 'false');
+
         // Update Button State
         if (DOM.btnToggleLayout) {
             DOM.btnToggleLayout.textContent = "Done";
-            DOM.btnToggleLayout.classList.add('active-state'); // We will style this green
+            DOM.btnToggleLayout.classList.add('active-state');
         }
 
     } else {
@@ -664,6 +703,11 @@ function toggleLayoutEditing(enabled) {
             DOM.startBtn.classList.remove('hidden');
         }
 
+        // Re-enable contenteditable!
+        DOM.title.setAttribute('contenteditable', 'true');
+        DOM.timerMin.setAttribute('contenteditable', 'true');
+        DOM.timerSec.setAttribute('contenteditable', 'true');
+
         // Update Button State
         if (DOM.btnToggleLayout) {
             DOM.btnToggleLayout.textContent = "Unlock";
@@ -672,75 +716,247 @@ function toggleLayoutEditing(enabled) {
     }
 }
 
+// Updated to accept scale and rotation during initial load
+function applyPos(element, posString, scaleString = "1.0", rotString = "0") {
+    const [x, y] = posString.split(',');
+    if (x && y) {
+        element.style.left = `${x}%`;
+        element.style.top = `${y}%`;
+        
+        // Apply transform, keeping the translation intact
+        element.style.transform = `translate(-50%, -50%) scale(${scaleString}) rotate(${rotString}deg)`;
+        
+        // Store current values on the element for the math to read later
+        element.dataset.scale = scaleString; 
+        element.dataset.rot = rotString;
+
+        // Scale the handles by the inverse so they stay the same size visually
+        const inverseScale = 1 / parseFloat(scaleString);
+        const handles = element.querySelectorAll('.edit-handle');
+        handles.forEach(h => {
+            h.style.transform = `scale(${inverseScale})`;
+        });
+    }
+}
+
+/* js/ui.js - inside Helper Functions */
+
 function makeElementDraggable(element, paramKey) {
-    let isDragging = false;
     
-    // Helper to get X/Y from either Mouse or Touch
+    // INJECT HANDLES without destroying the inner DOM nodes!
+    const scaleHandle = document.createElement('div');
+    scaleHandle.className = 'edit-handle handle-scale';
+    scaleHandle.title = "Drag to Scale";
+    
+    const rotHandle = document.createElement('div');
+    rotHandle.className = 'edit-handle handle-rotate';
+    rotHandle.title = "Drag to Rotate";
+
+    element.appendChild(scaleHandle);
+    element.appendChild(rotHandle);
+
+    // IMMEDIATELY INVERSE SCALE ON CREATION
+    // Read the scale that was applied by applySettings, and invert it
+    const currentScale = parseFloat(element.dataset.scale) || 1.0;
+    const inverseScale = 1 / currentScale;
+    scaleHandle.style.transform = `scale(${inverseScale})`;
+    rotHandle.style.transform = `scale(${inverseScale})`;
+
+    // store handles to restore them if they get removed during innerHTML updates
+    element._editHandles = [scaleHandle, rotHandle];
+
+    // STATE VARIABLES
+    let isDragging = false;
+    let isScaling = false;
+    let isRotating = false;
+    let startDistance, startScale;
+    let startAngle, startRot;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    
     const getCoords = (e) => {
-        if (e.touches && e.touches.length > 0) {
-            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
+        if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
         return { x: e.clientX, y: e.clientY };
     };
 
-    const onStart = (e) => {
+    // --- MAIN DRAG LOGIC ---
+    const onStartDrag = (e) => {
         if (!document.body.classList.contains('layout-editing')) return;
+        // Ignore if we clicked a handle
+        if (e.target.classList.contains('edit-handle')) return; 
         
         isDragging = true;
         element.style.cursor = 'grabbing';
         
-        // Prevent scrolling while dragging on mobile
         if (e.type === 'touchstart') document.body.style.overflow = 'hidden';
-
-        // Prevent default browser drag/selection
-        // (We don't preventDefault on touchstart immediately, or click events might break.
-        // We do it on move.)
-        if (e.type === 'mousedown') e.preventDefault();
-        
+        if (e.cancelable) e.preventDefault();
         element.style.zIndex = 1000;
+
+        // CALCULATE CLICK OFFSET
+        const coords = getCoords(e);
+        const rect = element.getBoundingClientRect();
+        
+        // Find the absolute pixel center of the element on the screen
+        const centerX = rect.left + (rect.width / 2);
+        const centerY = rect.top + (rect.height / 2);
+        
+        // Save the distance between the center and the mouse pointer
+        dragOffsetX = coords.x - centerX;
+        dragOffsetY = coords.y - centerY;
     };
 
-    const onMove = (e) => {
+    const onMoveDrag = (e) => {
         if (!isDragging) return;
-        
-        e.preventDefault(); // Stop screen scrolling
-
+        e.preventDefault();
         const coords = getCoords(e);
-        
-        // Calculate position as percentage of window width/height
-        const xPct = (coords.x / window.innerWidth) * 100;
-        const yPct = (coords.y / window.innerHeight) * 100;
 
+        // Subtract the offset so we drag the center, but relative to where we clicked
+        const targetX = coords.x - dragOffsetX;
+        const targetY = coords.y - dragOffsetY;
+
+        const xPct = (targetX / window.innerWidth) * 100;
+        const yPct = (targetY / window.innerHeight) * 100;
+        
         element.style.left = `${xPct}%`;
         element.style.top = `${yPct}%`;
     };
 
-    const onEnd = () => {
+    const onEndDrag = () => {
         if (!isDragging) return;
         isDragging = false;
         element.style.cursor = 'grab';
         element.style.zIndex = '';
-        
-        // Re-enable scrolling
         document.body.style.overflow = '';
 
-        // Save state
         const x = parseFloat(element.style.left).toFixed(2);
         const y = parseFloat(element.style.top).toFixed(2);
-        
         const stateKey = `pos${paramKey.charAt(0).toUpperCase() + paramKey.slice(1)}`;
         updateParam(stateKey, `${x},${y}`);
     };
 
-    // Mouse Listeners
-    element.addEventListener('mousedown', onStart);
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onEnd);
+    // --- SCALE LOGIC ---
+    const onScaleStart = (e) => {
+        if (!document.body.classList.contains('layout-editing')) return;
+        e.stopPropagation(); // Prevent triggering main drag
+        isScaling = true;
+        startScale = parseFloat(element.dataset.scale) || 1.0;
+        
+        const rect = element.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        const coords = getCoords(e);
+        
+        // Calculate initial distance from center to mouse/finger
+        startDistance = Math.hypot(coords.x - centerX, coords.y - centerY);
+        document.body.style.cursor = 'nwse-resize';
+        
+        if (e.type === 'touchstart') {
+            document.body.style.overflow = 'hidden'; // Prevent page scrolling
+        }
+    };
 
-    // Touch Listeners (Passive: false allows us to call preventDefault)
-    element.addEventListener('touchstart', onStart, { passive: false });
-    window.addEventListener('touchmove', onMove, { passive: false });
-    window.addEventListener('touchend', onEnd);
+    scaleHandle.addEventListener('mousedown', onScaleStart);
+    scaleHandle.addEventListener('touchstart', onScaleStart, { passive: false });
+
+    const onScaleMove = (e) => {
+        if (!isScaling) return;
+        e.preventDefault();
+        
+        const centerX = window.innerWidth * (parseFloat(element.style.left) / 100);
+        const centerY = window.innerHeight * (parseFloat(element.style.top) / 100);
+        
+        const coords = getCoords(e);
+        const currentDistance = Math.hypot(coords.x - centerX, coords.y - centerY);
+        
+        let newScale = startScale * (currentDistance / startDistance);
+        newScale = Math.max(0.1, Math.min(newScale, 5.0)); // Clamp
+        
+        const rot = element.dataset.rot || "0";
+        element.style.transform = `translate(-50%, -50%) scale(${newScale}) rotate(${rot}deg)`;
+        element.dataset.scale = newScale;
+
+        const inverseScale = 1 / newScale;
+        scaleHandle.style.transform = `scale(${inverseScale})`;
+        rotHandle.style.transform = `scale(${inverseScale})`;
+    };
+
+    const onScaleEnd = () => {
+        if (!isScaling) return;
+        isScaling = false;
+        document.body.style.cursor = '';
+        document.body.style.overflow = '';
+        const stateKey = `scale${paramKey.charAt(0).toUpperCase() + paramKey.slice(1)}`;
+        updateParam(stateKey, parseFloat(element.dataset.scale).toFixed(2));
+    };
+
+    window.addEventListener('mousemove', onScaleMove);
+    window.addEventListener('touchmove', onScaleMove, { passive: false });
+    window.addEventListener('mouseup', onScaleEnd);
+    window.addEventListener('touchend', onScaleEnd);
+
+    // --- ROTATE LOGIC ---
+    const onRotateStart = (e) => {
+        if (!document.body.classList.contains('layout-editing')) return;
+        e.stopPropagation();
+        isRotating = true;
+        startRot = parseFloat(element.dataset.rot) || 0;
+        
+        const centerX = window.innerWidth * (parseFloat(element.style.left) / 100);
+        const centerY = window.innerHeight * (parseFloat(element.style.top) / 100);
+        
+        const coords = getCoords(e);
+        
+        // Calculate starting angle using atan2
+        startAngle = Math.atan2(coords.y - centerY, coords.x - centerX) * (180 / Math.PI);
+        document.body.style.cursor = 'grabbing';
+        
+        if (e.type === 'touchstart') {
+            document.body.style.overflow = 'hidden'; // Prevent page scrolling
+        }
+    };
+
+    rotHandle.addEventListener('mousedown', onRotateStart);
+    rotHandle.addEventListener('touchstart', onRotateStart, { passive: false });
+
+    const onRotateMove = (e) => {
+        if (!isRotating) return;
+        e.preventDefault();
+        
+        const centerX = window.innerWidth * (parseFloat(element.style.left) / 100);
+        const centerY = window.innerHeight * (parseFloat(element.style.top) / 100);
+        
+        const coords = getCoords(e);
+        const currentAngle = Math.atan2(coords.y - centerY, coords.x - centerX) * (180 / Math.PI);
+        
+        let newRot = startRot + (currentAngle - startAngle);
+        
+        const scale = element.dataset.scale || "1.0";
+        element.style.transform = `translate(-50%, -50%) scale(${scale}) rotate(${newRot}deg)`;
+        element.dataset.rot = newRot;
+    };
+
+    const onRotateEnd = () => {
+        if (!isRotating) return;
+        isRotating = false;
+        document.body.style.cursor = '';
+        document.body.style.overflow = '';
+        const stateKey = `rot${paramKey.charAt(0).toUpperCase() + paramKey.slice(1)}`;
+        updateParam(stateKey, Math.round(parseFloat(element.dataset.rot)));
+    };
+
+    window.addEventListener('mousemove', onRotateMove);
+    window.addEventListener('touchmove', onRotateMove, { passive: false });
+    window.addEventListener('mouseup', onRotateEnd);
+    window.addEventListener('touchend', onRotateEnd);
+
+    // --- MAIN DRAG LISTENERS ---
+    element.addEventListener('mousedown', onStartDrag);
+    window.addEventListener('mousemove', onMoveDrag);
+    window.addEventListener('mouseup', onEndDrag);
+    element.addEventListener('touchstart', onStartDrag, { passive: false });
+    window.addEventListener('touchmove', onMoveDrag, { passive: false });
+    window.addEventListener('touchend', onEndDrag);
 }
 
 

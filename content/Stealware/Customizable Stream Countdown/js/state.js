@@ -9,11 +9,12 @@ const DEFAULTS = {
     seconds: 0,
     font: "Roboto",
     colorText: "#ffffff",
-    colorBg: "#000000",
+    colorBg: "#676767",
     bgTransparent: "false",
     audioEnabled: "true",
     volume: 0.8,
-    autoplay:"true",
+    autoplay:"onstream",
+    nsfw: "false",
 
     shadowEnabled: "true",
     shadowColor: "#000000",
@@ -24,7 +25,18 @@ const DEFAULTS = {
     posTitle: "",      
     posTimer: "",
     posTrack: "",
-    layoutMode: "auto" // 'auto' (flex) or 'custom' (absolute)
+    
+    // Default scales (1.0 = 100%)
+    scaleTitle: "1.0",
+    scaleTimer: "1.0",
+    scaleTrack: "1.0",
+
+    // Default rotations (degrees)
+    rotTitle: "0",
+    rotTimer: "0",
+    rotTrack: "0",
+
+    layoutMode: "auto"
 };
 
 /**

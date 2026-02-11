@@ -1,6 +1,7 @@
 import { CONFIG } from './config.js';
 
 let allEpisodes = []; 
+let loadedFeeds = new Set();
 let currentAudio = new Audio();
 let nextAudio = new Audio();
 let playlistQueue = []; 
@@ -10,19 +11,42 @@ let isSoftStopping = false;
 /* =========================================
    DATA INGESTION
    ========================================= */
-export async function loadEpisodes() {
-    if (allEpisodes.length > 0) return allEpisodes;
-    const feedPromises = CONFIG.RSS_FEEDS.map(url => fetchAndParseFeed(url));
-    const results = await Promise.allSettled(feedPromises);
-    allEpisodes = results.filter(r => r.status === 'fulfilled').map(r => r.value).flat();
+export async function loadEpisodes(allowNSFW) {
+    let urlsToFetch = [];
+
+    // Queue feeds based on the user's NSFW preference
+    CONFIG.FEEDS.forEach(feed => {
+        if (!loadedFeeds.has(feed.url)) {
+            // If the feed is NSFW, only add it if the user allowed it
+            if (!feed.isNSFW || (feed.isNSFW && allowNSFW)) {
+                urlsToFetch.push(feed);
+            }
+        }
+    });
+
+    if (urlsToFetch.length > 0) {
+        const promises = urlsToFetch.map(feed => 
+            feed.type === 'rss' ? fetchAndParseFeed(feed) : fetchAndParseJSON(feed)
+        );
+        const results = await Promise.allSettled(promises);
+        const newEpisodes = results.filter(r => r.status === 'fulfilled').map(r => r.value).flat();
+        
+        allEpisodes = allEpisodes.concat(newEpisodes);
+        urlsToFetch.forEach(feed => loadedFeeds.add(feed.url));
+    }
+    
     return allEpisodes;
 }
 
 export async function getPodcastLogoUrl() {
-    if (CONFIG.RSS_FEEDS.length === 0) return null;
+    if (!CONFIG.FEEDS || CONFIG.FEEDS.length === 0) return null;
+    
+    // Find the first RSS feed to try and pull a logo from
+    const primaryFeed = CONFIG.FEEDS.find(f => f.type === 'rss');
+    if (!primaryFeed) return null;
+
     try {
-        const url = CONFIG.RSS_FEEDS[0];
-        const response = await fetch(url);
+        const response = await fetch(primaryFeed.url);
         const str = await response.text();
         const data = new window.DOMParser().parseFromString(str, "text/xml");
         
@@ -41,9 +65,10 @@ export async function getPodcastLogoUrl() {
     }
 }
 
-async function fetchAndParseFeed(url) {
+// Notice we now pass the whole feed object so we can attach its metadata to the tracks!
+async function fetchAndParseFeed(feedObj) {
     try {
-        const response = await fetch(url);
+        const response = await fetch(feedObj.url);
         const str = await response.text();
         const data = new window.DOMParser().parseFromString(str, "text/xml");
         const items = data.querySelectorAll("item");
@@ -54,12 +79,29 @@ async function fetchAndParseFeed(url) {
                 title: item.querySelector("title").textContent,
                 url: enclosure ? enclosure.getAttribute("url") : null,
                 duration: parseDuration(durationRaw),
-                source_feed: url 
+                source_feed: feedObj.url,
+                isNSFW: feedObj.isNSFW // Attach the flag directly to the track!
             };
         }).filter(ep => ep.url && ep.duration > 0); 
     } catch (err) {
-        console.warn(`[Audio] Failed to load feed: ${url}`, err);
+        console.warn(`[Audio] Failed to load feed: ${feedObj.url}`, err);
         return []; 
+    }
+}
+
+async function fetchAndParseJSON(feedObj) {
+    try {
+        const response = await fetch(feedObj.url);
+        const items = await response.json(); 
+        
+        console.log(`[Audio] Measuring durations for ${items.length} tracks from ${feedObj.url}...`);
+        
+        const measuredItems = await Promise.all(items.map(item => measureDuration(item, feedObj)));
+        
+        return measuredItems.filter(ep => ep.url && ep.duration > 0);
+    } catch (err) {
+        console.warn(`[Audio] Failed to load JSON feed: ${feedObj.url}`, err);
+        return [];
     }
 }
 
@@ -74,15 +116,50 @@ function parseDuration(raw) {
     return seconds;
 }
 
+function measureDuration(item, feedObj) {
+    return new Promise((resolve) => {
+        if (item.duration) {
+            resolve({ ...item, source_feed: feedObj.url, isNSFW: feedObj.isNSFW });
+            return;
+        }
+
+        const audio = new Audio();
+        
+        audio.addEventListener('loadedmetadata', () => {
+            resolve({
+                title: item.title,
+                url: item.url,
+                duration: Math.round(audio.duration),
+                source_feed: feedObj.url,
+                isNSFW: feedObj.isNSFW // Attach the flag!
+            });
+        });
+        
+        audio.addEventListener('error', () => {
+            resolve({ title: item.title, url: item.url, duration: 0 }); 
+        });
+        
+        audio.preload = "metadata";
+        audio.src = item.url;
+    });
+}
+
 /* =========================================
    LOGIC (True Random Fill)
    ========================================= */
 
-export function generatePlaylist(totalTimeSeconds) {
+/* js/audio.js - inside generatePlaylist */
+
+export function generatePlaylist(totalTimeSeconds, allowNSFW) {
     if (allEpisodes.length === 0) return [];
 
-    // Initial Shuffle: Start with a completely random order
     let pool = [...allEpisodes];
+
+    // 1. Filter out NSFW tracks if the user disabled them
+    if (!allowNSFW) {
+        pool = pool.filter(ep => ep.isNSFW === false);
+    }
+    
     shuffleArray(pool);
 
     const queue = [];
@@ -92,44 +169,49 @@ export function generatePlaylist(totalTimeSeconds) {
     let attempts = 0;
     const MAX_ATTEMPTS = 500;
 
+    // --- LENGTH THRESHOLDS ---
+    const SHORT_TRACK_MAX = 60;  // Anything under 60s is considered "Filler"
+    const RESERVE_TIME = 120;    // Start using Filler when gap drops below 2 mins
+
     while (currentFill < TARGET_DURATION && pool.length > 0 && attempts < MAX_ATTEMPTS) {
         attempts++;
         
         const gapCost = queue.length > 0 ? CONFIG.TRACK_GAP_SECONDS : 0;
         const remainingSpace = TARGET_DURATION - (currentFill + gapCost);
 
-        // Find all tracks that fit the remaining time
+        // Find all tracks that physically fit the remaining time
         let candidates = pool.filter(ep => ep.duration <= remainingSpace);
 
         if (candidates.length === 0) break;
 
-        // If we have 3 or fewer episodes that fit, we are in the "danger zone" 
-        // where the same short episodes get picked too often.
-        if (candidates.length <= 3) {
-            // 75% chance to stop early and leave a gap instead of 
-            // forcing a repeat of the same short tracks.
-            if (Math.random() < 0.75) {
-                console.log(`[Audio] Low variety (${candidates.length} left). Stopping to preserve randomness.`);
-                break;
+        // If we still have a lot of time left to fill, temporarily hide the short tracks
+        // so they don't get wasted at the beginning of the countdown.
+        if (remainingSpace > RESERVE_TIME) {
+            const longCandidates = candidates.filter(ep => ep.duration > SHORT_TRACK_MAX);
+            
+            // Safety check: Only apply this filter if we actually HAVE long tracks left!
+            if (longCandidates.length > 0) {
+                candidates = longCandidates;
             }
         }
 
-        // Pick randomly from the available candidates
-        // This treats all fitting tracks (short or long) with equal probability.
+        // Now just pick completely at random from whatever candidates are left
         const pickIndex = Math.floor(Math.random() * candidates.length);
         const selectedTrack = candidates[pickIndex];
 
         queue.push(selectedTrack);
         currentFill += (selectedTrack.duration + gapCost);
-
-        // Remove from pool to prevent duplicates in the same session
+        
+        // Remove from pool to prevent duplicates
         pool = pool.filter(ep => ep !== selectedTrack);
     }
 
-    // This solves the "shortest last" side effect of the filling algorithm.
+    // Shuffle the final queue so if we picked multiple short tracks at the end, 
+    // they get mixed into the general order a bit better
     shuffleArray(queue);
 
     console.log(`[Audio] Generated playlist with ${queue.length} tracks. Total: ${currentFill}s`);
+    console.log(queue.map((t, i) => `  ${i+1}. ${t.title} (${t.duration}s)`).join('\n'));
     return queue;
 }
 
@@ -191,7 +273,10 @@ export function playQueue(queue) {
     isSoftStopping = false;
     
     window.dispatchEvent(new CustomEvent('trackChange', { 
-        detail: { title: playlistQueue[currentTrackIndex].title } 
+        detail: { 
+            title: playlistQueue[currentTrackIndex].title,
+            sourceFeed: playlistQueue[currentTrackIndex].source_feed
+        } 
     }));
     
     // Safely check if src needs to be set, avoiding wiping out the preload!
@@ -256,7 +341,10 @@ function swapPlayers() {
     nextAudio.playbackRate = 1;
 
     console.log(`[Audio] Swapping to: ${track.title}`);
-    window.dispatchEvent(new CustomEvent('trackChange', { detail: { title: track.title } }));
+    window.dispatchEvent(new CustomEvent('trackChange', { detail: {
+         title: track.title,
+         sourceFeed: track.source_feed
+        } }));
 
     // The new currentAudio ALREADY has its src loaded, just attach listeners!
     attachTrackListeners(currentAudio, track);
@@ -295,6 +383,7 @@ export function syncPlaybackRate(timerSecondsLeft) {
 
     if (Math.abs(currentAudio.playbackRate - idealRate) > 0.01) {
         currentAudio.playbackRate = idealRate;
+        console.log(`[Audio] Adjusting playback rate to ${idealRate.toFixed(3)}x (Audio Left: ${totalAudioRemaining.toFixed(1)}s, Timer Left: ${timerSecondsLeft}s)`);
     }
 }
 
@@ -305,7 +394,7 @@ export function unlockAudio() {
     const silentUrl = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU5LjI3LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIAD+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+AAAAAExhdmM1OS4zNyAAAAAAAAAAAAAAAAQAAAAALgAAAAAA//OEAEAAAMgAAAAAABIAAIAgAAAAAgAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//OEAEAAAMgAAAAAABIAAIAgAAAAAgAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//OEAEAAAMgAAAAAABIAAIAgAAAAAgAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
     
     [currentAudio, nextAudio].forEach(a => {
-        // FIX: Save the exact attribute, not the resolved absolute URL property
+        // Save the exact attribute, not the resolved absolute URL property
         const originalSrc = a.getAttribute('src');
         
         a.src = silentUrl;

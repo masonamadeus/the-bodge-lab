@@ -5,6 +5,7 @@ const TEMPLATE_EXTENSIONS = [
     '.md', 
     '.njk', 
     '.fountain',
+    '.11ty.js',
 ];
 
 // Define our media categories
@@ -54,7 +55,7 @@ const SYSTEM_FILES = [
     '404.njk',
     'search.json.njk',
     'share.njk',
-    '_generators'
+    '_generators',
 ];
 
 // Export all our definitions
