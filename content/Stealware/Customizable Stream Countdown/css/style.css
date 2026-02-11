@@ -2,18 +2,13 @@
    OBS ENVIRONMENT OVERRIDES
    ========================================= */
 
-/* 1. Smart Transparency:
-   Only apply transparent background if:
-   (a) We are in OBS (.obs-environment) AND
-   (b) The user checked the box (.transparency-requested)
+/* Only apply transparency in OBS
 */
 html.obs-environment.transparency-requested {
     --main-bg-color: transparent !important;
 }
 
-/* 2. Settings Cog Visibility:
-   Default to invisible in OBS, but show on hover.
-   (Updated selector to match <html> class)
+/* Hide settings cog in OBS
 */
 html.obs-environment #settings-trigger {
     opacity: 0;
@@ -108,19 +103,17 @@ button {border-radius:0;}
     filter: url(#global-drop-shadow);
 }
 
-#app-container .start-btn {
-    filter: none;
-}
 
 /* =========================================
    3. TYPOGRAPHY & EDITABLES
    ========================================= */
-h1 {
+#stream-title {
     font-size: 8vmin; 
     margin: 0 0 2vh 0;
     line-height: 1.1;
     white-space: pre-wrap; 
 }
+
 
 
 
@@ -293,6 +286,7 @@ h1 {
     cursor: pointer;
     z-index: 10;
     transition: opacity 0.3s ease, transform 0.3s ease;
+    user-select: none;
 }
 
 
@@ -484,6 +478,11 @@ input[type="text"] {
 }
 input[type="text"]:focus { border-color: var(--accent-color); outline: none; }
 
+input[type="range"] {
+    color: var(--accent-color);
+    accent-color: var(--accent-color);
+}
+
 /* --- Color Swatches --- */
 .color-swatch-wrapper {
     width: 100%;
@@ -536,8 +535,25 @@ input[type="color"]::-webkit-color-swatch { border: none; }
     font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
     border: none; cursor: pointer;
 }
+
 .primary-btn { background: var(--accent-color); color: #fff; }
+
 .primary-btn:hover { filter: brightness(1.1); }
+
+.secondary-btn {
+    font-size: 1em;
+    font-weight:bold;
+    padding: 0.5vmin 1.5vmin;
+    background: var(--btn-secondary-bg);
+    border: 0.2vmin solid currentColor;
+    color: currentColor;
+    border-radius: 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.secondary-btn:hover { background: var(--btn-secondary-hover); }
+
 .danger-btn { background: #333; color: var(--danger-color); border: 1px solid var(--danger-color); }
 .danger-btn:hover { background: var(--danger-color); color: #fff; }
 
@@ -547,7 +563,7 @@ input[type="color"]::-webkit-color-swatch { border: none; }
 
 }
 .subtle-btn:hover { color: #aaa; }
-.text-btn { background: none; border: none; color: var(--accent-color); text-decoration: underline; cursor: pointer; }
+.text-btn { padding-left:0; background: none; border: none; color: var(--accent-color); text-decoration: underline; cursor: pointer; }
 
 /* --- Spacer --- */
 .spacer { height: 20px; }
@@ -649,8 +665,8 @@ body.layout-editing .edit-handle:hover {
 
 /* Rotate Handle (Top Right) */
 .handle-rotate {
-    top: -12px;
-    right: -12px;
+    top: -20px;
+    right: 45%;
     cursor:crosshair;
     background-color: #ff9800; 
     /* NEW: Circular arrow SVG */
@@ -659,6 +675,32 @@ body.layout-editing .edit-handle:hover {
 
 body.layout-editing .handle-rotate:active {
     cursor: grabbing;
+}
+
+
+.knob-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+}
+.knob {
+    width: 50px;
+    height: 50px;
+    background: #333;
+    border: 2px solid var(--accent-color);
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+}
+.knob-pointer {
+    position: absolute;
+    width: 2px;
+    height: 20px;
+    background: var(--accent-color);
+    top: 5px;
+    left: 24px;
+    transform-origin: bottom center;
 }
 
 /* =========================================

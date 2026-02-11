@@ -37,6 +37,10 @@ const DOM = {
     shadowContainer: document.getElementById('shadow-controls-container'),
     svgFilter: document.getElementById('svg-filter-container'),
     dropShadowNode: document.getElementById('dynamic-drop-shadow'),
+    shadowKnob: document.getElementById('input-shadow-knob'),
+    shadowPointer: document.querySelector('.knob-pointer'),
+    shadowDist: document.getElementById('input-shadow-dist'),
+    shadowBlur: document.getElementById('input-shadow-blur'),
     
     // The draggable targets
     dragTargets: {
@@ -57,6 +61,12 @@ export async function loadBranding() {
 }
 
 export function applySettings(state) {
+        // --- Drop Shadow Defaults & Sanitization ---
+        // Set defaults if missing or invalid
+        if (!('shadowAngle' in state) || isNaN(Number(state.shadowAngle))) state.shadowAngle = 90;
+        if (!('shadowDistance' in state) || isNaN(Number(state.shadowDistance))) state.shadowDistance = 0;
+        if (!('shadowBlur' in state) || isNaN(Number(state.shadowBlur))) state.shadowBlur = 0;
+
     if (window.obsstudio) {
         document.documentElement.classList.add('obs-environment');
     }
@@ -79,16 +89,36 @@ export function applySettings(state) {
     document.body.style.color = state.colorText;
 
 
-    // SHADOW
-    const shadowOn = (state.shadowEnabled === 'true');
-    const sColor = shadowOn ? state.shadowColor : 'transparent'; 
 
+    // SHADOW (Angle/Distance/Blur)
+    const shadowOn = (state.shadowEnabled === 'true');
+    const sColor = shadowOn ? state.shadowColor : 'transparent';
     document.documentElement.style.setProperty('--shadow-color', sColor);
-   if (DOM.dropShadowNode) {
-        DOM.dropShadowNode.setAttribute('dx', parseFloat(state.shadowX) * 10);
-        DOM.dropShadowNode.setAttribute('dy', parseFloat(state.shadowY) * 10);
-        DOM.dropShadowNode.setAttribute('stdDeviation', parseFloat(state.shadowBlur) * 10);
+    if (DOM.dropShadowNode) {
+        let angle = Number(state.shadowAngle);
+        let distance = Number(state.shadowDistance);
+        let blur = Number(state.shadowBlur);
+        if (!isFinite(angle)) angle = 90;
+        if (!isFinite(distance)) distance = 0;
+        if (!isFinite(blur)) blur = 0;
+        const rad = (angle - 90) * (Math.PI / 180);
+        let dx = Math.cos(rad) * distance * 10;
+        let dy = Math.sin(rad) * distance * 10;
+        if (!isFinite(dx)) dx = 0;
+        if (!isFinite(dy)) dy = 0;
+        DOM.dropShadowNode.setAttribute('dx', dx);
+        DOM.dropShadowNode.setAttribute('dy', dy);
+        DOM.dropShadowNode.setAttribute('stdDeviation', blur * 10);
         DOM.dropShadowNode.setAttribute('flood-color', sColor);
+    }
+
+    // Sync UI controls to state (robust)
+    if (DOM.shadowDist) DOM.shadowDist.value = String(Number(state.shadowDistance) || 0);
+    if (DOM.shadowBlur) DOM.shadowBlur.value = String(Number(state.shadowBlur) || 0);
+    if (DOM.shadowKnob && DOM.shadowPointer) {
+        let angle = Number(state.shadowAngle);
+        if (!isFinite(angle)) angle = 90;
+        DOM.shadowPointer.style.transform = `rotate(${angle}deg)`;
     }
 
     if (state.font) loadGoogleFont(state.font);
@@ -299,25 +329,9 @@ export function initEventListeners() {
 
         if (key === 'font') loadGoogleFont(value);
         if (key === 'colorText') document.body.style.color = value;
-        if (['shadowColor', 'shadowEnabled', 'shadowX', 'shadowY', 'shadowBlur'].includes(key)) {
-            const sEnabled = document.getElementById('input-shadow-enabled').checked;
-            const sColor = document.getElementById('input-color-shadow').value;
-            const sX = document.getElementById('input-shadow-x').value;
-            const sY = document.getElementById('input-shadow-y').value;
-            const sBlur = document.getElementById('input-shadow-blur').value;
-
-            const finalColor = sEnabled ? sColor : 'transparent';
-
-            // Set the color (Standard CSS var)
-            document.documentElement.style.setProperty('--shadow-color', finalColor);
-            
-            // Set the SVG attributes (Raw numbers, multiplying by 10 to convert vmin scale to roughly pixels)
-            if (DOM.dropShadowNode) {
-                DOM.dropShadowNode.setAttribute('dx', parseFloat(sX) * 10);
-                DOM.dropShadowNode.setAttribute('dy', parseFloat(sY) * 10);
-                DOM.dropShadowNode.setAttribute('stdDeviation', parseFloat(sBlur) * 10);
-                DOM.dropShadowNode.setAttribute('flood-color', finalColor);
-            }
+        if (['shadowColor', 'shadowEnabled', 'shadowAngle', 'shadowDistance', 'shadowBlur'].includes(key)) {
+            const state = getState();
+            applyShadowTransformation(state);
         }
 
         if (key === 'colorBg' || key === 'bgTransparent') {
@@ -408,6 +422,59 @@ export function initEventListeners() {
             }
         });
     }
+
+    // --- SHADOW KNOB, DISTANCE, BLUR LOGIC ---
+    function initKnobLogic() {
+        let isDragging = false;
+
+        const updateFromMouse = (e) => {
+            if (!isDragging) return;
+            const rect = DOM.shadowKnob.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const coords = e.touches ? e.touches[0] : e;
+            const angle = Math.atan2(coords.clientY - centerY, coords.clientX - centerX) * (180 / Math.PI);
+            let finalAngle = Math.round(angle + 90);
+            if (!isFinite(finalAngle)) finalAngle = 90;
+            if (finalAngle < 0) finalAngle += 360;
+            updateParam('shadowAngle', String(finalAngle));
+            if (DOM.shadowPointer) DOM.shadowPointer.style.transform = `rotate(${finalAngle}deg)`;
+        };
+
+        DOM.shadowKnob.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            e.preventDefault();
+        });
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('mousemove', updateFromMouse);
+
+        // Touch support for OBS Interact mode
+        DOM.shadowKnob.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            e.preventDefault();
+        }, { passive: false });
+        window.addEventListener('touchend', () => isDragging = false);
+        window.addEventListener('touchmove', updateFromMouse, { passive: false });
+    }
+
+    // Distance slider
+    if (DOM.shadowDist) {
+        DOM.shadowDist.addEventListener('input', (e) => {
+            let val = Number(e.target.value);
+            if (!isFinite(val)) val = 0;
+            updateParam('shadowDistance', String(val));
+        });
+    }
+    // Blur slider
+    if (DOM.shadowBlur) {
+        DOM.shadowBlur.addEventListener('input', (e) => {
+            let val = Number(e.target.value);
+            if (!isFinite(val)) val = 0;
+            updateParam('shadowBlur', String(val));
+        });
+    }
+
+    initKnobLogic();
 
     DOM.btnResetLayout.addEventListener('click', () => {
         if(confirm("Reset all elements to center?")) {
@@ -959,6 +1026,35 @@ function makeElementDraggable(element, paramKey) {
     window.addEventListener('touchend', onEndDrag);
 }
 
+function applyShadowTransformation(state) {
+    let angle = Number(state.shadowAngle);
+    let dist = Number(state.shadowDistance);
+    let blur = Number(state.shadowBlur);
+    const shadowOn = (state.shadowEnabled === 'true');
+    const sColor = shadowOn ? state.shadowColor : 'transparent';
+
+    if (!isFinite(angle)) angle = 90;
+    if (!isFinite(dist)) dist = 0;
+    if (!isFinite(blur)) blur = 0;
+
+    // Convert Polar to Cartesian
+    const rad = (angle - 90) * (Math.PI / 180);
+    let dx = Math.cos(rad) * dist * 10;
+    let dy = Math.sin(rad) * dist * 10;
+    if (!isFinite(dx)) dx = 0;
+    if (!isFinite(dy)) dy = 0;
+
+    if (DOM.dropShadowNode) {
+        DOM.dropShadowNode.setAttribute('dx', dx);
+        DOM.dropShadowNode.setAttribute('dy', dy);
+        DOM.dropShadowNode.setAttribute('stdDeviation', blur * 10);
+        DOM.dropShadowNode.setAttribute('flood-color', sColor);
+    }
+
+    if (DOM.shadowPointer) {
+        DOM.shadowPointer.style.transform = `rotate(${angle}deg)`;
+    }
+}
 
 function loadGoogleFont(fontName) {
     if (!fontName) return;

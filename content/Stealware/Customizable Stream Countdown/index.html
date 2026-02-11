@@ -5,25 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Really Simple Custom Countdown (with PodCube™)</title>
-    
+
     <meta name="title" content="Really Simple Custom Countdown (with PodCube™)">
-    <meta name="description" content="A customizable, browser-based stream countdown timer for OBS featuring hilarious, high-quality audio fill powered by PodCube™.">
+    <meta name="description"
+        content="A customizable, browser-based stream countdown timer for OBS featuring hilarious, high-quality audio fill powered by PodCube™.">
 
     <link rel="stylesheet" href="css/style.css">
     <link id="dynamic-font" rel="stylesheet" href="">
 </head>
 
 <body>
-<svg id="svg-filter-container" style="width:0; height:0; position:absolute;" aria-hidden="true" focusable="false">
+    <svg id="svg-filter-container" style="width:0; height:0; position:absolute;" aria-hidden="true" focusable="false">
         <defs>
             <filter id="global-drop-shadow" x="-100%" y="-100%" width="300%" height="300%">
-                <feDropShadow 
-                    id="dynamic-drop-shadow"
-                    dx="2" 
-                    dy="2" 
-                    stdDeviation="4" 
-                    flood-color="#000000" 
-                    flood-opacity="1"/>
+                <feDropShadow id="dynamic-drop-shadow" dx="2" dy="2" stdDeviation="4" flood-color="#000000"
+                    flood-opacity="1" />
             </filter>
         </defs>
     </svg>
@@ -37,7 +33,7 @@
             <span id="timer-sec" contenteditable="true" spellcheck="false" title="Click to edit seconds">00</span>
         </div>
 
-        
+
 
         <div id="now-playing">
             <div class="brand-row">
@@ -63,7 +59,7 @@
 
         </div>
 
-        
+
     </main>
 
     <button id="main-start-btn" class="start-btn">Start Timer</button>
@@ -72,32 +68,43 @@
 
     <div id="settings-modal" class="hidden">
         <div class="settings-content">
-            
+
             <div class="settings-header">
                 <h2>CUSTOMIZATION</h2>
                 <button id="close-settings" class="icon-btn" title="Close">✕</button>
             </div>
 
             <div class="settings-scroll-area">
-                
+
                 <section class="config-card hero-card">
                     <div class="card-header-row">
                         <div class="podcube-logo settings-logo">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 11a9 9 0 0 1 9 9"></path>
+                                <path d="M4 4a16 16 0 0 1 16 16"></path>
+                                <circle cx="5" cy="19" r="1"></circle>
+                            </svg>
                         </div>
                         <div class="toggle-wrapper">
-                            <label for="input-audio-enabled" class="toggle-label">PodCube™ Enhanced Experience [P.E.E.]</label>
-                            <input type="checkbox" id="input-audio-enabled" data-param="audioEnabled" class="toggle-switch">
+                            <label for="input-audio-enabled" class="toggle-label">PodCube™ Enhanced Experience
+                                [P.E.E.]</label>
+                            <input type="checkbox" id="input-audio-enabled" data-param="audioEnabled"
+                                class="toggle-switch">
                         </div>
                     </div>
-                    <p class="helper-text">Auto-plays hilarious, high quality <a href="https://poweredbypodcube.com/" target="_blank">PodCube™</a> episodes to fill time until the countdown ends. (PG-13)</p>
-                    
-                    <div class="card-header-row" style="margin-top: 15px; border-top: 1px solid #444; padding-top: 15px;">
+                    <p class="helper-text">Auto-plays hilarious, high quality <a href="https://poweredbypodcube.com/"
+                            target="_blank">PodCube™</a> episodes to fill time until the countdown ends. (PG-13)</p>
+
+                    <div class="card-header-row"
+                        style="margin-top: 15px; border-top: 1px solid #444; padding-top: 15px;">
                         <div class="toggle-wrapper">
                             <input type="checkbox" id="input-ads-enabled" data-param="nsfw" class="toggle-switch">
-                            <label for="input-ads-enabled" class="toggle-label" style="font-size: 0.9rem; color: #ccc;">Include <a href="https://bodgelab.com/s/widk-ads" target="_blank">WIDK Commercials</a></label>
-                            
-                    <p class="helper-text"><b style="color:var(--danger-color);">Commercials may contain NSFW language/themes.</b></p>
+                            <label for="input-ads-enabled" class="toggle-label"
+                                style="font-size: 0.9rem; color: #ccc;">Include <a
+                                    href="https://bodgelab.com/s/widk-ads" target="_blank">WIDK Commercials</a></label>
+
+                            <p class="helper-text"><b style="color:var(--danger-color);">Commercials may contain NSFW
+                                    language/themes.</b></p>
                         </div>
                     </div>
 
@@ -105,15 +112,16 @@
                         <label>Volume</label>
                         <input type="range" id="input-volume" data-param="volume" min="0" max="1" step="0.1">
                     </div>
-                    
+
                 </section>
 
                 <section class="config-section">
                     <h3>FONT && COLOR</h3>
-                    
+
                     <div class="input-grid">
                         <div class="grid-item full-width">
-                            <label>Type the name of any font from <a href="https://fonts.google.com/">Google Fonts</a>.</label>
+                            <label>Type the name of any font from <a href="https://fonts.google.com/">Google
+                                    Fonts</a>.</label>
                             <input type="text" id="input-font" data-param="font" placeholder="e.g. Roboto, Bangers">
                         </div>
 
@@ -141,27 +149,27 @@
                 <section class="config-section">
                     <div class="section-header-toggle">
                         <h3>Drop Shadow</h3>
-                        <input type="checkbox" id="input-shadow-enabled" data-param="shadowEnabled" class="toggle-switch-small">
+                        <input type="checkbox" id="input-shadow-enabled" data-param="shadowEnabled"
+                            class="toggle-switch-small">
                     </div>
-                    
+
                     <div id="shadow-controls-container">
                         <div class="control-row">
                             <label>Color</label>
                             <input type="color" id="input-color-shadow" data-param="shadowColor" class="mini-color">
                         </div>
-                        <div class="slider-stack">
-                            <div class="slider-row-compact">
-                                <span>X</span>
-                                <input type="range" id="input-shadow-x" data-param="shadowX" min="-2" max="2" step="0.1">
+                        <div class="control-row">
+                            <label>Angle & Distance</label>
+                            <div class="knob-container">
+                                <div id="input-shadow-knob" class="knob">
+                                    <div class="knob-pointer"></div>
+                                </div>
                             </div>
-                            <div class="slider-row-compact">
-                                <span>Y</span>
-                                <input type="range" id="input-shadow-y" data-param="shadowY" min="-2" max="2" step="0.1">
-                            </div>
-                            <div class="slider-row-compact">
-                                <span>Blur</span>
-                                <input type="range" id="input-shadow-blur" data-param="shadowBlur" min="0" max="5" step="0.1">
-                            </div>
+                            <input type="range" id="input-shadow-dist" data-param="shadowDistance" min="0" max="2" step="0.05">
+                        </div>
+                        <div class="control-row">
+                            <label>Blur</label>
+                            <input type="range" id="input-shadow-blur" data-param="shadowBlur" min="0" max="2" step="0.05">
                         </div>
                     </div>
                 </section>
@@ -171,19 +179,21 @@
                         <div>
                             <h3>Rearrange Layout</h3>
                             <p class="helper-text">Unlock to drag elements.<br>Click Done to save & lock.</p>
+                            <button id="btn-reset-layout" class="text-btn" style="font-size: 0.8rem;">Reset
+                                Positions</button>
                         </div>
-                        <button id="btn-toggle-layout" class="secondary-btn small-btn">Unlock</button>
+                        <button id="btn-toggle-layout" class="secondary-btn">Unlock</button>
                     </div>
-                    
-                
-                    <button id="btn-reset-layout" class="text-btn" style="font-size: 0.8rem;">Reset Positions</button>
+
+
+
                 </section>
 
                 <div class="hidden">
                     <input type="text" id="input-title" data-param="title">
                     <input type="number" id="input-minutes" data-param="minutes">
                     <input type="number" id="input-seconds" data-param="seconds">
-                    <input type="range" id="slider-minutes"> 
+                    <input type="range" id="slider-minutes">
                     <input type="range" id="slider-seconds">
                 </div>
 
@@ -191,15 +201,22 @@
                     <h3>Info:</h3>
                     <ul>
                         <li>
-                    <b>The settings cog will not appear when this site is used as a browser source in OBS!</b> You can still access settings menu by clicking "Interact" 
-                    on the browser source and hovering over the bottom right corner (where the cog normally is).</li>
-                    <li><b>The transparent background setting will only apply inside of OBS.</b></li>
-                    <li><b>Please consider leaving the PodCube™ integration enabled!</b> It will fill your countdown with hilarious, high-quality audio sketch comedy.
-                        The show is <b>PG-13</b> at most (but still hilarious) so it should be acceptable for even family-friendly streams.
-                    </li>
-                    <li><b>You can move this settings window around</b> by dragging its title bar, and resize it by dragging the bottom right corner.</li>
-                    <li>Created with love by <b>Mason Amadeus</b>, keeper of <a href="https://bodgelab.com" target="_blank">The Bodge Lab</a>, and co-creator of <a href="https://poweredbypodcube.com/" target="_blank">PodCube™</a></li>
-                </ul>
+                            <b>The settings cog will not appear when this site is used as a browser source in OBS!</b>
+                            You can still access settings menu by clicking "Interact"
+                            on the browser source and hovering over the bottom right corner (where the cog normally is).
+                        </li>
+                        <li><b>The transparent background setting will only apply inside of OBS.</b></li>
+                        <li><b>Please consider leaving the PodCube™ integration enabled!</b> It will fill your countdown
+                            with hilarious, high-quality audio sketch comedy.
+                            The show is <b>PG-13</b> at most (but still hilarious) so it should be acceptable for even
+                            family-friendly streams.
+                        </li>
+                        <li><b>You can move this settings window around</b> by dragging its title bar, and resize it by
+                            dragging the bottom right corner.</li>
+                        <li>Created with love by <b>Mason Amadeus</b>, keeper of <a href="https://bodgelab.com"
+                                target="_blank">The Bodge Lab</a>, and co-creator of <a
+                                href="https://poweredbypodcube.com/" target="_blank">PodCube™</a></li>
+                    </ul>
                 </section>
 
             </div>
@@ -207,10 +224,12 @@
             <div class="settings-actions">
                 <div class="autoplay-row">
                     <button id="copy-url-btn" class="primary-btn block-btn">Copy OBS Link</button>
-                    
+
                     <div style="display: flex; flex-direction: column; width: 100%;">
-                        <label for="select-autoplay" style="font-size: 0.8rem; margin-bottom: 5px;">Autoplay Mode:</label>
-                        <select id="select-autoplay" data-param="autoplay" style="width: 100%; background: #333; color: white; border: 1px solid #555; padding: 5px;">
+                        <label for="select-autoplay" style="font-size: 0.8rem; margin-bottom: 5px;">Autoplay
+                            Mode:</label>
+                        <select id="select-autoplay" data-param="autoplay"
+                            style="width: 100%; background: #333; color: white; border: 1px solid #555; padding: 5px;">
                             <option value="off">Off (Manual Start)</option>
                             <option value="onload">On Load</option>
                             <option value="onstream">On Stream Start (OBS)</option>

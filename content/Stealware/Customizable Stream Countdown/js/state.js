@@ -12,15 +12,15 @@ const DEFAULTS = {
     colorBg: "#676767",
     bgTransparent: "false",
     audioEnabled: "true",
-    volume: 0.8,
-    autoplay:"onstream",
+    volume: "0.8",
+    autoplay: "onstream",
     nsfw: "false",
 
     shadowEnabled: "true",
     shadowColor: "#000000",
-    shadowX: 0.2,    // Horizontal offset (vmin)
-    shadowY: 0.2,    // Vertical offset (vmin)
-    shadowBlur: 0.4,  // Blur radius (vmin)
+    shadowAngle: "130",      // Angle in degrees (as string for URL param consistency)
+    shadowDistance: "0.2",  // Distance from text (as string for URL param consistency)
+    shadowBlur: "0.3",      // Blur radius (as string for URL param consistency)
 
     posTitle: "",      
     posTimer: "",
