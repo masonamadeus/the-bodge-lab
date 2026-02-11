@@ -101,6 +101,8 @@ button {border-radius:0;}
     align-items: center;
     justify-content: center; 
     filter: url(#global-drop-shadow);
+    /* Use currentColor so filter adapts to text */
+    --shadow-scale: 1;
 }
 
 

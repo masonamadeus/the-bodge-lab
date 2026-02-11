@@ -59,15 +59,31 @@ export function getState() {
 }
 
 /**
- * Updates a single parameter in the URL without reloading page
+ * Updates a single parameter in the URL without reloading page.
+ * The stateChange event fires immediately for snappy UI updates.
+ * The URL history is debounced to prevent spamming the address bar.
  */
+let debounceTimer = null;
+let pendingUrl = null;
+
 export function updateParam(key, value) {
+    // 1. Update the pending URL object immediately so getState() is always accurate
     const url = new URL(window.location);
     url.searchParams.set(key, value);
-    window.history.pushState({}, '', url);
-    
-    // Dispatch event so other modules know state changed
+    pendingUrl = url;
+
+    // 2. Fire stateChange event IMMEDIATELY for snappy UI response
     window.dispatchEvent(new CustomEvent('stateChange', { detail: { key, value } }));
+
+    // 3. Clear the timer to reset the debounce window
+    if (debounceTimer) clearTimeout(debounceTimer);
+
+    // 4. Debounce only the browser history update (to stop spamming the address bar)
+    // Use a closure to capture the current URL, preventing stale data
+    const urlToApply = url;
+    debounceTimer = setTimeout(() => {
+        window.history.replaceState({}, '', urlToApply);
+    }, 250);
 }
 
 /**

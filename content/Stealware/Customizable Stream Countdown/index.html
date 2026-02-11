@@ -15,10 +15,10 @@
 </head>
 
 <body>
-    <svg id="svg-filter-container" style="width:0; height:0; position:absolute;" aria-hidden="true" focusable="false">
+    <svg id="svg-filter-container" style="width:0; height:0; position:fixed; top:0; left:0;" aria-hidden="true" focusable="false">
         <defs>
-            <filter id="global-drop-shadow" x="-100%" y="-100%" width="300%" height="300%">
-                <feDropShadow id="dynamic-drop-shadow" dx="2" dy="2" stdDeviation="4" flood-color="#000000"
+            <filter id="global-drop-shadow" filterUnits="objectBoundingBox" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow id="dynamic-drop-shadow" dx="0.02" dy="0.02" stdDeviation="0.04" flood-color="#000000"
                     flood-opacity="1" />
             </filter>
         </defs>

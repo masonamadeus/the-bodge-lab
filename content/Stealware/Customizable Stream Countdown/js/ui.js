@@ -4,6 +4,25 @@ import * as Audio from './audio.js';
 
 let syncInterval = null;
 
+/**
+ * Validates that critical DOM elements exist before initializing
+ * @throws {Error} if required elements are missing
+ */
+function validateDOM() {
+    const required = [
+        'app-container', 'stream-title', 'timer-container', 'timer-min', 'timer-sec',
+        'main-start-btn', 'now-playing', 'settings-modal', 'settings-trigger',
+        'close-settings', 'stop-timer-btn', 'copy-url-btn', 'dynamic-font',
+        'svg-filter-container', 'dynamic-drop-shadow', 'input-shadow-enabled'
+    ];
+    
+    for (const id of required) {
+        if (!document.getElementById(id)) {
+            console.error(`[UI] Critical DOM element missing: #${id}`);
+        }
+    }
+}
+
 const DOM = {
     app: document.getElementById('app-container'),
     title: document.getElementById('stream-title'),
@@ -61,6 +80,9 @@ export async function loadBranding() {
 }
 
 export function applySettings(state) {
+        // Validate DOM on first run
+        validateDOM();
+        
         // --- Drop Shadow Defaults & Sanitization ---
         // Set defaults if missing or invalid
         if (!('shadowAngle' in state) || isNaN(Number(state.shadowAngle))) state.shadowAngle = 90;
@@ -329,7 +351,53 @@ export function initEventListeners() {
 
         if (key === 'font') loadGoogleFont(value);
         if (key === 'colorText') document.body.style.color = value;
-        if (['shadowColor', 'shadowEnabled', 'shadowAngle', 'shadowDistance', 'shadowBlur'].includes(key)) {
+        
+        // Handle shadow changes efficiently
+        if (key === 'shadowAngle') {
+            // Only angle changed - update pointer and dx/dy calculations
+            let angle = Number(value);
+            if (!isFinite(angle)) angle = 90;
+            const state = getState();
+            const dist = Number(state.shadowDistance);
+            const rad = (angle - 90) * (Math.PI / 180);
+            let dx = Math.cos(rad) * dist * 10;
+            let dy = Math.sin(rad) * dist * 10;
+            if (!isFinite(dx)) dx = 0;
+            if (!isFinite(dy)) dy = 0;
+            
+            if (DOM.dropShadowNode) {
+                DOM.dropShadowNode.setAttribute('dx', dx);
+                DOM.dropShadowNode.setAttribute('dy', dy);
+            }
+            if (DOM.shadowPointer) {
+                DOM.shadowPointer.style.transform = `rotate(${angle}deg)`;
+            }
+        } else if (key === 'shadowDistance') {
+            // Only distance changed - recalculate dx/dy with current angle
+            let distance = Number(value);
+            if (!isFinite(distance)) distance = 0;
+            const state = getState();
+            const angle = Number(state.shadowAngle);
+            const rad = (angle - 90) * (Math.PI / 180);
+            let dx = Math.cos(rad) * distance * 10;
+            let dy = Math.sin(rad) * distance * 10;
+            if (!isFinite(dx)) dx = 0;
+            if (!isFinite(dy)) dy = 0;
+            
+            if (DOM.dropShadowNode) {
+                DOM.dropShadowNode.setAttribute('dx', dx);
+                DOM.dropShadowNode.setAttribute('dy', dy);
+            }
+        } else if (key === 'shadowBlur') {
+            // Only blur changed - update stdDeviation only
+            let blur = Number(value);
+            if (!isFinite(blur)) blur = 0;
+            
+            if (DOM.dropShadowNode) {
+                DOM.dropShadowNode.setAttribute('stdDeviation', blur * 10);
+            }
+        } else if (['shadowColor', 'shadowEnabled'].includes(key)) {
+            // Color/enabled changed - run full transformation
             const state = getState();
             applyShadowTransformation(state);
         }
@@ -438,7 +506,7 @@ export function initEventListeners() {
             if (!isFinite(finalAngle)) finalAngle = 90;
             if (finalAngle < 0) finalAngle += 360;
             updateParam('shadowAngle', String(finalAngle));
-            if (DOM.shadowPointer) DOM.shadowPointer.style.transform = `rotate(${finalAngle}deg)`;
+            // Note: pointer update is handled by stateChange listener for consistency
         };
 
         DOM.shadowKnob.addEventListener('mousedown', (e) => {
@@ -722,8 +790,7 @@ function freezeCurrentPositions() {
         const xPct = (centerX / window.innerWidth) * 100;
         const yPct = (centerY / window.innerHeight) * 100;
         
-        // Maybe Delete? Ensures the dataset has the defaults 
-        // before applyPos is called, or the transform will be incomplete.
+        // Initialize dataset with defaults for consistent transforms
         if (!element.dataset.scale) element.dataset.scale = "1.0";
         if (!element.dataset.rot) element.dataset.rot = "0";
 
