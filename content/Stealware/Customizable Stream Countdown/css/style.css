@@ -125,6 +125,10 @@ button {border-radius:0; font-family: "SN Pro", sans-serif;}
     white-space: pre; 
 }
 
+#confirm-modal, #prompt-modal {
+    font-family: "SN Pro", sans-serif;
+}
+
 /* Editable Field Styling */
 [contenteditable="true"] {
     outline: none;
