@@ -105,8 +105,6 @@ async function fetchAndParseJSON(feedObj) {
         const response = await fetch(feedObj.url);
         const items = await response.json(); 
         
-        console.log(`[Audio] Measuring durations for ${items.length} tracks from ${feedObj.url}...`);
-        
         const measuredItems = await Promise.all(items.map(item => measureDuration(item, feedObj)));
         
         return measuredItems.filter(ep => ep.url && ep.duration > 0);
@@ -133,6 +131,8 @@ function measureDuration(item, feedObj) {
             resolve({ ...item, source_feed: feedObj.url, isNSFW: feedObj.isNSFW });
             return;
         }
+
+        console.log(`[Audio] Measuring duration for: ${item.title}`);
 
         const audio = new Audio();
         

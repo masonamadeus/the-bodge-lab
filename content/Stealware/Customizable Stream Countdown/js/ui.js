@@ -828,6 +828,21 @@ export async function startExperience(state) {
         } while (retries < MAX_RETRIES);
         // --------------------------------------
 
+        // CONTINGENCY IF WE CANNOT GENERATE A PLAYLIST
+        if (playlist.length === 0) {
+            console.warn("[UI] Playlist generation failed.");
+            
+            // Update UI to inform the user
+            DOM.trackName.textContent = "Timer too short for PodCube™ Audio";
+            DOM.brandLabel.textContent = "Audio Unavailable";
+            
+            // Ensure progress bar is hidden/reset
+            DOM.progressBar.style.width = '0%';
+            
+            // Exit function so we don't try to sync or play nothing
+            return; 
+        }
+
         console.group("[UI.js] Back-Timing Calculation");
         console.log(`Target Timer:   ${durationSec}s`);
         console.log(`Playlist Total: ${playlistDuration}s`);

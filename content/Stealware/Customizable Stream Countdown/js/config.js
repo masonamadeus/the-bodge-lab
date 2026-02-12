@@ -7,7 +7,7 @@ export const CONFIG = {
             isNSFW: false 
         },
         { 
-            url: '/widkads.json', 
+            url: 'https://bodgelab.com/widkads.json', 
             type: 'json', 
             isNSFW: true 
         }
@@ -18,7 +18,7 @@ export const CONFIG = {
     BLACKLIST: [
         "https://op3.dev/e/pinecast.com/listen/dbd4765e-66dd-4e70-b69a-d559ba4dc136.mp3?source=rss&ext=asset.mp3", // 🅿 04.01.2050_STOVE'S_DESK⚠️UNINTENTIONAL_TRANSMISSION⚠️
         "🔸😃🔸 Hello and Welcome to 🅿️odCube™ 🔸😃🔸",
-        "HEAVY PETTING ZOO", "SIN ATRA", "WARONXMAS", "WHITE HOUSE HIRING", "ARTESINAL CRACK",
+        "HEAVY PETTING ZOO", "SIN ATRA", "WARONXMAS", "WHITE HOUSE HIRING", "ARTESINAL CRACK", "GUT BE GONE FINAL",
 
     ],
 
