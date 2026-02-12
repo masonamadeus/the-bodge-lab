@@ -599,7 +599,7 @@ button {border-radius:0; font-family: "SN Pro", sans-serif;}
 .section-header-toggle h3 { margin: 0; }
 
 /* Specific label styling */
-.ads-label {
+.widk-label {
     font-size: 0.9rem;
     color: #ccc;
 }
