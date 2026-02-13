@@ -1,6 +1,3 @@
-// Ensure PodCube.log is defined or remove its usage if not needed elsewhere
-// For this example, let's assume a basic console.log for PodCube.log
-
 export class PodCubeDate {
     constructor(year, month = 0, day = 0) {
         if (typeof year === 'string') {
@@ -95,7 +92,6 @@ export class PodCubeDate {
             };
         }
 
-        PodCube.log("Unrecognized date format:", str);
         return {
             year: 0,
             month: 0,

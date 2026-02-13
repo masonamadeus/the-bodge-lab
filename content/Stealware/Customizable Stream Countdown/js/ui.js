@@ -1,5 +1,6 @@
 import { updateParam, getShareableURL, getState } from './state.js';
 import { startTimer, stopTimer, formatTime } from './timer.js';
+import { PodCube } from './PodCube.js';
 import * as Audio from './audio.js';
 
 let syncInterval = null;
@@ -209,7 +210,12 @@ function showPromptDialog(title, message, defaultValue = '') {
 
 
 export async function loadBranding() {
-    const logoUrl = await Audio.getPodcastLogoUrl();
+    // Ensure engine is ready (it likely is, but safe to check)
+    if (!PodCube.isReady) await PodCube.init();
+
+    // Use the logo directly from the engine
+    const logoUrl = PodCube.logo;
+    
     if (logoUrl) {
         DOM.logoContainers.forEach(el => {
             el.innerHTML = `<img src="${logoUrl}" alt="Show Logo">`;
@@ -646,7 +652,11 @@ export function initEventListeners() {
         DOM.nowPlaying.classList.remove('hidden');
 
         // Smoothly update the title
-        DOM.trackName.textContent = e.detail.title;
+        if (e.detail.date) {
+            DOM.trackName.textContent = `${e.detail.title} \n ${e.detail.date}`;
+        } else {
+            DOM.trackName.textContent = e.detail.title;
+        }
 
         // Update "You're Listening To" based on source feed
         if (e.detail.sourceFeed && e.detail.sourceFeed.includes('.json')) {

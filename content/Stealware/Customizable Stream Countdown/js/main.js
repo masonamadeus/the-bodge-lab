@@ -73,3 +73,6 @@ function setupManualStart() {
 
 // Start the app
 init();
+
+// Expose debug function globally
+window.debugExportEpisodes = Audio.debugExportEpisodes;

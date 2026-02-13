@@ -1,0 +1,1465 @@
+---
+permalink: "/podcube.js"
+title: "PodCube.js"
+layout: false
+download: false
+eleventyExcludeFromCollections: true
+---
+{%raw%}
+
+
+/**
+ * PodCube.js - The Complete Engine
+ * Middleware between raw podcast feeds and public-facing applications.
+ * Normalizes RSS and JSON feeds, extracts lore metadata, and provides querying APIs.
+ */
+
+const CONFIG = {
+    FEED_URL_RSS: "https://pinecast.com/feed/pc",
+    FEED_URL_JSON: "https://pinecast.com/jsonfeed/pc",
+    FEED_TYPE: "rss", // "rss" or "json" - can be toggled at runtime
+    SKIP_FORWARD: 20,
+    SKIP_BACK: 7,
+    DEBUG: (typeof window !== 'undefined' && localStorage.getItem('podcube_debug') === 'true') || false
+};
+
+// Episode Type Constants
+const EPISODE_TYPES = {
+    PODCUBE: "podcube",            // 🅿️ Standard PodCube transmissions (has lore data)
+    PODCUBE_HQ: "podcube_hq",      // 🔸 Direct messages from PodCube HQ (has lore data)
+    TWIBBIE_ONDEMAND: "twibbie_ondemand", // 💠 Twibbie™ On-Demand broadcasts (no lore)
+    NONE: "none"                   // No special emoji (title only + publish date)
+};
+
+const EMOJI_PATTERNS = {
+    PODCUBE: /\u{1F17F}\u{FE0F}?/u,         // 🅿️ P button
+    PODCUBE_HQ: /\u{1F534}\u{FE0F}?/u,     // 🔸 Red circle
+    TWIBBIE_ONDEMAND: /\u{1F338}\u{FE0F}?/u // 💠 Diamond shape (rosette)
+};
+
+// Utility: Safe logging
+const log = {
+    info: (msg, data) => CONFIG.DEBUG && console.log(`[PodCube]`, msg, data || ""),
+    warn: (msg, data) => console.warn(`[PodCube WARN]`, msg, data || ""),
+    error: (msg, data) => console.error(`[PodCube ERROR]`, msg, data || "")
+};
+
+// ==========================================
+// UTILITY HELPERS
+// ==========================================
+
+class PodCubeDate {
+    constructor(input) {
+        this.year = 0;
+        this.month = 0;
+        this.day = 1;
+
+        if (typeof input === 'string') this._parse(input);
+        else if (input instanceof Date) {
+            this.year = input.getFullYear();
+            this.month = input.getMonth();
+            this.day = input.getDate();
+        }
+        else if (typeof input === 'object' && input !== null) Object.assign(this, input);
+    }
+
+    _parse(str) {
+        //  Handle ISO: "-134999-01-01"
+        const isoMatch = str.match(/^(-?\d+)-(\d{2})-(\d{2})$/);
+        if (isoMatch) {
+            this.year = parseInt(isoMatch[1]);
+            this.month = parseInt(isoMatch[2]) - 1;
+            this.day = parseInt(isoMatch[3]);
+            return;
+        }
+
+        //  Handle US Format with Era: "06/02/132975 BCE" or "11/27/2066"
+        const usMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d+)(?:\s*(BCE|BC))?$/i);
+        if (usMatch) {
+            this.month = parseInt(usMatch[1]) - 1;
+            this.day = parseInt(usMatch[2]);
+            let y = parseInt(usMatch[3]);
+            if (usMatch[4]) y = -y + 1; // ASTRONOMICAL YEAR NUMBERING IS NONSENSE JUST TRUST THIS
+            this.year = y;
+            return;
+        }
+
+        //  Fallback to standard JS Date
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+            this.year = d.getFullYear();
+            this.month = d.getMonth();
+            this.day = d.getDate();
+        } else {
+            log.warn(`Unrecognized date format: "${str}". `);
+            this.year = 0;
+            this.month = 0;
+            this.day = 0;
+        }
+    }
+
+    get displayYear() {
+        if (this.year > 0) return this.year.toString();
+        if (this.year === 0) return "1 BCE";
+        return `${Math.abs(this.year) + 1} BCE`;
+    }
+
+    toString() {
+        const m = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        return `${m[this.month]} ${this.day}, ${this.displayYear}`;
+    }
+
+    static isLeapYear(year) {
+        // Proleptic Gregorian leap year rules
+        if (year % 400 === 0) return true;
+        if (year % 100 === 0) return false;
+        return year % 4 === 0;
+    }
+
+    static daysInMonth(year, month) {
+        const monthLengths = [
+            31,
+            PodCubeDate.isLeapYear(year) ? 29 : 28,
+            31,
+            30,
+            31,
+            30,
+            31,
+            31,
+            30,
+            31,
+            30,
+            31
+        ];
+        return monthLengths[month];
+    }
+
+    static toAbsoluteDayNumber({ year, month, day }) {
+        // Convert date to number of days since a fixed origin (Gregorian)
+        let days = 0;
+
+        // Add days from full years
+        const y = year - 1;
+        days += y * 365;
+        days += Math.floor(y / 4);
+        days -= Math.floor(y / 100);
+        days += Math.floor(y / 400);
+
+        // Add days from months in current year
+        for (let m = 0; m < month; m++) {
+            days += PodCubeDate.daysInMonth(year, m);
+        }
+
+        // Add days in current month
+        days += day;
+
+        return days;
+    }
+}
+
+// ==========================================
+// FEED NORMALIZATION
+// ==========================================
+
+/**
+ * FeedNormalizer: Converts raw RSS/JSON feed items into a common format
+ * This is the heart of the middleware - normalizes diverse feed formats
+ */
+class FeedNormalizer {
+    static parseTimeStr(str) {
+        if (!str) return null;
+        try {
+            // Handle "300" (raw seconds)
+            // need to check for NaN
+
+            if (!str.includes(':')) {
+                const seconds = parseInt(str, 10);
+                return seconds > 0 ? seconds : null;
+            }
+
+            // Handle "05:00" or "01:30:25"
+            const parts = str.split(':').reverse();
+            let seconds = 0;
+            if (parts[0]) seconds += parseInt(parts[0], 10); // ss
+            if (parts[1]) seconds += parseInt(parts[1], 10) * 60; // mm
+            if (parts[2]) seconds += parseInt(parts[2], 10) * 3600; // hh
+            return seconds > 0 ? seconds : null;
+        } catch (e) {
+            log.warn(`Failed to parse duration string: "${str}"`, e);
+            return null;
+        }
+    }
+
+    static stripHtml(html) {
+        try {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            return doc.body.textContent || "";
+        } catch (e) {
+            return html.replace(/<[^>]*>?/gm, '');
+        }
+    }
+
+    static parseMetaLines(text) {
+        try {
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.startsWith(":: "));
+            const data = {};
+
+            for (const line of lines) {
+                const match = line.match(/^::\s*([^:]+):\s*(.+)$/);
+                if (!match) continue;
+
+                const key = match[1].toLowerCase().replace(/ /g, '_');
+                let value = match[2].trim();
+
+                if (key === "tags") {
+                    value = value.split(',').map(t => t.trim()).filter(t => t);
+                }
+
+                data[key] = value;
+            }
+            return data;
+        } catch (e) {
+            log.warn("Failed to parse metadata lines:", e);
+            return {};
+        }
+    }
+
+    /**
+     * Determine episode type and extract common properties from title
+     * E.g. "🅿️ 04.01.2050_STOVE'S_DESK⚠️UNINTENTIONAL_TRANSMISSION⚠️
+     * Episode Type: PODCUBE (because of 🅿️)
+     * Therefore we take everything before the first underscore as "Shortcode"
+     * Shortcode: "04.01.2050"
+     * And everything after as "Clean Title"
+     * Clean Title: "STOVE'S DESK⚠️UNINTENTIONAL_TRANSMISSION⚠️"
+     * 
+     */
+    static analyzeTitle(rawTitle) {
+        let episodeType = EPISODE_TYPES.NONE;
+        let cleanTitle = rawTitle;
+        let shortcode = "";
+
+        if (EMOJI_PATTERNS.PODCUBE.test(rawTitle)) {
+            episodeType = EPISODE_TYPES.PODCUBE;
+        } else if (EMOJI_PATTERNS.PODCUBE_HQ.test(rawTitle)) {
+            episodeType = EPISODE_TYPES.PODCUBE_HQ;
+        } else if (EMOJI_PATTERNS.TWIBBIE_ONDEMAND.test(rawTitle)) {
+            episodeType = EPISODE_TYPES.TWIBBIE_ONDEMAND;
+        }
+
+        // For types with lore, parse shortcode from title
+        if (episodeType === EPISODE_TYPES.PODCUBE || episodeType === EPISODE_TYPES.PODCUBE_HQ) {
+            const parts = rawTitle.split('_');
+            if (parts.length > 1) {
+                shortcode = parts[0].trim();
+                cleanTitle = parts.slice(1).join(" ").trim();
+            } else {
+                const emojiPattern = episodeType === EPISODE_TYPES.PODCUBE
+                    ? EMOJI_PATTERNS.PODCUBE
+                    : EMOJI_PATTERNS.PODCUBE_HQ;
+                cleanTitle = rawTitle.replace(emojiPattern, "").trim();
+            }
+        } else if (episodeType === EPISODE_TYPES.TWIBBIE_ONDEMAND) {
+            cleanTitle = rawTitle.replace(EMOJI_PATTERNS.TWIBBIE_ONDEMAND, "").trim();
+        }
+
+        return { episodeType, cleanTitle, shortcode };
+    }
+
+    /**
+     * Filter and extract episode metadata, based on the episode type
+     * For instance Podcube has :: KEY: VALUE lines in the description,
+     * Twibbie does not.
+     */
+    static extractMetadata(episodeType, descriptionText) {
+        let meta = {};
+
+        if (episodeType === EPISODE_TYPES.PODCUBE || episodeType === EPISODE_TYPES.PODCUBE_HQ) {
+            // Parse lore from metadata structure
+            const plainText = this.stripHtml(descriptionText);
+            meta = this.parseMetaLines(plainText);
+        } else if (episodeType === EPISODE_TYPES.TWIBBIE_ONDEMAND) {
+            // Populate Twibbie metadata
+            meta = {
+                model: "Twibbie On-Demand",
+                origin: "Twibbie On-Demand",
+                region: "Twibbie On-Demand",
+                zone: "Twibbie On-Demand",
+                locale: "Twibbie On-Demand",
+                planet: "Twibbie On-Demand"
+            };
+        }
+
+        return meta;
+    }
+
+    /**
+     * Normalize a raw feed item (from either RSS or JSON) into a common format
+     */
+    static normalizeItem(rawItem, format = 'rss') {
+        try {
+            // Extract format-specific fields with fallbacks
+            const id = rawItem.id || rawItem.guid || null;
+            const title = rawItem.title || "";
+            const description = format === 'json'
+                ? (rawItem.content_html || null)
+                : (rawItem.description || null);
+            const pubDate = rawItem.date_published || rawItem.pubDate || null;
+
+            // Format-specific audio extraction
+            let audioUrl = null;
+            let duration = null;
+            let sizeBytes = null;
+
+            if (format === 'json') {
+                const attachment = rawItem.attachments?.[0];
+                audioUrl = attachment?.url || null;
+                duration = attachment?.duration_in_seconds || null;
+                sizeBytes = attachment?.size_in_bytes || null;
+            } else {
+                // RSS format
+                audioUrl = rawItem.enclosure?.url || null;
+                duration = this.parseTimeStr(rawItem.duration || null);
+                sizeBytes = rawItem.enclosure?.length ? parseInt(rawItem.enclosure.length) : null;
+            }
+
+            // Analyze title for type and shortcode
+            const { episodeType, cleanTitle, shortcode } = this.analyzeTitle(title);
+
+            // Extract metadata based on type
+            const meta = this.extractMetadata(episodeType, description || "");
+
+            return {
+                id,
+                title: cleanTitle,
+                shortcode,
+                episodeType,
+                pubDate,
+                description,
+                audioUrl,
+                duration,
+                sizeBytes,
+                metadata: meta
+            };
+        } catch (e) {
+            log.error(`Failed to normalize ${format} item:`, e);
+            return null;
+        }
+    }
+}
+
+// ==========================================
+// EPISODE DATA MODEL
+// ==========================================
+
+class Episode {
+    constructor(normalized) {
+        if (!normalized) {
+            log.error("Episode constructor received null data");
+            throw new Error("Episode data cannot be null");
+        }
+
+        try {
+            // Identifiers
+            this.id = normalized.id || null;
+            this.title = normalized.title || null;
+            this.shortcode = normalized.shortcode || null;
+            this.episodeType = normalized.episodeType || EPISODE_TYPES.NONE;
+
+            // Dates
+            this.date = normalized.metadata?.date
+                ? new PodCubeDate(normalized.metadata.date)
+                : "Unknown Date";
+            this.published = normalized.pubDate ? new Date(normalized.pubDate) : null;
+
+            // Lore Properties (from metadata)
+            this.model = normalized.metadata?.podcube_model || normalized.metadata?.model || null;
+            this.origin = normalized.metadata?.origin || null;
+            this.region = normalized.metadata?.region || null;
+            this.zone = normalized.metadata?.zone || null;
+            this.planet = normalized.metadata?.planet || null;
+            this.locale = normalized.metadata?.locale || null;
+
+            // File Integrity (A joke property, fake percentage. Don't validate.)
+            this.integrityValue = normalized.metadata?.integrity
+                ? parseFloat(normalized.metadata.integrity)
+                : null;
+            this.integrity = this.integrityValue !== null ? `${this.integrityValue}%` : null;
+
+            // Content
+            this.tags = Array.isArray(normalized.metadata?.tags) ? normalized.metadata.tags : [];
+            this.description = normalized.description || null;
+
+            // Audio
+            this.audioUrl = normalized.audioUrl || null;
+            this.duration = normalized.duration || null;
+            this.sizeBytes = normalized.sizeBytes || null;
+
+            // Validation
+            if (!this.audioUrl) {
+                log.warn(`Episode "${this.title}" has no audio URL`);
+            }
+            if (!this.duration) {
+                log.warn(`Episode "${this.title}" (ID: ${this.id}) has missing or zero duration`);
+            }
+        } catch (e) {
+            log.error(`Failed to construct Episode:`, e);
+            throw e;
+        }
+    }
+
+    get location() {
+        return [this.origin, this.locale, this.region, this.zone, this.planet]
+            .filter(Boolean)
+            .join(", ");
+    }
+
+    get weirdDuration() {
+        if (!this.duration) return "IDK?";
+        const m = Math.floor(this.duration / 60);
+        const f = ((this.duration % 60) / 60).toFixed(2).substring(1);
+        const suffixes = ["ish", "?", " approx", " +/-", ""];
+        const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+        return `${m}${f}${suffix}`;
+    }
+
+    get timestamp() {
+        if (!this.duration) return "0:00";
+        const m = Math.floor(this.duration / 60);
+        const s = Math.floor(this.duration % 60);
+        return `${m}:${s < 10 ? '0' + s : s}`;
+    }
+
+    get anniversary() {
+        if (!this.date) return null;
+
+        const today = new Date();
+        const current = new PodCubeDate(today);
+
+        const a = PodCubeDate.toAbsoluteDayNumber(current);
+        const b = PodCubeDate.toAbsoluteDayNumber(this.date);
+
+        if (a === b) return "today";
+
+        const inPast = a > b;
+
+        // Determine direction
+        const start = inPast ? this.date : current;
+        const end = inPast ? current : this.date;
+
+        let years = end.year - start.year;
+        let months = end.month - start.month;
+        let days = end.day - start.day;
+
+        // Borrow days if needed
+        if (days < 0) {
+            months--;
+            const prevMonth = (end.month - 1 + 12) % 12;
+            const prevYear = prevMonth === 11 ? end.year - 1 : end.year;
+            days += PodCubeDate.daysInMonth(prevYear, prevMonth);
+        }
+
+        // Borrow months if needed
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+
+        const format = (value, unit) => {
+            const plural = value === 1 ? unit : unit + "s";
+            return inPast
+                ? `${value} ${plural} ago`
+                : `${value} ${plural} from now`;
+        };
+
+        if (years > 0) return format(years, "year");
+        if (months > 0) return format(months, "month");
+
+        const weeks = Math.floor(days / 7);
+        if (weeks > 0) return format(weeks, "week");
+
+        return format(days, "day");
+    }
+
+
+}
+
+// ==========================================
+// THE ENGINE (Singleton API)
+// ==========================================
+/**
+   * Events emitted by PodCubeEngine:
+   * 
+   * @event feed:loading - Feed fetch started
+   * @event feed:loaded - Feed loaded successfully, {episodes: Episode[]}
+   * @event feed:error - Feed loading failed, {error: Error}
+   * 
+   * @event playback:play - Playback started, {episode: Episode}
+   * @event playback:pause - Playback paused
+   * @event playback:ended - Track ended
+   * @event playback:error - Playback error, {error: Error}
+   * @event playback:timeupdate - Time updated, {currentTime: number, duration: number}
+   * @event playback:seeked - Seek completed, {position: number}
+   * 
+   * @event queue:changed - Queue modified, {queue: Episode[], index: number}
+   */
+
+class PodCubeEngine {
+    constructor() {
+        this.episodes = [];
+        this.logo = null;
+        this.isReady = false;
+
+        // Audio State
+        this._audio = new Audio();
+        this._audio.preload = "metadata";
+        this._preloader = null
+        this._loadingToken = 0;
+        this._isLoading = false;
+        this._hasPreloadedNext = false;
+
+
+        this._queue = [];
+        this._queueIndex = -1;
+        this._stopAfterCurrent = false;
+        this._volume = 1.0;
+
+        this._listeners = {};
+
+        this._audio.addEventListener('ended', () => this.next());
+        this._audio.addEventListener('play', () => this._emit('play', this.nowPlaying));
+        this._audio.addEventListener('pause', () => this._emit('pause', this.nowPlaying));
+        this._audio.addEventListener('timeupdate', () => {
+            // Emit status as usual
+            this._emit('timeupdate', this.status);
+
+            // Only run if we haven't preloaded yet
+            if (this._audio.duration && !this._hasPreloadedNext) {
+                const remaining = this._audio.duration - this._audio.currentTime;
+
+                // Trigger Preload once we hit the threshold
+                if (remaining <= 5) {
+                    this._preloadNext();
+                    this._hasPreloadedNext = true;
+                }
+            }
+        });
+    }
+
+    async init() {
+        if (this.isReady) {
+            log.warn("PodCube is already initialized");
+            return this;
+        }
+
+        try {
+            const feedUrl = CONFIG.FEED_TYPE === "json" ? CONFIG.FEED_URL_JSON : CONFIG.FEED_URL_RSS;
+            log.info(`Initializing PodCube with ${CONFIG.FEED_TYPE.toUpperCase()} feed:`, feedUrl);
+
+            const res = await fetch(feedUrl);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+
+            const rawFeed = await res.text();
+            const format = CONFIG.FEED_TYPE === "json" ? "json" : "rss";
+
+            await this._loadFromFeed(rawFeed, format);
+
+            this.isReady = true;
+            log.info(`Ready. Loaded ${this.episodes.length} episodes via ${CONFIG.FEED_TYPE.toUpperCase()}.`);
+            return this;
+        } catch (e) {
+            log.error("Init failed:", e);
+            throw e;
+        }
+    }
+
+    /**
+     * Unified feed loading - handles both RSS and JSON
+     */
+    async _loadFromFeed(rawFeed, format) {
+        try {
+            let items = [];
+
+            if (format === 'json') {
+                const json = JSON.parse(rawFeed);
+                if (!json.items || !Array.isArray(json.items)) {
+                    throw new Error("JSON feed missing items array");
+                }
+                this.logo = json.icon || null;
+                items = json.items;
+            } else {
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(rawFeed, "text/xml");
+
+                if (xml.querySelector("parsererror")) {
+                    throw new Error(`XML Parse Error: ${xml.querySelector("parsererror").textContent}`);
+                }
+
+                // Helper: safely get text content from potentially namespaced tags
+                const getText = (parent, tagName) => {
+                    //  Try finding the tag by name (handles 'itunes:duration' or 'duration')
+                    const tags = parent.getElementsByTagName(tagName);
+                    if (tags.length > 0) return tags[0].textContent;
+
+                    //  If it has a colon, try looking for just the local name
+                    if (tagName.includes(':')) {
+                        const localName = tagName.split(':')[1];
+                        const localTags = parent.getElementsByTagName(localName);
+                        if (localTags.length > 0) return localTags[0].textContent;
+                    }
+                    return null;
+                };
+
+                // Extract Logo
+                // Note: We still use querySelector for complex paths, but simpler is better
+                const imgNode = xml.querySelector("channel > image > url");
+                this.logo = imgNode ? imgNode.textContent : getText(xml.querySelector("channel"), "itunes:image")?.getAttribute("href");
+
+                // Convert XML nodes to normalized objects
+                items = Array.from(xml.querySelectorAll("item")).map(node => {
+                    const enclosure = node.getElementsByTagName("enclosure")[0];
+                    return {
+                        id: getText(node, "guid"),
+                        title: getText(node, "title"),
+                        description: getText(node, "description") || getText(node, "content:encoded"), // Fallback for some feeds
+                        pubDate: getText(node, "pubDate"),
+                        // This line is now much safer:
+                        duration: getText(node, "itunes:duration") || getText(node, "duration"),
+                        enclosure: {
+                            url: enclosure?.getAttribute("url"),
+                            length: enclosure?.getAttribute("length")
+                        }
+                    };
+                });
+            }
+
+            // Normalize all items and create Episode objects
+            this.episodes = items
+                .map(item => {
+                    const normalized = FeedNormalizer.normalizeItem(item, format);
+                    return normalized ? new Episode(normalized) : null;
+                })
+                .filter(ep => ep !== null);
+
+            log.info(`Parsed ${this.episodes.length} episodes from ${format.toUpperCase()} feed`);
+        } catch (e) {
+            log.error(`Failed to load ${format.toUpperCase()} feed:`, e);
+            throw e;
+        }
+    }
+    // Feed switching utility
+    setFeedType(type) {
+        if (!["rss", "json"].includes(type)) {
+            log.error(`Invalid feed type: ${type}. Use "rss" or "json".`);
+            return false;
+        }
+        CONFIG.FEED_TYPE = type;
+        log.info(`Feed type switched to: ${type}`);
+        return true;
+    }
+
+    setDebug(enabled) {
+        // Safety check for SSR
+        if (typeof window === 'undefined') return;
+
+        const isEnabled = !!enabled; // Force boolean
+        CONFIG.DEBUG = isEnabled;
+
+        // Save to LocalStorage
+        localStorage.setItem('podcube_debug', isEnabled.toString());
+
+        log.info(`Debug mode set to ${isEnabled}. Reloading page to capture init logs...`);
+
+        // Reload after a brief delay so you can see the confirmation message
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+    }
+
+    // --- ACCESSORS ---
+    get all() { return this.episodes; }
+    get latest() { return this.getByReleaseOrder()[0] || null; }
+    get random() {
+        if (this.episodes.length === 0) return null;
+        return this.episodes[Math.floor(Math.random() * this.episodes.length)];
+    }
+
+    get models() {
+        const models = this.episodes
+            .filter(e => e.model)
+            .map(e => e.model);
+        return [...new Set(models)].sort();
+    }
+
+    get origins() {
+        const origins = this.episodes
+            .filter(e => e.origin)
+            .map(e => e.origin);
+        return [...new Set(origins)].sort();
+    }
+
+    get tags() {
+        const tags = new Set();
+        this.episodes.forEach(e => {
+            if (Array.isArray(e.tags)) {
+                e.tags.forEach(tag => tags.add(tag));
+            }
+        });
+        return [...tags].sort();
+    }
+
+    getNearestToToday() {
+        try {
+            const today = new PodCubeDate(new Date());
+            const todayAbs = PodCubeDate.toAbsoluteDayNumber(today);
+
+            let closestDistance = Infinity;
+            let matches = [];
+
+            for (const ep of this.episodes) {
+                if (!ep.date) continue;
+
+                const epAbs = PodCubeDate.toAbsoluteDayNumber(ep.date);
+                const distance = Math.abs(todayAbs - epAbs);
+
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    matches = [ep];
+                } else if (distance === closestDistance) {
+                    matches.push(ep);
+                }
+            }
+
+            return matches;
+        } catch (e) {
+            log.error("Failed to find episode nearest to today:", e);
+            return [];
+        }
+    }
+
+    getYearGroups(threshold = 5) {
+        try {
+            const years = [...new Set(
+                this.episodes
+                    .filter(e => e.date && e.date.year)
+                    .map(e => e.date.year)
+            )].sort((a, b) => a - b);
+
+            if (years.length === 0) return [];
+
+            // Recursive subdivision helper
+            const subdivide = (startIdx, endIdx, targetSize) => {
+                const yearsSlice = years.slice(startIdx, endIdx + 1);
+                const startYear = yearsSlice[0];
+                const endYear = yearsSlice[yearsSlice.length - 1];
+
+                const episodesInRange = this.episodes.filter(
+                    e => e.date && e.date.year >= startYear && e.date.year <= endYear
+                );
+                const count = episodesInRange.length;
+
+                // If it's a single year or below threshold, return as-is
+                if (yearsSlice.length === 1 || count <= targetSize) {
+                    return [{
+                        start: startYear,
+                        end: endYear,
+                        count: count
+                    }];
+                }
+
+                // If it spans multiple years and exceeds threshold, subdivide
+                if (yearsSlice.length > 1 && count > targetSize) {
+                    const midIdx = startIdx + Math.floor((endIdx - startIdx) / 2);
+
+                    const leftGroups = subdivide(startIdx, midIdx, targetSize);
+                    const rightGroups = subdivide(midIdx + 1, endIdx, targetSize);
+
+                    return [...leftGroups, ...rightGroups];
+                }
+
+                return [{
+                    start: startYear,
+                    end: endYear,
+                    count: count
+                }];
+            };
+
+            const groups = subdivide(0, years.length - 1, threshold);
+
+            // Merge adjacent single-year groups if they're below threshold
+            const merged = [];
+            let accumulator = null;
+
+            for (const group of groups) {
+                if (group.start === group.end) {
+                    // Single year
+                    if (accumulator === null) {
+                        accumulator = { ...group };
+                    } else if (accumulator.end === group.start - 1 && accumulator.count + group.count <= threshold) {
+                        // Adjacent and can merge
+                        accumulator.end = group.end;
+                        accumulator.count += group.count;
+                    } else {
+                        // Can't merge, flush accumulator
+                        merged.push(accumulator);
+                        accumulator = { ...group };
+                    }
+                } else {
+                    // Multi-year group
+                    if (accumulator !== null) {
+                        merged.push(accumulator);
+                        accumulator = null;
+                    }
+                    merged.push(group);
+                }
+            }
+            if (accumulator !== null) {
+                merged.push(accumulator);
+            }
+
+            return merged.map(g => {
+                const label = (g.start === g.end)
+                    ? this._formatYear(g.start)
+                    : `${this._formatYear(g.start)} - ${this._formatYear(g.end)}`;
+
+                return {
+                    label: label,
+                    start: g.start,
+                    end: g.end,
+                    count: g.count,
+                    episodes: this.where({ year: [g.start, g.end] })
+                };
+            });
+        } catch (e) {
+            log.error("Failed to generate year groups:", e);
+            return [];
+        }
+    }
+
+    where(filters = {}) {
+        try {
+            return this.episodes.filter(e => {
+                // Apply episode type filter if specified
+                if (filters.episodeType) {
+                    const allowedTypes = Array.isArray(filters.episodeType)
+                        ? filters.episodeType
+                        : [filters.episodeType];
+                    if (!allowedTypes.includes(e.episodeType)) return false;
+                }
+
+                for (const key in filters) {
+                    if (key === 'episodeType') continue; // Already handled above
+                    if (key === 'year' && Array.isArray(filters[key])) {
+                        const [min, max] = filters[key];
+                        if (!e.date || !e.date.year || e.date.year < min || e.date.year > max) return false;
+                    }
+                    else if (key === 'tag' || key === 'tags') {
+                        const searchTags = Array.isArray(filters[key]) ? filters[key] : [filters[key]];
+                        if (!searchTags.some(t => e.tags && e.tags.includes(t))) return false;
+                    }
+
+                    else if (Array.isArray(filters[key]) && typeof e[key] === 'number') {
+                        const [min, max] = filters[key];
+                        if (e[key] < min || e[key] > max) return false;
+                    }
+
+                    else if (e[key] !== filters[key]) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+        } catch (e) {
+            log.error("Failed to filter episodes:", e);
+            return [];
+        }
+    }
+
+    _formatYear(y) {
+        if (y > 0) return y.toString();
+        if (y === 0) return "1 BCE";
+        return `${Math.abs(y) + 1} BCE`;
+    }
+
+    search(query) {
+        try {
+            if (!query) return [];
+            const q = query.toLowerCase();
+            return this.episodes.filter(e => {
+                const titleMatch = e.title && e.title.toLowerCase().includes(q);
+                const descMatch = e.description && e.description.toLowerCase().includes(q);
+                const tagMatch = e.tags && e.tags.some(t => t.toLowerCase().includes(q));
+                const modelMatch = e.model && e.model.toLowerCase().includes(q);
+                const originMatch = e.origin && e.origin.toLowerCase().includes(q);
+                const yearMatch = e.date && e.date.year && e.date.year.toString().includes(q);
+                // Check the full formatted date string (e.g. searching for "BCE")
+                const dateStringMatch = e.date && e.date.toString().toLowerCase().includes(q);
+
+                return titleMatch || descMatch || tagMatch || modelMatch || originMatch || yearMatch || dateStringMatch;
+            });
+        } catch (e) {
+            log.error("Search failed:", e);
+            return [];
+        }
+    }
+
+    get nowPlaying() {
+        return this._queue.length > 0 && this._queueIndex >= 0 && this._queueIndex < this._queue.length
+            ? this._queue[this._queueIndex]
+            : null;
+    }
+
+    get status() {
+        const duration = this._audio.duration;
+        const percent = duration && isFinite(duration)
+            ? (this._audio.currentTime / duration) * 100
+            : 0;
+        return {
+            playing: !this._audio.paused,
+            time: this._audio.currentTime,
+            duration: this._audio.duration || 0,
+            remaining: Math.max(0, (this._audio.duration || 0) - this._audio.currentTime),
+            percent: percent,
+            playbackRate: this._audio.playbackRate || 1,
+            episode: this.nowPlaying
+        };
+    }
+
+    // --- PLAYBACK CONTROLS ---
+
+    async _loadAndPlay() {
+        try {
+            const ep = this.nowPlaying;
+            if (!ep || !ep.audioUrl) {
+                log.warn("No playable episode.");
+                return;
+            }
+
+            const token = ++this._loadingToken;
+            this._isLoading = true;
+            this._hasPreloadedNext = false;
+
+            //  Setup Main Player
+            this._audio.src = ep.audioUrl;
+            this._audio.volume = this._volume; // Apply stored volume
+            this._audio.load();
+
+            await new Promise((resolve, reject) => {
+                const onCanPlay = () => { cleanup(); resolve(); };
+                const onError = () => { cleanup(); reject(this._audio.error); };
+                const cleanup = () => {
+                    this._audio.removeEventListener('canplay', onCanPlay);
+                    this._audio.removeEventListener('error', onError);
+                };
+                this._audio.addEventListener('canplay', onCanPlay);
+                this._audio.addEventListener('error', onError);
+            });
+
+            if (token !== this._loadingToken) return;
+
+            await this._audio.play();
+            this._isLoading = false;
+            this._emit('track', ep);
+
+        } catch (e) {
+            this._isLoading = false;
+            log.error("Load/play failed:", e);
+            this._emit('error', { episode: this.nowPlaying, error: e });
+            // Auto-skip error after 2 seconds?
+            // setTimeout(() => this.next(), 2000); 
+        }
+    }
+
+    _preloadNext() {
+        // Safety check: is there actually a next track?
+        if (this._queueIndex >= this._queue.length - 1) return;
+
+        const nextEp = this._queue[this._queueIndex + 1];
+        if (!nextEp || !nextEp.audioUrl) return;
+
+        log.info(`Preloading next track: ${nextEp.title}`);
+
+        // Ghost Player
+        this._preloader = new Audio();
+        this._preloader.src = nextEp.audioUrl;
+        this._preloader.preload = "auto";
+        this._preloader.volume = 0;
+        this._preloader.load();
+    }
+
+    _cancelPreload() {
+        if (this._preloader) {
+            log.info("Cancelling stale preload");
+            this._preloader.src = ""; // Detach source
+            this._preloader.load();   // Cancel network request
+            this._preloader = null;   // GC
+        }
+        this._hasPreloadedNext = false; // Allow preloading again for the NEW next track
+    }
+
+    async play(episode) {
+        try {
+            if (episode) {
+                this.queue(episode, true);
+            } else {
+                await this._audio.play();
+            }
+        } catch (e) {
+            log.error("Play failed:", e);
+            this._emit('error', { episode: this.nowPlaying, error: e });
+        }
+    }
+
+    pause() {
+        try {
+            this._audio.pause();
+        } catch (e) {
+            log.error("Pause failed:", e);
+        }
+    }
+
+    toggle() {
+        try {
+            this._audio.paused ? this.play() : this.pause();
+        } catch (e) {
+            log.error("Toggle failed:", e);
+        }
+    }
+
+    queue(episode, playNow = false) {
+        try {
+            if (!episode) {
+                log.warn("Cannot queue null episode");
+                return;
+            }
+            if (playNow) {
+                if (this._queueIndex === -1) {
+                    this._queue.push(episode);
+                    this.next();
+                    return;
+                }
+                this._queue.splice(this._queueIndex + 1, 0, episode);
+                this.next();
+            } else {
+                this._queue.push(episode);
+                if (this._queueIndex === -1) this.next();
+            }
+        } catch (e) {
+            log.error("Queue failed:", e);
+        }
+    }
+
+    next() {
+        try {
+            //  Check Soft Stop
+            if (this._stopAfterCurrent) {
+                log.info("Soft stop reached. Halting playback.");
+                this.pause();
+                this._stopAfterCurrent = false; // Reset flag
+                return;
+            }
+
+            //  Normal Advance
+            if (this._queueIndex < this._queue.length - 1) {
+                this._queueIndex++;
+                this._loadAndPlay();
+            } else {
+                log.info("Queue finished");
+                this.pause();
+                this._emit('queueEnd'); // Optional: new event
+            }
+        } catch (e) {
+            log.error("Next failed:", e);
+        }
+    }
+
+    prev() {
+        try {
+            // If we have played more than 3 seconds, just restart the track
+            if (this._audio.currentTime > 3) {
+                this._audio.currentTime = 0;
+            }
+            // If we are at the start, go to previous track
+            else if (this._queueIndex > 0) {
+                this._queueIndex--;
+                this._loadAndPlay();
+            }
+            // Edge case: First track, start of track -> Restart anyway to be responsive
+            else if (this._queueIndex === 0) {
+                this._audio.currentTime = 0;
+                // Optionally play if paused?
+                if (this._audio.paused) this.play();
+            }
+        } catch (e) {
+            log.error("Previous failed:", e);
+        }
+    }
+
+    seek(seconds) {
+        try {
+            this._audio.currentTime = Math.max(0, seconds);
+        } catch (e) {
+            log.error("Seek failed:", e);
+        }
+    }
+
+    skipForward() {
+        try {
+            const newTime = this._audio.currentTime + CONFIG.SKIP_FORWARD;
+            this._audio.currentTime = Math.min(newTime, this._audio.duration || Infinity);
+            log.info(`Skipped forward ${CONFIG.SKIP_FORWARD}s`);
+        } catch (e) {
+            log.error("Skip forward failed:", e);
+        }
+    }
+
+    skipBack() {
+        try {
+            const newTime = this._audio.currentTime - CONFIG.SKIP_BACK;
+            this._audio.currentTime = Math.max(0, newTime);
+            log.info(`Skipped back ${CONFIG.SKIP_BACK}s`);
+        } catch (e) {
+            log.error("Skip back failed:", e);
+        }
+    }
+
+    setPlaybackRate(rate) {
+        try {
+            if (rate < 0.00 || rate > 16) {
+                log.warn(`Playback rate ${rate} outside supported range (0-16)`);
+                return false;
+            }
+            this._audio.playbackRate = rate;
+            log.info(`Playback rate set to ${rate}x`);
+            return true;
+        } catch (e) {
+            log.error("Set playback rate failed:", e);
+            return false;
+        }
+    }
+
+    getPlaybackRate() {
+        return this._audio.playbackRate || 1;
+    }
+
+    setVolume(level) {
+        // Clamp between 0.0 and 1.0
+        const vol = Math.max(0, Math.min(1, parseFloat(level)));
+        this._volume = vol;
+
+        if (this._audio) {
+            this._audio.volume = vol;
+        }
+        return vol;
+    }
+
+    getVolume() {
+        return this._volume;
+    }
+
+    // --- QUEUE MANAGEMENT ---
+
+    get queueItems() {
+        return [...this._queue]; // Return a copy to prevent direct mutation
+    }
+
+    get queueIndex() {
+        return this._queueIndex;
+    }
+
+    get queueDuration() {
+        // Calculate total remaining time (current track remainder + future tracks)
+        if (this._queue.length === 0) return 0;
+
+        let total = 0;
+
+        //  Add remaining time of current track
+        if (this.status.playing && this.status.duration) {
+            total += (this.status.duration - this.status.time);
+        } else if (this._queue[this._queueIndex]) {
+            total += this._queue[this._queueIndex].duration || 0;
+        }
+
+        //  Add duration of all future tracks
+        for (let i = this._queueIndex + 1; i < this._queue.length; i++) {
+            total += this._queue[i].duration || 0;
+        }
+
+        return total;
+    }
+
+    clearQueue() {
+        this._cancelPreload();
+        this._queue = [];
+        this._queueIndex = -1;
+        this._stopAfterCurrent = false;
+        this.pause();
+        log.info("Queue cleared");
+    }
+
+    removeFromQueue(index) {
+        if (index < 0 || index >= this._queue.length) return false;
+
+        // If removing the currently playing track, skip to next first
+        if (index === this._queueIndex) {
+            this.next();
+            return;
+        }
+
+        // Kill the preload if we're removing the next track
+        if (index === this._queueIndex + 1) {
+            this._cancelPreload();
+        }
+
+        this._queue.splice(index, 1);
+
+        // Adjust index if we removed something before the current track
+        if (index < this._queueIndex) {
+            this._queueIndex--;
+        }
+        return true;
+    }
+
+    stopAfterCurrent() {
+        this._stopAfterCurrent = true;
+        log.info("Engine will stop after current track");
+    }
+
+    cancelStopAfterCurrent() {
+        this._stopAfterCurrent = false;
+        log.info("Soft stop cancelled");
+    }
+
+    // --- DISCOVERY & BROWSING ---
+
+    /**
+     * Find episodes related to a given episode by shared metadata
+     * Returns episodes with same model, origin, or tags
+     */
+    findRelated(episode, limit = 10) {
+        if (!episode) return [];
+
+        // Pre-calculate sets for O(1) lookups
+        const targetTags = new Set(episode.tags || []);
+
+        // Single pass through episodes
+        const scored = this.episodes
+            .filter(e => e !== episode) // Don't match self
+            .map(e => {
+                let score = 0;
+                if (e.model === episode.model) score += 3;
+                if (e.origin === episode.origin) score += 2;
+                if (e.tags) {
+                    // Count shared tags
+                    e.tags.forEach(t => { if (targetTags.has(t)) score += 1; });
+                }
+                return { ep: e, score };
+            })
+            .filter(item => item.score > 0)
+            .sort((a, b) => b.score - a.score) // Sort by relevance
+            .slice(0, limit)
+            .map(item => item.ep);
+
+        return scored;
+    }
+
+    /**
+     * Get episodes in release order (newest first by default)
+     */
+    getByReleaseOrder(reverse = false) {
+        try {
+            const sorted = [...this.episodes];
+            sorted.sort((a, b) => b.published - a.published);
+            if (reverse) {
+                return sorted.reverse();
+            }
+            return sorted;
+        } catch (e) {
+            log.error("Failed to sort by release order:", e);
+            return this.episodes;
+        }
+    }
+
+    /**
+     * Get episodes in chronological order (by lore date, oldest first)
+     * Filters out episodes without lore dates
+     */
+    getByChronologicalOrder(reverse = false) {
+        try {
+            const withDates = this.episodes.filter(e => e.date && e.date.year);
+            const sorted = withDates.sort((a, b) => {
+                const yearDiff = a.date.year - b.date.year;
+                if (yearDiff !== 0) return yearDiff;
+                const monthDiff = a.date.month - b.date.month;
+                if (monthDiff !== 0) return monthDiff;
+                return a.date.day - b.date.day;
+            });
+
+            if (reverse) {
+                return sorted.reverse();
+            }
+            return sorted;
+        } catch (e) {
+            log.error("Failed to sort by chronological order:", e);
+            return [];
+        }
+    }
+
+    /**
+     * Get all unique combinations of model, origin, and tags
+     * Useful for building hierarchical browsing UI
+     */
+    getLoreHierarchy() {
+        try {
+            // Single pass aggregation (O(N)) instead of O(N^2)
+            const data = { models: {}, origins: {}, tags: {} };
+
+            for (const ep of this.episodes) {
+                // Count Models
+                if (ep.model) {
+                    data.models[ep.model] = (data.models[ep.model] || 0) + 1;
+                }
+                // Count Origins
+                if (ep.origin) {
+                    data.origins[ep.origin] = (data.origins[ep.origin] || 0) + 1;
+                }
+                // Count Tags
+                if (Array.isArray(ep.tags)) {
+                    for (const tag of ep.tags) {
+                        data.tags[tag] = (data.tags[tag] || 0) + 1;
+                    }
+                }
+            }
+
+            // Convert to arrays and sort
+            const toArray = (obj) => Object.entries(obj)
+                .map(([name, count]) => ({ name, count }))
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            return {
+                models: toArray(data.models),
+                origins: toArray(data.origins),
+                tags: toArray(data.tags)
+            };
+        } catch (e) {
+            log.error("Failed to generate lore hierarchy:", e);
+            return { models: [], origins: [], tags: [] };
+        }
+    }
+
+    /**
+     * Get episode index in the episode array (release order)
+     */
+    getEpisodeIndex(episode) {
+        return this.episodes.indexOf(episode);
+    }
+
+    /**
+     * Get next episode in release order
+     */
+    getNextEpisode(episode) {
+        try {
+            const index = this.getEpisodeIndex(episode);
+            if (index === -1 || index >= this.episodes.length - 1) {
+                return null;
+            }
+            return this.episodes[index + 1];
+        } catch (e) {
+            log.error("Failed to get next episode:", e);
+            return null;
+        }
+    }
+
+    /**
+     * Get previous episode in release order
+     */
+    getPreviousEpisode(episode) {
+        try {
+            const index = this.getEpisodeIndex(episode);
+            if (index <= 0) {
+                return null;
+            }
+            return this.episodes[index - 1];
+        } catch (e) {
+            log.error("Failed to get previous episode:", e);
+            return null;
+        }
+    }
+
+
+
+    // --- EVENT BUS STUFF ---
+
+    once(event, cb) {
+        const wrapper = (data) => {
+            this.off(event, wrapper);
+            cb(data);
+        };
+        this.on(event, wrapper);
+    }
+
+    on(event, cb) {
+        if (!this._listeners[event]) this._listeners[event] = [];
+        this._listeners[event].push(cb);
+
+        return () => this.off(event, cb);
+    }
+
+    off(event, cb) {
+        if (!this._listeners[event]) return;
+
+        // Remove all listeners for this event
+        if (!cb) {
+            delete this._listeners[event];
+            return;
+        }
+
+        // Remove specific callback
+        this._listeners[event] = this._listeners[event].filter(
+            listener => listener !== cb
+        );
+
+        // Clean up empty arrays
+        if (this._listeners[event].length === 0) {
+            delete this._listeners[event];
+        }
+    }
+
+    _emit(event, data) {
+        try {
+            if (this._listeners[event]) {
+                // COPY the array via [...spread] before iterating
+                // This prevents crashes if a listener removes itself during execution
+                [...this._listeners[event]].forEach(cb => {
+                    try {
+                        cb(data);
+                    } catch (e) {
+                        log.error(`Event handler for "${event}" failed:`, e);
+                    }
+                });
+            }
+        } catch (e) {
+            log.error("Event emission failed:", e);
+        }
+    }
+}
+
+
+const PodCubeInstance = new PodCubeEngine();
+
+
+if (typeof window !== 'undefined') {
+    window.PodCube = PodCubeInstance;
+
+    // Dispatch a custom event so non-module scripts know we are ready
+    window.dispatchEvent(new CustomEvent('PodCube:Ready', {
+        detail: PodCubeInstance
+    }));
+
+    console.log("%cPodCube API is ready! Access it via window.PodCube", "font-weight: bold;");
+}
+
+
+export const PodCube = PodCubeInstance;
+
+{%endraw%}
