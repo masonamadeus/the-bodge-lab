@@ -42,7 +42,7 @@ uid: podcube
         <div id="overview" class="tab-content active">
             <div class="section brigistics-hero">
                 <div class="hero-actions">
-                    <button class="hero-btn pulse" onclick="run('PodCube.play(PodCube.random)')">
+                    <button class="hero-btn pulse" onclick="run('PodCube.play(PodCube.random); toggleAutoplayMode(true);')">
                         <span class="hero-btn-icon"></span>
                         <span class="hero-btn-text">
                             <strong style="">Activate Radio Mode</strong>
@@ -869,23 +869,57 @@ uid: podcube
 
 <!-- GLOBAL TRANSPORT -->
             <div id="global-transport" class="global-transport">
-    <button class="transport-toggle-btn" onclick="toggleTransport()">
-        <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
-    </button>
-    <div class="transport-main">
-        <button class="control-btn" onclick="run('PodCube.prev()')">PREV</button>
-        <button class="control-btn control-btn-play" id="playBtn" onclick="run('PodCube.toggle()')">PLAY</button>
-        <button class="control-btn" onclick="run('PodCube.next()')">NEXT</button>
-        <div class="transport-info">
-            <div id="transTitle" class="transport-title">System Idle</div>
-            <div id="transTime" class="meta" style="font-size:11px;">0:00 / 0:00</div>
-        </div>
-    </div>
-    <div class="scrubber" id="scrubber" onclick="seek(event)">
-        <div id="scrubberFill" class="scrubber-fill"></div>
-    </div>
-</div>
-                    
+            <button class="transport-toggle-btn" id="transportToggleBtn" onclick="toggleTransport()">
+                <svg viewbox="0 0 24 24" class="icon-svg"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                </svg>
+            </button>
+            <div class="transport-main">
+                <button class="control-btn" onclick="run('PodCube.prev()')" title="Previous">
+                    <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                    </svg>
+                </button>
+                <button class="control-btn control-btn-play" id="playBtn" onclick="run('PodCube.toggle()')" title="Play/Pause">
+                    <svg viewbox="0 0 24 24" class="icon-svg"><path d="M8 5v14l11-7z"/>
+                    </svg>
+                </button>
+                <button class="control-btn" onclick="run('PodCube.next()')" title="Next">
+                    <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                    </svg>
+                </button>
+                <div class="transport-info">
+                    <div class="transport-title" id="transTitle">System Idle</div>
+                    <div class="meta" id="transTime" style="font-size:11px; color:#888;">0:00 / 0:00</div>
+                </div>
+                <div class="transport-controls">
+                    <div class="transport-control-group">
+                        <label class="transport-label">Speed:</label>
+                        <select id="transportSpeed" onchange="updatePlayerSpeed(this.value)" class="transport-select">
+                            <option value="0.5">0.5x</option>
+                            <option value="0.75">0.75x</option>
+                            <option value="1" selected>1.0x</option>
+                            <option value="1.25">1.25x</option>
+                            <option value="1.5">1.5x</option>
+                            <option value="2">2.0x</option>
+                        </select>
+                    </div>
+                    <div class="transport-control-group">
+                        <label class="transport-label">Vol:</label>
+                        <input
+                            type="range"
+                            id="transportVolume"
+                            min="0"
+                            max="100"
+                            value="100"
+                            oninput="updatePlayerVolume(this.value)"
+                            class="transport-slider">
+                        <span class="transport-value" id="transportVolumeValue">100%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="scrubber" id="scrubber" onclick="seek(event)" title="Click to seek">
+                <div class="scrubber-fill" id="scrubberFill"></div>
+            </div>
+        </div>       
             <!-- CODE MONITOR -->
             <div class="code-monitor">
                 <span class="monitor-prompt">>></span>
