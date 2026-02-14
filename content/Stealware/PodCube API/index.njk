@@ -21,7 +21,9 @@ uid: podcube
                 <div style="display:flex; align-items:center;">
                     <img id="headerLogo" class="header-logo" src="" alt="PodCube Logo" style="display:none;">
                     <div>
-                        <h1>PodCube™ <i>Explorer</i></h1>
+                        <h1>PodCube™
+                            <i>Explorer</i>
+                        </h1>
                         <div class="subtitle">Official Diagnostic™ Tool & API Reference</div>
                     </div>
                 </div>
@@ -38,7 +40,6 @@ uid: podcube
         <!-- OVERVIEW TAB -->
         <div id="overview" class="tab-content active">
             <div class="section brigistics-hero">
-                
                 <div class="hero-actions">
                     <button class="hero-btn pulse" onclick="run('PodCube.play(PodCube.random)')">
                         <span class="hero-btn-icon"></span>
@@ -51,7 +52,9 @@ uid: podcube
                         <span class="hero-btn-icon"></span>
                         <div class="hero-btn-text">
                             <strong>Nearest to Today</strong>
-                            <span>Closest to <b>Now™</b></span>
+                            <span>Closest to
+                                <b>Now™</b>
+                            </span>
                         </div>
                     </button>
                 </div>
@@ -95,51 +98,48 @@ uid: podcube
                         </button>
                     </div>
                     <div class="sidebar-content">
-                        
-
-
                         <label>Episode Type</label>
-                            <select id="arcType" onchange="updateArchive()">
-                                <option value="">Any Type</option>
-                                <option value="transmission">PodCube™ Transmission</option>
-                                <option value="podcube_hq">P.R.I.C.</option>
-                                <option value="twibbie_ondemand">Twibbie™ On-Demand</option>
-                                <option value="none">Other/Unknown</option>
-                                <option value="issues" style="color:var(--danger); font-weight:bold;">Flagged for Review</option>
-                            </select>
-                        </div>
+                        <select id="arcType" onchange="updateArchive()">
+                            <option value="">Any Type</option>
+                            <option value="transmission">PodCube™ Transmission</option>
+                            <option value="podcube_hq">P.R.I.C.</option>
+                            <option value="twibbie_ondemand">Twibbie™ On-Demand</option>
+                            <option value="none">Other/Unknown</option>
+                            <option value="issues" style="color:var(--danger); font-weight:bold;">Flagged for Review</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Era Grouping</label>
+                        <select id="arcYearGroup" onchange="updateYearOptions()">
+                            <option value="5">5-Year Eras</option>
+                            <option value="10">10-Year Eras</option>
+                            <option value="25">25-Year Eras</option>
+                            <option value="50">50-Year Eras</option>
+                            <option value="100">Century</option>
+                            <option value="1">Single Years</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Timeline</label>
+                        <select id="arcYear" onchange="updateArchive()">
+                            <option value="">All Time</option>
+                        </select>
+                    </div>
+                    <div style="margin-top:15px; border-top:1px solid #ddd; padding-top:12px;">
+                        <label>Sort By</label>
+                        <select id="arcSort" onchange="updateArchive()">
+                            <option value="release_desc">Release Date (Newest)</option>
+                            <option value="release_asc">Release Date (Oldest)</option>
+                            <option value="lore_desc">Lore Date (Newest)</option>
+                            <option value="lore_asc">Lore Date (Oldest)</option>
+                            <option value="integrity_desc">Integrity (High → Low)</option>
+                            <option value="integrity_asc">Integrity (Low → High)</option>
+                            <option value="duration_desc">Duration (Longest)</option>
+                            <option value="duration_asc">Duration (Shortest)</option>
+                        </select>
+                    </div>
+                    <div style="border-top:1px solid #ddd; padding-top:12px; margin-top:12px;">
                         <div>
-                            <label>Era Grouping</label>
-                            <select id="arcYearGroup" onchange="updateYearOptions()">
-                                <option value="5">5-Year Eras</option>
-                                <option value="10">10-Year Eras</option>
-                                <option value="25">25-Year Eras</option>
-                                <option value="50">50-Year Eras</option>
-                                <option value="100">Century</option>
-                                <option value="1">Single Years</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Timeline</label>
-                            <select id="arcYear" onchange="updateArchive()">
-                                <option value="">All Time</option>
-                            </select>
-                        </div>
-                        <div style="margin-top:15px; border-top:1px solid #ddd; padding-top:12px;">
-                            <label>Sort By</label>
-                            <select id="arcSort" onchange="updateArchive()">
-                                <option value="release_desc">Release Date (Newest)</option>
-                                <option value="release_asc">Release Date (Oldest)</option>
-                                <option value="lore_desc">Lore Date (Newest)</option>
-                                <option value="lore_asc">Lore Date (Oldest)</option>
-                                <option value="integrity_desc">Integrity (High → Low)</option>
-                                <option value="integrity_asc">Integrity (Low → High)</option>
-                                <option value="duration_desc">Duration (Longest)</option>
-                                <option value="duration_asc">Duration (Shortest)</option>
-                            </select>
-                        </div>
-                        <div style="border-top:1px solid #ddd; padding-top:12px; margin-top:12px;">
-                            <div>
                             <label>Full-Text Search</label>
                             <input type="text" id="arcSearch" placeholder="Title, description, tags..." oninput="updateArchive()">
                         </div>
@@ -255,6 +255,7 @@ uid: podcube
             <div class="section">
                 <h3>Playback Controls</h3>
                 <div class="playback-control-panel">
+                    
                     <div class="playback-bar">
                         <button class="control-btn" onclick="run('PodCube.prev()')" title="Previous Track">
                             <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
@@ -332,7 +333,20 @@ uid: podcube
                     </div>
                 </div>
                 <div id="playerQueueList"></div>
+                <div class="radio-btn">
+                        
+                        <label for="autoplayRandom" style="margin-bottom: 0; cursor: pointer;">
+                            <strong>Enable Radio Mode:</strong>
+                            Autoplay Random Transmissions
+                        </label>
+                        <input
+                            type="checkbox"
+                            id="autoplayRandom"
+                            style="width: auto; margin-bottom: 0;"
+                            onchange="toggleAutoplayMode(this.checked)">
             </div>
+            </div>
+            
             <div class="section">
                 <h3>Playlists</h3>
                 <div class="playlist-controls">
@@ -1156,7 +1170,6 @@ uid: podcube
                     <div class="ep-meta-row primary-meta">
                         <span class="ep-type ep-tag"></span>
                         <span class="ep-model"></span>
-                        
                     </div>
                     <div class="ep-meta-row secondary-meta">
                         <span class="ep-location"></span>

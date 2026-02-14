@@ -6,7 +6,8 @@ const AppState = {
     lastCommandTime: null,
     commandHistory: [],
     filteredResults: [],
-    liveDataInterval: null
+    liveDataInterval: null,
+    radioMode: false,
 };
 
 // --- ICONS (SVG) ---
@@ -63,6 +64,9 @@ window.addEventListener('PodCube:Ready', async () => {
         PodCube.on('track', (ep) => { 
             updateUI(); 
             loadEpisodeInspector(ep);
+            if (AppState.radioMode) {
+                checkRadioChain();
+            }
         });
         PodCube.on('timeupdate', updateProgress);
         PodCube.on('queue:changed', () => {
@@ -911,6 +915,55 @@ function clearInspector() {
 }
 
 // --- PLAYBACK & PLAYER TAB ---
+
+function toggleAutoplayMode(enabled) {
+    AppState.radioMode = enabled;
+    
+    if (enabled) {
+        logCommand("// RADIO MODE: AUTHORIZED. Continuous transmission active.");
+        
+        // If nothing is playing, start the radio immediately
+        if (!PodCube.nowPlaying) {
+            playNextRandom();
+        } else {
+            // If something IS playing, check if we need to append the next track now
+            checkRadioChain();
+        }
+    } else {
+        logCommand("// RADIO MODE: DE-AUTHORIZED.");
+    }
+}
+
+/**
+ * Ensures there is always at least one "next" track in the queue 
+ * if Radio Mode is active.
+ */
+function checkRadioChain() {
+    if (!AppState.radioMode) return;
+    
+    const q = PodCube.queueItems; //
+    const idx = PodCube.queueIndex; //
+    
+    // If the currently playing track is the last one in the queue, 
+    // append a new random one to the end.
+    if (idx >= q.length - 1) {
+        const nextRandom = PodCube.random; //
+        if (nextRandom) {
+            const epIdx = PodCube.getEpisodeIndex(nextRandom);
+            // Append to queue without interrupting current playback (playNow = false)
+            run(`PodCube.addToQueue(PodCube.all[${epIdx}], false)`, true);
+        }
+    }
+}
+
+function playNextRandom() {
+    const nextEp = PodCube.random;
+    if (nextEp) {
+        const epIdx = PodCube.getEpisodeIndex(nextEp);
+        run(`PodCube.play(PodCube.all[${epIdx}])`);
+    }
+}
+
 function updatePlayerVolume(value) {
     const vol = value / 100;
     run(`PodCube.setVolume(${vol.toFixed(2)})`, true);
