@@ -937,17 +937,22 @@ function clearInspector() {
 function toggleAutoplayMode(enabled) {
     AppState.radioMode = enabled;
     
+    // FIX: Sync the UI checkbox state (from previous fix)
+    const checkbox = document.getElementById('autoplayRandom');
+    if (checkbox) {
+        checkbox.checked = enabled;
+    }
+    
     if (enabled) {
         logCommand("// RADIO MODE: AUTHORIZED. Continuous transmission active.");
         
-        // If nothing is playing, start the radio immediately
-        if (!PodCube.nowPlaying) {
-            playNextRandom();
-        } else {
-            // If something IS playing, check if we need to append the next track now
-            checkRadioChain();
+        // FIX: Don't auto-play on toggle. Let the user press Play, 
+        // or let the Hero Button handle the initial play command.
+        
+        // If something IS playing, we check chain immediately to ensure buffer.
+        if (PodCube.nowPlaying) {
+             checkRadioChain();
         }
-
         
     } else {
         logCommand("// RADIO MODE: DE-AUTHORIZED.");

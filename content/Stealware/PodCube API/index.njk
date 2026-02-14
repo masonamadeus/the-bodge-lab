@@ -33,9 +33,9 @@ uid: podcube
             <nav class="tabs">
                 <button class="tab-button active" data-tab="overview">Brigistics</button>
                 <button class="tab-button" data-tab="archive">Transmissions</button>
-                <button class="tab-button" data-tab="inspector">Data Inspector</button>
-                <button class="tab-button" data-tab="player">Playback Engine</button>
-                <button class="tab-button" data-tab="api">API Reference</button>
+                <button class="tab-button" data-tab="inspector">Inspector</button>
+                <button class="tab-button" data-tab="player">Player</button>
+                <button class="tab-button" data-tab="api">API</button>
             </nav>
         </div>
         <!-- OVERVIEW TAB -->
@@ -43,18 +43,18 @@ uid: podcube
             <div class="section brigistics-hero">
                 <div class="hero-actions">
                     <button class="hero-btn pulse" onclick="run('PodCube.play(PodCube.random); toggleAutoplayMode(true);')">
-                        <span class="hero-btn-icon"></span>
+                        <span class="hero-btn-icon">◆</span>
                         <span class="hero-btn-text">
-                            <strong style="">Activate Radio Mode</strong>
-                            <span>Sample the Feej</span>
+                            <strong style="">Activate PodCube Radio™</strong>
+                            <span>The Feed Exploration Experience Journey!</span>
                         </span>
                     </button>
                     <button class="hero-btn" onclick="run('PodCube.play(PodCube.getNearestToToday()[0])')">
-                        <span class="hero-btn-icon"></span>
+                        <span class="hero-btn-icon">◆</span>
                         <span class="hero-btn-text">
                             <strong style=")">Nearest to Today</strong>
                             <span>Closest to
-                                <b>Now™</b>
+                                <b>Now™.</b>
                             </span>
                         </span>
                     </button>
@@ -69,14 +69,14 @@ uid: podcube
             <div class="section">
                 <h3>Temporal Analysis</h3>
                 <p class="text-muted meta mb-10">
-                    Click any item to filter • Sorted by frequency
+                   Scroll for more • Click any item to filter
                 </p>
                 <div id="loreOutput"></div>
             </div>
             <div class="section">
                 <h3>Geographic Distribution</h3>
                 <p class="text-muted meta mb-10">
-                    Click any item to filter • Sorted by frequency
+                   Scroll for more • Click any item to filter
                 </p>
                 <div id="geoDistribution"></div>
             </div>

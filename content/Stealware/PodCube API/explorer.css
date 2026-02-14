@@ -19,12 +19,13 @@
     --transport-height: 80px;
 
     border-radius: 0px!important;
+    touch-action: manipulation;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; 
 
     scrollbar-color: var(--primary-dark) var(--primary-dim);
-    scrollbar-width: thin;
+    scrollbar-width: none;
 }
 
 .icon-svg {
@@ -47,6 +48,7 @@ body {
     display: block;     /* Remove flex column constraint */
     max-width: 1100px;
     margin:auto;
+    border: 1px solid var(--primary-dim);
 
 }
 
@@ -125,7 +127,7 @@ h1 {
     margin-bottom: 20px;
     z-index: 50;
     background: var(--bg-body);
-    overflow-y:hidden;
+    overflow-y:visible;
 }
 
 .tab-button {
@@ -151,8 +153,15 @@ h1 {
     color: var(--primary);
     background: #fff;
     border-color: var(--primary);
-    border-bottom-color: #fff;
-    margin-bottom: -1px;
+    
+    /* THE FIX: Solid white bottom border to mask the container line */
+    border-bottom: 1px solid #fff;
+    
+    /* Push the tab down 1px to overlap the line */
+    position: relative;
+    top: 1px;
+    
+    /* Ensure it sits above the container's border */
     z-index: 2;
 }
 
@@ -1681,11 +1690,6 @@ h1 {
     text-align: center;
 }
 
-.stat-box:hover {
-    border-color: var(--primary);
-    background: var(--primary-dim);
-}
-
 .stat-box label {
     font-size: 10px;
     text-transform: uppercase;
@@ -1886,11 +1890,15 @@ label {
     height: var(--transport-height);
     background: #fff;
     border-top: 3px double var(--primary);
+    border-left: 1px solid var(--primary-dim);
+    border-right: 1px solid var(--primary-dim);
     display: flex;
     flex-direction: column;
     padding: 12px 30px;
     z-index: 100;
     transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 1100px;
+    margin: 0 auto;
 }
 
 .transport-toggle-btn {
@@ -2049,6 +2057,8 @@ label {
     font-family: monospace;
     font-size: 12px;
     z-index: 101;
+    max-width: 1100px;
+    margin: 0 auto;
     border-top: 2px solid var(--primary-dark);
 }
 
@@ -2241,11 +2251,6 @@ label {
 .console-input-container input {
     flex: 1;
     margin-bottom: 0;
-}
-
-.stat-box:hover {
-    border-color: var(--primary);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .stat-num { 
@@ -2478,6 +2483,7 @@ label {
 /* --- DRAG AND DROP --- */
 
 .queue-drag-handle {
+    display:none!important;
     width: 24px;
     height: 24px;
     display: flex;
@@ -2541,6 +2547,7 @@ label {
     :root {
         --transport-height: 140px; /* Taller footer for stacked controls */
         --monitor-height: 30px;
+        touch-action: manipulation;
     }
 
     body {
@@ -2829,6 +2836,7 @@ label {
         flex-direction: column; /* Stack vertically for mobile */
         padding: 15px;
         gap: 15px;
+        justify-content:center!important;
     }
 
     .hero-logo {
@@ -2916,6 +2924,11 @@ label {
     width: 100%;
     border-radius: 0px !important; /* Document requirement: No round corners */
     transition: background 0.1s steps(2);
+}
+
+.hero-btn-icon {
+    color: var(--orange);
+    font-size: 1.5em;
 }
 
 .hero-btn:hover {
