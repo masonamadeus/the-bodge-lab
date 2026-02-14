@@ -201,6 +201,7 @@ uid: podcube
                     </div>
                 </div>
             </div>
+        </div>
             <!-- EPISODE INSPECTOR TAB -->
             <div id="inspector" class="tab-content">
                 <div class="section">
@@ -865,6 +866,25 @@ uid: podcube
                     </div>
                 </div>
             </div>
+
+<!-- GLOBAL TRANSPORT -->
+            <div id="global-transport" class="global-transport">
+    <button class="transport-toggle-btn" onclick="toggleTransport()">
+        <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+    </button>
+    <div class="transport-main">
+        <button class="control-btn" onclick="run('PodCube.prev()')">PREV</button>
+        <button class="control-btn control-btn-play" id="playBtn" onclick="run('PodCube.toggle()')">PLAY</button>
+        <button class="control-btn" onclick="run('PodCube.next()')">NEXT</button>
+        <div class="transport-info">
+            <div id="transTitle" class="transport-title">System Idle</div>
+            <div id="transTime" class="meta" style="font-size:11px;">0:00 / 0:00</div>
+        </div>
+    </div>
+    <div class="scrubber" id="scrubber" onclick="seek(event)">
+        <div id="scrubberFill" class="scrubber-fill"></div>
+    </div>
+</div>
                     
             <!-- CODE MONITOR -->
             <div class="code-monitor">
