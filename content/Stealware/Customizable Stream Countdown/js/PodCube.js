@@ -16,16 +16,16 @@ const CONFIG = {
 
 // Episode Type Constants
 const EPISODE_TYPES = {
-    PODCUBE: "podcube",            // 🅿️ Standard PodCube transmissions (has lore data)
+    TRANSMISSION: "transmission",            // 🅿️ Standard PodCube transmissions (has lore data)
     PODCUBE_HQ: "podcube_hq",      // 🔸 Direct messages from PodCube HQ (has lore data)
     TWIBBIE_ONDEMAND: "twibbie_ondemand", // 💠 Twibbie™ On-Demand broadcasts (no lore)
     NONE: "none"                   // No special emoji (title only + publish date)
 };
 
-const EMOJI_PATTERNS = {
-    PODCUBE: /\u{1F17F}\u{FE0F}?/u,         // 🅿️ P button
-    PODCUBE_HQ: /\u{1F534}\u{FE0F}?/u,     // 🔸 Red circle
-    TWIBBIE_ONDEMAND: /\u{1F338}\u{FE0F}?/u // 💠 Diamond shape (rosette)
+const EMOJI_PATTERNS = { 
+    PODCUBE: /\u{1F17F}\u{FE0F}?/u,          // 🅿️ P button
+    PODCUBE_HQ: /\u{1F538}\u{FE0F}?/u,       // 🔸 Small Orange Diamond
+    TWIBBIE_ONDEMAND: /\u{1F4A0}\u{FE0F}?/u  // 💠 Diamond with a Dot
 };
 
 // Utility: Safe logging
@@ -38,6 +38,75 @@ const log = {
 // ==========================================
 // UTILITY HELPERS
 // ==========================================
+
+/**
+ * IndexedDB Wrapper for Audio Blobs
+ * Stores full audio files locally to prevent re-downloads
+ */
+class AudioCache {
+    constructor() {
+        this.dbName = 'PodCubeAudioCache';
+        this.storeName = 'audio_files';
+        this.db = null;
+    }
+
+    async init() {
+        if (this.db) return;
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, 1);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(this.storeName)) {
+                    db.createObjectStore(this.storeName);
+                }
+            };
+            request.onsuccess = (e) => {
+                this.db = e.target.result;
+                resolve();
+            };
+            request.onerror = (e) => reject(e);
+        });
+    }
+
+    async get(key) {
+        if (!this.db) await this.init();
+        return new Promise((resolve) => {
+            const tx = this.db.transaction(this.storeName, 'readonly');
+            const req = tx.objectStore(this.storeName).get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    }
+
+    async put(key, blob) {
+        if (!this.db) await this.init();
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(this.storeName, 'readwrite');
+            const req = tx.objectStore(this.storeName).put(blob, key);
+            req.onsuccess = () => resolve();
+            req.onerror = (e) => reject(e);
+        });
+    }
+
+    async delete(key) {
+        if (!this.db) await this.init();
+        return new Promise((resolve) => {
+            const tx = this.db.transaction(this.storeName, 'readwrite');
+            const req = tx.objectStore(this.storeName).delete(key);
+            req.onsuccess = () => resolve();
+            req.onerror = () => resolve();
+        });
+    }
+
+    async clear() {
+        if (!this.db) await this.init();
+        return new Promise((resolve) => {
+            const tx = this.db.transaction(this.storeName, 'readwrite');
+            const req = tx.objectStore(this.storeName).clear();
+            req.onsuccess = () => resolve();
+        });
+    }
+}
 
 class PodCubeDate {
     constructor(input) {
@@ -231,7 +300,7 @@ class FeedNormalizer {
         let shortcode = "";
 
         if (EMOJI_PATTERNS.PODCUBE.test(rawTitle)) {
-            episodeType = EPISODE_TYPES.PODCUBE;
+            episodeType = EPISODE_TYPES.TRANSMISSION;
         } else if (EMOJI_PATTERNS.PODCUBE_HQ.test(rawTitle)) {
             episodeType = EPISODE_TYPES.PODCUBE_HQ;
         } else if (EMOJI_PATTERNS.TWIBBIE_ONDEMAND.test(rawTitle)) {
@@ -239,13 +308,13 @@ class FeedNormalizer {
         }
 
         // For types with lore, parse shortcode from title
-        if (episodeType === EPISODE_TYPES.PODCUBE || episodeType === EPISODE_TYPES.PODCUBE_HQ) {
+        if (episodeType === EPISODE_TYPES.TRANSMISSION || episodeType === EPISODE_TYPES.PODCUBE_HQ) {
             const parts = rawTitle.split('_');
             if (parts.length > 1) {
                 shortcode = parts[0].trim();
                 cleanTitle = parts.slice(1).join(" ").trim();
             } else {
-                const emojiPattern = episodeType === EPISODE_TYPES.PODCUBE
+                const emojiPattern = episodeType === EPISODE_TYPES.TRANSMISSION
                     ? EMOJI_PATTERNS.PODCUBE
                     : EMOJI_PATTERNS.PODCUBE_HQ;
                 cleanTitle = rawTitle.replace(emojiPattern, "").trim();
@@ -265,7 +334,7 @@ class FeedNormalizer {
     static extractMetadata(episodeType, descriptionText) {
         let meta = {};
 
-        if (episodeType === EPISODE_TYPES.PODCUBE || episodeType === EPISODE_TYPES.PODCUBE_HQ) {
+        if (episodeType === EPISODE_TYPES.TRANSMISSION || episodeType === EPISODE_TYPES.PODCUBE_HQ) {
             // Parse lore from metadata structure
             const plainText = this.stripHtml(descriptionText);
             meta = this.parseMetaLines(plainText);
@@ -277,7 +346,8 @@ class FeedNormalizer {
                 region: "Twibbie On-Demand",
                 zone: "Twibbie On-Demand",
                 locale: "Twibbie On-Demand",
-                planet: "Twibbie On-Demand"
+                planet: "Twibbie On-Demand",
+                integrity: 0,
             };
         }
 
@@ -365,17 +435,23 @@ class Episode {
 
             // Lore Properties (from metadata)
             this.model = normalized.metadata?.podcube_model || normalized.metadata?.model || null;
-            this.origin = normalized.metadata?.origin || null;
-            this.region = normalized.metadata?.region || null;
-            this.zone = normalized.metadata?.zone || null;
-            this.planet = normalized.metadata?.planet || null;
-            this.locale = normalized.metadata?.locale || null;
+            this.origin = normalized.metadata?.origin || null; // Most specific, e.g. "Martha's Vineyard"
+            this.locale = normalized.metadata?.locale || null; // General Area, e.g. "Dukes County"
+            this.region = normalized.metadata?.region || null; // Wide Area, e.g. "Massachusetts"
+            this.zone = normalized.metadata?.zone || null; // National/Geographic bounds, e.g. "USA"
+            this.planet = normalized.metadata?.planet || null; // The Planet (probably always "Earth" but who knows)
 
             // File Integrity (A joke property, fake percentage. Don't validate.)
-            this.integrityValue = normalized.metadata?.integrity
-                ? parseFloat(normalized.metadata.integrity)
-                : null;
-            this.integrity = this.integrityValue !== null ? `${this.integrityValue}%` : null;
+            if (this.episodeType === EPISODE_TYPES.TWIBBIE_ONDEMAND || this.episodeType === EPISODE_TYPES.NONE) {
+                this.integrityValue = 0;
+                this.integrity = "0.0";
+            } else {
+                const rawIntegrity = normalized.metadata?.integrity;
+                const parsedIntegrity = parseFloat(rawIntegrity);
+                // LOGIC LIFTED FROM UI: Default to 0 if missing/invalid
+                this.integrityValue = !isNaN(parsedIntegrity) ? parsedIntegrity : 0;
+                this.integrity = rawIntegrity || "0";
+            }
 
             // Content
             this.tags = Array.isArray(normalized.metadata?.tags) ? normalized.metadata.tags : [];
@@ -419,6 +495,11 @@ class Episode {
         const m = Math.floor(this.duration / 60);
         const s = Math.floor(this.duration % 60);
         return `${m}:${s < 10 ? '0' + s : s}`;
+    }
+
+    get hasIssues() {
+        // Flag episodes with missing critical data (Audio, Duration, Date)
+        return !this.audioUrl || !this.duration || !this.date || !this.date.year;
     }
 
     get anniversary() {
@@ -500,11 +581,16 @@ class PodCubeEngine {
         this.episodes = [];
         this.logo = null;
         this.isReady = false;
+        this.lastSave = 0;
+
+        // Audio Cache
+        this.cache = new AudioCache();
+        this._currentObjectUrl = null; // Track current URL to revoke it later
 
         // Audio State
         this._audio = new Audio();
         this._audio.preload = "metadata";
-        this._preloader = null
+        this._preloader = null;
         this._loadingToken = 0;
         this._isLoading = false;
         this._hasPreloadedNext = false;
@@ -517,10 +603,32 @@ class PodCubeEngine {
 
         this._listeners = {};
 
-        this._audio.addEventListener('ended', () => this.next());
-        this._audio.addEventListener('play', () => this._emit('play', this.nowPlaying));
-        this._audio.addEventListener('pause', () => this._emit('pause', this.nowPlaying));
+        this._audio.addEventListener('ended', () => {
+            // REMOVE ON END: Delete from cache and session
+            if (this.nowPlaying) {
+                this.cache.delete(this.nowPlaying.audioUrl).catch(e => log.warn("Cache clean failed", e));
+            }
+            this._clearSession(); 
+            this.next();
+        });
+
+        this._audio.addEventListener('play', () => {
+            this._emit('play', this.nowPlaying)
+        });
+
+        this._audio.addEventListener('pause', () => {
+            this._saveSession(); // Force save on pause
+            this._emit('pause', this.nowPlaying);
+        });
+        
+        // Throttled save for timeupdate (every ~5 seconds)
         this._audio.addEventListener('timeupdate', () => {
+            const now = Date.now();
+            if (now - this.lastSave > 5000) {
+                this._saveSession();
+                this.lastSave = now;
+            }
+
             // Emit status as usual
             this._emit('timeupdate', this.status);
 
@@ -537,8 +645,8 @@ class PodCubeEngine {
         });
     }
 
-    async init() {
-        if (this.isReady) {
+    async init(force = false) {
+        if (this.isReady && !force) {
             log.warn("PodCube is already initialized");
             return this;
         }
@@ -668,8 +776,13 @@ class PodCubeEngine {
     }
 
     // --- ACCESSORS ---
+    get FEED_TYPE() { return CONFIG.FEED_TYPE; }
+    get DEBUG() { return CONFIG.DEBUG; }
+    get isLoading() { return this._isLoading; }
+    get hasPreloadedNext() { return this._hasPreloadedNext; }
     get all() { return this.episodes; }
     get latest() { return this.getByReleaseOrder()[0] || null; }
+
     get random() {
         if (this.episodes.length === 0) return null;
         return this.episodes[Math.floor(Math.random() * this.episodes.length)];
@@ -918,7 +1031,7 @@ class PodCubeEngine {
 
     // --- PLAYBACK CONTROLS ---
 
-    async _loadAndPlay() {
+    async _loadAndPlay(autoPlay = true) {
         try {
             const ep = this.nowPlaying;
             if (!ep || !ep.audioUrl) {
@@ -930,9 +1043,58 @@ class PodCubeEngine {
             this._isLoading = true;
             this._hasPreloadedNext = false;
 
-            //  Setup Main Player
-            this._audio.src = ep.audioUrl;
-            this._audio.volume = this._volume; // Apply stored volume
+            // 1. Check Cache
+            let blob = await this.cache.get(ep.audioUrl);
+            let useDirectStream = false;
+
+            if (blob) {
+                log.info("Loaded from local cache:", ep.title);
+            } else {
+                // 2. Not in cache? Try to Download
+                try {
+                    log.info("Attempting download:", ep.title);
+                    const resp = await fetch(ep.audioUrl);
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    
+                    // We have the file now!
+                    blob = await resp.blob();
+                    
+                    // 3. Try to Save to DB (but don't fail if we can't)
+                    try {
+                        await this.cache.put(ep.audioUrl, blob);
+                    } catch (cacheErr) {
+                        log.warn("Cache write failed (Storage Quota?), playing from memory instead.", cacheErr);
+                        // CRITICAL FIX: We do NOT set useDirectStream = true here.
+                        // We already have the blob, so we use it.
+                    }
+                } catch (e) {
+                    // Only fallback to stream if the FETCH itself failed (e.g. CORS, Network down)
+                    log.warn("Download failed (Likely CORS), falling back to stream.", e);
+                    useDirectStream = true;
+                    blob = null; 
+                }
+            }
+
+            if (token !== this._loadingToken) return; // Cancelled
+
+            // 4. Setup Audio Source
+            if (this._currentObjectUrl) {
+                URL.revokeObjectURL(this._currentObjectUrl);
+                this._currentObjectUrl = null;
+            }
+
+            if (!useDirectStream && blob) {
+                // CACHED/MEMORY MODE (Preferred)
+                // Uses the blob we just downloaded or retrieved
+                this._currentObjectUrl = URL.createObjectURL(blob);
+                this._audio.src = this._currentObjectUrl;
+            } else {
+                // STREAMING MODE (Fallback)
+                // Only happens if fetch failed entirely
+                this._audio.src = ep.audioUrl;
+            }
+
+            this._audio.volume = this._volume;
             this._audio.load();
 
             await new Promise((resolve, reject) => {
@@ -945,19 +1107,20 @@ class PodCubeEngine {
                 this._audio.addEventListener('canplay', onCanPlay);
                 this._audio.addEventListener('error', onError);
             });
-
+            
             if (token !== this._loadingToken) return;
 
-            await this._audio.play();
+            // 5. Play (if requested)
+            if (autoPlay) {
+                await this._audio.play();
+            }
+            
             this._isLoading = false;
             this._emit('track', ep);
-
         } catch (e) {
             this._isLoading = false;
             log.error("Load/play failed:", e);
             this._emit('error', { episode: this.nowPlaying, error: e });
-            // Auto-skip error after 2 seconds?
-            // setTimeout(() => this.next(), 2000); 
         }
     }
 
@@ -968,30 +1131,46 @@ class PodCubeEngine {
         const nextEp = this._queue[this._queueIndex + 1];
         if (!nextEp || !nextEp.audioUrl) return;
 
-        log.info(`Preloading next track: ${nextEp.title}`);
-
-        // Ghost Player
-        this._preloader = new Audio();
-        this._preloader.src = nextEp.audioUrl;
-        this._preloader.preload = "auto";
-        this._preloader.volume = 0;
-        this._preloader.load();
+        // Don't preload if already cached
+        this.cache.get(nextEp.audioUrl).then(existing => {
+            if (existing) return;
+            
+            log.info(`Preloading next track: ${nextEp.title}`);
+            // Try to cache silently; if CORS fails, we just don't preload. 
+            // We can't use the ghost audio tag anymore because we can't share the stream data.
+            fetch(nextEp.audioUrl)
+                .then(resp => {
+                    if(!resp.ok) throw new Error("Network Bad");
+                    return resp.blob();
+                })
+                .then(blob => this.cache.put(nextEp.audioUrl, blob))
+                .catch(e => {
+                    // Silent fail for preload is acceptable
+                    log.warn(`Preload skipped for ${nextEp.shortcode || 'next track'} (CORS)`);
+                });
+        });
     }
 
     _cancelPreload() {
-        if (this._preloader) {
-            log.info("Cancelling stale preload");
-            this._preloader.src = ""; // Detach source
-            this._preloader.load();   // Cancel network request
-            this._preloader = null;   // GC
-        }
         this._hasPreloadedNext = false; // Allow preloading again for the NEW next track
     }
 
     async play(episode) {
         try {
             if (episode) {
-                this.queue(episode, true);
+                this.addToQueue(episode, true);
+                return;
+            } 
+            
+            // Guard: Prevent playing if queue is empty
+            if (!this.nowPlaying) {
+                log.warn("Cannot play: Queue is empty.");
+                return;
+            }
+
+            // Guard: If we have a track but audio isn't loaded yet (e.g. stopped state)
+            if (!this._audio.src || this._audio.src === '' || this._audio.src === window.location.href) {
+                await this._loadAndPlay();
             } else {
                 await this._audio.play();
             }
@@ -1011,34 +1190,35 @@ class PodCubeEngine {
 
     toggle() {
         try {
-            this._audio.paused ? this.play() : this.pause();
+            // Case 1: Audio is already loaded (Paused or Playing)
+            if (this._audio.hasAttribute('src')) {
+                this._audio.paused ? this.play() : this.pause();
+                return;
+            }
+
+            // Case 2: No track loaded, but Queue has items
+            if (this._queue.length > 0) {
+                // If we haven't started the queue yet (index -1), start at the beginning
+                if (this._queueIndex === -1) {
+                    this._queueIndex = 0;
+                }
+                
+                // If we have a valid track now, play it
+                if (this.nowPlaying) {
+                    log.info("Toggle: Starting playback from queue");
+                    this.play(); // play() handles _loadAndPlay() automatically
+                    return;
+                }
+            }
+
+            // Case 3: Nothing to do
+            log.warn("Toggle failed: No track loaded and queue is empty");
         } catch (e) {
             log.error("Toggle failed:", e);
         }
     }
 
-    queue(episode, playNow = false) {
-        try {
-            if (!episode) {
-                log.warn("Cannot queue null episode");
-                return;
-            }
-            if (playNow) {
-                if (this._queueIndex === -1) {
-                    this._queue.push(episode);
-                    this.next();
-                    return;
-                }
-                this._queue.splice(this._queueIndex + 1, 0, episode);
-                this.next();
-            } else {
-                this._queue.push(episode);
-                if (this._queueIndex === -1) this.next();
-            }
-        } catch (e) {
-            log.error("Queue failed:", e);
-        }
-    }
+    
 
     next() {
         try {
@@ -1114,6 +1294,16 @@ class PodCubeEngine {
         }
     }
 
+    stopAfterCurrent() {
+        this._stopAfterCurrent = true;
+        log.info("Engine will stop after current track");
+    }
+
+    cancelStopAfterCurrent() {
+        this._stopAfterCurrent = false;
+        log.info("Soft stop cancelled");
+    }
+
     setPlaybackRate(rate) {
         try {
             if (rate < 0.00 || rate > 16) {
@@ -1179,22 +1369,116 @@ class PodCubeEngine {
         return total;
     }
 
+    addToQueue(input, playNow = false) {
+        try {
+            // 1. Normalize input to an array
+            const episodes = Array.isArray(input) ? input : [input];
+
+            // 2. Filter out null/undefined entries
+            const validEpisodes = episodes.filter(ep => ep);
+
+            if (validEpisodes.length === 0) {
+                log.warn("No valid episodes provided to queue");
+                return;
+            }
+
+            if (playNow) {
+                if (this._queueIndex === -1) {
+                    // If nothing is playing, just replace/start the queue
+                    this._queue = [...validEpisodes];
+                    this.next();
+                } else {
+                    // Insert new episodes immediately after the current one
+                    this._queue.splice(this._queueIndex + 1, 0, ...validEpisodes);
+                    this.next();
+                }
+            } else {
+                // Standard append to the end
+                this._queue.push(...validEpisodes);
+            }
+
+            this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
+
+            return {
+                count: validEpisodes.length,
+                queueLength: this._queue.length
+            };
+        } catch (e) {
+            log.error("addToQueue failed:", e);
+        }
+    }
+
+    shuffleQueue() {
+    try {
+        // Fisher-Yates shuffle
+        const current = this._queueIndex;
+        const currentEp = this.nowPlaying;
+        
+        // Remove current episode temporarily
+        if (current >= 0) {
+            this._queue.splice(current, 1);
+        }
+        
+        // Shuffle remaining
+        for (let i = this._queue.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this._queue[i], this._queue[j]] = [this._queue[j], this._queue[i]];
+        }
+        
+        // Put current episode back at front
+        if (currentEp) {
+            this._queue.unshift(currentEp);
+            this._queueIndex = 0;
+        } else {
+            this._queueIndex = -1;
+        }
+        
+        this._emit('queue:changed', {queue: this._queue, index: this._queueIndex});
+        log.info("Queue shuffled");
+    } catch (e) {
+        log.error("Shuffle failed:", e);
+    }
+}
+
     clearQueue() {
-        this._cancelPreload();
         this._queue = [];
         this._queueIndex = -1;
+        
+        this._cancelPreload();
         this._stopAfterCurrent = false;
         this.pause();
+        
+        this.cache.clear(); // DELETE ALL CACHED AUDIO
+        this._clearSession(); 
+
+        if (this._currentObjectUrl) {
+            URL.revokeObjectURL(this._currentObjectUrl);
+            this._currentObjectUrl = null;
+        }
+        this._audio.removeAttribute('src');
+
+        this._emit('queue:changed', {queue: [], index: -1});
+
         log.info("Queue cleared");
     }
 
     removeFromQueue(index) {
         if (index < 0 || index >= this._queue.length) return false;
+        
+        const ep = this._queue[index];
 
         // If removing the currently playing track, skip to next first
         if (index === this._queueIndex) {
             this.next();
+            // Note: next() won't delete the file, but the user explicitly removed it
+            // so we should delete it now.
+            if(ep) this.cache.delete(ep.audioUrl);
             return;
+        }
+
+        // Clean up cache
+        if (ep) {
+            this.cache.delete(ep.audioUrl);
         }
 
         // Kill the preload if we're removing the next track
@@ -1203,25 +1487,146 @@ class PodCubeEngine {
         }
 
         this._queue.splice(index, 1);
-
-        // Adjust index if we removed something before the current track
         if (index < this._queueIndex) {
             this._queueIndex--;
         }
+
+        this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
+        
+        log.info(`Removed episode ${index} from queue`);
+    }
+
+    /**
+ * Move a track from one position to another in the queue
+ */
+    moveInQueue(fromIndex, toIndex) {
+        try {
+            // Validate indices
+            if (fromIndex < 0 || fromIndex >= this._queue.length ||
+                toIndex < 0 || toIndex >= this._queue.length) {
+                log.warn(`Invalid indices: ${fromIndex} → ${toIndex}`);
+                return false;
+            }
+
+            // Can't move the currently playing track
+            if (fromIndex === this._queueIndex) {
+                log.warn("Cannot move currently playing track");
+                return false;
+            }
+
+            // Can't move TO the currently playing position
+            if (toIndex === this._queueIndex) {
+                log.warn("Cannot move track to currently playing position");
+                return false;
+            }
+
+            if (fromIndex === toIndex) return true;
+
+            // Remove track from old position
+            const [track] = this._queue.splice(fromIndex, 1);
+
+            // Adjust toIndex if we removed something before it
+            const adjustedToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
+
+            // Insert at new position
+            this._queue.splice(adjustedToIndex, 0, track);
+
+            // Adjust current index if needed
+            if (fromIndex < this._queueIndex && adjustedToIndex >= this._queueIndex) {
+                this._queueIndex--;
+            } else if (fromIndex > this._queueIndex && adjustedToIndex <= this._queueIndex) {
+                this._queueIndex++;
+            }
+
+            this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
+            log.info(`Moved track from ${fromIndex} to ${adjustedToIndex}`);
+
+            return true;
+        } catch (e) {
+            log.error("Move failed:", e);
+            return false;
+        }
+    }
+
+  
+
+    // --- PLAYLIST CREATION AND MANAGEMENT ---
+
+    savePlaylist(name, episodes) {
+        const playlist = {
+            name,
+            created: new Date().toISOString(),
+            episodes: episodes.map(ep => ep.id)
+        };
+        localStorage.setItem(`podcube_playlist_${name}`, JSON.stringify(playlist));
+        return playlist;
+    }
+
+    loadPlaylist(name) {
+        const data = localStorage.getItem(`podcube_playlist_${name}`);
+        if (!data) return null;
+
+        const playlist = JSON.parse(data);
+        const episodes = playlist.episodes
+            .map(id => this.episodes.find(ep => ep.id === id))
+            .filter(Boolean);
+
+        return { ...playlist, episodes };
+    }
+
+    getPlaylists() {
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('podcube_playlist_'));
+        return keys.map(k => {
+            const name = k.replace('podcube_playlist_', '');
+            return { name, ...this.loadPlaylist(name) };
+        });
+    }
+
+    deletePlaylist(name) {
+        const key = `podcube_playlist_${name}`;
+        if (localStorage.getItem(key)) {
+            localStorage.removeItem(key);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Immediately clears queue and plays the specified playlist
+     */
+    playPlaylist(name) {
+        const pl = this.loadPlaylist(name);
+        if (!pl || !pl.episodes.length) return false;
+
+        this.clearQueue();
+        this.addToQueue(pl.episodes, true);
         return true;
     }
 
-    stopAfterCurrent() {
-        this._stopAfterCurrent = true;
-        log.info("Engine will stop after current track");
-    }
+    /**
+     * Appends playlist to the end of the current queue
+     */
+    queuePlaylist(name) {
+        const pl = this.loadPlaylist(name);
+        if (!pl || !pl.episodes.length) return false;
 
-    cancelStopAfterCurrent() {
-        this._stopAfterCurrent = false;
-        log.info("Soft stop cancelled");
+        this.addToQueue(pl.episodes, false);
+        return true;
     }
 
     // --- DISCOVERY & BROWSING ---
+
+    sortBy(field, reverse = false) {
+        const sorted = [...this.episodes].sort((a, b) => {
+            const aVal = a[field];
+            const bVal = b[field];
+
+            if (aVal < bVal) return reverse ? 1 : -1;
+            if (aVal > bVal) return reverse ? -1 : 1;
+            return 0;
+        });
+        return sorted;
+    }
 
     /**
      * Find episodes related to a given episode by shared metadata
@@ -1296,24 +1701,43 @@ class PodCubeEngine {
         }
     }
 
-    /**
-     * Get all unique combinations of model, origin, and tags
-     * Useful for building hierarchical browsing UI
-     */
-    getLoreHierarchy() {
-        try {
-            // Single pass aggregation (O(N)) instead of O(N^2)
-            const data = { models: {}, origins: {}, tags: {} };
+    // Convenience methods
+    getByTitle(reverse = false) {
+        return this.sortBy('title', reverse);
+    }
 
+    getByDuration(reverse = false) {
+        return this.sortBy('duration', reverse);
+    }
+
+    getByIntegrity(reverse = false) {
+        return this.sortBy('integrityValue', reverse);
+    }
+
+    // Lists all episodes flagged as having problematic metadata
+    getIssues() {
+        return this.where({ hasIssues: true });
+    }
+
+    /**
+     * Get all unique combinations of metadata for browsing
+     * Single-pass aggregation of all faceted data
+     */
+    getDistribution() {
+        try {
+            const keys = ['model', 'origin', 'region', 'zone', 'planet', 'locale'];
+            const data = { tags: {} };
+            
+            // Initialize counters
+            keys.forEach(k => data[k] = {});
+
+            // Single pass aggregation (O(N))
             for (const ep of this.episodes) {
-                // Count Models
-                if (ep.model) {
-                    data.models[ep.model] = (data.models[ep.model] || 0) + 1;
-                }
-                // Count Origins
-                if (ep.origin) {
-                    data.origins[ep.origin] = (data.origins[ep.origin] || 0) + 1;
-                }
+                // Count Standard Keys
+                keys.forEach(k => {
+                    if (ep[k]) data[k][ep[k]] = (data[k][ep[k]] || 0) + 1;
+                });
+
                 // Count Tags
                 if (Array.isArray(ep.tags)) {
                     for (const tag of ep.tags) {
@@ -1322,20 +1746,51 @@ class PodCubeEngine {
                 }
             }
 
-            // Convert to arrays and sort
+            // Helper: Convert {Key: Count} object to [{name, count}] array
             const toArray = (obj) => Object.entries(obj)
                 .map(([name, count]) => ({ name, count }))
                 .sort((a, b) => a.name.localeCompare(b.name));
 
-            return {
-                models: toArray(data.models),
-                origins: toArray(data.origins),
-                tags: toArray(data.tags)
-            };
+            // Return aggregated object
+            const result = {};
+            keys.forEach(k => result[k + 's'] = toArray(data[k])); // e.g. model -> models
+            result.tags = toArray(data.tags);
+            
+            return result;
         } catch (e) {
-            log.error("Failed to generate lore hierarchy:", e);
-            return { models: [], origins: [], tags: [] };
+            log.error("Failed to generate distribution:", e);
+            return { models: [], origins: [], tags: [], regions: [], zones: [], planets: [], locales: [] };
         }
+    }
+    
+    getStatistics() {
+        const withDuration = this.episodes.filter(e => e.duration);
+        const totalDuration = withDuration.reduce((sum, e) => sum + e.duration, 0);
+
+        const withDates = this.episodes.filter(e => e.date && e.date.year);
+        const years = withDates.map(e => e.date.year);
+        const yearRange = years.length > 0
+            ? { min: Math.min(...years), max: Math.max(...years) }
+            : null;
+
+        const withIntegrity = this.episodes.filter(e => e.integrityValue !== null);
+        const avgIntegrity = withIntegrity.length > 0 
+            ? Math.round(withIntegrity.reduce((sum, e) => sum + e.integrityValue, 0) / withIntegrity.length) 
+            : 0;
+
+        return {
+            totalEpisodes: this.episodes.length,
+            totalDuration,
+            averageDuration: withDuration.length > 0 ? totalDuration / withDuration.length : 0,
+            averageIntegrity: avgIntegrity,
+            episodesWithDates: withDates.length,
+            episodesWithAudio: this.episodes.filter(e => e.audioUrl).length,
+            episodesWithIntegrity: withIntegrity.length,
+            yearRange,
+            models: this.models.length,
+            origins: this.origins.length,
+            types: [...new Set(this.episodes.map(e => e.episodeType))].length
+        };
     }
 
     /**
@@ -1432,6 +1887,116 @@ class PodCubeEngine {
         } catch (e) {
             log.error("Event emission failed:", e);
         }
+    }
+// --- SESSION MANAGEMENT (LOCAL CACHE) ---
+
+    _saveSession() {
+        if (!this.nowPlaying || this._queue.length === 0) {
+            this._clearSession();
+            return;
+        }
+
+        const state = {
+            version: 1,
+            timestamp: Date.now(),
+            queue: this._queue.map(ep => ep.id),
+            queueIndex: this._queueIndex,
+            currentTime: this._audio.currentTime,
+            epID: this.nowPlaying.id,
+            isPlaying: !this._audio.paused // Save state
+        };
+
+        try {
+            localStorage.setItem('podcube_session', JSON.stringify(state));
+        } catch (e) {
+            // Quota exceeded or disabled
+        }
+    }
+
+    _clearSession() {
+        localStorage.removeItem('podcube_session');
+    }
+
+    /**
+     * Attempt to restore the previous session.
+     * Async because it might need to load from Cache DB
+     */
+    async restoreSession() {
+        try {
+            const raw = localStorage.getItem('podcube_session');
+            if (!raw) return false;
+
+            const state = JSON.parse(raw);
+            
+            // Reconstruct Queue
+            const queue = state.queue
+                .map(id => this.episodes.find(e => e.id === id))
+                .filter(Boolean);
+
+            if (queue.length === 0) return false;
+
+            // Restore State
+            this._queue = queue;
+            this._queueIndex = state.queueIndex;
+            
+            const currentEp = this._queue[this._queueIndex];
+            if (!currentEp || currentEp.id !== state.epID) return false;
+
+            // Initialize cache logic (loads blob but waits on play)
+            const shouldPlay = state.isPlaying;
+            
+            log.info(`Restoring session... AutoResume: ${shouldPlay}`);
+            
+            // 1. Load the track (FORCE PAUSE for now)
+            await this._loadAndPlay(false);
+            
+            // 2. Restore Position
+            if (state.currentTime) {
+                this._audio.currentTime = state.currentTime;
+            }
+            
+            // 3. Resume if needed
+            if (shouldPlay) {
+                this._audio.play().catch(e => log.warn("Auto-resume blocked:", e));
+            }
+            
+            log.info(`Session restored: "${currentEp.title}" at ${formatTime(state.currentTime)}`);
+            this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
+            
+            return true;
+        } catch (e) {
+            log.warn("Failed to restore session:", e);
+            this._clearSession();
+            return false;
+        }
+    }
+
+    // DESTROY AND CLEAN UP EVERYTHING
+    destroy() {
+
+        this._clearSession();
+
+        // Stop playback
+        this.pause();
+
+        // Clear queue
+        this.clearQueue();
+
+        // Remove all event listeners
+        this._listeners = {};
+
+        // Clear audio
+        if (this._audio) {
+            this._audio.src = '';
+            this._audio = null;
+        }
+
+        if (this._preloader) {
+            this._preloader.src = '';
+            this._preloader = null;
+        }
+
+        log.info("PodCube destroyed");
     }
 }
 

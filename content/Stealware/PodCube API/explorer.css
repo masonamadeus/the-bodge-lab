@@ -1,0 +1,1736 @@
+/* --- PODCUBE EXPLORER STYLES (COMPREHENSIVE EDITION) --- */
+:root {
+    --primary: #1768da;
+    --primary-dim: #eef4ff;
+    --primary-dark: #0d4da1;
+    --bg-body: #fdfdfc;
+    --bg-panel: #ffffff;
+    --text-main: #1a1a1a;
+    --text-muted: #555555;
+    --border: #1768da;
+    --success: #00C851;
+    --warning: #ffbb33;
+    --danger: #ff4444;
+    --code-bg: #1768da;
+    --code-text: #ffffff;
+    
+    --monitor-height: 40px;
+    --transport-height: 80px;
+
+    border-radius: 0px!important;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; 
+
+    scrollbar-color: var(--primary-dark) var(--primary-dim);
+    scrollbar-width: thin;
+}
+
+.icon-svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+    display: block;
+}
+
+body {
+    font-family: "Libertinus Math", serif;
+    background: var(--bg-body);
+    color: var(--text-main);
+    padding: 30px 40px calc(var(--transport-height) + var(--monitor-height) + 20px) 40px;
+    
+    /* GLOBAL SCROLL: Allow the window to handle scrolling */
+    min-height: 100vh;
+    height: auto;
+    overflow-y: scroll; /* Force scrollbar to prevent layout shift */
+    display: block;     /* Remove flex column constraint */
+    max-width: 1100px;
+    margin:auto;
+
+}
+
+header {
+    flex: 0 0 auto;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 3px double var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-body); /* Ensure opacity */
+}
+
+/* --- TYPOGRAPHY --- */
+h1, h2, h3, h4, .ep-title { 
+    font-family: "Libertinus Math", serif; 
+    font-weight: 700; 
+}
+
+.label, button, input, select, .tab-button { 
+    font-family: "Fustat", sans-serif; 
+}
+
+
+/* --- HEADER --- */
+header {
+    flex: 0 0 auto;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 3px double var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-logo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border: 1px solid var(--primary);
+    margin-right: 15px;
+    background: #fff;
+}
+
+h1 { 
+    font-size: 2em;
+    letter-spacing: -0.02em; 
+    color: var(--primary); 
+}
+
+.subtitle { 
+    font-family: "Fustat"; 
+    font-size: 10px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.1em; 
+    color: #666; 
+}
+
+/* --- TABS --- */
+.sticky-top {
+    position: sticky;
+    top: 0;
+    background: var(--bg-body);
+    z-index: 12;
+    padding-top: 10px;
+    padding-bottom: 1px;
+}
+
+.tabs {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 5px;
+    border-bottom: 1px solid var(--primary);
+    margin-bottom: 20px;
+    z-index: 50;
+    background: var(--bg-body);
+}
+
+.tab-button {
+    padding: 8px 20px;
+    background: transparent;
+    border: 1px solid var(--text-muted);
+    border-bottom: none;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #888;
+    
+    transition: all 0.15s ease;
+}
+
+.tab-button:hover { 
+    color: var(--primary); 
+    background: #f5f5f5; 
+}
+
+.tab-button.active {
+    color: var(--primary);
+    background: #fff;
+    border-color: var(--primary);
+    border-bottom-color: #fff;
+    margin-bottom: -1px;
+    z-index: 2;
+}
+
+/* --- CONTENT AREA (SCROLLABLE) --- */
+
+.filter-toggle-cb, .filter-toggle-btn {
+    display: none;
+}
+
+.tab-content {
+    display: none;
+    flex: 1;
+    overflow: visible;
+    padding-right: 5px;
+}
+
+.tab-content.active { 
+    display: block;
+    flex-direction: column;
+}
+
+.section {
+    margin-bottom: 30px;
+}
+
+.section:last-child {
+    margin-bottom: 0;
+}
+
+.section-subtitle {
+    font-size: 1.1em;
+    margin-bottom: 12px;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* --- ARCHIVE REGISTRY LAYOUT --- */
+.registry-container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+}
+
+.registry-sidebar {
+    background: #f8f8f8;
+    border: 1px solid var(--primary);
+    padding: 15px;
+    overflow-y: auto;
+    
+}
+
+.registry-results {
+    overflow-y: auto;
+    padding-right: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- EPISODE CARDS --- */
+.ep-card {
+    display: flex;
+    background: #fff;
+    border: 1px solid var(--primary);
+    margin-bottom: 10px;
+    transition: all 0.15s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.ep-card:hover {
+    border-color: var(--primary);
+    transform: translateX(3px);
+    box-shadow: 3px 3px 0 rgba(23, 104, 218, 0.1);
+}
+
+.ep-card.selected {
+    border-color: var(--primary);
+    background: var(--primary-dim);
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+.ep-status-strip {
+    width: 6px;
+    background: #eee;
+    flex-shrink: 0;
+}
+
+.ep-card.playing .ep-status-strip { 
+    background: var(--primary);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.ep-content { 
+    padding: 12px 15px; 
+    flex: 1; 
+    min-width: 0; 
+}
+
+.ep-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: baseline; 
+    margin-bottom: 5px; 
+    gap: 10px;
+}
+
+.ep-title { 
+    font-size: 1.1em; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    flex: 1;
+}
+
+.ep-date { 
+    font-family: "Fustat"; 
+    font-size: 10px; 
+    color: #888; 
+    white-space: nowrap; 
+}
+
+.ep-meta-row { 
+    display: flex; 
+    gap: 10px; 
+    font-size: 11px; 
+    color: #555; 
+    margin-bottom: 4px; 
+    align-items: center;
+}
+
+.ep-tag { 
+    background: #eee; 
+    padding: 2px 6px; 
+     
+    font-size: 10px; 
+    font-family: "Fustat";
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.ep-location {
+    font-size: 10px;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* Integrity Bar */
+.integrity-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.integrity-text {
+    font-size: 9px;
+    font-family: "Fustat";
+    font-weight: 700;
+    color: #888;
+    min-width: 30px;
+}
+
+.integrity-container {
+    height: 4px;
+    background: #f0f0f0;
+    width: 100px; /* Reduced slightly to fit text */
+    overflow: hidden;
+}
+
+.integrity-fill {
+    height: 100%;
+    background: var(--success);
+    transition: width 0.3s ease;
+}
+
+.ep-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px;
+    border-left: 1px solid #f0f0f0;
+    gap: 5px;
+    background: #fafafa;
+}
+
+.icon-btn {
+    border: 1px solid var(--primary);
+    background: #fff;
+    cursor: pointer;
+    padding: 5px 10px;
+    font-size: 10px;
+    text-transform: uppercase;
+    font-family: "Fustat";
+    font-weight: 600;
+    transition: all 0.15s ease;
+    
+}
+
+.icon-btn:hover { 
+    border-color: var(--primary); 
+    color: var(--primary); 
+    background: var(--primary-dim);
+}
+
+.icon-btn:active {
+    transform: scale(0.95);
+}
+
+/* --- INSPECTOR STYLES --- */
+.inspector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.inspector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.inspector-field {
+    background: #fff;
+    border: 1px solid var(--primary);
+    padding: 12px;
+    
+}
+
+.inspector-field-label {
+    font-family: "Libertinus Math";
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #777;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+
+.inspector-field-value, .inspector-field-value.code {
+    font-family: "Fustat";
+    font-size: 12px;
+    background: #f5f5f5;
+    padding: 4px 6px;
+    
+}
+
+.inspector-field-value.empty {
+    color: #999;
+    font-style: italic;
+}
+
+.inspector-code-block {
+    background: var(--code-bg);
+    color: var(--code-text);
+    font-family: monospace;
+    font-size: 11px;
+    padding: 15px;
+    
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+}
+
+.inspector-code-block.live-updating {
+    animation: updateFlash 0.3s ease;
+}
+
+@keyframes updateFlash {
+    0%, 100% { background: var(--code-bg); }
+    50% { background: #2a2a2a; }
+}
+
+.inspector-description {
+    background: #fff;
+    border: 1px solid var(--primary);
+    padding: 15px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #555;
+    
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.inspector-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.inspector-tag {
+    background: var(--primary-dim);
+    color: var(--primary-dark);
+    padding: 4px 10px;
+    
+    font-size: 11px;
+    font-family: "Fustat";
+    font-weight: 600;
+}
+
+/* --- DATA TABS --- */
+.data-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.data-tab-btn {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--primary);
+    border-bottom: none;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: "Fustat";
+    color: #888;
+    transition: all 0.15s ease;
+}
+
+.data-tab-btn:hover {
+    color: var(--primary);
+    background: #f5f5f5;
+}
+
+.data-tab-btn.active {
+    color: var(--primary);
+    background: #fff;
+    border-color: #ddd;
+    border-bottom-color: #fff;
+    margin-bottom: -1px;
+}
+
+.data-panel {
+    display: none;
+}
+
+.data-panel.active {
+    display: block;
+}
+
+/* --- PLAYBACK CONTROL PANEL --- */
+.playback-control-panel {
+    background: #fff;
+    border: 1px solid var(--primary);
+    
+    padding: 30px;
+    margin-bottom: 20px;
+}
+.playback-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    background: #fcfcfc;
+    padding: 10px;
+    border: 1px solid #f0f0f0;
+}
+
+.bar-separator {
+    width: 1px;
+    height: 24px;
+    background: #ddd;
+    margin: 0 8px;
+}
+
+.bar-input-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.bar-input-group label {
+    font-size: 9px;
+    margin: 0;
+    color: #999;
+}
+
+.control-btn-large {
+    width: 80px;
+    height: 80px;
+    border: 2px solid var(--primary);
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    transition: all 0.2s ease;
+}
+
+.control-btn-large.control-btn-play {
+    width: 100px;
+    height: 100px;
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+}
+
+.control-btn-large:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.control-btn-large.control-btn-play:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.control-btn-large:active {
+    transform: scale(0.95);
+}
+
+/* --- PLAYBACK SCRUBBER --- */
+.playback-scrubber-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.playback-time {
+    font-family: "Fustat";
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+    min-width: 50px;
+    text-align: center;
+}
+
+.playback-scrubber {
+    flex: 1;
+    height: 8px;
+    background: #e0e0e0;
+    
+    cursor: pointer;
+    position: relative;
+    overflow: visible;
+}
+
+.playback-scrubber-fill {
+    height: 100%;
+    background: var(--primary);
+    
+    transition: width 0.1s linear;
+    position: relative;
+}
+
+.playback-scrubber-handle {
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    background: var(--primary);
+    border: 2px solid var(--primary);
+    
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.playback-scrubber:hover .playback-scrubber-handle {
+    opacity: 1;
+}
+
+/* --- AUDIO SETTINGS --- */
+.audio-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.audio-setting {
+    background: #fff;
+    border: 1px solid var(--primary);
+    
+    padding: 20px;
+}
+
+.audio-setting label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #777;
+}
+
+.audio-setting select {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.audio-setting input[type="range"] {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.audio-setting-value {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: "Fustat";
+}
+
+/* --- LIVE DATA CONTAINER --- */
+.live-data-container {
+    position: relative;
+}
+
+.live-data-container::before {
+    content: "LIVE";
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--danger);
+    color: #fff;
+    padding: 3px 8px;
+    
+    font-size: 9px;
+    font-weight: 700;
+    font-family: "Fustat";
+    animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* --- RELATED EPISODES --- */
+.related-ep-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid var(--primary);
+    margin-bottom: 8px;
+    
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.related-ep-card:hover {
+    border-color: var(--primary);
+    background: var(--primary-dim);
+    transform: translateX(2px);
+}
+
+.related-ep-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.related-ep-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.related-ep-meta {
+    font-size: 10px;
+    color: #777;
+    font-family: "Fustat";
+}
+
+.related-ep-score {
+    font-size: 11px;
+    color: var(--primary);
+    font-weight: 700;
+    font-family: "Fustat";
+    margin-left: 10px;
+}
+
+/* --- CONTROLS --- */
+input, select {
+    width: 100%;
+    padding: 7px;
+    margin-bottom: 12px;
+    border: 1px solid var(--primary-dark);
+    font-family: "Fustat";
+    font-size: 12px;
+    
+    transition: border-color 0.15s ease;
+}
+
+input[type="range"] {
+    -webkit-appearance: none; /* Remove default browser styling */
+    appearance: none;
+    border: none;             /* Remove the border inherited from generic input */
+    padding: 0;               /* Remove padding inherited from generic input */
+    background: var(--text-muted);
+    height: 4px;              /* Thin track */
+    margin: 10px 0;           /* Give it breathing room */
+    cursor: pointer;
+    
+    /* THE MAGIC FIX: This sets the thumb and filled track color */
+    accent-color: var(--primary); 
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-dim);
+}
+
+label { 
+    display: block; 
+    font-size: 10px; 
+    text-transform: uppercase; 
+    color: #777; 
+    margin-bottom: 4px; 
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+/* --- GLOBAL TRANSPORT --- */
+.global-transport {
+    position: fixed;
+    bottom: var(--monitor-height);
+    left: 0; 
+    right: 0;
+    height: var(--transport-height);
+    background: #fff;
+    border-top: 3px double var(--primary);
+    display: flex;
+    flex-direction: column;
+    padding: 12px 30px;
+    z-index: 100;
+    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transport-toggle-btn {
+    display: none;
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 15px;
+    background: #fff;
+    border: 1px solid var(--primary);
+    border-bottom: none;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    z-index: 101;
+    color: var(--primary);
+}
+
+.transport-toggle-btn svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s ease;
+}
+
+/* Rotate chevron when expanded */
+.global-transport.expanded .transport-toggle-btn svg {
+    transform: rotate(180deg);
+}
+
+.transport-main { 
+    display: flex; 
+    align-items: center; 
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.transport-info { 
+    min-width: 0; 
+    flex: 1;
+}
+
+.transport-title { 
+    font-weight: 700; 
+    color: var(--primary); 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.transport-controls {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.transport-control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.transport-label {
+    font-size: 14px;
+}
+
+.transport-select {
+    padding: 4px 8px;
+    margin: 0;
+    font-size: 11px;
+    min-width: 80px;
+}
+
+.transport-slider {
+    width: 120px;
+    margin: 0;
+}
+
+.transport-value {
+    font-family: "Fustat";
+    font-size: 11px;
+    font-weight: 600;
+    color: #666;
+    min-width: 40px;
+}
+
+.control-btn {
+    width: 45px; 
+    height: 30px;
+    border: 1px solid var(--primary);
+    background: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.control-btn.control-btn-play {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.control-btn:hover { 
+    background: var(--primary); 
+    color: #fff; 
+    border-color: var(--primary); 
+    transform: scale(1.05);
+}
+
+.control-btn.control-btn-play:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+.scrubber { 
+    flex: 1; 
+    height: 6px; 
+    background: #e0e0e0; 
+    cursor: pointer; 
+    position: relative; 
+    
+    overflow: hidden;
+}
+
+.scrubber-fill { 
+    height: 100%; 
+    background: var(--primary); 
+    width: 0%; 
+    transition: width 0.1s linear;
+}
+
+/* --- CODE MONITOR --- */
+.code-monitor {
+    position: fixed;
+    bottom: 0; 
+    left: 0; 
+    right: 0;
+    height: var(--monitor-height);
+    background: var(--code-bg);
+    color: var(--code-text);
+    display: flex;
+    align-items: center;
+    padding: 0 30px;
+    font-family: monospace;
+    font-size: 12px;
+    z-index: 101;
+    border-top: 2px solid var(--primary-dark);
+}
+
+.monitor-prompt {
+    opacity: 0.5;
+    margin-right: 10px;
+    color: #ffffff;
+}
+
+.monitor-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.monitor-timestamp {
+    opacity: 0.6;
+    font-size: 10px;
+    margin-left: 20px;
+    color: #cccccc;
+}
+
+/* --- STATS GRID --- */
+.stat-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+    gap: 12px; 
+}
+
+.stat-box { 
+    border: 1px solid var(--primary); 
+    padding: 15px; 
+    background: #fff; 
+    
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.distribution-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    width: 100%;
+}
+
+.geo-distribution-grid {
+    display: grid;
+    gap: 12px;
+    width: 100%;
+    /* Default (Mobile): Stack them */
+    grid-template-columns: 1fr;
+}
+
+/* 6-Column Layout Trick for 2-top, 3-bottom */
+@media (min-width: 768px) {
+    .geo-distribution-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+
+    /* First 2 items take 50% (3/6) */
+    .geo-distribution-grid > *:nth-child(1),
+    .geo-distribution-grid > *:nth-child(2) {
+        grid-column: span 3;
+    }
+
+    /* Next 3 items take 33% (2/6) */
+    .geo-distribution-grid > *:nth-child(3),
+    .geo-distribution-grid > *:nth-child(4),
+    .geo-distribution-grid > *:nth-child(5) {
+        grid-column: span 2;
+    }
+}
+
+/* --- HIERARCHY COLUMNS --- */
+.hierarchy-col {
+    flex: 1;
+    border: 1px solid #ddd;
+    padding: 0; 
+    height: 320px;
+    overflow-y: auto;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+}
+
+.geo-col {
+    min-height: 200px; 
+    max-height: 300px;
+}
+
+.hierarchy-title {
+    border-bottom: 2px solid var(--primary);
+    padding: 12px 12px 8px 12px; /* Added padding here to replace container padding */
+    margin-bottom: 0; /* REMOVED: Margin creates transparent gap; use padding instead */
+    font-size: 14px;
+    position: sticky;
+    top: 0;
+    background-color: #fff;
+    z-index: 10;
+}
+
+/* New class to add padding to the list content so it aligns with the header */
+.hierarchy-list {
+    padding: 0 12px 12px 12px;
+}
+
+.hierarchy-item {
+    display: flex; 
+    justify-content: space-between; 
+    font-size: 12px; 
+    padding: 4px 6px; 
+    border-bottom: 1px solid #f5f5f5; 
+    cursor: pointer; 
+    transition: background 0.15s ease;
+}
+
+.hierarchy-item:hover {
+    background: var(--primary-dim);
+}
+
+.hi-name, .hi-count {
+    font-family: 'Fustat';
+}
+
+.hi-count {
+    font-weight: 700; 
+    color: var(--primary);
+}
+
+/* --- CONSOLE (Refactored) --- */
+.console-entry {
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+.console-prompt {
+    color: #777; 
+    margin-bottom: 5px; 
+    font-weight: 600;
+}
+.console-result {
+    margin: 0; 
+    white-space: pre-wrap; 
+    color: #222;
+}
+
+.stat-box:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.stat-num { 
+    font-size: 1.8em; 
+    color: var(--primary); 
+    font-family: "Libertinus Math"; 
+    margin-bottom: 5px;
+}
+
+.stat-lbl { 
+    font-size: 12px; 
+    text-transform: uppercase; 
+    color: #666; 
+    font-family: "Fustat"; 
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+/* --- CONSOLE OUTPUT --- */
+.console-output {
+    background: #f5f5f5;
+    padding: 12px;
+    margin-top: 10px;
+    font-family: monospace;
+    font-size: 11px;
+    
+    border: 1px solid var(--primary);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.console-input-container {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.console-input-container input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+/* --- QUEUE LIST --- */
+.queue-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    transition: background 0.15s ease;
+}
+
+.queue-item:hover {
+    background: #f9f9f9;
+}
+
+.queue-item.current {
+    background: var(--primary-dim);
+    border-left: 3px solid var(--primary);
+}
+
+.queue-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.queue-item-title {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.queue-item-number {
+    font-weight: 700;
+    margin-right: 8px;
+    color: var(--primary);
+}
+
+.queue-item-meta {
+    font-size: 10px;
+    color: #888;
+    font-family: "Fustat";
+}
+
+.queue-item-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.queue-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* --- PLAYLISTS --- */
+.playlist-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    background: #f9f9f9;
+    padding: 10px;
+    border: 1px solid #eee;
+}
+
+.playlist-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+}
+
+.playlist-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid #ddd;
+    background: #fff;
+    transition: all 0.15s ease;
+}
+
+.playlist-item:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.playlist-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.playlist-name {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 2px;
+    color: var(--primary);
+}
+
+.playlist-meta {
+    font-size: 10px;
+    color: #888;
+    font-family: "Fustat";
+}
+
+.playlist-actions {
+    display: flex;
+    gap: 6px;
+    margin-left: 10px;
+}
+
+/* --- BADGES --- */
+.badge {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 9px;
+    font-family: "Fustat";
+    font-weight: 700;
+    text-transform: uppercase;
+    
+    letter-spacing: 0.03em;
+}
+
+.badge-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.badge-danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.badge-info {
+    background: var(--primary-dim);
+    color: var(--primary-dark);
+}
+
+/* --- EMPTY STATES --- */
+.empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: #999;
+    font-size: 14px;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    opacity: 0.3;
+    margin-bottom: 15px;
+}
+
+/* --- API REFERENCE STYLES --- */
+.api-section {
+    margin-bottom: 30px;
+    background: #fff;
+    border: 1px solid var(--primary);
+    
+    padding: 20px;
+}
+
+.api-section h4 {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+    color: var(--primary);
+}
+
+.api-methods {
+    display: grid;
+    gap: 15px;
+}
+
+.api-method {
+    border-left: 3px solid var(--primary-dim);
+    padding-left: 15px;
+}
+
+.api-signature {
+    font-family: monospace;
+    font-size: 13px;
+    color: var(--primary);
+    background: var(--primary-dim);
+    padding: 4px 8px;
+    
+    display: inline-block;
+    margin-bottom: 6px;
+}
+
+.api-method p {
+    font-size: 12px;
+    color: #666;
+    margin: 0;
+}
+
+/* --- DRAG AND DROP --- */
+
+.queue-drag-handle {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+    flex-shrink: 0;
+    margin-right: 8px;
+}
+
+.queue-item:hover .queue-drag-handle {
+    opacity: 0.6;
+}
+
+.queue-item.current .queue-drag-handle {
+    opacity: 0.1;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.drag-icon {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.queue-item.dragging {
+    opacity: 0.5;
+    background: var(--primary-dim);
+    border: 2px dashed var(--primary);
+    cursor: grabbing;
+}
+
+.queue-item[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.queue-drop-indicator {
+    height: 3px;
+    background: var(--primary);
+    margin: -2px 0;
+    animation: dropPulse 0.8s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(23, 104, 218, 0.5);
+}
+
+.queue-drop-indicator::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+}
+
+@keyframes dropPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* --- RESPONSIVE & MOBILE --- */
+@media (max-width: 768px) {
+    :root {
+        --transport-height: 140px; /* Taller footer for stacked controls */
+        --monitor-height: 30px;
+    }
+
+    body {
+        padding: 15px 15px calc(var(--transport-height) + var(--monitor-height) + 10px) 15px;
+        /* SCROLL FIX: Allow body to scroll naturally on mobile */
+        height: auto;
+        overflow-y: auto;
+        display: block;
+    }
+
+    .sticky-top {
+            position: relative;
+            background: var(--bg-body);
+            z-index: 12;
+            padding-top: 0px;
+            padding-bottom: 0px;
+        }
+    
+    .tabs {
+            flex: 0 0 auto;
+            display: flex;
+            gap: 5px;
+            border-bottom: 1px solid var(--primary);
+            margin-bottom: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: var(--bg-body);
+        }
+
+    /* SCROLL FIX: Remove internal tab scrolling */
+    .tab-content {
+        overflow: visible;
+        height: auto;
+        display: none; /* Override flex */
+    }
+
+    .tab-content.active {
+        display: block; /* Stack content naturally */
+    }
+
+    .sticky-top {
+        /* "Unwrap" the container so tabs can stick independently of the header */
+        display: contents;
+    }
+
+    /* 2. Header: Stack Logo & Text */
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+        position: relative;
+        z-index: 15;
+    }
+    
+    .header-logo {
+        width: 50px;
+        height: 50px;
+        margin-right: 5px;
+    }
+
+    h1 { font-size: 1.5em; }
+    
+    #statusIndicator {
+        align-self: flex-start;
+        margin-top: 5px;
+    }
+
+    /* 3. Tabs: Sticky & Horizontal Scroll */
+    .tabs {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: var(--bg-body);
+        
+        overflow-x: auto;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+        margin: 0 -15px 20px -15px; /* Bleed to edges */
+        padding: 5px 15px 0px 15px;
+        border-bottom: 1px solid #eee;
+        
+        /* Hide scrollbars */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab-button {
+        flex: 0 0 auto;
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+
+    .tab-content{
+        overflow-x: hidden;
+    }
+
+    /* 3. Registry: Collapsible Sidebar & Flow Layout */
+    .registry-container { 
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        height: auto; /* Remove fixed height constraints */
+    }
+    
+    /* Hide the checkbox logic */
+    .filter-toggle-cb { display: none; }
+
+    .registry-sidebar { 
+        max-height: none; 
+        resize: none;
+        border-bottom: 3px double var(--primary);
+        padding: 10px 15px;
+        overflow: visible; /* Let it grow */
+    }
+
+    /* Header with Toggle Button */
+    .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0; /* Tight when collapsed */
+    }
+
+    .filter-toggle-btn {
+        background: #fff;
+        border: 1px solid var(--primary);
+        color: var(--primary);
+        padding: 4px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        display: block; /* Visible on mobile */
+    }
+
+    /* Default State: Content Hidden */
+    .sidebar-content {
+        display: none;
+        margin-top: 15px;
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+    }
+
+    /* Expanded State: Content Visible (The Hack) */
+    .filter-toggle-cb:checked ~ .sidebar-content {
+        display: block;
+        animation: slideDown 0.2s ease-out;
+    }
+    
+    .filter-toggle-cb:checked ~ .sidebar-header .toggle-icon {
+        content: "Hide ▴"; /* Change text via CSS if supported, or just rely on icon rotation */
+    }
+
+    /* Results: Remove internal scrolling, let the page scroll */
+    .registry-results {
+        padding-right: 0;
+        overflow: visible; 
+        height: auto;
+    }
+    
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 4. Global Transport: Stacked Layout */
+    /* 4. Global Transport: Mobile Logic */
+    .transport-toggle-btn {
+        display: flex; /* Visible on Mobile */
+    }
+
+    .global-transport {
+        /* Default: COLLAPSED State */
+        height: 50px; 
+        padding: 10px 15px;
+        flex-direction: column;
+        align-items: stretch;
+        overflow: visible;
+    }
+
+    /* EXPANDED State */
+    .global-transport.expanded {
+        height: 190px; /* Space for everything */
+    }
+
+    .transport-main {
+        flex-wrap: nowrap; /* Keep on one line in collapsed mode */
+        justify-content: space-between;
+        margin-bottom: 0;
+        gap: 10px;
+        align-items: center;
+    }
+
+    /* Info: Compact by default */
+    .transport-info {
+        width: auto;
+        order: 0; /* Natural order: Prev, Info, Play, Next */
+        text-align: left;
+        margin: 0;
+        padding: 0;
+        flex: 1;
+        border: none;
+    }
+    
+    .transport-title {
+        font-size: 12px;
+        margin-bottom: 0;
+    }
+    
+    .transport-info .meta {
+        font-size: 12px !important;
+        display: none; /* Hide time in mini mode to save space */
+    }
+    
+    /* Show Time only when expanded */
+    .global-transport.expanded .transport-info .meta {
+        display: block;
+    }
+
+    .global-transport.expanded .transport-main {
+        flex-wrap: wrap;
+    }
+
+    /* Controls (Vol/Speed): HIDDEN by default */
+    .transport-controls {
+        display: none;
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 15px;
+        padding-top: 10px;
+        border-top: 1px solid #f0f0f0;
+        opacity: 0;
+        transition: opacity 0.2s ease 0.1s;
+    }
+    
+    .global-transport.expanded .transport-controls {
+        display: flex;
+        opacity: 1;
+    }
+
+    /* Scrubber: HIDDEN by default */
+    .scrubber {
+        display: none;
+        margin-top: 12px;
+    }
+
+    .global-transport.expanded .scrubber {
+        display: block;
+    }
+
+    .transport-control-group {
+        font-size: 12px;
+    }
+    
+    .transport-slider { width: 80px; }
+
+    /* 5. Playback Tab: Wrap elements */
+    .playback-control-panel { padding: 15px; }
+    
+    .playback-main-controls { gap: 10px; }
+    
+    .control-btn-large {
+        width: 60px; height: 60px;
+        font-size: 18px;
+    }
+    
+    .control-btn-large.control-btn-play {
+        width: 70px; height: 70px;
+        font-size: 24px;
+    }
+
+    .playback-bar {
+        padding: 5px;
+    }
+    
+    .bar-input-group label { display: none; } /* Save space */
+    .bar-input-group input { width: 60px !important; margin: 0; }
+    .bar-separator { display: none; }
+
+    /* 6. Grids */
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .inspector-grid { grid-template-columns: 1fr; }
+    
+    /* 7. Code Monitor */
+    .code-monitor {
+        padding: 0 10px;
+        font-size: 10px;
+    }
+}
+
+/* --- UTILITY CLASSES --- */
+.mb-10 { margin-bottom: 10px; }
+.mb-20 { margin-bottom: 20px; }
+.mt-10 { margin-top: 10px; }
+.mt-20 { margin-top: 20px; }
+.text-muted { color: var(--text-muted); }
+.text-primary { color: var(--primary); }
+.text-center { text-align: center; }
