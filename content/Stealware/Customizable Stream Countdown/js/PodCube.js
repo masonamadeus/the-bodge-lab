@@ -50,75 +50,6 @@ const log = {
 // UTILITY HELPERS
 // ==========================================
 
-/**
- * IndexedDB Wrapper for Audio Blobs
- * Stores full audio files locally to prevent re-downloads
- */
-class AudioCache {
-    constructor() {
-        this.dbName = 'PodCubeAudioCache';
-        this.storeName = 'audio_files';
-        this.db = null;
-    }
-
-    async init() {
-        if (this.db) return;
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(this.dbName, 1);
-            request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains(this.storeName)) {
-                    db.createObjectStore(this.storeName);
-                }
-            };
-            request.onsuccess = (e) => {
-                this.db = e.target.result;
-                resolve();
-            };
-            request.onerror = (e) => reject(e);
-        });
-    }
-
-    async get(key) {
-        if (!this.db) await this.init();
-        return new Promise((resolve) => {
-            const tx = this.db.transaction(this.storeName, 'readonly');
-            const req = tx.objectStore(this.storeName).get(key);
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => resolve(null);
-        });
-    }
-
-    async put(key, blob) {
-        if (!this.db) await this.init();
-        return new Promise((resolve, reject) => {
-            const tx = this.db.transaction(this.storeName, 'readwrite');
-            const req = tx.objectStore(this.storeName).put(blob, key);
-            req.onsuccess = () => resolve();
-            req.onerror = (e) => reject(e);
-        });
-    }
-
-    async delete(key) {
-        if (!this.db) await this.init();
-        return new Promise((resolve) => {
-            const tx = this.db.transaction(this.storeName, 'readwrite');
-            const req = tx.objectStore(this.storeName).delete(key);
-            req.onsuccess = () => resolve();
-            req.onerror = () => resolve();
-        });
-    }
-
-    async clear() {
-        if (!this.db) await this.init();
-        return new Promise((resolve) => {
-            const tx = this.db.transaction(this.storeName, 'readwrite');
-            const req = tx.objectStore(this.storeName).clear();
-            req.onsuccess = () => resolve();
-        });
-    }
-}
-
 class PodCubeDate {
     constructor(input) {
         this.year = 0;
@@ -616,7 +547,6 @@ class PodCubeEngine {
         this.lastSave = 0;
 
         // Audio Cache
-        this.cache = new AudioCache();
         this._currentObjectUrl = null; // Track current URL to revoke it later
 
         // Audio State
@@ -636,10 +566,6 @@ class PodCubeEngine {
         this._listeners = {};
 
         this._audio.addEventListener('ended', () => {
-            // REMOVE ON END: Delete from cache and session
-            if (this.nowPlaying) {
-                this.cache.delete(this.nowPlaying.audioUrl).catch(e => log.warn("Cache clean failed", e));
-            }
             this._clearSession(); 
             this.next();
         });
@@ -1071,80 +997,38 @@ class PodCubeEngine {
                 return;
             }
 
+            // [Fix 3.1] Race Condition Protection: Increment token to invalidate previous requests
             const token = ++this._loadingToken;
             this._isLoading = true;
             this._hasPreloadedNext = false;
 
-            // 1. Check Cache
-            let blob = await this.cache.get(ep.audioUrl);
-            let useDirectStream = false;
-
-            if (blob) {
-                log.info("Loaded from local cache:", ep.title);
-            } else {
-                // 2. Not in cache? Try to Download
-                try {
-                    log.info("Attempting download:", ep.title);
-                    const resp = await fetch(ep.audioUrl);
-                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                    
-                    // We have the file now!
-                    blob = await resp.blob();
-                    
-                    // 3. Try to Save to DB (but don't fail if we can't)
-                    try {
-                        await this.cache.put(ep.audioUrl, blob);
-                    } catch (cacheErr) {
-                        log.warn("Cache write failed (Storage Quota?), playing from memory instead.", cacheErr);
-                        // CRITICAL FIX: We do NOT set useDirectStream = true here.
-                        // We already have the blob, so we use it.
-                    }
-                } catch (e) {
-                    // Only fallback to stream if the FETCH itself failed (e.g. CORS, Network down)
-                    log.warn("Download failed (Likely CORS), falling back to stream.", e);
-                    useDirectStream = true;
-                    blob = null; 
-                }
-            }
-
-            if (token !== this._loadingToken) return; // Cancelled
-
-            // 4. Setup Audio Source
+            // [Fix 2.1] Remove Blocking Downloads:
+            // We removed the entire fetch/blob/cache logic. 
+            // We now stream directly using standard HTML5 Audio.
+            
+            // Clean up any previous object URLs if they exist
             if (this._currentObjectUrl) {
                 URL.revokeObjectURL(this._currentObjectUrl);
                 this._currentObjectUrl = null;
             }
 
-            if (!useDirectStream && blob) {
-                // CACHED/MEMORY MODE (Preferred)
-                // Uses the blob we just downloaded or retrieved
-                this._currentObjectUrl = URL.createObjectURL(blob);
-                this._audio.src = this._currentObjectUrl;
-            } else {
-                // STREAMING MODE (Fallback)
-                // Only happens if fetch failed entirely
-                this._audio.src = ep.audioUrl;
-            }
-
+            // Direct stream assignment
+            this._audio.src = ep.audioUrl;
             this._audio.volume = this._volume;
-            this._audio.load();
-
-            await new Promise((resolve, reject) => {
-                const onCanPlay = () => { cleanup(); resolve(); };
-                const onError = () => { cleanup(); reject(this._audio.error); };
-                const cleanup = () => {
-                    this._audio.removeEventListener('canplay', onCanPlay);
-                    this._audio.removeEventListener('error', onError);
-                };
-                this._audio.addEventListener('canplay', onCanPlay);
-                this._audio.addEventListener('error', onError);
-            });
             
-            if (token !== this._loadingToken) return;
+            // We do not await 'canplay' here to keep the UI responsive.
+            // HTML5 audio handles buffering automatically.
 
-            // 5. Play (if requested)
+            // [Fix 3.1] Check token again before playing
+            if (token !== this._loadingToken) return; 
+
             if (autoPlay) {
-                await this._audio.play();
+                try {
+                    await this._audio.play();
+                } catch (playErr) {
+                    log.warn("Auto-play blocked or failed:", playErr);
+                    this._emit('error', { episode: ep, error: playErr });
+                }
             }
             
             this._isLoading = false;
@@ -1157,30 +1041,8 @@ class PodCubeEngine {
     }
 
     _preloadNext() {
-        // Safety check: is there actually a next track?
-        if (this._queueIndex >= this._queue.length - 1) return;
-
-        const nextEp = this._queue[this._queueIndex + 1];
-        if (!nextEp || !nextEp.audioUrl) return;
-
-        // Don't preload if already cached
-        this.cache.get(nextEp.audioUrl).then(existing => {
-            if (existing) return;
-            
-            log.info(`Preloading next track: ${nextEp.title}`);
-            // Try to cache silently; if CORS fails, we just don't preload. 
-            // We can't use the ghost audio tag anymore because we can't share the stream data.
-            fetch(nextEp.audioUrl)
-                .then(resp => {
-                    if(!resp.ok) throw new Error("Network Bad");
-                    return resp.blob();
-                })
-                .then(blob => this.cache.put(nextEp.audioUrl, blob))
-                .catch(e => {
-                    // Silent fail for preload is acceptable
-                    log.warn(`Preload skipped for ${nextEp.shortcode || 'next track'} (CORS)`);
-                });
-        });
+        // NOTE: MAYBE IMPLEMENT GHOST PLAYER SWAPPING FOR GAPLESS PLAYBACK SUPPORT
+        return;
     }
 
     _cancelPreload() {
@@ -1494,7 +1356,6 @@ class PodCubeEngine {
         this._stopAfterCurrent = false;
         this.pause();
         
-        this.cache.clear(); // DELETE ALL CACHED AUDIO
         this._clearSession(); 
 
         if (this._currentObjectUrl) {
@@ -1510,36 +1371,52 @@ class PodCubeEngine {
 
     removeFromQueue(index) {
         if (index < 0 || index >= this._queue.length) return false;
-        
         const ep = this._queue[index];
+        const isCurrentTrack = (index === this._queueIndex);
+        
+        // 1. CAPTURE STATE: Were we playing?
+        // We only care about this if we are removing the track currently loaded.
+        const wasPlaying = isCurrentTrack && !this._audio.paused;
 
-        // If removing the currently playing track, skip to next first
-        if (index === this._queueIndex) {
-            this.next();
-            // Note: next() won't delete the file, but the user explicitly removed it
-            // so we should delete it now.
-            if(ep) this.cache.delete(ep.audioUrl);
-            this._saveSession(); // Save queue to session
-            return;
-        }
 
-        // Clean up cache
-        if (ep) {
-            this.cache.delete(ep.audioUrl);
-        }
-
-        // Kill the preload if we're removing the next track
+        // Kill the preload if we're removing the immediate next track
         if (index === this._queueIndex + 1) {
             this._cancelPreload();
         }
 
+        // 2. Remove from array
         this._queue.splice(index, 1);
-        if (index < this._queueIndex) {
+
+        // 3. Handle Logic
+        if (isCurrentTrack) {
+            // Stop the audio engine immediately (we just removed the source file)
+            this.pause();
+            
+            // Unload the source to prevent memory leaks
+            this._audio.removeAttribute('src'); 
+            if (this._currentObjectUrl) {
+                URL.revokeObjectURL(this._currentObjectUrl);
+                this._currentObjectUrl = null;
+            }
+
+            // Determine if there is a next track to load
+            if (this._queue.length === 0 || this._queueIndex >= this._queue.length) {
+                // Queue is empty or we removed the last item
+                this._queueIndex = -1;
+                this._emit('queueEnd');
+                this._emit('track', null); // Update UI to Idle
+            } else {
+                // An item has shifted into the current index (the next track).
+                // Load it, respecting the previous playback state.
+                this._loadAndPlay(wasPlaying); 
+            }
+        } else if (index < this._queueIndex) {
+            // Removed item before the current one; shift index left to keep playing same track
             this._queueIndex--;
         }
-
+        
         this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
-        this._saveSession(); // Save queue to session
+        this._saveSession();
         
         log.info(`Removed episode ${index} from queue`);
     }
@@ -1982,7 +1859,6 @@ class PodCubeEngine {
             const queue = state.queue
                 .map(id => this.episodes.find(e => e.id === id))
                 .filter(Boolean);
-
             if (queue.length === 0) return false;
 
             // Restore State
@@ -1991,40 +1867,35 @@ class PodCubeEngine {
             
             // Emit queue changed to update UI
             this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
-            
-            // If nothing was playing when session was saved, just restore the queue
+
             if (!state.epID) {
                 log.info(`Session restored: ${queue.length} items in queue (nothing playing)`);
                 return true;
             }
             
-            // Otherwise, restore the currently playing episode
             const currentEp = this._queue[this._queueIndex];
             if (!currentEp || currentEp.id !== state.epID) {
                 log.warn("Current episode mismatch, queue restored but not resuming playback");
-                return true; // Still return true since queue was restored
+                return true;
             }
 
-            // Initialize cache logic (loads blob but waits on play)
             const shouldPlay = state.isPlaying;
-            
             log.info(`Restoring session... AutoResume: ${shouldPlay}`);
             
-            // 1. Load the track (FORCE PAUSE for now)
+            // Load the track (Paused). 
             await this._loadAndPlay(false);
-            
-            // 2. Restore Position
+
+            // Restore Position
             if (state.currentTime) {
                 this._audio.currentTime = state.currentTime;
             }
             
-            // 3. Resume if needed
+            // Resume only if needed
             if (shouldPlay) {
                 this._audio.play().catch(e => log.warn("Auto-resume blocked:", e));
             }
             
-            log.info(`Session restored: "${currentEp.title}" at ${formatTime(state.currentTime)}`);
-            
+            log.info(`Session restored: "${currentEp.title}"`);
             return true;
         } catch (e) {
             log.warn("Failed to restore session:", e);
@@ -2032,6 +1903,7 @@ class PodCubeEngine {
             return false;
         }
     }
+
 
     // DESTROY AND CLEAN UP EVERYTHING
     destroy() {

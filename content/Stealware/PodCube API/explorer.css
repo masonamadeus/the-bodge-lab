@@ -529,6 +529,7 @@ h1 {
 .inspector-meta-line .value {
     color: var(--text-main);
     font-weight: 600;
+    text-transform:uppercase;
 }
 
 .inspector-meta-line .separator {
@@ -976,7 +977,7 @@ h1 {
 
 .player-transport-controls {
     display: flex;
-    gap: 10px;
+    gap: 20px;
     justify-content: center;
     margin-bottom: 20px;
     padding-bottom: 20px;
@@ -1003,7 +1004,6 @@ h1 {
 
 .player-transport-btn-play {
     width: 60px;
-    height: 60px;
     background: var(--primary);
     color: #fff;
 }
@@ -1015,7 +1015,7 @@ h1 {
 .player-settings-bar {
     display: flex;
     gap: 30px;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
 }
 
@@ -1032,6 +1032,7 @@ h1 {
     font-weight: 700;
     color: #888;
     min-width: 50px;
+    margin-bottom: 0;
 }
 
 .player-setting-slider {
@@ -1052,6 +1053,7 @@ h1 {
     font-size: 11px;
     border: 1px solid #ddd;
     background: #fff;
+    margin-bottom: 0;
 }
 
 /* Queue Section (brigistics-style, no double border wrapper) */
@@ -1130,10 +1132,11 @@ h1 {
 }
 
 .player-radio-section {
-    padding: 15px;
+    padding: 5px 15px;
     background: var(--primary-dim);
-    border-left: 3px solid var(--primary);
+    border-right: 3px double var(--primary);
     margin-top: 15px;
+    direction:rtl;
 }
 
 .player-radio-toggle {

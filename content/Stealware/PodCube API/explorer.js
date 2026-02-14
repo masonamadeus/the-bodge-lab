@@ -17,7 +17,7 @@ const ICONS = {
     play: `<svg viewBox="0 0 24 24" class="icon-svg"><path d="M8 5v14l11-7z"/></svg>`,
     pause: `<svg viewBox="0 0 24 24" class="icon-svg"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
     skipBack: `<svg viewBox="0 0 24 24" class="icon-svg"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`,
-    skipForward: `<svg viewBox="0 0 24 24" class="icon-svg"><path d="M10 19c-3.54 0-6.55-2.31-7.6-5.5l-2.37.78C1.42 18.97 5.35 22 10 22c4.65 0 7.05-.99 8.9-2.6L22 23v-9h-9l3.62 3.62c-1.39 1.16-3.16 1.88-5.12 1.88z"/></svg>`,
+    skipForward:`<svg viewBox="0 0 24 24" class="icon-svg" style="transform: scaleY(-1);"><path d="M10 19c-3.54 0-6.55-2.31-7.6-5.5l-2.37.78C1.42 18.97 5.35 22 10 22c4.65 0 7.05-.99 8.9-2.6L22 23v-9h-9l3.62 3.62c-1.39 1.16-3.16 1.88-5.12 1.88z"/></svg>`,
     shuffle: `<svg viewBox="0 0 24 24" class="icon-svg"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>`
 };
 
@@ -47,6 +47,8 @@ window.addEventListener('PodCube:Ready', async () => {
         updatePlaylistsUI();
         clearInspector();
         initQueueDragAndDrop();
+        enableScrubbing('scrubber');        // Global transport scrubber
+        enableScrubbing('playerScrubber');  // Player tab scrubber
         refreshSessionInspector();
 
 
@@ -159,42 +161,6 @@ function updateBrigistics() {
 
     logCommand('PodCube.getStatistics()');
 }
-
-function updatePlayerQueueList() {
-    const q = PodCube.queueItems;
-    const currentIndex = PodCube.queueIndex;
-    
-    // Show only upcoming tracks (everything AFTER current index)
-    const upcoming = q.slice(currentIndex + 1);
-    
-    if (upcoming.length === 0) {
-        list.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">📭</div>
-                <div>No upcoming tracks</div>
-            </div>
-        `;
-        return;
-    }
-    
-    list.innerHTML = upcoming.map((ep, i) => {
-        const actualIndex = currentIndex + 1 + i;  // Actual index in full queue
-        return `
-        <div class="queue-item">
-            <div class="queue-item-info">
-                <div class="queue-item-title">
-                    <span class="queue-item-number">${i + 1}.</span>
-                    ${escapeHtml(ep.title)}
-                </div>
-            </div>
-            <div class="queue-item-actions">
-                <button class="icon-btn" onclick="run('PodCube.removeFromQueue(${actualIndex})')">REMOVE</button>
-            </div>
-        </div>
-        `;
-    }).join('');
-}
-
 
 function showDistribution() {
     const h = PodCube.getDistribution();
@@ -682,6 +648,9 @@ function loadEpisodeInspector(ep) {
                         <button class="inspector-action-btn primary" onclick="run('PodCube.play(PodCube.all[${idx}])')">
                             PLAY NOW
                         </button>
+                        <button class="inspector-action-btn" onclick="run('PodCube.addNextInQueue(PodCube.all[${idx}])')">
+                            PLAY NEXT
+                        </button>
                         <button class="inspector-action-btn" onclick="run('PodCube.addToQueue(PodCube.all[${idx}])')">
                             ADD TO QUEUE
                         </button>
@@ -1044,6 +1013,11 @@ function updateProgress(status) {
             const el = document.getElementById(id);
             if (el) el.style.width = status.percent + '%';
         });
+
+        const handle = document.getElementById('playerScrubberHandle');
+        if (handle) {
+            handle.style.left = status.percent + '%';
+        }
         
         const timeText = formatTime(status.time) + ' / ' + formatTime(status.duration);
         const el = document.getElementById('transTime');
@@ -1054,6 +1028,48 @@ function updateProgress(status) {
         if (start) start.textContent = formatTime(status.time);
         if (end) end.textContent = formatTime(status.duration);
     }
+}
+
+function enableScrubbing(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    let isDragging = false;
+
+    const seekToMouse = (e) => {
+        const rect = el.getBoundingClientRect();
+        const relativeX = e.clientX - rect.left;
+        let percent = relativeX / rect.width;
+        
+        // Clamp percentage between 0 and 1
+        percent = Math.max(0, Math.min(1, percent));
+        
+        // Only seek if we have a valid duration
+        if (PodCube.status.duration) {
+            const time = percent * PodCube.status.duration;
+            // Use run() with 'true' (silent) to avoid flooding the console log
+            run(`PodCube.seek(${time.toFixed(2)})`, true);
+        }
+    };
+
+    // Start dragging on mousedown
+    el.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        seekToMouse(e); // Seek immediately where clicked
+    });
+
+    // Update position while dragging (listen on document in case cursor slips off)
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            e.preventDefault(); // Prevent text selection
+            seekToMouse(e);
+        }
+    });
+
+    // Stop dragging on mouseup
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
 }
 
 function startLiveDataMonitor() {
@@ -1430,6 +1446,20 @@ function updateUI() {
     const titleEl = document.getElementById('transTitle');
     if (titleEl) {
         titleEl.textContent = PodCube.nowPlaying ? PodCube.nowPlaying.title : 'System Idle';
+    }
+
+    const playerTitle = document.getElementById('playerNowPlayingTitle');
+    const playerMeta = document.getElementById('playerNowPlayingMeta');
+
+    if (playerTitle && playerMeta) {
+        if (PodCube.nowPlaying) {
+            playerTitle.textContent = PodCube.nowPlaying.title;
+            // Display Model • Origin or similar metadata
+            playerMeta.textContent = `${PodCube.nowPlaying.model || 'Unknown Model'} • ${PodCube.nowPlaying.timestamp || '0:00'}`;
+        } else {
+            playerTitle.textContent = 'System Idle';
+            playerMeta.textContent = 'No transmission loaded';
+        }
     }
     
     updatePlayerQueueList();
