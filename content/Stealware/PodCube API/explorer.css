@@ -65,6 +65,7 @@ header {
 h1, h2, h3, h4, .ep-title { 
     font-family: "Libertinus Math", serif; 
     font-weight: 700; 
+    margin-bottom: 5px;
 }
 
 .label, button, .tab-button { 
@@ -227,6 +228,7 @@ h1 {
     position: relative;
     overflow: hidden;
     cursor: pointer;
+    align-items:center;
 }
 
 .ep-card:hover {
@@ -272,7 +274,7 @@ h1 {
 }
 
 .ep-title { 
-    font-size: 1.1em; 
+    font-size: 0.8em; 
     white-space: nowrap; 
     overflow: hidden; 
     text-overflow: ellipsis; 
@@ -284,6 +286,7 @@ h1 {
     font-size: 10px; 
     font-weight: bold;
     color: #888; 
+    margin-left:auto;
     white-space: nowrap; 
 }
 
@@ -294,6 +297,7 @@ h1 {
     color: #555; 
     margin-bottom: 4px; 
     align-items: center;
+    
 }
 
 .ep-tag { 
@@ -425,6 +429,319 @@ h1 {
     margin-bottom: 20px;
 }
 
+/* New Inspector Header Card */
+.inspector-header-card {
+    background: #fff;
+    border: 3px double var(--primary);
+    padding: 25px;
+    margin-bottom: 20px;
+    margin-top:10px;
+    position: relative;
+}
+
+.inspector-header-card::before {
+    content: "Transmission Report";
+    position: absolute;
+    top: -10px;
+    left: 15px;
+    background: var(--bg-body);
+    padding: 0 10px;
+    font-family: "Fustat", sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+}
+
+.inspector-empty-state {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+}
+
+.inspector-empty-state h3 {
+    margin-bottom: 10px;
+    color: var(--text-main);
+}
+
+/* Loaded State - Summary Card */
+.inspector-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.inspector-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.inspector-title {
+    font-size: 1.8em;
+    color: var(--primary);
+    line-height: 1.2;
+    flex: 1;
+    min-width: 200px;
+}
+
+.inspector-summary-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.inspector-summary-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.inspector-meta-line {
+    font-family: "Fustat";
+    font-size: 11px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.inspector-meta-line .label {
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #999;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+}
+
+.inspector-meta-line .value {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.inspector-meta-line .separator {
+    color: #ccc;
+}
+
+.inspector-action-btn {
+    border: 1px solid var(--primary);
+    background: #fff;
+    color: var(--primary);
+    padding: 8px 16px;
+    font-family: "Fustat";
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.inspector-action-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+.inspector-action-btn.primary {
+    background: var(--primary);
+    color: #fff;
+}
+
+.inspector-action-btn.primary:hover {
+    background: var(--primary-dark);
+}
+
+/* Report Body */
+.inspector-report-body {
+    display: none;
+}
+
+.inspector-report-body.loaded {
+    display: block;
+}
+
+.inspector-section {
+    margin-bottom: 25px;
+}
+
+.inspector-section-title {
+    letter-spacing: 0.05em;
+    color: var(--text);
+    font-family: "Libertinus Math";
+    font-weight: 700;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Prose Style Content */
+.inspector-prose {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-main);
+}
+
+.inspector-prose p {
+    margin-bottom: 12px;
+}
+
+.inspector-prose strong {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.inspector-prose .code-inline {
+    font-family: "Fustat";
+    font-size: 12px;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+/* Callout Boxes - for important info */
+.inspector-callout {
+    margin: 15px 0;
+    font-size: 13px;
+}
+
+.inspector-callout-title {
+    font-family: "Fustat";
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #999;
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+}
+
+.inspector-callout-content {
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+/* Data Grid - for structured lists */
+.inspector-data-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 20px;
+    font-size: 13px;
+    margin: 15px 0;
+    padding: 0;
+}
+
+.inspector-data-grid .data-label {
+    font-family: "Fustat";
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #888;
+}
+
+.inspector-data-grid .data-value {
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.inspector-data-grid .data-value.code {
+    font-family: "Fustat";
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Tag Pills */
+.inspector-tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 12px 0;
+}
+
+.inspector-tag-pill {
+    background: var(--primary-dim);
+    color: var(--primary-dark);
+    padding: 5px 12px;
+    font-size: 11px;
+    font-family: "Fustat";
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.inspector-tag-pill:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* Related Episodes - Compact List */
+.inspector-related-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.inspector-related-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f5f5f5;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.inspector-related-item:hover {
+    background: var(--primary-dim);
+}
+
+.inspector-related-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.inspector-related-item-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inspector-related-item-meta {
+    font-size: 10px;
+    color: #777;
+    font-family: "Fustat";
+}
+
+.inspector-related-item-arrow {
+    color: var(--primary);
+    font-weight: 700;
+    margin-left: 10px;
+}
+
+/* Description Block */
+.inspector-description-block {
+    padding: 0;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #555;
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 15px 0;
+}
+
+.inspector-description-block:empty::before {
+    content: "No description available";
+    color: #999;
+    font-style: italic;
+}
+
+/* Legacy Grid Styles - Keep for compatibility */
 .inspector-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -575,6 +892,358 @@ h1 {
     display: block;
 }
 /* ========== PLAYBACK CONTROL PANEL ========== */
+
+/* Now Playing Card (keeps double border) */
+.player-now-playing-card {
+    background: #fff;
+    border: 3px double var(--primary);
+    padding: 25px;
+    margin-bottom: 20px;
+    margin-top:10px;
+    position: relative;
+}
+
+.player-now-playing-card::before {
+    content: "Playback Engine";
+    position: absolute;
+    top: -10px;
+    left: 15px;
+    background: var(--bg-body);
+    padding: 0 10px;
+    font-family: "Fustat", sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+}
+
+.player-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.player-card-label {
+    font-family: "Fustat";
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #999;
+    letter-spacing: 0.05em;
+}
+
+.player-card-time {
+    font-family: "Fustat";
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.time-separator {
+    margin: 0 4px;
+    color: #ccc;
+}
+
+.player-card-title {
+    font-size: 1.8em;
+    color: var(--primary);
+    margin-bottom: 6px;
+    line-height: 1.2;
+}
+
+.player-card-meta {
+    font-family: "Fustat";
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.player-scrubber-wrapper {
+    margin-bottom: 20px;
+}
+
+.player-transport-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.player-transport-btn {
+    width: 50px;
+    height: 50px;
+    border: 1px solid var(--primary);
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.player-transport-btn:hover {
+    background: var(--primary);
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.player-transport-btn-play {
+    width: 60px;
+    height: 60px;
+    background: var(--primary);
+    color: #fff;
+}
+
+.player-transport-btn-play:hover {
+    background: var(--primary-dark);
+}
+
+.player-settings-bar {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    align-items: center;
+}
+
+.player-setting-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-setting-label {
+    font-family: "Fustat";
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #888;
+    min-width: 50px;
+}
+
+.player-setting-slider {
+    width: 120px;
+}
+
+.player-setting-value {
+    font-family: "Fustat";
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-main);
+    min-width: 40px;
+}
+
+.player-setting-select {
+    padding: 4px 8px;
+    font-family: "Fustat";
+    font-size: 11px;
+    border: 1px solid #ddd;
+    background: #fff;
+}
+
+/* Queue Section (brigistics-style, no double border wrapper) */
+.player-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0;
+    padding-bottom: 10px;
+    border-bottom: 3px double var(--primary);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.player-section-header h3 {
+    margin: 0;
+}
+
+.player-queue-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.player-queue-btn {
+    border: 1px solid var(--primary);
+    background: #fff;
+    color: var(--primary);
+    padding: 6px 14px;
+    font-family: "Fustat";
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.player-queue-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+.player-queue-stats-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-family: "Fustat";
+    font-size: 11px;
+    color: #666;
+    padding: 12px 0;
+    margin-bottom: 0;
+}
+
+.queue-stat-item {
+    font-weight: 600;
+}
+
+.queue-stat-separator {
+    color: #ccc;
+}
+
+.player-queue-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    background: #fff;
+}
+
+.player-queue-list:empty::before {
+    content: "Queue is empty — add transmissions from the Browse tab or activate Radio Mode";
+    display: block;
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+    font-style: italic;
+    font-size: 14px;
+}
+
+.player-radio-section {
+    padding: 15px;
+    background: var(--primary-dim);
+    border-left: 3px solid var(--primary);
+    margin-top: 15px;
+}
+
+.player-radio-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.player-radio-toggle input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    accent-color: var(--orange);
+}
+
+.player-radio-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.player-radio-label strong {
+    font-family: "Fustat";
+    font-size: 12px;
+    color: var(--text-main);
+}
+
+.player-radio-desc {
+    font-family: "Fustat";
+    font-size: 10px;
+    color: #666;
+}
+
+/* Section Titles */
+.player-section-title {
+    font-size: 1em;
+    color: var(--text-main);
+    font-family: "Libertinus Math", serif;
+    font-weight: 700;
+    margin-bottom: 0;
+    padding-bottom: 10px;
+    border-bottom: 3px double var(--primary);
+}
+
+/* Playlist Controls */
+.player-playlist-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    padding: 12px 0;
+}
+
+.player-playlist-input {
+    flex: 1;
+    margin: 0;
+    padding: 8px 12px;
+    font-family: "Fustat";
+    font-size: 12px;
+    border: 1px solid #ddd;
+}
+
+/* Audio Diagnostics (visible, integrated into document flow) */
+.player-diagnostic-prose {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #666;
+    margin-bottom: 15px;
+    margin-top: 10px;
+}
+
+.player-diagnostic-prose p {
+    margin: 0;
+}
+
+.player-diagnostic-callout {
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.player-diagnostic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.player-diagnostic-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0;
+}
+
+.player-diagnostic-label {
+    font-family: "Fustat";
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #888;
+}
+
+.player-diagnostic-value {
+    font-family: "Fustat";
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.player-live-data-title {
+    font-family: "Fustat";
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #888;
+    margin-bottom: 10px;
+    margin-top: 20px;
+}
+
+/* Legacy Playback Control Panel (keep for compatibility) */
 .playback-control-panel {
     background: #fff;
     border: 3px double var(--primary);
@@ -747,34 +1416,7 @@ h1 {
 }
 
 /* ========== QUEUE MANAGEMENT SECTION ========== */
-#player .section:nth-of-type(2) {
-    position: relative;
-    border: 3px double var(--primary);
-    padding: 20px;
-    padding-top: 30px;
-    background: #fff;
-}
-
-#player .section:nth-of-type(2)::before {
-    content: "Queue Management";
-    position: absolute;
-    top: -8px;
-    left: 15px;
-    background: var(--bg-body);
-    padding: 0 8px;
-    font-family: "Fustat", sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--primary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-#player .section:nth-of-type(2) h3 {
-    display: none;
-}
-
-/* Queue stats styling */
+/* Queue stats styling (legacy) */
 .queue-stats {
     display: flex;
     gap: 10px;
@@ -872,9 +1514,10 @@ h1 {
 }
 
 .queue-item-actions button {
-    width: 24px;
+    width: auto;
     height: 24px;
-    padding: 0;
+
+    padding: 0 5px;
     border: 1px solid var(--primary);
     background: transparent;
     cursor: pointer;
@@ -924,32 +1567,6 @@ h1 {
 }
 
 /* ========== PLAYLISTS SECTION ========== */
-#player .section:nth-of-type(3) {
-    position: relative;
-    border: 3px double var(--primary);
-    padding: 20px;
-    padding-top: 30px;
-    background: #fff;
-}
-
-#player .section:nth-of-type(3)::before {
-    content: "Saved Playlists";
-    position: absolute;
-    top: -8px;
-    left: 15px;
-    background: var(--bg-body);
-    padding: 0 8px;
-    font-family: "Fustat", sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--primary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-#player .section:nth-of-type(3) h3 {
-    display: none;
-}
 
 .playlist-controls {
     display: flex;
@@ -1043,32 +1660,6 @@ h1 {
 }
 
 /* ========== BUFFER & AUDIO STATE SECTION ========== */
-#player .section:nth-of-type(4) {
-    position: relative;
-    border: 3px double var(--primary);
-    padding: 20px;
-    padding-top: 30px;
-    background: #fff;
-}
-
-#player .section:nth-of-type(4)::before {
-    content: "Audio State";
-    position: absolute;
-    top: -8px;
-    left: 15px;
-    background: var(--bg-body);
-    padding: 0 8px;
-    font-family: "Fustat", sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--primary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-#player .section:nth-of-type(4) h3 {
-    display: none;
-}
 
 /* Status grid boxes */
 .stat-grid {
@@ -1112,38 +1703,6 @@ h1 {
 }
 
 /* ========== LIVE PLAYBACK DATA SECTION ========== */
-#player .section:nth-of-type(5) {
-    position: relative;
-    border: 3px double var(--primary);
-    padding: 20px;
-    padding-top: 30px;
-    background: #fff;
-}
-
-#player .section:nth-of-type(5)::before {
-    content: "Live Data Feed";
-    position: absolute;
-    top: -8px;
-    left: 15px;
-    background: var(--bg-body);
-    padding: 0 8px;
-    font-family: "Fustat", sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--primary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-#player .section:nth-of-type(5) h3 {
-    display: none;
-}
-
-#player .section:nth-of-type(5) p {
-    margin: 0 0 15px 0;
-    font-size: 11px;
-    color: #777;
-}
 
 .live-data-container {
     position: relative;
@@ -1535,9 +2094,9 @@ label {
 
 .distribution-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 12px;
     width: 94%;
+    grid-template-columns: 1fr;
     margin-left:auto;
 }
 
@@ -1551,7 +2110,7 @@ label {
 }
 
 /* 6-Column Layout Trick for 2-top, 3-bottom */
-@media (max-width: 768px) {
+@media (min-width: 768px) {
     .geo-distribution-grid {
         width: 90%;
         margin:auto;
@@ -1561,7 +2120,7 @@ label {
     .distribution-grid{
         width: 90%;
         margin: auto;
-        grid-template-columns: 1fr;
+        grid-template-columns: 33% 33% 33%;
     }
     /* First 2 items take 50% (3/6) */
     .geo-distribution-grid > *:nth-child(1),
@@ -1580,7 +2139,6 @@ label {
 /* --- HIERARCHY COLUMNS --- */
 .hierarchy-col {
     flex: 1;
-    border: 1px solid #ddd;
     padding: 0; 
     height: 320px;
     overflow-y: auto;
@@ -1596,8 +2154,8 @@ label {
 }
 
 .hierarchy-title {
-    border-bottom: 2px solid var(--primary);
-    padding: 12px 12px 8px 12px; /* Added padding here to replace container padding */
+    border-bottom: 3px double var(--primary);
+    padding: 12px 12px 8px 0px; /* Added padding here to replace container padding */
     margin-bottom: 0; /* REMOVED: Margin creates transparent gap; use padding instead */
     font-size: 14px;
     position: sticky;
@@ -1608,7 +2166,7 @@ label {
 
 /* New class to add padding to the list content so it aligns with the header */
 .hierarchy-list {
-    padding: 0 12px 12px 12px;
+    padding: 0 0px 12px 12px;
 }
 
 .hierarchy-item {
@@ -1718,6 +2276,7 @@ label {
     border-bottom: 1px solid #eee;
     background: #fff;
     transition: background 0.15s ease;
+    cursor: grab;
 }
 
 .queue-item:hover {
@@ -1727,6 +2286,15 @@ label {
 .queue-item.current {
     background: var(--primary-dim);
     border-left: 3px solid var(--primary);
+    cursor: default;
+}
+
+.queue-item[draggable="true"]:not(.current) {
+    cursor: grab;
+}
+
+.queue-item[draggable="true"]:not(.current):active {
+    cursor: grabbing;
 }
 
 .queue-item-info {
@@ -1915,21 +2483,19 @@ label {
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: grab;
-    opacity: 0.3;
+    opacity: 0.2;
     transition: opacity 0.2s ease;
     flex-shrink: 0;
     margin-right: 8px;
+    pointer-events: none; /* Handle is decorative, whole item is draggable */
 }
 
 .queue-item:hover .queue-drag-handle {
-    opacity: 0.6;
+    opacity: 0.4;
 }
 
 .queue-item.current .queue-drag-handle {
     opacity: 0.1;
-    cursor: not-allowed;
-    pointer-events: none;
 }
 
 .drag-icon {
@@ -1942,10 +2508,6 @@ label {
     opacity: 0.5;
     background: var(--primary-dim);
     border: 2px dashed var(--primary);
-    cursor: grabbing;
-}
-
-.queue-item[draggable="true"]:active {
     cursor: grabbing;
 }
 
@@ -2273,6 +2835,7 @@ label {
         flex: 0 0 100px; /* Keep logo at a readable "stamp" size */
         max-height: 100px;
         order: -1; /* Image stays on top */
+        display:none!important;
     }
 
     .hero-actions {

@@ -1430,6 +1430,7 @@ class PodCubeEngine {
             }
 
             this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
+            this._saveSession(); // Save queue to session
 
             return {
                 count: validEpisodes.length,
@@ -1478,6 +1479,7 @@ class PodCubeEngine {
         }
         
         this._emit('queue:changed', {queue: this._queue, index: this._queueIndex});
+        this._saveSession(); // Save queue to session
         log.info("Queue shuffled");
     } catch (e) {
         log.error("Shuffle failed:", e);
@@ -1517,6 +1519,7 @@ class PodCubeEngine {
             // Note: next() won't delete the file, but the user explicitly removed it
             // so we should delete it now.
             if(ep) this.cache.delete(ep.audioUrl);
+            this._saveSession(); // Save queue to session
             return;
         }
 
@@ -1536,6 +1539,7 @@ class PodCubeEngine {
         }
 
         this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
+        this._saveSession(); // Save queue to session
         
         log.info(`Removed episode ${index} from queue`);
     }
@@ -1583,6 +1587,7 @@ class PodCubeEngine {
             }
 
             this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
+            this._saveSession(); // Save queue to session
             log.info(`Moved track from ${fromIndex} to ${adjustedToIndex}`);
 
             return true;
@@ -1935,7 +1940,8 @@ class PodCubeEngine {
 // --- SESSION MANAGEMENT (LOCAL CACHE) ---
 
     _saveSession() {
-        if (!this.nowPlaying || this._queue.length === 0) {
+        // Save if we have a queue, regardless of whether something is playing
+        if (this._queue.length === 0) {
             this._clearSession();
             return;
         }
@@ -1945,9 +1951,9 @@ class PodCubeEngine {
             timestamp: Date.now(),
             queue: this._queue.map(ep => ep.id),
             queueIndex: this._queueIndex,
-            currentTime: this._audio.currentTime,
-            epID: this.nowPlaying.id,
-            isPlaying: !this._audio.paused // Save state
+            currentTime: this.nowPlaying ? this._audio.currentTime : 0,
+            epID: this.nowPlaying ? this.nowPlaying.id : null,
+            isPlaying: this.nowPlaying ? !this._audio.paused : false
         };
 
         try {
@@ -1983,8 +1989,21 @@ class PodCubeEngine {
             this._queue = queue;
             this._queueIndex = state.queueIndex;
             
+            // Emit queue changed to update UI
+            this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
+            
+            // If nothing was playing when session was saved, just restore the queue
+            if (!state.epID) {
+                log.info(`Session restored: ${queue.length} items in queue (nothing playing)`);
+                return true;
+            }
+            
+            // Otherwise, restore the currently playing episode
             const currentEp = this._queue[this._queueIndex];
-            if (!currentEp || currentEp.id !== state.epID) return false;
+            if (!currentEp || currentEp.id !== state.epID) {
+                log.warn("Current episode mismatch, queue restored but not resuming playback");
+                return true; // Still return true since queue was restored
+            }
 
             // Initialize cache logic (loads blob but waits on play)
             const shouldPlay = state.isPlaying;
@@ -2005,7 +2024,6 @@ class PodCubeEngine {
             }
             
             log.info(`Session restored: "${currentEp.title}" at ${formatTime(state.currentTime)}`);
-            this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
             
             return true;
         } catch (e) {

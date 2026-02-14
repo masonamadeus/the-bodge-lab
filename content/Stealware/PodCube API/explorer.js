@@ -46,6 +46,8 @@ window.addEventListener('PodCube:Ready', async () => {
         showDistribution();
         updatePlaylistsUI();
         clearInspector();
+        initQueueDragAndDrop();
+        refreshSessionInspector();
 
 
         if (await PodCube.restoreSession()) {
@@ -316,6 +318,8 @@ function applyHierarchyFilter(filterType, value) {
     // Reset all filters first
     resetArchive();
     
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
     if (filterType === 'year') {
         // Special Handling for Eras
         const groupSel = document.getElementById('arcYearGroup');
@@ -461,8 +465,8 @@ function updateArchive() {
     const sortMap = {
         'release_desc': 'sort by release (newest)',
         'release_asc': 'sort by release (oldest)',
-        'lore_desc': 'sort by lore date (newest)',
-        'lore_asc': 'sort by lore date (oldest)',
+        'lore_desc': 'sort by origin date (newest)',
+        'lore_asc': 'sort by origin date (oldest)',
         'integrity_desc': 'sort by integrity (high→low)',
         'integrity_asc': 'sort by integrity (low→high)',
         'duration_desc': 'sort by duration (longest)',
@@ -602,11 +606,7 @@ function updateArchive() {
             run(`PodCube.addToQueue(PodCube.all[${idx}])`);
         });
 
-        // Wire up INSPECT
-        clone.querySelector('.btn-inspect').addEventListener('click', (e) => {
-            e.stopPropagation();
-            handleEpisodeClick(idx); // Standard inspection trigger
-        });
+        
 
         fragment.appendChild(clone);
     });
@@ -618,9 +618,9 @@ function handleEpisodeClick(index) {
     const episode = PodCube.all[index];
     loadEpisodeInspector(episode);
     
-    // Switch to inspector tab
-    //const tab = document.querySelector('[data-tab="inspector"]');
-    //if (tab) tab.click();
+    //Switch to inspector tab
+    const tab = document.querySelector('[data-tab="inspector"]');
+    if (tab) tab.click();
 }
 
 function resetArchive() {
@@ -671,125 +671,160 @@ function loadEpisodeInspector(ep) {
     
     const idx = PodCube.getEpisodeIndex(ep);
     
-    // Header with actions
+    // === HEADER CARD ===
     const header = document.getElementById('inspectorHeader');
     if (header) {
-        // We reuse the structure but safely update content
-        // Note: For simplicity here we kept the innerHTML structure in index.njk 
-        // but we are injecting buttons safely now. 
-        // Ideally inspectorHeader in HTML should have distinct elements to target.
-        // For this refactor, let's just make the buttons safer:
-        
-        header.textContent = ''; // Clear
-        
-        const titleDiv = document.createElement('div');
-        titleDiv.innerHTML = `<h3>Transmission Data Inspector</h3>`;
-        const p = document.createElement('h1');
-        p.style.color = 'var(--primary)';
-        p.style.marginTop = '15px';
-        p.innerHTML = 'Complete metadata for: ';
-        const strong = document.createElement('strong');
-        strong.textContent = ep.title;
-        p.appendChild(strong);
-        titleDiv.appendChild(p);
-
-        const btnDiv = document.createElement('div');
-        btnDiv.style.display = 'flex';
-        btnDiv.style.gap = '10px';
-
-        const btnPlay = document.createElement('button');
-        btnPlay.className = 'icon-btn';
-        btnPlay.textContent = 'PLAY NOW';
-        btnPlay.onclick = () => run(`PodCube.play(PodCube.all[${idx}])`);
-
-        const btnQueue = document.createElement('button');
-        btnQueue.className = 'icon-btn';
-        btnQueue.textContent = 'ADD TO QUEUE';
-        btnQueue.onclick = () => run(`PodCube.addToQueue(PodCube.all[${idx}])`);
-
-        btnDiv.appendChild(btnPlay);
-        btnDiv.appendChild(btnQueue);
-
-        header.appendChild(titleDiv);
-        header.appendChild(btnDiv);
+        header.innerHTML = `
+            <div class="inspector-summary">
+                <div class="inspector-summary-header">
+                    <h2 class="inspector-title">${escapeHtml(ep.title)}</h2>
+                    <div class="inspector-summary-actions">
+                        <button class="inspector-action-btn primary" onclick="run('PodCube.play(PodCube.all[${idx}])')">
+                            PLAY NOW
+                        </button>
+                        <button class="inspector-action-btn" onclick="run('PodCube.addToQueue(PodCube.all[${idx}])')">
+                            ADD TO QUEUE
+                        </button>
+                    </div>
+                </div>
+                <div class="inspector-summary-main">
+                    <div class="inspector-meta-line">
+                        <span class="label">Type</span>
+                        <span class="value">${escapeHtml(ep.episodeType || 'none')}</span>
+                        <span class="separator">•</span>
+                        <span class="label">Model</span>
+                        <span class="value">${escapeHtml(ep.model || 'N/A')}</span>
+                        <span class="separator">•</span>
+                        <span class="label">Duration</span>
+                        <span class="value">${escapeHtml(ep.timestamp || 'N/A')}</span>
+                    </div>
+                    <div class="inspector-meta-line">
+                        <span class="label">Origin</span>
+                        <span class="value">${escapeHtml(ep.location || 'Unknown')}</span>
+                    </div>
+                    <div class="inspector-meta-line">
+                        <span class="label">Date</span>
+                        <span class="value">${escapeHtml(ep.date?.toString() || 'Unknown Date')}</span>
+                        ${ep.anniversary ? `<span class="separator">•</span><span class="value" style="font-style:italic;">${escapeHtml(ep.anniversary)}</span>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
     }
     
-    // Core Properties
-    const coreFields = [
-        { label: 'Title', value: ep.title },
-        { label: 'Shortcode', value: ep.shortcode || 'N/A', code: true },
-        { label: 'Episode Type', value: ep.episodeType || 'none', code: true },
-        { label: 'Model', value: ep.model || 'N/A', code: true },
-        { label: 'Integrity', value: ep.integrity || 'N/A', code: false },
-        { label: 'Integrity Value', value: ep.integrityValue !== null ? ep.integrityValue + '%' : 'N/A', code: false },
-        { label: 'Episode ID', value: ep.id || 'N/A', code: true },
-    ];
+    // === REPORT BODY ===
+    const body = document.getElementById('inspectorBody');
+    body.className = 'inspector-report-body loaded';
     
-    renderFields('inspectorCore', coreFields);
+    let html = '';
+
+        // Tags
+    if (ep.tags && ep.tags.length > 0) {
+        html += '<div class="inspector-section">';
+        html += '<h4 class="inspector-section-title">Classification Tags</h4>';
+        html += '<div class="inspector-tag-list">';
+        ep.tags.forEach(tag => {
+            html += `<span class="inspector-tag-pill" onclick="applyHierarchyFilter('tag', '${escapeForAttribute(tag)}')">${escapeHtml(tag)}</span>`;
+        });
+        html += '</div>';
+        html += '</div>';
+    }
     
-    // Temporal Data
-    const temporalFields = [
-        { label: 'Anniversary', value: ep.anniversary || 'N/A', code: false },
-        { label: 'Lore Date', value: ep.date?.toString() || 'Unknown Date', code: false },
-        { label: 'Lore Year', value: ep.date?.year ? ep.date.displayYear : 'N/A', code: true },
-        { label: 'Published Date', value: ep.published ? new Date(ep.published).toLocaleDateString() : 'N/A', code: false },
-        { label: 'Published Time', value: ep.published ? new Date(ep.published).toLocaleTimeString() : 'N/A', code: true },
-    ];
+    // Core Properties Section
+    html += '<div class="inspector-section">';
+    html += '<h4 class="inspector-section-title">Core Properties</h4>';
+    html += '<div class="inspector-prose">';
+    html += `<p>This transmission has been cataloged with shortcode <strong class="code-inline">${escapeHtml(ep.shortcode || 'N/A')}</strong> `;
+    html += `and carries an integrity rating of <strong>${escapeHtml(ep.integrity || 'N/A')}</strong>`;
+    if (ep.integrityValue !== null) {
+        html += ` (${ep.integrityValue}% verified)`;
+    }
+    html += `. The episode's unique identifier is <span class="code-inline">${escapeHtml(ep.id || 'N/A')}</span>.</p>`;
+    html += '</div>';
+    html += '</div>';
     
-    renderFields('inspectorTemporal', temporalFields);
+    // Temporal Analysis
+    html += '<div class="inspector-section">';
+    html += '<h4 class="inspector-section-title">Temporal Analysis</h4>';
+    html += '<div class="inspector-callout">';
+    html += '<div class="inspector-callout-title">Origin Timeline</div>';
+    html += '<div class="inspector-callout-content">';
+    html += `<strong>Origin Date:</strong> ${escapeHtml(ep.date?.toString() || 'Unknown Date')}<br>`;
+    if (ep.date?.year) {
+        html += `<strong>Origin Year:</strong> ${escapeHtml(ep.date.displayYear)}<br>`;
+    }
+    html += `<strong>Published:</strong> ${ep.published ? new Date(ep.published).toLocaleDateString() + ' at ' + new Date(ep.published).toLocaleTimeString() : 'N/A'}`;
+    if (ep.anniversary) {
+        html += `<br><strong>Anniversary:</strong> ${escapeHtml(ep.anniversary)}`;
+    }
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
     
-    // Geographic Metadata
-    const geoFields = [
-        { label: 'Origin', value: ep.origin || 'N/A', code: true },
-        { label: 'Locale', value: ep.locale || 'N/A', code: true },
-        { label: 'Region', value: ep.region || 'N/A', code: true },
-        { label: 'Zone', value: ep.zone || 'N/A', code: true },
-        { label: 'Planet', value: ep.planet || 'N/A', code: true },
-        { label: 'Location (Composite)', value: ep.location || 'N/A', code: false },
-    ];
-    
-    renderFields('inspectorGeo', geoFields);
+    // Geographic Data
+    html += '<div class="inspector-section">';
+    html += '<h4 class="inspector-section-title">Geographic Metadata</h4>';
+    html += '<div class="inspector-data-grid">';
+    html += `<div class="data-label">Origin Point</div><div class="data-value code">${escapeHtml(ep.origin || 'N/A')}</div>`;
+    html += `<div class="data-label">Locale</div><div class="data-value code">${escapeHtml(ep.locale || 'N/A')}</div>`;
+    html += `<div class="data-label">Region</div><div class="data-value code">${escapeHtml(ep.region || 'N/A')}</div>`;
+    html += `<div class="data-label">Zone</div><div class="data-value code">${escapeHtml(ep.zone || 'N/A')}</div>`;
+    html += `<div class="data-label">Planet</div><div class="data-value code">${escapeHtml(ep.planet || 'N/A')}</div>`;
+    html += '</div>';
+    html += '</div>';
     
     // Audio Information
-    const audioFields = [
-        { label: 'Duration', value: ep.timestamp || 'N/A', code: false },
-        { label: 'Duration (seconds)', value: ep.duration ? ep.duration + 's' : 'N/A', code: true },
-        { label: 'Weird Duration', value: ep.weirdDuration || 'N/A', code: false },
-        { label: 'Audio URL', value: ep.audioUrl ? 'Present' : 'Missing', code: false },
-        { label: 'File Size', value: ep.sizeBytes ? formatBytes(ep.sizeBytes) : 'N/A', code: true },
-    ];
+    html += '<div class="inspector-section">';
+    html += '<h4 class="inspector-section-title">Audio Characteristics</h4>';
+    html += '<div class="inspector-prose">';
+    html += `<p>This transmission runs for <strong>${escapeHtml(ep.timestamp || 'N/A')}</strong> `;
+    html += `(${ep.duration ? ep.duration + ' seconds' : 'duration unknown'})`;
+    if (ep.weirdDuration) {
+        html += `, or roughly <em>${escapeHtml(ep.weirdDuration)}</em>`;
+    }
+    html += `. `;
+    if (ep.sizeBytes) {
+        html += `The audio file size is ${formatBytes(ep.sizeBytes)}. `;
+    }
+    html += `Audio source is ${ep.audioUrl ? '<strong>present</strong>' : '<strong style="color:var(--danger);">missing</strong>'}.`;
+    html += `</p>`;
+    html += '</div>';
+    html += '</div>';
+
+    // Related Episodes
+    const related = PodCube.findRelated(ep, 5);
+    if (related.length > 0) {
+        html += '<div class="inspector-section">';
+        html += '<h4 class="inspector-section-title">Related Transmissions</h4>';
+        html += '<div class="inspector-related-list">';
+        related.forEach(relEp => {
+            const relIdx = PodCube.getEpisodeIndex(relEp);
+            html += `<div class="inspector-related-item" onclick="loadEpisodeInspector(PodCube.all[${relIdx}])">`;
+            html += '<div class="inspector-related-item-info">';
+            html += `<div class="inspector-related-item-title">${escapeHtml(relEp.title)}</div>`;
+            html += `<div class="inspector-related-item-meta">${escapeHtml(relEp.model || 'Unknown')} • ${escapeHtml(relEp.origin || 'Unknown')}</div>`;
+            html += '</div>';
+            html += '<div class="inspector-related-item-arrow">→</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+        html += '</div>';
+    }
     
-    renderFields('inspectorAudio', audioFields);
     
     // Description
-    const descContainer = document.getElementById('inspectorDescription');
-    if (descContainer) {
-        descContainer.innerHTML = ep.description 
-            ? `<div>${escapeHtml(ep.description)}</div>`
-            : '<div class="text-muted" style="font-style:italic;">No description available</div>';
+    if (ep.description) {
+        html += '<div class="inspector-section">';
+        html += '<h4 class="inspector-section-title">Transmission Description</h4>';
+        html += `<div class="inspector-description-block">${escapeHtml(ep.description)}</div>`;
+        html += '</div>';
     }
     
-    // Tags
-    const tagsContainer = document.getElementById('inspectorTags');
-    if (tagsContainer) {
-        if (ep.tags && ep.tags.length > 0) {
-            tagsContainer.innerHTML = `
-        <div class="inspector-tags">
-            ${ep.tags.map(tag => `
-                <span class="inspector-tag" 
-                      style="cursor:pointer;" 
-                      onclick="applyHierarchyFilter('tag', '${escapeForAttribute(tag)}')">
-                    ${escapeHtml(tag)}
-                </span>`).join('')}
-        </div>
-    `;
-        } else {
-            tagsContainer.innerHTML = '<p class="text-muted" style="font-size:12px;">No tags</p>';
-        }
-    }
     
-    // Related Episodes
-    loadRelatedEpisodes(ep);
+    body.innerHTML = html;
+    
+    // Show raw data section
+    document.getElementById('inspectorRawSection').style.display = 'block';
     
     // Raw Data Panels
     try {
@@ -870,76 +905,34 @@ function loadRelatedEpisodes(ep) {
 }
 
 function clearInspector() {
-    // 1. Reset Header (Remove buttons, reset text)
+    // Reset Header
     const header = document.getElementById('inspectorHeader');
     if (header) {
         header.innerHTML = `
-            <div>
-                <h3>Episode Data Inspector</h3>
-                <p class="text-muted" style="font-size:12px; margin-top:5px;">
-                    Select an episode from the Browse tab to populate metadata fields.
-                </p>
+            <div class="inspector-empty-state">
+                <h3>Transmission Data Inspector</h3>
+                <p class="text-muted">Select an episode from the Transmissions tab to view complete metadata and analysis.</p>
             </div>
-            <div id="inspectorActions"></div>
         `;
     }
 
-    // 2. Render Empty Grids (Scaffolding)
-    // We use empty strings so the boxes appear but are marked as .empty by the renderer
+    // Clear body
+    const body = document.getElementById('inspectorBody');
+    if (body) {
+        body.className = 'inspector-report-body';
+        body.innerHTML = '';
+    }
     
-    renderFields('inspectorCore', [
-        { label: 'Title', value: '' },
-        { label: 'Shortcode', value: '' },
-        { label: 'Episode Type', value: '' },
-        { label: 'Model', value: '' },
-        { label: 'Integrity', value: '' },
-        { label: 'Integrity Value', value: '' },
-        { label: 'Episode ID', value: '' },
-    ]);
+    // Hide raw data section
+    const rawSection = document.getElementById('inspectorRawSection');
+    if (rawSection) {
+        rawSection.style.display = 'none';
+    }
     
-    renderFields('inspectorTemporal', [
-        { label: 'Anniversary', value: '' },
-        { label: 'Lore Date', value: '' },
-        { label: 'Lore Year', value: '' },
-        { label: 'Published Date', value: '' },
-        { label: 'Published Time', value: '' },
-    ]);
-    
-    renderFields('inspectorGeo', [
-        { label: 'Origin', value: '' },
-        { label: 'Locale', value: '' },
-        { label: 'Region', value: '' },
-        { label: 'Zone', value: '' },
-        { label: 'Planet', value: '' },
-        { label: 'Location (Composite)', value: '' },
-    ]);
-    
-    renderFields('inspectorAudio', [
-        { label: 'Duration', value: '' },
-        { label: 'Duration (seconds)', value: '' },
-        { label: 'Weird Duration', value: '' },
-        { label: 'Audio URL', value: '' },
-        { label: 'File Size', value: '' },
-    ]);
-    
-    // 3. Reset Non-Grid Sections
-    const desc = document.getElementById('inspectorDescription');
-    if (desc) desc.innerHTML = '<span class="text-muted" style="font-style:italic;">-</span>';
-    
-    const tags = document.getElementById('inspectorTags');
-    if (tags) tags.innerHTML = '<span class="text-muted">-</span>';
-    
-    const related = document.getElementById('inspectorRelated');
-    if (related) related.innerHTML = '<span class="text-muted" style="font-size:12px;">-</span>';
-    
-    // 4. Clear Raw Data Tabs
-    ['rawJson', 'rawMeta', 'rawDesc'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = '';
-    });
+    AppState.selectedEpisode = null;
 }
 
-// --- PLAYBACK & PLAYER TAB ---
+// --- PLAYBACK TAB ---
 
 function toggleAutoplayMode(enabled) {
     AppState.radioMode = enabled;
@@ -954,6 +947,8 @@ function toggleAutoplayMode(enabled) {
             // If something IS playing, check if we need to append the next track now
             checkRadioChain();
         }
+
+        
     } else {
         logCommand("// RADIO MODE: DE-AUTHORIZED.");
     }
@@ -1300,11 +1295,38 @@ function handleQueueDrop(e) {
     document.querySelectorAll('.queue-drop-indicator').forEach(el => el.remove());
 }
 
-// Add to initialization
-window.addEventListener('PodCube:Ready', async () => {
-    // ... existing init ...
-    initQueueDragAndDrop();
-});
+/**
+ * Reads PodCube session data from localStorage and updates the inspector display.
+ */
+function refreshSessionInspector() {
+    const sessionRaw = localStorage.getItem('podcube_session');
+    const display = document.getElementById('sessionDataDisplay');
+    
+    if (sessionRaw) {
+        try {
+            const parsed = JSON.parse(sessionRaw);
+            display.textContent = JSON.stringify(parsed, null, 2);
+            display.classList.remove('text-muted');
+        } catch (e) {
+            display.textContent = "// Error parsing session data";
+        }
+    } else {
+        display.textContent = "// No active session found in localStorage";
+    }
+    logCommand("// Session Inspector Refreshed");
+}
+
+/**
+ * Completely resets the engine, clears the queue, and deletes the local session.
+ */
+function clearUserSession() {
+    if (confirm("Are you sure? This will clear your queue, saved session, and all cached audio files.")) {
+        // PodCube.clearQueue() handles cache clearing and session removal
+        run('PodCube.clearQueue()');
+        refreshSessionInspector();
+        updateStatusIndicator("Session Purged");
+    }
+}
 
 // --- PLAYLIST MANAGEMENT ---
 function saveQueueAsPlaylist() {
@@ -1523,12 +1545,32 @@ function escapeForAttribute(text) {
 }
 
 // --- TAB SWITCHING ---
+let lastArchiveScroll = 0; // Stores the position of the Transmissions list
 document.querySelectorAll('.tab-button').forEach(btn => {
     btn.addEventListener('click', () => {
+        const targetId = btn.dataset.tab;
+        const currentTab = document.querySelector('.tab-content.active');
+        
+        // 1. If we are leaving the 'archive' tab, save its scroll position
+        if (currentTab && currentTab.id === 'archive') {
+            lastArchiveScroll = window.scrollY;
+        }
+
+        // 2. Perform the Switch
         document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
         btn.classList.add('active');
-        document.getElementById(btn.dataset.tab).classList.add('active');
+        document.getElementById(targetId).classList.add('active');
+
+        // 3. Handle Scroll Behavior
+        if (targetId === 'archive') {
+            // If returning to Transmissions, restore the saved position
+            window.scrollTo({ top: lastArchiveScroll, behavior: 'instant' });
+        } else {
+            // For all other tabs, snap to the top for a fresh view
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        }
     });
 });
 
