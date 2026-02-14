@@ -1440,6 +1440,18 @@ class PodCubeEngine {
         }
     }
 
+    addNextInQueue(episode) {
+        if (!episode) return;
+        // If nothing is playing, just play it
+        if (this._queueIndex === -1) {
+            return this.play(episode);
+        }
+        // Insert immediately after the current index
+        this._queue.splice(this._queueIndex + 1, 0, episode);
+        this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
+        log.info(`Enqueued next: ${episode.title}`);
+    }
+
     shuffleQueue() {
     try {
         // Fisher-Yates shuffle

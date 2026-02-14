@@ -44,19 +44,19 @@ uid: podcube
                 <div class="hero-actions">
                     <button class="hero-btn pulse" onclick="run('PodCube.play(PodCube.random)')">
                         <span class="hero-btn-icon"></span>
-                        <div class="hero-btn-text">
-                            <strong>Play Random Transmission</strong>
-                            <span>Just Fun! Ha ha!</span>
-                        </div>
+                        <span class="hero-btn-text">
+                            <strong style="">Activate Radio Mode</strong>
+                            <span>Sample the Feej</span>
+                        </span>
                     </button>
                     <button class="hero-btn" onclick="run('PodCube.play(PodCube.getNearestToToday()[0])')">
                         <span class="hero-btn-icon"></span>
-                        <div class="hero-btn-text">
-                            <strong>Nearest to Today</strong>
+                        <span class="hero-btn-text">
+                            <strong style=")">Nearest to Today</strong>
                             <span>Closest to
                                 <b>Now™</b>
                             </span>
-                        </div>
+                        </span>
                     </button>
                 </div>
                 <img src="" class="hero-logo" alt="PodCube Logo">
@@ -86,11 +86,11 @@ uid: podcube
         <div id="archive" class="tab-content">
             <div class="registry-container">
                 <div class="registry-sidebar">
-                    <input type="checkbox" id="filter-toggle" class="filter-toggle-cb">
+                    
                     <div class="sidebar-header">
                         <h3>Search & Filter</h3>
                         <label for="filter-toggle" class="filter-toggle-btn">
-                            <span class="toggle-icon">Expand ▾</span>
+                            <span class="toggle-icon">Show/Hide Filters</span>
                         </label>
                     </div>
                     <div style="margin-top:15px;margin-bottom:15px;">
@@ -98,6 +98,8 @@ uid: podcube
                             Reset All Filters
                         </button>
                     </div>
+                    
+                    <input type="checkbox" id="filter-toggle" class="filter-toggle-cb">
                     <div class="sidebar-content">
                         <label>Episode Type</label>
                         <select id="arcType" onchange="updateArchive()">
@@ -108,234 +110,236 @@ uid: podcube
                             <option value="none">Other/Unknown</option>
                             <option value="issues" style="color:var(--danger); font-weight:bold;">Flagged for Review</option>
                         </select>
+                        <div>
+                            <div>
+                                <label>Era Grouping</label>
+                                <select id="arcYearGroup" onchange="updateYearOptions()">
+                                    <option value="5">5-Year Eras</option>
+                                    <option value="10">10-Year Eras</option>
+                                    <option value="25">25-Year Eras</option>
+                                    <option value="50">50-Year Eras</option>
+                                    <option value="100">Century</option>
+                                    <option value="1">Single Years</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Timeline</label>
+                                <select id="arcYear" onchange="updateArchive()">
+                                    <option value="">All Time</option>
+                                </select>
+                            </div>
+                            <div style="margin-top:15px; border-top:1px solid #ddd; padding-top:12px;">
+                                <label>Sort By</label>
+                                <select id="arcSort" onchange="updateArchive()">
+                                    <option value="release_desc">Release Date (Newest)</option>
+                                    <option value="release_asc">Release Date (Oldest)</option>
+                                    <option value="lore_desc">Lore Date (Newest)</option>
+                                    <option value="lore_asc">Lore Date (Oldest)</option>
+                                    <option value="integrity_desc">Integrity (High → Low)</option>
+                                    <option value="integrity_asc">Integrity (Low → High)</option>
+                                    <option value="duration_desc">Duration (Longest)</option>
+                                    <option value="duration_asc">Duration (Shortest)</option>
+                                </select>
+                            </div>
+                            <div style="border-top:1px solid #ddd; padding-top:12px; margin-top:12px;"></div>
+                            <div>
+                                <label>Full-Text Search</label>
+                                <input type="text" id="arcSearch" placeholder="Title, description, tags..." oninput="updateArchive()">
+                            </div>
+                            <div>
+                                <label>Model</label>
+                                <select id="arcModel" onchange="updateArchive()">
+                                    <option value="">All Models</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Origin</label>
+                                <select id="arcOrigin" onchange="updateArchive()">
+                                    <option value="">All Origins</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Region</label>
+                                <select id="arcRegion" onchange="updateArchive()">
+                                    <option value="">All Regions</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Zone</label>
+                                <select id="arcZone" onchange="updateArchive()">
+                                    <option value="">All Zones</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Planet</label>
+                                <select id="arcPlanet" onchange="updateArchive()">
+                                    <option value="">All Planets</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Locale</label>
+                                <select id="arcLocale" onchange="updateArchive()">
+                                    <option value="">All Locales</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label>Era Grouping</label>
-                        <select id="arcYearGroup" onchange="updateYearOptions()">
-                            <option value="5">5-Year Eras</option>
-                            <option value="10">10-Year Eras</option>
-                            <option value="25">25-Year Eras</option>
-                            <option value="50">50-Year Eras</option>
-                            <option value="100">Century</option>
-                            <option value="1">Single Years</option>
-                        </select>
                     </div>
-                    <div>
-                        <label>Timeline</label>
-                        <select id="arcYear" onchange="updateArchive()">
-                            <option value="">All Time</option>
-                        </select>
-                    </div>
-                    <div style="margin-top:15px; border-top:1px solid #ddd; padding-top:12px;">
-                        <label>Sort By</label>
-                        <select id="arcSort" onchange="updateArchive()">
-                            <option value="release_desc">Release Date (Newest)</option>
-                            <option value="release_asc">Release Date (Oldest)</option>
-                            <option value="lore_desc">Lore Date (Newest)</option>
-                            <option value="lore_asc">Lore Date (Oldest)</option>
-                            <option value="integrity_desc">Integrity (High → Low)</option>
-                            <option value="integrity_asc">Integrity (Low → High)</option>
-                            <option value="duration_desc">Duration (Longest)</option>
-                            <option value="duration_asc">Duration (Shortest)</option>
-                        </select>
-                    </div>
-                    <div style="border-top:1px solid #ddd; padding-top:12px; margin-top:12px;">
-                        <div>
-                            <label>Full-Text Search</label>
-                            <input type="text" id="arcSearch" placeholder="Title, description, tags..." oninput="updateArchive()">
+                    <div class="registry-results">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <h3 id="resCount">0 Records</h3>
+                            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                                <span class="text-muted" style="font-size:11px;">
+                                    Click transmission to inspect.
+                                </span>
+                                <button class="icon-btn" onclick="playFilteredResults()">Play All</button>
+                                <button class="icon-btn" onclick="queueFilteredResults()">Queue All</button>
+                                
+                            </div>
                         </div>
-                        <div>
-                            <label>Model</label>
-                            <select id="arcModel" onchange="updateArchive()">
-                                <option value="">All Models</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Origin</label>
-                            <select id="arcOrigin" onchange="updateArchive()">
-                                <option value="">All Origins</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Region</label>
-                            <select id="arcRegion" onchange="updateArchive()">
-                                <option value="">All Regions</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Zone</label>
-                            <select id="arcZone" onchange="updateArchive()">
-                                <option value="">All Zones</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Planet</label>
-                            <select id="arcPlanet" onchange="updateArchive()">
-                                <option value="">All Planets</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Locale</label>
-                            <select id="arcLocale" onchange="updateArchive()">
-                                <option value="">All Locales</option>
-                            </select>
-                        </div>
+                        <div id="archiveList"></div>
                     </div>
                 </div>
-                <div class="registry-results">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center; flex-wrap:wrap; gap:10px;">
-                        <h3 id="resCount">0 Records</h3>
-                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                            <button class="icon-btn" onclick="playFilteredResults()">Play All</button>
-                            <button class="icon-btn" onclick="queueFilteredResults()">Queue All</button>
-                            <span class="text-muted" style="font-size:11px;">
-                                Click transmission to inspect.
-                            </span>
+            </div>
+            <!-- EPISODE INSPECTOR TAB -->
+            <div id="inspector" class="tab-content">
+                <div class="section">
+                    <div id="inspectorHeader" class="inspector-header">
+                        <div>
+                            <h3>
+                                Transmission Data Inspector</h3>
+                            <h4 class="text-muted" style="color:var(--primary)">
+                                Click any transmission from Browse & Search to load complete metadata.
+                            </h4>
                         </div>
                     </div>
-                    <div id="archiveList"></div>
-                </div>
-            </div>
-        </div>
-        <!-- EPISODE INSPECTOR TAB -->
-        <div id="inspector" class="tab-content">
-            <div class="section">
-                <div id="inspectorHeader" class="inspector-header">
-                    <div>
-                        <h3>
-                            Transmission Data Inspector</h3>
-                        <h4 class="text-muted" style="color:var(--primary)">
-                            Click any transmission from Browse & Search to load complete metadata.
-                        </h4>
-                    </div>
-                    <div id="inspectorActions"></div>
-                </div>
-            </div>
-            <div class="section">
-                <h4 class="section-subtitle">Core Properties</h4>
-                <div id="inspectorCore"></div>
-            </div>
-            <div class="section">
-                <h4 class="section-subtitle">Temporal Data</h4>
-                <div id="inspectorTemporal"></div>
-            </div>
-            <div class="section">
-                <h4 class="section-subtitle">Geographic Metadata</h4>
-                <div id="inspectorGeo"></div>
-            </div>
-            <div class="section">
-                <h4 class="section-subtitle">Audio Information</h4>
-                <div id="inspectorAudio"></div>
-            </div>
-            <div class="section">
-                <h4 class="section-subtitle">Tags</h4>
-                <div id="inspectorTags"></div>
-            </div>
-            <div class="section">
-                <h4 class="section-subtitle">Related Episodes</h4>
-                <div id="inspectorRelated"></div>
-            </div>
-            <div class="section">
-                <h4 class="section-subtitle">Description</h4>
-                <div id="inspectorDescription" class="inspector-description"></div>
-            </div>
-            <div class="section">
-                <h4 class="section-subtitle">Raw Data</h4>
-                <div class="data-tabs">
-                    <button class="data-tab-btn active" data-target="rawJson">Complete JSON</button>
-                    <button class="data-tab-btn" data-target="rawMeta">Parsed Metadata</button>
-                    <button class="data-tab-btn" data-target="rawDesc">Raw Description</button>
-                </div>
-                <pre id="rawJson" class="inspector-code-block data-panel active"></pre>
-                <pre id="rawMeta" class="inspector-code-block data-panel"></pre>
-                <pre id="rawDesc" class="inspector-code-block data-panel"></pre>
-            </div>
-        </div>
-        <!-- PLAYBACK CONTROL TAB -->
-        <div id="player" class="tab-content">
-            <div class="section">
-                <h3>Playback Controls</h3>
-                <div class="playback-control-panel">
                     
-                    <div class="playback-bar">
-                        <button class="control-btn" onclick="run('PodCube.prev()')" title="Previous Track">
-                            <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
-                            </svg>
-                        </button>
-                        <button class="control-btn" onclick="run('PodCube.skipBack()')" title="Skip Back 7s">
-                            <svg viewbox="0 0 24 24" class="icon-svg"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6
-                                5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
-                            </svg>
-                        </button>
-                        <button class="control-btn control-btn-play" id="playerPlayBtn" onclick="run('PodCube.toggle()')" title="Play/Pause">
-                            <span id="playerPlayIcon">
-                                <svg viewbox="0 0 24 24" class="icon-svg"><path d="M8 5v14l11-7z"/>
-                                </svg>
-                            </span>
-                        </button>
-                        <button class="control-btn" onclick="run('PodCube.skipForward()')" title="Skip Forward 20s">
-                            <svg viewbox="0 0 24 24" class="icon-svg"><path d="M10 19c-3.54 0-6.55-2.31-7.6-5.5l-2.37.78C1.42 18.97 5.35 22 10 22c4.65 0 7.05-.99 8.9-2.6L22 23v-9h-9l3.62 3.62c-1.39
-                                1.16-3.16 1.88-5.12 1.88z"/>
-                            </svg>
-                        </button>
-                        <button class="control-btn" onclick="run('PodCube.next()')" title="Next Track">
-                            <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
-                            </svg>
-                        </button>
-                        <div class="bar-separator"></div>
-                        <div class="bar-input-group">
-                            <label>Vol</label>
-                            <input
-                                type="range"
-                                style="width:200px"
-                                id="playerVolume"
-                                min="0"
-                                max="100"
-                                value="100"
-                                oninput="updatePlayerVolume(this.value)">
-                        </div>
-                        <div class="bar-input-group">
-                            <label>Rate</label>
-                            <select id="playerSpeed" onchange="updatePlayerSpeed(this.value)" style="margin:0; padding:2px; width:auto;">
-                                <option value="0.25">0.25x</option>
-                                <option value="0.5">0.5x</option>
-                                <option value="0.75">0.75x</option>
-                                <option value="1" selected>1.0x</option>
-                                <option value="1.25">1.25x</option>
-                                <option value="1.5">1.5x</option>
-                                <option value="1.75">1.75x</option>
-                                <option value="2">2.0x</option>
-                                <option value="3">3.0x</option>
-                            </select>
-                        </div>
+                        <div id="inspectorActions"></div>
+                </div>
+                <div class="section">
+                    <h4 class="section-subtitle">Core Properties</h4>
+                    <div id="inspectorCore"></div>
+                </div>
+                <div class="section">
+                    <h4 class="section-subtitle">Temporal Data</h4>
+                    <div id="inspectorTemporal"></div>
+                </div>
+                <div class="section">
+                    <h4 class="section-subtitle">Geographic Metadata</h4>
+                    <div id="inspectorGeo"></div>
+                </div>
+                <div class="section">
+                    <h4 class="section-subtitle">Audio Information</h4>
+                    <div id="inspectorAudio"></div>
+                </div>
+                <div class="section">
+                    <h4 class="section-subtitle">Tags</h4>
+                    <div id="inspectorTags"></div>
+                </div>
+                <div class="section">
+                    <h4 class="section-subtitle">Related Episodes</h4>
+                    <div id="inspectorRelated"></div>
+                </div>
+                <div class="section">
+                    <h4 class="section-subtitle">Description</h4>
+                    <div id="inspectorDescription" class="inspector-description"></div>
+                </div>
+                <div class="section">
+                    <h4 class="section-subtitle">Raw Data</h4>
+                    <div class="data-tabs">
+                        <button class="data-tab-btn active" data-target="rawJson">Complete JSON</button>
+                        <button class="data-tab-btn" data-target="rawMeta">Parsed Metadata</button>
+                        <button class="data-tab-btn" data-target="rawDesc">Raw Description</button>
                     </div>
-                    <div class="playback-scrubber-container">
-                        <div class="playback-time" id="playerTimeStart">0:00</div>
-                        <div class="playback-scrubber" id="playerScrubber" onclick="seekPlayer(event)">
-                            <div class="playback-scrubber-fill" id="playerScrubberFill"></div>
-                            <div class="playback-scrubber-handle" id="playerScrubberHandle"></div>
-                        </div>
-                        <div class="playback-time" id="playerTimeEnd">0:00</div>
-                    </div>
+                    <pre id="rawJson" class="inspector-code-block data-panel active"></pre>
+                    <pre id="rawMeta" class="inspector-code-block data-panel"></pre>
+                    <pre id="rawDesc" class="inspector-code-block data-panel"></pre>
                 </div>
             </div>
-            <!-- QUEUE MANAGEMENT -->
-            <div class="section">
-                <h3>Queue Management</h3>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-                    <div class="queue-stats">
-                        <span class="badge badge-info" id="queueCount">0 tracks</span>
-                        <span class="badge badge-info" id="queueDuration">0:00 total</span>
-                        <span class="badge" id="queuePosition">Position: -</span>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button class="icon-btn" onclick="run('PodCube.shuffleQueue()')">Shuffle Queue</button>
-                        <button class="icon-btn" onclick="run('PodCube.clearQueue()')">Clear All</button>
+
+            <!-- PLAYBACK CONTROL TAB -->
+            <div id="player" class="tab-content">
+                <div class="section">
+                    <h3>Playback Controls</h3>
+                    <div class="playback-control-panel">
+                        <div class="playback-bar">
+                            <button class="control-btn" onclick="run('PodCube.prev()')" title="Previous Track">
+                                <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                                </svg>
+                            </button>
+                            <button class="control-btn" onclick="run('PodCube.skipBack()')" title="Skip Back 7s">
+                                <svg viewbox="0 0 24 24" class="icon-svg"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6
+                                    5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
+                                </svg>
+                            </button>
+                            <button class="control-btn control-btn-play" id="playerPlayBtn" onclick="run('PodCube.toggle()')" title="Play/Pause">
+                                <span id="playerPlayIcon">
+                                    <svg viewbox="0 0 24 24" class="icon-svg"><path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                </span>
+                            </button>
+                            <button class="control-btn" onclick="run('PodCube.skipForward()')" title="Skip Forward 20s">
+                                <svg viewbox="0 0 24 24" class="icon-svg"><path d="M10 19c-3.54 0-6.55-2.31-7.6-5.5l-2.37.78C1.42 18.97 5.35 22 10 22c4.65 0 7.05-.99 8.9-2.6L22 23v-9h-9l3.62 3.62c-1.39
+                                    1.16-3.16 1.88-5.12 1.88z"/>
+                                </svg>
+                            </button>
+                            <button class="control-btn" onclick="run('PodCube.next()')" title="Next Track">
+                                <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                                </svg>
+                            </button>
+                            <div class="bar-separator"></div>
+                            <div class="bar-input-group">
+                                <label>Vol</label>
+                                <input
+                                    type="range"
+                                    style="width:200px"
+                                    id="playerVolume"
+                                    min="0"
+                                    max="100"
+                                    value="100"
+                                    oninput="updatePlayerVolume(this.value)">
+                            </div>
+                            <div class="bar-input-group">
+                                <label>Rate</label>
+                                <select id="playerSpeed" onchange="updatePlayerSpeed(this.value)" style="margin:0; padding:2px; width:auto;">
+                                    <option value="0.25">0.25x</option>
+                                    <option value="0.5">0.5x</option>
+                                    <option value="0.75">0.75x</option>
+                                    <option value="1" selected>1.0x</option>
+                                    <option value="1.25">1.25x</option>
+                                    <option value="1.5">1.5x</option>
+                                    <option value="1.75">1.75x</option>
+                                    <option value="2">2.0x</option>
+                                    <option value="3">3.0x</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="playback-scrubber-container">
+                            <div class="playback-time" id="playerTimeStart">0:00</div>
+                            <div class="playback-scrubber" id="playerScrubber" onclick="seekPlayer(event)">
+                                <div class="playback-scrubber-fill" id="playerScrubberFill"></div>
+                                <div class="playback-scrubber-handle" id="playerScrubberHandle"></div>
+                            </div>
+                            <div class="playback-time" id="playerTimeEnd">0:00</div>
+                        </div>
                     </div>
                 </div>
-                <div id="playerQueueList"></div>
-                <div class="radio-btn">
-                        
+                <!-- QUEUE MANAGEMENT -->
+                <div class="section">
+                    <h3>Queue Management</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                        <div class="queue-stats">
+                            <span class="badge badge-info" id="queueCount">0 tracks</span>
+                            <span class="badge badge-info" id="queueDuration">0:00 total</span>
+                            <span class="badge" id="queuePosition">Position: -</span>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button class="icon-btn" onclick="run('PodCube.shuffleQueue()')">Shuffle Queue</button>
+                            <button class="icon-btn" onclick="run('PodCube.clearQueue()')">Clear All</button>
+                        </div>
+                    </div>
+                    <div id="playerQueueList"></div>
+                    <div class="radio-btn">
                         <label for="autoplayRandom" style="margin-bottom: 0; cursor: pointer;">
                             <strong>Enable Radio Mode:</strong>
                             Autoplay Random Transmissions
@@ -345,905 +349,634 @@ uid: podcube
                             id="autoplayRandom"
                             style="width: auto; margin-bottom: 0;"
                             onchange="toggleAutoplayMode(this.checked)">
-            </div>
-            </div>
-            
-            <div class="section">
-                <h3>Playlists</h3>
-                <div class="playlist-controls">
-                    <input type="text" id="playlistNameInput" placeholder="Playlist Name..." style="margin-bottom:0; flex:1;">
-                    <button class="icon-btn" onclick="saveQueueAsPlaylist()">Save Queue</button>
-                </div>
-                <div id="playlistList" class="playlist-list"></div>
-            </div>
-            <div class="section">
-                <h3>Buffer & Audio State</h3>
-                <div class="stat-grid">
-                    <div class="stat-box">
-                        <label>Buffer State</label>
-                        <div id="playerBufferState" class="stat-num" style="font-size:1.2em">IDLE</div>
-                    </div>
-                    <div class="stat-box">
-                        <label>Ready State</label>
-                        <div id="playerReadyState" class="stat-num" style="font-size:1.2em">0</div>
-                    </div>
-                    <div class="stat-box">
-                        <label>Network State</label>
-                        <div id="playerNetworkState" class="stat-num" style="font-size:1.2em">0</div>
-                    </div>
-                    <div class="stat-box">
-                        <label>Buffered Ranges</label>
-                        <div id="playerBufferedRanges" class="stat-num" style="font-size:1.2em">0</div>
                     </div>
                 </div>
-            </div>
-            <div class="section">
-                <h3>Live Playback Data</h3>
-                <p class="text-muted mb-10" style="font-size:12px;">Real-time playback status • Updates every 100ms</p>
-                <div class="live-data-container">
-                    <pre id="livePlaybackData" class="inspector-code-block live-updating"></pre>
+                <div class="section">
+                    <h3>Playlists</h3>
+                    <div class="playlist-controls">
+                        <input type="text" id="playlistNameInput" placeholder="Playlist Name..." style="margin-bottom:0; flex:1;">
+                        <button class="icon-btn" onclick="saveQueueAsPlaylist()">Save Queue</button>
+                    </div>
+                    <div id="playlistList" class="playlist-list"></div>
                 </div>
-            </div>
-        </div>
-        <!-- API REFERENCE TAB -->
-        <div id="api" class="tab-content">
-            <div class="section">
-                <h3>Live API Console</h3>
-                <p class="text-muted mb-10" style="font-size:12px;">
-                    Execute PodCube API commands directly. Press Enter or click Execute.
-                </p>
-                <div class="console-input-container">
-                    <input type="text" id="consoleInput" placeholder="PodCube.all.length" style="font-family:monospace; font-size:12px;">
-                    <button class="icon-btn" onclick="runConsole()">Execute</button>
+                <div class="section">
+                    <h3>Buffer & Audio State</h3>
+                    <div class="stat-grid">
+                        <div class="stat-box">
+                            <label>Buffer State</label>
+                            <div id="playerBufferState" class="stat-num" style="font-size:1.2em">IDLE</div>
+                        </div>
+                        <div class="stat-box">
+                            <label>Ready State</label>
+                            <div id="playerReadyState" class="stat-num" style="font-size:1.2em">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <label>Network State</label>
+                            <div id="playerNetworkState" class="stat-num" style="font-size:1.2em">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <label>Buffered Ranges</label>
+                            <div id="playerBufferedRanges" class="stat-num" style="font-size:1.2em">0</div>
+                        </div>
+                    </div>
                 </div>
-                <div id="consoleOutput" class="console-output">
-                    <div class="text-muted" style="font-size:11px;">
-                        // Output will appear here. Try: PodCube.all.length
+                <div class="section">
+                    <h3>Live Playback Data</h3>
+                    <p class="text-muted mb-10" style="font-size:12px;">Real-time playback status • Updates every 100ms</p>
+                    <div class="live-data-container">
+                        <pre id="livePlaybackData" class="inspector-code-block live-updating"></pre>
                     </div>
                 </div>
             </div>
-            <div class="section">
-                <h3>System Configuration</h3>
-                <div class="stat-grid">
-                    <div class="stat-box">
-                        <label>Feed Protocol</label>
-                        <div id="confFeed" class="stat-num" style="font-size:1.2em">RSS</div>
-                        <button class="icon-btn" onclick="toggleFeedType()" style="margin-top:8px;" id="feedToggleBtn">
-                            Switch to JSON
-                        </button>
+            <!-- API REFERENCE TAB -->
+            <div id="api" class="tab-content">
+                <div class="section">
+                    <h3>Live API Console</h3>
+                    <p class="text-muted mb-10" style="font-size:12px;">
+                        Execute PodCube API commands directly. Press Enter or click Execute.
+                    </p>
+                    <div class="console-input-container">
+                        <input type="text" id="consoleInput" placeholder="PodCube.all.length" style="font-family:monospace; font-size:12px;">
+                        <button class="icon-btn" onclick="runConsole()">Execute</button>
                     </div>
-                    <div class="stat-box">
-                        <label>Debug Mode</label>
-                        <div id="confDebug" class="stat-num" style="font-size:1.2em">OFF</div>
-                        <button class="icon-btn" onclick="toggleDebug()" style="margin-top:8px;">
-                            Toggle Debug
-                        </button>
-                    </div>
-                    <div class="stat-box">
-                        <label>Total Episodes</label>
-                        <div class="stat-num" style="font-size:1.2em">
-                            <span id="confTotal">-</span>
-                        </div>
-                    </div>
-                    <div class="stat-box">
-                        <label>API Version</label>
-                        <div class="stat-num" style="font-size:1.2em">2.0</div>
-                    </div>
-                </div>
-            </div>
-            <!-- COMPLETE PODCUBE API REFERENCE -->
-            <!-- Replace the entire API Reference section with this -->
-            <div class="section">
-                <h3>Complete API Reference</h3>
-                <!-- Episode Access & Filtering -->
-                <div class="api-section">
-                    <h4>Episode Access & Filtering</h4>
-                    <div class="api-methods">
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.all</code>
-                            <p>Array of all Episode objects in the feed</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.latest</code>
-                            <p>Most recently published episode (by release date)</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.random</code>
-                            <p>Returns a random episode from the collection</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.where(filters)</code>
-                            <p>Filter episodes by properties. Example:
-                                <code>PodCube.where({ model: "Beta Build 0.4", origin: "Haberdashery" })</code>
-                            </p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.search(query)</code>
-                            <p>Full-text search across title, description, and tags. Returns matching episodes.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.findRelated(episode, limit)</code>
-                            <p>Find episodes related to the given episode by model, origin, or tags. Default limit is 10.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getNearestToToday()</code>
-                            <p>Returns array of episodes with lore dates closest to today's date</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getIssues()</code>
-                            <p>Returns episodes missing critical data (audio URL, duration, or lore date)</p>
+                    <div id="consoleOutput" class="console-output">
+                        <div class="text-muted" style="font-size:11px;">
+                            // Output will appear here. Try: PodCube.all.length
                         </div>
                     </div>
                 </div>
-                <!-- Metadata & Organization -->
-                <div class="api-section">
-                    <h4>Metadata & Organization</h4>
-                    <div class="api-methods">
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.models</code>
-                            <p>Array of unique model names (sorted alphabetically)</p>
+                <div class="section">
+                    <h3>System Configuration</h3>
+                    <div class="stat-grid">
+                        <div class="stat-box">
+                            <label>Feed Protocol</label>
+                            <div id="confFeed" class="stat-num" style="font-size:1.2em">RSS</div>
+                            <button class="icon-btn" onclick="toggleFeedType()" style="margin-top:8px;" id="feedToggleBtn">
+                                Switch to JSON
+                            </button>
                         </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.origins</code>
-                            <p>Array of unique origin points (sorted alphabetically)</p>
+                        <div class="stat-box">
+                            <label>Debug Mode</label>
+                            <div id="confDebug" class="stat-num" style="font-size:1.2em">OFF</div>
+                            <button class="icon-btn" onclick="toggleDebug()" style="margin-top:8px;">
+                                Toggle Debug
+                            </button>
                         </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.tags</code>
-                            <p>Array of all unique tags across all episodes (sorted alphabetically)</p>
+                        <div class="stat-box">
+                            <label>Total Episodes</label>
+                            <div class="stat-num" style="font-size:1.2em">
+                                <span id="confTotal">-</span>
+                            </div>
                         </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getDistribution()</code>
-                            <p>Returns distribution object with counts:
-                                <code>{ models: [{name, count}], origins: [], regions: [], zones: [], planets: [], locales: [], tags: [] }</code>
-                            </p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getStatistics()</code>
-                            <p>Returns aggregate statistics: total episodes, duration, average integrity, date ranges, etc.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getYearGroups(threshold)</code>
-                            <p>Group episodes by n-year eras with adaptive subdivision. Returns array of:
-                                <code>{ label, start, end, count, episodes }</code>
-                            </p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getEpisodeIndex(episode)</code>
-                            <p>Get the array index of an episode in the main episodes array</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getNextEpisode(episode)</code>
-                            <p>Get the next episode in release order. Returns null if at end.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getPreviousEpisode(episode)</code>
-                            <p>Get the previous episode in release order. Returns null if at beginning.</p>
+                        <div class="stat-box">
+                            <label>API Version</label>
+                            <div class="stat-num" style="font-size:1.2em">2.0</div>
                         </div>
                     </div>
                 </div>
-                <!-- Sorting & Ordering -->
-                <div class="api-section">
-                    <h4>Sorting & Ordering</h4>
-                    <div class="api-methods">
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getByReleaseOrder(reverse)</code>
-                            <p>Episodes sorted by publish date. Pass true for oldest first.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getByChronologicalOrder(reverse)</code>
-                            <p>Episodes sorted by lore date. Pass true for oldest first. Filters out episodes without dates.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getByTitle(reverse)</code>
-                            <p>Episodes sorted alphabetically by title</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getByDuration(reverse)</code>
-                            <p>Episodes sorted by duration. Pass true for shortest first.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getByIntegrity(reverse)</code>
-                            <p>Episodes sorted by integrity value. Pass true for lowest first.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.sortBy(field, reverse)</code>
-                            <p>Generic sort by any episode field. Example:
-                                <code>sortBy('model', false)</code>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <!-- Playback Control -->
-                <div class="api-section">
-                    <h4>Playback Control</h4>
-                    <div class="api-methods">
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.play(episode)</code>
-                            <p>Play a specific episode. If no episode provided, resumes current. Adds to queue with playNow=true.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.pause()</code>
-                            <p>Pause playback</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.toggle()</code>
-                            <p>Toggle between play and pause states</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.next()</code>
-                            <p>Skip to next track in queue</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.prev()</code>
-                            <p>Go to previous track, or restart current if > 3 seconds in</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.seek(seconds)</code>
-                            <p>Jump to specific time position in current track</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.skipForward()</code>
-                            <p>Skip forward 20 seconds</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.skipBack()</code>
-                            <p>Skip back 7 seconds</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.setVolume(level)</code>
-                            <p>Set volume (0.0 to 1.0). Values are clamped to valid range.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getVolume()</code>
-                            <p>Get current volume level (0.0 to 1.0)</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.setPlaybackRate(rate)</code>
-                            <p>Set playback speed (0.0 to 16.0). Common values: 0.5x, 1.0x, 1.5x, 2.0x</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getPlaybackRate()</code>
-                            <p>Get current playback rate</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.stopAfterCurrent()</code>
-                            <p>Stop playback after current track ends (soft stop)</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.cancelStopAfterCurrent()</code>
-                            <p>Cancel the stop-after-current flag</p>
+                <!-- COMPLETE PODCUBE API REFERENCE -->
+                <!-- Replace the entire API Reference section with this -->
+                <div class="section">
+                    <h3>Complete API Reference</h3>
+                    <!-- Episode Access & Filtering -->
+                    <div class="api-section">
+                        <h4>Episode Access & Filtering</h4>
+                        <div class="api-methods">
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.all</code>
+                                <p>Array of all Episode objects in the feed</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.latest</code>
+                                <p>Most recently published episode (by release date)</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.random</code>
+                                <p>Returns a random episode from the collection</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.where(filters)</code>
+                                <p>Filter episodes by properties. Example:
+                                    <code>PodCube.where({ model: "Beta Build 0.4", origin: "Haberdashery" })</code>
+                                </p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.search(query)</code>
+                                <p>Full-text search across title, description, and tags. Returns matching episodes.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.findRelated(episode, limit)</code>
+                                <p>Find episodes related to the given episode by model, origin, or tags. Default limit is 10.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getNearestToToday()</code>
+                                <p>Returns array of episodes with lore dates closest to today's date</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getIssues()</code>
+                                <p>Returns episodes missing critical data (audio URL, duration, or lore date)</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <!-- Queue Management -->
-                <div class="api-section">
-                    <h4>Queue Management</h4>
-                    <div class="api-methods">
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.addToQueue(episode|episodes, playNow)</code>
-                            <p>Add single episode or array of episodes to queue. If playNow=true, inserts after current and plays immediately.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.queueItems</code>
-                            <p>Array of episodes currently in queue (read-only copy)</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.queueIndex</code>
-                            <p>Current position in queue (number). -1 if queue is empty.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.queueDuration</code>
-                            <p>Total duration of all tracks in queue plus remaining time of current track (in seconds)</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.shuffleQueue()</code>
-                            <p>Randomize queue order using Fisher-Yates algorithm. Keeps currently playing track at front.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.clearQueue()</code>
-                            <p>Remove all tracks from queue, clear cache, and reset playback state</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.removeFromQueue(index)</code>
-                            <p>Remove specific track by index. Adjusts queue index accordingly.</p>
-                        </div>
-                    </div>
-                </div>
-                <!-- Playlist Management -->
-                <div class="api-section">
-                    <h4>Playlist Management</h4>
-                    <div class="api-methods">
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.savePlaylist(name, episodes)</code>
-                            <p>Save array of episodes as a named playlist to localStorage. Returns playlist object.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.loadPlaylist(name)</code>
-                            <p>Load playlist by name. Returns
-                                <code>{ name, created, episodes }</code>
-                                or null if not found.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.getPlaylists()</code>
-                            <p>Get all saved playlists. Returns array of playlist objects.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.deletePlaylist(name)</code>
-                            <p>Delete playlist by name. Returns true if deleted, false if not found.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.playPlaylist(name)</code>
-                            <p>Load playlist and start playing immediately</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.queuePlaylist(name)</code>
-                            <p>Add playlist episodes to queue without playing</p>
+                    <!-- Metadata & Organization -->
+                    <div class="api-section">
+                        <h4>Metadata & Organization</h4>
+                        <div class="api-methods">
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.models</code>
+                                <p>Array of unique model names (sorted alphabetically)</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.origins</code>
+                                <p>Array of unique origin points (sorted alphabetically)</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.tags</code>
+                                <p>Array of all unique tags across all episodes (sorted alphabetically)</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getDistribution()</code>
+                                <p>Returns distribution object with counts:
+                                    <code>{ models: [{name, count}], origins: [], regions: [], zones: [], planets: [], locales: [], tags: [] }</code>
+                                </p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getStatistics()</code>
+                                <p>Returns aggregate statistics: total episodes, duration, average integrity, date ranges, etc.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getYearGroups(threshold)</code>
+                                <p>Group episodes by n-year eras with adaptive subdivision. Returns array of:
+                                    <code>{ label, start, end, count, episodes }</code>
+                                </p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getEpisodeIndex(episode)</code>
+                                <p>Get the array index of an episode in the main episodes array</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getNextEpisode(episode)</code>
+                                <p>Get the next episode in release order. Returns null if at end.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getPreviousEpisode(episode)</code>
+                                <p>Get the previous episode in release order. Returns null if at beginning.</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <!-- State & Events -->
-                <div class="api-section">
-                    <h4>State & Events</h4>
-                    <div class="api-methods">
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.nowPlaying</code>
-                            <p>Currently playing Episode object, or null if nothing is playing</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.status</code>
-                            <p>Playback status object:
-                                <code>{ playing: boolean, time: number, duration: number, percent: number }</code>
-                            </p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.isLoading</code>
-                            <p>Boolean indicating if audio is currently loading</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.hasPreloadedNext</code>
-                            <p>Boolean indicating if next track has been preloaded</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.on(event, callback)</code>
-                            <p>Subscribe to event. Returns unsubscribe function. Events: 'play', 'pause', 'track', 'timeupdate', 'queue:changed',
-                                'error'</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.off(event, callback)</code>
-                            <p>Unsubscribe from event. If no callback provided, removes all listeners for that event.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.once(event, callback)</code>
-                            <p>Subscribe to event once, then automatically unsubscribe</p>
+                    <!-- Sorting & Ordering -->
+                    <div class="api-section">
+                        <h4>Sorting & Ordering</h4>
+                        <div class="api-methods">
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getByReleaseOrder(reverse)</code>
+                                <p>Episodes sorted by publish date. Pass true for oldest first.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getByChronologicalOrder(reverse)</code>
+                                <p>Episodes sorted by lore date. Pass true for oldest first. Filters out episodes without dates.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getByTitle(reverse)</code>
+                                <p>Episodes sorted alphabetically by title</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getByDuration(reverse)</code>
+                                <p>Episodes sorted by duration. Pass true for shortest first.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getByIntegrity(reverse)</code>
+                                <p>Episodes sorted by integrity value. Pass true for lowest first.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.sortBy(field, reverse)</code>
+                                <p>Generic sort by any episode field. Example:
+                                    <code>sortBy('model', false)</code>
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <!-- Session Management -->
-                <div class="api-section">
-                    <h4>Session Management</h4>
-                    <div class="api-methods">
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.restoreSession()</code>
-                            <p>Restore previous playback session from localStorage (async). Returns true if session restored.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.destroy()</code>
-                            <p>Clean up all resources: stop playback, clear cache, remove listeners, revoke object URLs</p>
-                        </div>
-                    </div>
-                </div>
-                <!-- Configuration -->
-                <div class="api-section">
-                    <h4>Configuration</h4>
-                    <div class="api-methods">
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.init(force)</code>
-                            <p>Initialize/reinitialize the API (async). Pass true to force reload. Returns PodCube instance.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.setFeedType(type)</code>
-                            <p>Switch between 'rss' and 'json' feed formats. Call init(true) after to reload.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.setDebug(enabled)</code>
-                            <p>Enable/disable debug logging to console. Persists to localStorage and reloads page.</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.FEED_TYPE</code>
-                            <p>Current feed type ('rss' or 'json')</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">PodCube.DEBUG</code>
-                            <p>Current debug mode state (boolean)</p>
-                        </div>
-                    </div>
-                </div>
-                <!-- Episode Object Properties -->
-                <div class="api-section">
-                    <h4>Episode Object Properties</h4>
-                    <div class="api-methods">
-                        <div class="api-method">
-                            <code class="api-signature">episode.id</code>
-                            <p>Unique identifier (from feed GUID)</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.title</code>
-                            <p>Cleaned episode title (emoji removed)</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.shortcode</code>
-                            <p>Episode shortcode (e.g., "PC-042"), or null</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.episodeType</code>
-                            <p>Type: 'transmission', 'podcube_hq', 'twibbie_ondemand', or 'none'</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.model</code>
-                            <p>AI model name (e.g., "A65v.14", "Bird Mug")</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.origin</code>
-                            <p>Origin point (e.g., "Dad's House", "Brad's House")</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.locale</code>
-                            <p>Locale identifier</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.region</code>
-                            <p>Geographic region</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.zone</code>
-                            <p>Geographic zone</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.planet</code>
-                            <p>Planet name</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.location</code>
-                            <p>Composite location string: "origin, locale, region, zone, planet"</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.date</code>
-                            <p>PodCubeDate object with lore date, or "Unknown Date"</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.published</code>
-                            <p>JavaScript Date object of publish date</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.anniversary</code>
-                            <p>Human-readable time from lore date to today (e.g., "2 years ago", "3 months from now")</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.integrity</code>
-                            <p>Integrity string (e.g., "94.7%")</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.integrityValue</code>
-                            <p>Numeric integrity value (0-100), or null</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.tags</code>
-                            <p>Array of tag strings</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.description</code>
-                            <p>Episode description HTML</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.audioUrl</code>
-                            <p>Direct URL to audio file</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.duration</code>
-                            <p>Duration in seconds</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.timestamp</code>
-                            <p>Duration formatted as "MM:SS"</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.weirdDuration</code>
-                            <p>Quirky duration format with random suffixes (e.g., "5.42ish")</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.sizeBytes</code>
-                            <p>File size in bytes, or null</p>
-                        </div>
-                        <div class="api-method">
-                            <code class="api-signature">episode.hasIssues</code>
-                            <p>Boolean - true if missing audio, duration, or lore date</p>
+                    <!-- Playback Control -->
+                    <div class="api-section">
+                        <h4>Playback Control</h4>
+                        <div class="api-methods">
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.play(episode)</code>
+                                <p>Play a specific episode. If no episode provided, resumes current. Adds to queue with playNow=true.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.pause()</code>
+                                <p>Pause playback</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.toggle()</code>
+                                <p>Toggle between play and pause states</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.next()</code>
+                                <p>Skip to next track in queue</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.prev()</code>
+                                <p>Go to previous track, or restart current if > 3 seconds in</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.seek(seconds)</code>
+                                <p>Jump to specific time position in current track</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.skipForward()</code>
+                                <p>Skip forward 20 seconds</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.skipBack()</code>
+                                <p>Skip back 7 seconds</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.setVolume(level)</code>
+                                <p>Set volume (0.0 to 1.0). Values are clamped to valid range.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getVolume()</code>
+                                <p>Get current volume level (0.0 to 1.0)</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.setPlaybackRate(rate)</code>
+                                <p>Set playback speed (0.0 to 16.0). Common values: 0.5x, 1.0x, 1.5x, 2.0x</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getPlaybackRate()</code>
+                                <p>Get current playback rate</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.stopAfterCurrent()</code>
+                                <p>Stop playback after current track ends (soft stop)</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.cancelStopAfterCurrent()</code>
+                                <p>Cancel the stop-after-current flag</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <!-- Event Reference -->
-                <div class="api-section">
-                    <h4>Event Reference</h4>
-                    <div class="api-methods">
-                        <div class="api-method">
-                            <code class="api-signature">'play'</code>
-                            <p>Fired when playback starts. Data: Episode object</p>
+                    <!-- Queue Management -->
+                    <div class="api-section">
+                        <h4>Queue Management</h4>
+                        <div class="api-methods">
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.addToQueue(episode|episodes, playNow)</code>
+                                <p>Add single episode or array of episodes to queue. If playNow=true, inserts after current and plays immediately.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.queueItems</code>
+                                <p>Array of episodes currently in queue (read-only copy)</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.queueIndex</code>
+                                <p>Current position in queue (number). -1 if queue is empty.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.queueDuration</code>
+                                <p>Total duration of all tracks in queue plus remaining time of current track (in seconds)</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.shuffleQueue()</code>
+                                <p>Randomize queue order using Fisher-Yates algorithm. Keeps currently playing track at front.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.clearQueue()</code>
+                                <p>Remove all tracks from queue, clear cache, and reset playback state</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.removeFromQueue(index)</code>
+                                <p>Remove specific track by index. Adjusts queue index accordingly.</p>
+                            </div>
                         </div>
-                        <div class="api-method">
-                            <code class="api-signature">'pause'</code>
-                            <p>Fired when playback pauses. Data: Episode object</p>
+                    </div>
+                    <!-- Playlist Management -->
+                    <div class="api-section">
+                        <h4>Playlist Management</h4>
+                        <div class="api-methods">
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.savePlaylist(name, episodes)</code>
+                                <p>Save array of episodes as a named playlist to localStorage. Returns playlist object.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.loadPlaylist(name)</code>
+                                <p>Load playlist by name. Returns
+                                    <code>{ name, created, episodes }</code>
+                                    or null if not found.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.getPlaylists()</code>
+                                <p>Get all saved playlists. Returns array of playlist objects.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.deletePlaylist(name)</code>
+                                <p>Delete playlist by name. Returns true if deleted, false if not found.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.playPlaylist(name)</code>
+                                <p>Load playlist and start playing immediately</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.queuePlaylist(name)</code>
+                                <p>Add playlist episodes to queue without playing</p>
+                            </div>
                         </div>
-                        <div class="api-method">
-                            <code class="api-signature">'track'</code>
-                            <p>Fired when new track loads. Data: Episode object</p>
+                    </div>
+                    <!-- State & Events -->
+                    <div class="api-section">
+                        <h4>State & Events</h4>
+                        <div class="api-methods">
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.nowPlaying</code>
+                                <p>Currently playing Episode object, or null if nothing is playing</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.status</code>
+                                <p>Playback status object:
+                                    <code>{ playing: boolean, time: number, duration: number, percent: number }</code>
+                                </p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.isLoading</code>
+                                <p>Boolean indicating if audio is currently loading</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.hasPreloadedNext</code>
+                                <p>Boolean indicating if next track has been preloaded</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.on(event, callback)</code>
+                                <p>Subscribe to event. Returns unsubscribe function. Events: 'play', 'pause', 'track', 'timeupdate', 'queue:changed',
+                                    'error'</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.off(event, callback)</code>
+                                <p>Unsubscribe from event. If no callback provided, removes all listeners for that event.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.once(event, callback)</code>
+                                <p>Subscribe to event once, then automatically unsubscribe</p>
+                            </div>
                         </div>
-                        <div class="api-method">
-                            <code class="api-signature">'timeupdate'</code>
-                            <p>Fired during playback (throttled). Data: status object</p>
+                    </div>
+                    <!-- Session Management -->
+                    <div class="api-section">
+                        <h4>Session Management</h4>
+                        <div class="api-methods">
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.restoreSession()</code>
+                                <p>Restore previous playback session from localStorage (async). Returns true if session restored.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.destroy()</code>
+                                <p>Clean up all resources: stop playback, clear cache, remove listeners, revoke object URLs</p>
+                            </div>
                         </div>
-                        <div class="api-method">
-                            <code class="api-signature">'queue:changed'</code>
-                            <p>Fired when queue is modified. Data:
-                                <code>{ queue: Episode[], index: number }</code>
-                            </p>
+                    </div>
+                    <!-- Configuration -->
+                    <div class="api-section">
+                        <h4>Configuration</h4>
+                        <div class="api-methods">
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.init(force)</code>
+                                <p>Initialize/reinitialize the API (async). Pass true to force reload. Returns PodCube instance.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.setFeedType(type)</code>
+                                <p>Switch between 'rss' and 'json' feed formats. Call init(true) after to reload.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.setDebug(enabled)</code>
+                                <p>Enable/disable debug logging to console. Persists to localStorage and reloads page.</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.FEED_TYPE</code>
+                                <p>Current feed type ('rss' or 'json')</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">PodCube.DEBUG</code>
+                                <p>Current debug mode state (boolean)</p>
+                            </div>
                         </div>
-                        <div class="api-method">
-                            <code class="api-signature">'error'</code>
-                            <p>Fired on playback error. Data:
-                                <code>{ episode: Episode, error: Error }</code>
-                            </p>
+                    </div>
+                    <!-- Episode Object Properties -->
+                    <div class="api-section">
+                        <h4>Episode Object Properties</h4>
+                        <div class="api-methods">
+                            <div class="api-method">
+                                <code class="api-signature">episode.id</code>
+                                <p>Unique identifier (from feed GUID)</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.title</code>
+                                <p>Cleaned episode title (emoji removed)</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.shortcode</code>
+                                <p>Episode shortcode (e.g., "PC-042"), or null</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.episodeType</code>
+                                <p>Type: 'transmission', 'podcube_hq', 'twibbie_ondemand', or 'none'</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.model</code>
+                                <p>AI model name (e.g., "A65v.14", "Bird Mug")</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.origin</code>
+                                <p>Origin point (e.g., "Dad's House", "Brad's House")</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.locale</code>
+                                <p>Locale identifier</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.region</code>
+                                <p>Geographic region</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.zone</code>
+                                <p>Geographic zone</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.planet</code>
+                                <p>Planet name</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.location</code>
+                                <p>Composite location string: "origin, locale, region, zone, planet"</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.date</code>
+                                <p>PodCubeDate object with lore date, or "Unknown Date"</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.published</code>
+                                <p>JavaScript Date object of publish date</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.anniversary</code>
+                                <p>Human-readable time from lore date to today (e.g., "2 years ago", "3 months from now")</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.integrity</code>
+                                <p>Integrity string (e.g., "94.7%")</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.integrityValue</code>
+                                <p>Numeric integrity value (0-100), or null</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.tags</code>
+                                <p>Array of tag strings</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.description</code>
+                                <p>Episode description HTML</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.audioUrl</code>
+                                <p>Direct URL to audio file</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.duration</code>
+                                <p>Duration in seconds</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.timestamp</code>
+                                <p>Duration formatted as "MM:SS"</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.weirdDuration</code>
+                                <p>Quirky duration format with random suffixes (e.g., "5.42ish")</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.sizeBytes</code>
+                                <p>File size in bytes, or null</p>
+                            </div>
+                            <div class="api-method">
+                                <code class="api-signature">episode.hasIssues</code>
+                                <p>Boolean - true if missing audio, duration, or lore date</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="api-section">
-                <h4>Playback Control</h4>
-                <div class="api-methods">
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.play(episode)</code>
-                        <p>Play specific episode, clears queue and plays immediately</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.toggle()</code>
-                        <p>Toggle play/pause state</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.pause()</code>
-                        <p>Pause playback</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.next()</code>
-                        <p>Skip to next track in queue</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.prev()</code>
-                        <p>Go to previous track or restart if > 3s</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.seek(seconds)</code>
-                        <p>Jump to specific time position</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.skipForward()</code>
-                        <p>Skip forward 20 seconds</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.skipBack()</code>
-                        <p>Skip back 7 seconds</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.setVolume(0-1)</code>
-                        <p>Set volume level (0.0 to 1.0)</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.getVolume()</code>
-                        <p>Get current volume level</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.setPlaybackRate(rate)</code>
-                        <p>Set playback speed (0.25 to 3.0)</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.getPlaybackRate()</code>
-                        <p>Get current playback rate</p>
-                    </div>
+                    
+            <!-- CODE MONITOR -->
+            <div class="code-monitor">
+                <span class="monitor-prompt">>></span>
+                <span class="monitor-text" id="monitorText">System Ready</span>
+                <span class="monitor-timestamp" id="monitorTimestamp"></span>
+            </div>
+            <!-- TEMPLATES -->
+            <template id="tmpl-stat-box">
+                <div class="stat-box">
+                    <div class="stat-num"></div>
+                    <div class="stat-lbl"></div>
                 </div>
-            </div>
-            <div class="api-section">
-                <h4>Playlist Management</h4>
-                <div class="api-methods">
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.savePlaylist(name, [episodes])</code>
-                        <p>Save a named playlist to local storage</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.loadPlaylist(name)</code>
-                        <p>Load a playlist object by name</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.getPlaylists()</code>
-                        <p>Get all saved playlists</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.deletePlaylist(name)</code>
-                        <p>Delete a playlist</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.playPlaylist(name)</code>
-                        <p>Clear queue and play playlist immediately</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.enqueuePlaylist(name)</code>
-                        <p>Append playlist to end of queue</p>
-                    </div>
+            </template>
+            <template id="tmpl-hierarchy-col">
+                <div class="hierarchy-col">
+                    <h4 class="hierarchy-title"></h4>
+                    <div class="hierarchy-list"></div>
                 </div>
-            </div>
-            <div class="api-section">
-                <h4>Queue Management</h4>
-                <div class="api-methods">
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.addToQueue(episode, playNow)</code>
-                        <p>Add episode to queue. playNow=true to start immediately</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.clearQueue()</code>
-                        <p>Remove all tracks from queue and reset</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.removeFromQueue(index)</code>
-                        <p>Remove specific track by index</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.shuffleQueue()</code>
-                        <p>Randomize queue order</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.stopAfterCurrent()</code>
-                        <p>Stop playback after current track ends</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.cancelStopAfterCurrent()</code>
-                        <p>Cancel stop after current flag</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.queueItems</code>
-                        <p>Array of episodes currently in queue</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.queueIndex</code>
-                        <p>Current position in queue (number)</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.queueDuration</code>
-                        <p>Total remaining time in queue (seconds)</p>
-                    </div>
+            </template>
+            <template id="tmpl-hierarchy-item">
+                <div class="hierarchy-item">
+                    <span class="hi-name"></span>
+                    <span class="hi-count"></span>
                 </div>
-            </div>
-            <div class="api-section">
-                <h4>State & Events</h4>
-                <div class="api-methods">
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.nowPlaying</code>
-                        <p>Currently playing Episode object (or null)</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.status</code>
-                        <p>Playback status object {playing, time, duration, percent}</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.on(event, callback)</code>
-                        <p>Listen to events: 'play', 'pause', 'track', 'timeupdate', 'queue:changed', 'error'</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.off(event, callback)</code>
-                        <p>Remove event listener</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.once(event, callback)</code>
-                        <p>Listen to event once, then auto-remove</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.init(force)</code>
-                        <p>Initialize or re-initialize the engine</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.destroy()</code>
-                        <p>Teardown engine and cleanup memory</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.isLoading</code>
-                        <p>Boolean: Is audio currently loading</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.hasPreloadedNext</code>
-                        <p>Boolean: Is "Ghost Player" ready</p>
-                    </div>
-                </div>
-            </div>
-            <div class="api-section">
-                <h4>Configuration</h4>
-                <div class="api-methods">
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.setFeedType('rss' | 'json')</code>
-                        <p>Switch between RSS and JSON feed formats</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.setDebug(boolean)</code>
-                        <p>Enable/disable debug logging to console</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.FEED_TYPE</code>
-                        <p>Current feed type ('rss' or 'json')</p>
-                    </div>
-                    <div class="api-method">
-                        <code class="api-signature">PodCube.DEBUG</code>
-                        <p>Current debug mode state (boolean)</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- GLOBAL TRANSPORT BAR -->
-        <div id="global-transport" class="global-transport">
-            <button class="transport-toggle-btn" id="transportToggleBtn" onclick="toggleTransport()">
-                <svg viewbox="0 0 24 24" class="icon-svg"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
-                </svg>
-            </button>
-            <div class="transport-main">
-                <button class="control-btn" onclick="run('PodCube.prev()')" title="Previous">
-                    <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
-                    </svg>
-                </button>
-                <button class="control-btn control-btn-play" id="playBtn" onclick="run('PodCube.toggle()')" title="Play/Pause">
-                    <svg viewbox="0 0 24 24" class="icon-svg"><path d="M8 5v14l11-7z"/>
-                    </svg>
-                </button>
-                <button class="control-btn" onclick="run('PodCube.next()')" title="Next">
-                    <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
-                    </svg>
-                </button>
-                <div class="transport-info">
-                    <div class="transport-title" id="transTitle">System Idle</div>
-                    <div class="meta" id="transTime" style="font-size:11px; color:#888;">0:00 / 0:00</div>
-                </div>
-                <div class="transport-controls">
-                    <div class="transport-control-group">
-                        <label class="transport-label">Speed:</label>
-                        <select id="transportSpeed" onchange="updatePlayerSpeed(this.value)" class="transport-select">
-                            <option value="0.5">0.5x</option>
-                            <option value="0.75">0.75x</option>
-                            <option value="1" selected>1.0x</option>
-                            <option value="1.25">1.25x</option>
-                            <option value="1.5">1.5x</option>
-                            <option value="2">2.0x</option>
-                        </select>
-                    </div>
-                    <div class="transport-control-group">
-                        <label class="transport-label">Vol:</label>
-                        <input
-                            type="range"
-                            id="transportVolume"
-                            min="0"
-                            max="100"
-                            value="100"
-                            oninput="updatePlayerVolume(this.value)"
-                            class="transport-slider">
-                        <span class="transport-value" id="transportVolumeValue">100%</span>
-                    </div>
-                </div>
-            </div>
-            <div class="scrubber" id="scrubber" onclick="seek(event)" title="Click to seek">
-                <div class="scrubber-fill" id="scrubberFill"></div>
-            </div>
-        </div>
-        <!-- CODE MONITOR -->
-        <div class="code-monitor">
-            <span class="monitor-prompt">>></span>
-            <span class="monitor-text" id="monitorText">System Ready</span>
-            <span class="monitor-timestamp" id="monitorTimestamp"></span>
-        </div>
-        <!-- TEMPLATES -->
-        <template id="tmpl-stat-box">
-            <div class="stat-box">
-                <div class="stat-num"></div>
-                <div class="stat-lbl"></div>
-            </div>
-        </template>
-        <template id="tmpl-hierarchy-col">
-            <div class="hierarchy-col">
-                <h4 class="hierarchy-title"></h4>
-                <div class="hierarchy-list"></div>
-            </div>
-        </template>
-        <template id="tmpl-hierarchy-item">
-            <div class="hierarchy-item">
-                <span class="hi-name"></span>
-                <span class="hi-count"></span>
-            </div>
-        </template>
-        <!-- EPISODE CARDS -->
-        <template id="tmpl-ep-card">
-            <div class="ep-card">
-                <div class="ep-status-strip"></div>
-                <div class="ep-content">
-                    <div class="ep-header">
-                        <div class="ep-title"></div>
-                        <div class="ep-date"></div>
-                    </div>
-                    <div class="ep-meta-row primary-meta">
-                        <span class="ep-type ep-tag"></span>
-                        <span class="ep-model"></span>
-                    </div>
-                    <div class="ep-meta-row secondary-meta">
-                        <span class="ep-location"></span>
-                    </div>
-                    <div class="integrity-wrapper">
-                        <div class="integrity-container">
-                            <div class="integrity-fill"></div>
+            </template>
+            <!-- EPISODE CARDS -->
+            <template id="tmpl-ep-card">
+                <div class="ep-card">
+                    <div class="ep-status-strip"></div>
+                    <div class="ep-content">
+                        <div class="ep-header">
+                            <div class="ep-title"></div>
+                            <div class="ep-date"></div>
                         </div>
-                        <div class="integrity-text"></div>
-                        <span class="ep-duration"></span>
+                        <div class="ep-meta-row primary-meta">
+                            <span class="ep-type ep-tag"></span>
+                            <span class="ep-model"></span>
+                        </div>
+                        <div class="ep-meta-row secondary-meta">
+                            <span class="ep-location"></span>
+                        </div>
+                        <div class="integrity-wrapper">
+                            <div class="integrity-container">
+                                <div class="integrity-fill"></div>
+                            </div>
+                            <div class="integrity-text"></div>
+                            <span class="ep-duration"></span>
+                        </div>
+                    </div>
+                    <div class="ep-actions">
+                        <button class="icon-btn btn-play">PLAY</button>
+                        <button class="icon-btn btn-play-next">PLAY NEXT</button>
+                        <button class="icon-btn btn-queue">QUEUE</button>
+                        <button class="icon-btn btn-inspect">INSPECT</button>
                     </div>
                 </div>
-                <div class="ep-actions">
-                    <button class="icon-btn btn-play">PLAY</button>
-                    <button class="icon-btn btn-queue">QUEUE</button>
+            </template>
+            <template id="tmpl-inspector-field">
+                <div class="inspector-field doubleborder">
+                    <div class="inspector-field-value"></div>
                 </div>
-            </div>
-        </template>
-        <template id="tmpl-inspector-field">
-            <div class="inspector-field">
-                <div class="inspector-field-label"></div>
-                <div class="inspector-field-value"></div>
-            </div>
-        </template>
-        <template id="tmpl-related-ep">
-            <div class="related-ep-card">
-                <div class="related-ep-info">
-                    <div class="related-ep-title"></div>
-                    <div class="related-ep-meta"></div>
-                </div>
-                <div class="related-ep-score">→</div>
-            </div>
-        </template>
-        <template id="tmpl-queue-item">
-            <div class="queue-item" draggable="true" data-queue-index="">
-                <div class="queue-drag-handle">
-                    <svg viewbox="0 0 24 24" class="drag-icon">
-                        <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2
-                        2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9
-                        2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                    </svg>
-                </div>
-                <div class="queue-item-info">
-                    <div class="queue-item-title">
-                        <span class="queue-item-number"></span>
-                        <span class="qi-title"></span>
+            </template>
+            <template id="tmpl-related-ep">
+                <div class="related-ep-card">
+                    <div class="related-ep-info">
+                        <div class="related-ep-title"></div>
+                        <div class="related-ep-meta"></div>
                     </div>
-                    <div class="queue-item-meta"></div>
+                    <div class="related-ep-score">→</div>
                 </div>
-                <div class="queue-item-actions">
-                    <button class="icon-btn btn-remove">REMOVE</button>
+            </template>
+            <template id="tmpl-queue-item">
+                <div class="queue-item" draggable="true" data-queue-index="">
+                    <div class="queue-drag-handle">
+                        <svg viewbox="0 0 24 24" class="drag-icon">
+                            <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2
+                            2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9
+                            2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                        </svg>
+                    </div>
+                    <div class="queue-item-info">
+                        <div class="queue-item-title">
+                            <span class="queue-item-number"></span>
+                            <span class="qi-title"></span>
+                        </div>
+                        <div class="queue-item-meta"></div>
+                    </div>
+                    <div class="queue-item-actions">
+                        <button class="icon-btn btn-remove">REMOVE</button>
+                    </div>
                 </div>
-            </div>
-        </template>
-        <template id="tmpl-playlist-item">
-            <div class="playlist-item">
-                <div class="playlist-info">
-                    <div class="playlist-name"></div>
-                    <div class="playlist-meta"></div>
+            </template>
+            <template id="tmpl-playlist-item">
+                <div class="playlist-item">
+                    <div class="playlist-info">
+                        <div class="playlist-name"></div>
+                        <div class="playlist-meta"></div>
+                    </div>
+                    <div class="playlist-actions">
+                        <button class="icon-btn btn-load">LOAD</button>
+                        <button class="icon-btn btn-delete" style="color:var(--danger); border-color:var(--danger);">DEL</button>
+                    </div>
                 </div>
-                <div class="playlist-actions">
-                    <button class="icon-btn btn-load">LOAD</button>
-                    <button class="icon-btn btn-delete" style="color:var(--danger); border-color:var(--danger);">DEL</button>
+            </template>
+            <template id="tmpl-console-output">
+                <div class="console-entry">
+                    <div class="console-prompt"></div>
+                    <pre class="console-result"></pre>
                 </div>
-            </div>
-        </template>
-        <template id="tmpl-console-output">
-            <div class="console-entry">
-                <div class="console-prompt"></div>
-                <pre class="console-result"></pre>
-            </div>
-        </template>
-        <script src="/podcube.js" type="module"></script>
-        <script src="./explorer.js"></script>
-    </body>
+            </template>
+            <script src="/podcube.js" type="module"></script>
+            <script src="./explorer.js"></script>
+        </body>
 </html>

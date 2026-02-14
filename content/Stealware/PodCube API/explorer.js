@@ -358,7 +358,7 @@ function applyHierarchyFilter(filterType, value) {
     }
 }
 
-// --- ARCHIVE REGISTRY ---
+// --- ARCHIVE REGISTRY TRANSMISSIONS SCREEN ---
 function initArchiveControls() {
     const populate = (id, items) => {
         const sel = document.getElementById(id);
@@ -584,9 +584,28 @@ function updateArchive() {
             run(`PodCube.play(PodCube.all[${idx}])`);
         });
 
+        // Wire up PLAY
+        clone.querySelector('.btn-play').addEventListener('click', (e) => {
+            e.stopPropagation();
+            run(`PodCube.play(PodCube.all[${idx}])`);
+        });
+
+        // Wire up PLAY NEXT
+        clone.querySelector('.btn-play-next').addEventListener('click', (e) => {
+            e.stopPropagation();
+            run(`PodCube.addNextInQueue(PodCube.all[${idx}])`);
+        });
+
+        // Wire up QUEUE
         clone.querySelector('.btn-queue').addEventListener('click', (e) => {
             e.stopPropagation();
             run(`PodCube.addToQueue(PodCube.all[${idx}])`);
+        });
+
+        // Wire up INSPECT
+        clone.querySelector('.btn-inspect').addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleEpisodeClick(idx); // Standard inspection trigger
         });
 
         fragment.appendChild(clone);
@@ -600,8 +619,8 @@ function handleEpisodeClick(index) {
     loadEpisodeInspector(episode);
     
     // Switch to inspector tab
-    const tab = document.querySelector('[data-tab="inspector"]');
-    if (tab) tab.click();
+    //const tab = document.querySelector('[data-tab="inspector"]');
+    //if (tab) tab.click();
 }
 
 function resetArchive() {
@@ -799,18 +818,24 @@ function renderFields(containerId, fields) {
     const template = document.getElementById('tmpl-inspector-field');
     if (!container || !template) return;
     
-    container.textContent = '';
+    container.textContent = ''; // Clear existing
     const grid = document.createElement('div');
     grid.className = 'inspector-grid';
 
     fields.forEach(f => {
         const clone = document.importNode(template.content, true);
-        clone.querySelector('.inspector-field-label').textContent = f.label;
+        const fieldContainer = clone.querySelector('.inspector-field');
+        const valueDisplay = clone.querySelector('.inspector-field-value');
         
-        const valEl = clone.querySelector('.inspector-field-value');
-        valEl.textContent = String(f.value);
-        if (f.code) valEl.classList.add('code');
-        if (!f.value || f.value === 'N/A') valEl.classList.add('empty');
+        // This triggers the CSS label
+        fieldContainer.dataset.label = f.label; 
+        
+        // This populates the actual data
+        valueDisplay.textContent = f.value || '-'; 
+        
+        // Add styling for empty or code fields
+        if (!f.value) valueDisplay.classList.add('empty');
+        if (f.code) valueDisplay.classList.add('code');
         
         grid.appendChild(clone);
     });
