@@ -1,6 +1,6 @@
 ---
 title: PodCube™
-uid: podcube
+uid: podcubepage
 contentHash: 8be5b21d
 date: '2025-11-21T23:12:49.953Z'
 ---

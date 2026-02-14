@@ -36,11 +36,22 @@ const EMOJI_PATTERNS = {
     TWIBBIE_ONDEMAND: /\u{1F4A0}\u{FE0F}?/u  // 💠 Diamond with a Dot
 };
 
-// Utility: Safe logging
+// Utility: Safe logging with pipe to window if wanted
 const log = {
-    info: (msg, data) => CONFIG.DEBUG && console.log(`[PodCube]`, msg, data || ""),
-    warn: (msg, data) => console.warn(`[PodCube WARN]`, msg, data || ""),
-    error: (msg, data) => console.error(`[PodCube ERROR]`, msg, data || "")
+    info: (msg, data) => {
+        if (CONFIG.DEBUG) {
+            console.log(`[PodCube]`, msg, data || "");
+            if (window.pipeToConsole) window.pipeToConsole(`${msg} ${data ? JSON.stringify(data) : ''}`, 'info');
+        }
+    },
+    warn: (msg, data) => {
+        console.warn(`[PodCube WARN]`, msg, data || "");
+        if (window.pipeToConsole) window.pipeToConsole(`${msg} ${data ? JSON.stringify(data) : ''}`, 'warn');
+    },
+    error: (msg, data) => {
+        console.error(`[PodCube ERROR]`, msg, data || "");
+        if (window.pipeToConsole) window.pipeToConsole(`${msg} ${data ? JSON.stringify(data) : ''}`, 'error');
+    }
 };
 
 // ==========================================
@@ -303,36 +314,57 @@ class FeedNormalizer {
      * 
      */
     static analyzeTitle(rawTitle) {
-        let episodeType = EPISODE_TYPES.NONE;
-        let cleanTitle = rawTitle;
-        let shortcode = "";
+    let episodeType = EPISODE_TYPES.NONE;
+    let cleanTitle = rawTitle;
+    let shortcode = "";
 
-        if (EMOJI_PATTERNS.PODCUBE.test(rawTitle)) {
-            episodeType = EPISODE_TYPES.TRANSMISSION;
-        } else if (EMOJI_PATTERNS.PODCUBE_HQ.test(rawTitle)) {
-            episodeType = EPISODE_TYPES.PODCUBE_HQ;
-        } else if (EMOJI_PATTERNS.TWIBBIE_ONDEMAND.test(rawTitle)) {
-            episodeType = EPISODE_TYPES.TWIBBIE_ONDEMAND;
+    // 1. Define strictly what identifies a functional PodCube type
+    const matchers = [
+        { type: EPISODE_TYPES.TRANSMISSION, pattern: EMOJI_PATTERNS.PODCUBE },
+        { type: EPISODE_TYPES.PODCUBE_HQ, pattern: EMOJI_PATTERNS.PODCUBE_HQ },
+        { type: EPISODE_TYPES.TWIBBIE_ONDEMAND, pattern: EMOJI_PATTERNS.TWIBBIE_ONDEMAND }
+    ];
+
+    // 2. Find the first functional match
+    let firstMatch = null;
+    for (const m of matchers) {
+        const result = rawTitle.match(m.pattern);
+        if (result && (firstMatch === null || result.index < firstMatch.index)) {
+            firstMatch = { ...m, index: result.index, length: result[0].length };
         }
+    }
 
-        // For types with lore, parse shortcode from title
-        if (episodeType === EPISODE_TYPES.TRANSMISSION || episodeType === EPISODE_TYPES.PODCUBE_HQ) {
-            const parts = rawTitle.split('_');
+    // 3. Process based on the first match found
+    if (firstMatch) {
+        episodeType = firstMatch.type;
+        
+        if (episodeType === EPISODE_TYPES.TRANSMISSION) {
+            // TRANSMISSIONS: Strip everything before and including the 🅿️
+            const startIndex = firstMatch.index + firstMatch.length;
+            let loreContent = rawTitle.substring(startIndex).trim();
+            
+            // Handle the shortcode split (e.g., "04.01.2050_Title")
+            const parts = loreContent.split('_');
             if (parts.length > 1) {
                 shortcode = parts[0].trim();
                 cleanTitle = parts.slice(1).join(" ").trim();
             } else {
-                const emojiPattern = episodeType === EPISODE_TYPES.TRANSMISSION
-                    ? EMOJI_PATTERNS.PODCUBE
-                    : EMOJI_PATTERNS.PODCUBE_HQ;
-                cleanTitle = rawTitle.replace(emojiPattern, "").trim();
+                cleanTitle = loreContent;
             }
-        } else if (episodeType === EPISODE_TYPES.TWIBBIE_ONDEMAND) {
-            cleanTitle = rawTitle.replace(EMOJI_PATTERNS.TWIBBIE_ONDEMAND, "").trim();
+        } 
+        else if (episodeType === EPISODE_TYPES.PODCUBE_HQ || episodeType === EPISODE_TYPES.TWIBBIE_ONDEMAND) {
+            // HQ/TWIBBIE: We keep the decorative start if it exists, 
+            // but we classify the type based on the first functional emoji found.
+            // "Everything INCLUDING that emoji is the title" per requirements.
+            cleanTitle = rawTitle.trim();
         }
-
-        return { episodeType, cleanTitle, shortcode };
     }
+
+    // 4. Final Cleanup: Strip trailing decorative diamonds/punctuation
+    cleanTitle = cleanTitle.replace(/[🔸💠\s;{}]+$/gu, "");
+
+    return { episodeType, cleanTitle, shortcode };
+}
 
     /**
      * Filter and extract episode metadata, based on the episode type

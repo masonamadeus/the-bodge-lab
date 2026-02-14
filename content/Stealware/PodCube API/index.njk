@@ -1,6 +1,7 @@
 ---
 title: "PodCube Explorer"
 layout: false
+uid: podcube
 ---
 
 <!DOCTYPE html>
@@ -20,8 +21,8 @@ layout: false
                 <div style="display:flex; align-items:center;">
                     <img id="headerLogo" class="header-logo" src="" alt="PodCube Logo" style="display:none;">
                     <div>
-                        <h1>PodCube™ Explorer</h1>
-                        <div class="subtitle">Official API Reference & Functional Demo</div>
+                        <h1>PodCube™ <i>Explorer</i></h1>
+                        <div class="subtitle">Official Diagnostic™ Tool & API Reference</div>
                     </div>
                 </div>
                 <div id="statusIndicator" class="meta" style="color: #888;">Initializing...</div>
@@ -36,6 +37,26 @@ layout: false
         </div>
         <!-- OVERVIEW TAB -->
         <div id="overview" class="tab-content active">
+            <div class="section brigistics-hero">
+                
+                <div class="hero-actions">
+                    <button class="hero-btn pulse" onclick="run('PodCube.play(PodCube.random)')">
+                        <span class="hero-btn-icon"></span>
+                        <div class="hero-btn-text">
+                            <strong>Play Random Transmission</strong>
+                            <span>Just Fun! Ha ha!</span>
+                        </div>
+                    </button>
+                    <button class="hero-btn" onclick="run('PodCube.play(PodCube.getNearestToToday()[0])')">
+                        <span class="hero-btn-icon"></span>
+                        <div class="hero-btn-text">
+                            <strong>Nearest to Today</strong>
+                            <span>Closest to <b>Now™</b></span>
+                        </div>
+                    </button>
+                </div>
+                <img src="" class="hero-logo" alt="PodCube Logo">
+            </div>
             <div class="section">
                 <h3>Brigistics Overview</h3>
                 <p class="meta mb-10 text-muted">Aggregate analysis of the connected PodCube feeds</p>
@@ -68,49 +89,16 @@ layout: false
                             <span class="toggle-icon">Expand ▾</span>
                         </label>
                     </div>
+                    <div style="margin-top:15px;margin-bottom:15px;">
+                        <button class="icon-btn reset-btn" onclick="resetArchive()">
+                            Reset All Filters
+                        </button>
+                    </div>
                     <div class="sidebar-content">
-                        <div>
-                            <label>Full-Text Search</label>
-                            <input type="text" id="arcSearch" placeholder="Title, description, tags..." oninput="updateArchive()">
-                        </div>
-                        <div>
-                            <label>Model</label>
-                            <select id="arcModel" onchange="updateArchive()">
-                                <option value="">All Models</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Origin</label>
-                            <select id="arcOrigin" onchange="updateArchive()">
-                                <option value="">All Origins</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Region</label>
-                            <select id="arcRegion" onchange="updateArchive()">
-                                <option value="">All Regions</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Zone</label>
-                            <select id="arcZone" onchange="updateArchive()">
-                                <option value="">All Zones</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Planet</label>
-                            <select id="arcPlanet" onchange="updateArchive()">
-                                <option value="">All Planets</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Locale</label>
-                            <select id="arcLocale" onchange="updateArchive()">
-                                <option value="">All Locales</option>
-                            </select>
-                        </div>
-                        <div style="border-top:1px solid #ddd; padding-top:12px; margin-top:12px;">
-                            <label>Episode Type</label>
+                        
+
+
+                        <label>Episode Type</label>
                             <select id="arcType" onchange="updateArchive()">
                                 <option value="">Any Type</option>
                                 <option value="transmission">PodCube™ Transmission</option>
@@ -150,10 +138,46 @@ layout: false
                                 <option value="duration_asc">Duration (Shortest)</option>
                             </select>
                         </div>
-                        <div style="margin-top:15px;">
-                            <button class="icon-btn" onclick="resetArchive()" style="width:100%">
-                                Reset All Filters
-                            </button>
+                        <div style="border-top:1px solid #ddd; padding-top:12px; margin-top:12px;">
+                            <div>
+                            <label>Full-Text Search</label>
+                            <input type="text" id="arcSearch" placeholder="Title, description, tags..." oninput="updateArchive()">
+                        </div>
+                        <div>
+                            <label>Model</label>
+                            <select id="arcModel" onchange="updateArchive()">
+                                <option value="">All Models</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Origin</label>
+                            <select id="arcOrigin" onchange="updateArchive()">
+                                <option value="">All Origins</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Region</label>
+                            <select id="arcRegion" onchange="updateArchive()">
+                                <option value="">All Regions</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Zone</label>
+                            <select id="arcZone" onchange="updateArchive()">
+                                <option value="">All Zones</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Planet</label>
+                            <select id="arcPlanet" onchange="updateArchive()">
+                                <option value="">All Planets</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Locale</label>
+                            <select id="arcLocale" onchange="updateArchive()">
+                                <option value="">All Locales</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -164,7 +188,7 @@ layout: false
                             <button class="icon-btn" onclick="playFilteredResults()">Play All</button>
                             <button class="icon-btn" onclick="queueFilteredResults()">Queue All</button>
                             <span class="text-muted" style="font-size:11px;">
-                                Click episode to inspect
+                                Click transmission to inspect.
                             </span>
                         </div>
                     </div>
@@ -177,10 +201,11 @@ layout: false
             <div class="section">
                 <div id="inspectorHeader" class="inspector-header">
                     <div>
-                        <h3>Episode Data Inspector</h3>
-                        <p class="text-muted" style="margin-top:5px;">
-                            Click any episode from Browse & Search to load complete metadata
-                        </p>
+                        <h3>
+                            Transmission Data Inspector</h3>
+                        <h4 class="text-muted" style="color:var(--primary)">
+                            Click any transmission from Browse & Search to load complete metadata.
+                        </h4>
                     </div>
                     <div id="inspectorActions"></div>
                 </div>
@@ -258,7 +283,14 @@ layout: false
                         <div class="bar-separator"></div>
                         <div class="bar-input-group">
                             <label>Vol</label>
-                            <input type="range" id="playerVolume" min="0" max="100" value="100" oninput="updatePlayerVolume(this.value)">
+                            <input
+                                type="range"
+                                style="width:200px"
+                                id="playerVolume"
+                                min="0"
+                                max="100"
+                                value="100"
+                                oninput="updatePlayerVolume(this.value)">
                         </div>
                         <div class="bar-input-group">
                             <label>Rate</label>
@@ -1124,8 +1156,7 @@ layout: false
                     <div class="ep-meta-row primary-meta">
                         <span class="ep-type ep-tag"></span>
                         <span class="ep-model"></span>
-                        <span class="sep">•</span>
-                        <span class="ep-duration"></span>
+                        
                     </div>
                     <div class="ep-meta-row secondary-meta">
                         <span class="ep-location"></span>
@@ -1135,6 +1166,7 @@ layout: false
                             <div class="integrity-fill"></div>
                         </div>
                         <div class="integrity-text"></div>
+                        <span class="ep-duration"></span>
                     </div>
                 </div>
                 <div class="ep-actions">

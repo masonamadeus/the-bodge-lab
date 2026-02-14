@@ -27,9 +27,15 @@ window.addEventListener('PodCube:Ready', async () => {
         updateStatusIndicator(`Connected: ${PodCube.FEED_TYPE.toUpperCase()}`);
 
         const logo = document.getElementById('headerLogo');
-        if (logo && PodCube.logo) {
-            logo.src = PodCube.logo;
-            logo.style.display = 'block';
+        const heroLogo = document.querySelector('.hero-logo');
+        if (PodCube.logo) {
+            if (logo) {
+                logo.src = PodCube.logo;
+                logo.style.display = 'block';
+            }
+            if (heroLogo) { // Add this block
+                heroLogo.src = PodCube.logo;
+            }
         }
         
         initArchiveControls();
@@ -549,7 +555,7 @@ function updateArchive() {
         
         // Row 1: Model & Duration
         clone.querySelector('.ep-model').textContent = ep.model || 'Unknown Model';
-        clone.querySelector('.ep-duration').textContent = ep.duration ? formatTime(ep.duration) : '0:00';
+        clone.querySelector('.ep-duration').textContent = ep.duration ? `${ep.weirdDuration} Minutes` : '0:00';
 
         // Row 2: Location
         clone.querySelector('.ep-location').textContent = ep.location || 'Unknown Location';
@@ -559,7 +565,7 @@ function updateArchive() {
         fill.style.width = `${intVal}%`;
         fill.style.backgroundColor = intColor;
         
-        clone.querySelector('.integrity-text').textContent = `${intVal}%`;
+        clone.querySelector('.integrity-text').textContent = `${intVal}% INTEGRITY`;
         clone.querySelector('.integrity-container').title = `Data Integrity: ${intVal}%`;
 
         // State classes
@@ -654,11 +660,10 @@ function loadEpisodeInspector(ep) {
         header.textContent = ''; // Clear
         
         const titleDiv = document.createElement('div');
-        titleDiv.innerHTML = `<h3>Episode Data Inspector</h3>`;
-        const p = document.createElement('p');
-        p.className = 'text-muted';
-        p.style.fontSize = '12px';
-        p.style.marginTop = '5px';
+        titleDiv.innerHTML = `<h3>Transmission Data Inspector</h3>`;
+        const p = document.createElement('h1');
+        p.style.color = 'var(--primary)';
+        p.style.marginTop = '15px';
         p.innerHTML = 'Complete metadata for: ';
         const strong = document.createElement('strong');
         strong.textContent = ep.title;
@@ -746,10 +751,15 @@ function loadEpisodeInspector(ep) {
     if (tagsContainer) {
         if (ep.tags && ep.tags.length > 0) {
             tagsContainer.innerHTML = `
-                <div class="inspector-tags">
-                    ${ep.tags.map(tag => `<span class="inspector-tag">${escapeHtml(tag)}</span>`).join('')}
-                </div>
-            `;
+        <div class="inspector-tags">
+            ${ep.tags.map(tag => `
+                <span class="inspector-tag" 
+                      style="cursor:pointer;" 
+                      onclick="applyHierarchyFilter('tag', '${escapeForAttribute(tag)}')">
+                    ${escapeHtml(tag)}
+                </span>`).join('')}
+        </div>
+    `;
         } else {
             tagsContainer.innerHTML = '<p class="text-muted" style="font-size:12px;">No tags</p>';
         }
@@ -1491,3 +1501,18 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+window.pipeToConsole = function(msg, type = 'info') {
+    const output = document.getElementById('consoleOutput');
+    const template = document.getElementById('tmpl-console-output');
+    if (!output || !template) return;
+
+    const clone = document.importNode(template.content, true);
+    const prefix = type === 'error' ? '❌ ' : (type === 'warn' ? '⚠️ ' : 'ℹ️ ');
+    
+    clone.querySelector('.console-prompt').textContent = `[SYSTEM ${type.toUpperCase()}]`;
+    clone.querySelector('.console-result').textContent = `${prefix}${msg}`;
+    clone.querySelector('.console-result').style.color = type === 'error' ? 'var(--danger)' : (type === 'warn' ? 'var(--warning)' : 'var(--primary)');
+
+    output.insertBefore(clone, output.firstChild);
+};

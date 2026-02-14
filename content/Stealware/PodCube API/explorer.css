@@ -1,18 +1,19 @@
 /* --- PODCUBE EXPLORER STYLES (COMPREHENSIVE EDITION) --- */
 :root {
     --primary: #1768da;
-    --primary-dim: #eef4ff;
+    --primary-dim: #d5dce7;
     --primary-dark: #0d4da1;
     --bg-body: #fdfdfc;
     --bg-panel: #ffffff;
     --text-main: #1a1a1a;
     --text-muted: #555555;
     --border: #1768da;
-    --success: #00C851;
-    --warning: #ffbb33;
+    --success: #1768da;
+    --warning: #1768da;
     --danger: #ff4444;
     --code-bg: #1768da;
     --code-text: #ffffff;
+    --orange: #f18701;
     
     --monitor-height: 40px;
     --transport-height: 80px;
@@ -169,6 +170,7 @@ h1 {
 .tab-content.active { 
     display: block;
     flex-direction: column;
+    margin-top:15px;
 }
 
 .section {
@@ -202,6 +204,7 @@ h1 {
     border: 1px solid var(--primary);
     padding: 15px;
     overflow-y: auto;
+    max-height:fit-content;
     
 }
 
@@ -277,6 +280,7 @@ h1 {
 .ep-date { 
     font-family: "Fustat"; 
     font-size: 10px; 
+    font-weight: bold;
     color: #888; 
     white-space: nowrap; 
 }
@@ -317,6 +321,7 @@ h1 {
     align-items: center;
     gap: 8px;
     margin-top: 6px;
+    width: 100%; /* Ensure it spans the full width */
 }
 
 .integrity-text {
@@ -325,6 +330,17 @@ h1 {
     font-weight: 700;
     color: #888;
     min-width: 30px;
+    flex-shrink: 0;
+}
+
+/* New styling for the relocated duration */
+.integrity-wrapper .ep-duration {
+    margin-left: auto; /* Pushes the duration to the far right */
+    font-family: "Fustat";
+    font-size: 9px;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
 }
 
 .integrity-container {
@@ -371,6 +387,12 @@ h1 {
 
 .icon-btn:active {
     transform: scale(0.95);
+}
+
+.reset-btn{
+    background: var(--primary-dark);
+    color: var(--bg-panel);
+    width:100%;
 }
 
 /* --- INSPECTOR STYLES --- */
@@ -950,7 +972,7 @@ label {
 
 .scrubber-fill { 
     height: 100%; 
-    background: var(--primary); 
+    background: var(--orange); 
     width: 0%; 
     transition: width 0.1s linear;
 }
@@ -974,9 +996,9 @@ label {
 }
 
 .monitor-prompt {
-    opacity: 0.5;
+    opacity: 1;
     margin-right: 10px;
-    color: #ffffff;
+    color: var(--orange);
 }
 
 .monitor-text {
@@ -987,10 +1009,10 @@ label {
 }
 
 .monitor-timestamp {
-    opacity: 0.6;
+    opacity: 1;
     font-size: 10px;
     margin-left: 20px;
-    color: #cccccc;
+    color: var(--bg-body);
 }
 
 /* --- STATS GRID --- */
@@ -1102,7 +1124,28 @@ label {
     color: var(--primary);
 }
 
-/* --- CONSOLE (Refactored) --- */
+/* --- CONSOLE --- */
+#api .section {
+    display: flex;
+    flex-direction: column;
+    max-height: 600px; /* Limits the total height of the console section */
+}
+
+/* Ensure the output box is the part that scrolls */
+.console-output {
+    background: #f5f5f5;
+    padding: 12px;
+    margin-top: 10px;
+    font-family: monospace;
+    font-size: 11px;
+    border: 1px solid var(--primary);
+    flex: 1;             /* Allows it to take up available space */
+    height: 300px;       /* Gives it a fixed base height */
+    overflow-y: scroll;  /* Forces the scrollbar to be active */
+    display: flex;
+    flex-direction: column; /* Keeps entries stacking correctly */
+}
+
 .console-entry {
     margin-bottom: 15px;
     border-bottom: 1px solid #eee;
@@ -1119,6 +1162,17 @@ label {
     color: #222;
 }
 
+.console-input-container {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.console-input-container input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
 .stat-box:hover {
     border-color: var(--primary);
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -1128,6 +1182,7 @@ label {
     font-size: 1.8em; 
     color: var(--primary); 
     font-family: "Libertinus Math"; 
+    font-weight:bold;
     margin-bottom: 5px;
 }
 
@@ -1140,29 +1195,7 @@ label {
     letter-spacing: 0.05em;
 }
 
-/* --- CONSOLE OUTPUT --- */
-.console-output {
-    background: #f5f5f5;
-    padding: 12px;
-    margin-top: 10px;
-    font-family: monospace;
-    font-size: 11px;
-    
-    border: 1px solid var(--primary);
-    max-height: 400px;
-    overflow-y: auto;
-}
 
-.console-input-container {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-}
-
-.console-input-container input {
-    flex: 1;
-    margin-bottom: 0;
-}
 
 /* --- QUEUE LIST --- */
 .queue-item {
@@ -1724,7 +1757,124 @@ label {
         padding: 0 10px;
         font-size: 10px;
     }
+
+    /* -- BRIGISTICS HERO MOBILE --*/
+    .brigistics-hero {
+        flex-direction: column; /* Stack vertically for mobile */
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .hero-logo {
+        flex: 0 0 100px; /* Keep logo at a readable "stamp" size */
+        max-height: 100px;
+        order: -1; /* Image stays on top */
+    }
+
+    .hero-actions {
+        width: 100%;
+        max-width: none;
+        align-items: center;
+    }
+
+    .hero-btn {
+        padding: 8px 12px; /* Shrink button height */
+        max-width: 100%;
+    }
+
+    .hero-btn-text strong {
+        font-size: 13px; /* Ensure text doesn't look "huge" on small screens */
+    }
+    
 }
+
+/* --- BRIGISTICS HERO --- */
+
+.brigistics-hero {
+    display: flex;
+    flex-direction: row; /* Horizontal for desktop */
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 2.5%;
+    background: #fff;
+    border: 3px double var(--primary); /* Official double border */
+    margin-bottom: 30px;
+    position: relative;
+    margin-top:15px;
+}
+
+/* Document Annotation */
+.brigistics-hero::before {
+    content: "Fast Access Random Transmissions";
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    background: var(--bg-body);
+    padding: 0 10px;
+    font-family: "Fustat", sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+}
+
+.hero-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    max-width: 500px;
+}
+
+.hero-logo {
+    flex: 0 1 200px; /* Allows logo to shrink but sets base size */
+    max-height: 180px;
+    width: auto;
+    object-fit: contain;
+    background: var(--bg-body);
+    padding: 5px;
+}
+
+/* --- THE "ACTION" BUTTONS --- */
+.hero-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    background: #fff;
+    border: 1px solid var(--primary);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    border-radius: 0px !important; /* Document requirement: No round corners */
+    transition: background 0.1s steps(2);
+}
+
+.hero-btn:hover {
+    background: var(--primary);
+}
+
+.hero-btn:hover .hero-btn-text strong,
+.hero-btn:hover .hero-btn-text span {
+    color: #fff;
+}
+
+.hero-btn-text strong {
+    display: block;
+    font-family: "Libertinus Math", serif; /* Document serif font */
+    font-size: clamp(14px, 1.5vw, 18px); /* Fluid typography */
+    color: var(--text-main);
+    line-height: 1.1;
+}
+
+.hero-btn-text span {
+    font-family: "Fustat", sans-serif;
+    font-size: 9px;
+    color: #666;
+    text-transform: uppercase;
+}
+
 
 /* --- UTILITY CLASSES --- */
 .mb-10 { margin-bottom: 10px; }
