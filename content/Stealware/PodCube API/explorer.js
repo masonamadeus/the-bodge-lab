@@ -22,6 +22,7 @@ const ICONS = {
 };
 
 // --- INITIALIZATION ---
+// WINDOW INITIALIZATION
 window.addEventListener('PodCube:Ready', async () => {
     try {
         await PodCube.init();
@@ -34,7 +35,7 @@ window.addEventListener('PodCube:Ready', async () => {
                 logo.src = PodCube.logo;
                 logo.style.display = 'block';
             }
-            if (heroLogo) { // Add this block
+            if (heroLogo) {
                 heroLogo.src = PodCube.logo;
             }
         }
@@ -51,12 +52,16 @@ window.addEventListener('PodCube:Ready', async () => {
         enableScrubbing('playerScrubber');  // Player tab scrubber
         refreshSessionInspector();
 
-
-        if (await PodCube.restoreSession()) {
+        // Attempt to restore session
+        const sessionRestored = await PodCube.restoreSession();
+        if (sessionRestored) {
             updateStatusIndicator("Session Restored");
-            if (PodCube.nowPlaying) {
-                loadEpisodeInspector(PodCube.nowPlaying);
-            }
+        }
+
+        // Load inspector only if we have a now playing episode
+        // (this happens after session restore, so don't call it twice)
+        if (PodCube.nowPlaying) {
+            loadEpisodeInspector(PodCube.nowPlaying);
         }
 
         updateUI();
@@ -72,16 +77,26 @@ window.addEventListener('PodCube:Ready', async () => {
                 checkRadioChain();
             }
         });
-        PodCube.on('timeupdate', updateProgress);
+        PodCube.on('track', (ep) => {
+            updateUI();
+            loadEpisodeInspector(ep);
+        });
+
+        PodCube.on('timeupdate', (status) => {
+            updateProgress(status);
+            // Pick the next episode when 30 seconds are remaining
+            if (AppState.radioMode && status.remaining < 30) {
+                checkRadioChain();
+            }
+        });
+
         PodCube.on('queue:changed', () => {
             updateQueueList();
-            updatePlayerQueueList();
+            // Ensure the chain is maintained if the user deletes the next track
+            if (AppState.radioMode) {
+                checkRadioChain();
+            }
         });
-        
-        // Auto-select currently playing episode if any
-        if (PodCube.nowPlaying) {
-            loadEpisodeInspector(PodCube.nowPlaying);
-        }
         
     } catch (e) {
         updateStatusIndicator(`Error: ${e.message}`);
@@ -381,7 +396,15 @@ function updateYearOptions() {
     updateArchive();
 }
 
+
+// Debounce Archive Updates
+const _debouncedUpdate = debounce(_performUpdateArchive, 300);
 function updateArchive() {
+    _debouncedUpdate();
+}
+
+
+function _performUpdateArchive() {
     const search = document.getElementById('arcSearch')?.value.toLowerCase() || '';
     const model = document.getElementById('arcModel')?.value || '';
     const origin = document.getElementById('arcOrigin')?.value || '';
@@ -548,11 +571,6 @@ function updateArchive() {
 
         // Events
         card.addEventListener('click', () => handleEpisodeClick(idx));
-        
-        clone.querySelector('.btn-play').addEventListener('click', (e) => {
-            e.stopPropagation();
-            run(`PodCube.play(PodCube.all[${idx}])`);
-        });
 
         // Wire up PLAY
         clone.querySelector('.btn-play').addEventListener('click', (e) => {
@@ -915,7 +933,7 @@ function toggleAutoplayMode(enabled) {
     if (enabled) {
         logCommand("// RADIO MODE: AUTHORIZED. Continuous transmission active.");
         
-        // FIX: Don't auto-play on toggle. Let the user press Play, 
+        // Don't auto-play on toggle. Let the user press Play, 
         // or let the Hero Button handle the initial play command.
         
         // If something IS playing, we check chain immediately to ensure buffer.
@@ -1073,14 +1091,30 @@ function enableScrubbing(elementId) {
 }
 
 function startLiveDataMonitor() {
+
+    // Remove aggressive polling loop
     if (AppState.liveDataInterval) {
         clearInterval(AppState.liveDataInterval);
+        AppState.liveDataInterval = null;
     }
     
-    AppState.liveDataInterval = setInterval(() => {
+    // Bind to audio engine events instead
+    // 'timeupdate' fires naturally during playback (approx 4Hz-60Hz depending on browser)
+    PodCube.on('timeupdate', () => {
         updateLivePlaybackData();
         updatePlayerBufferInfo();
-    }, 100);
+    });
+
+    // Ensure status updates immediately on state changes
+    const updateAll = () => {
+        updateLivePlaybackData();
+        updatePlayerBufferInfo();
+    };
+
+    PodCube.on('play', updateAll);
+    PodCube.on('pause', updateAll);
+    PodCube.on('ended', updateAll);
+    PodCube.on('error', updateAll);
 }
 
 function updateLivePlaybackData() {
@@ -1142,7 +1176,7 @@ function updatePlayerBufferInfo() {
     }
 }
 
-function updatePlayerQueueList() {
+function updateQueueList() {
     const q = PodCube.queueItems;
     const list = document.getElementById('playerQueueList');
     const template = document.getElementById('tmpl-queue-item');
@@ -1178,24 +1212,31 @@ function updatePlayerQueueList() {
     
     const fragment = document.createDocumentFragment();
 
-    
-    q.forEach((ep, i) => {
-        const isCur = i === PodCube.queueIndex;
-        const clone = document.importNode(template.content, true);
+    const displayQueue = [...q].reverse();
+
+    displayQueue.forEach((ep, i) => {
+        // Calculate the actual original index since we reversed the array
+        const originalIndex = (q.length - 1) - i;
+        const isCur = originalIndex === PodCube.queueIndex;
         
+        const clone = document.importNode(template.content, true);
         const item = clone.querySelector('.queue-item');
-        item.dataset.queueIndex = i;
-         if (isCur) {
+        
+        item.dataset.queueIndex = originalIndex;
+        
+        if (isCur) {
             item.classList.add('current');
-            item.removeAttribute('draggable');  // Can't drag current
+            item.removeAttribute('draggable');
         }
 
-        clone.querySelector('.queue-item-number').textContent = `${i + 1}.`;
+        // Display the user-facing number (1 at top, etc)
+        clone.querySelector('.queue-item-number').textContent = `${originalIndex + 1}.`;
+        
         clone.querySelector('.qi-title').textContent = ep.title;
         clone.querySelector('.queue-item-meta').textContent = `${ep.model || 'Unknown'} • ${ep.timestamp || 'Unknown duration'}`;
         
         clone.querySelector('.btn-remove').addEventListener('click', () => {
-            run(`PodCube.removeFromQueue(${i})`);
+            run(`PodCube.removeFromQueue(${originalIndex})`);
         });
 
         fragment.appendChild(clone);
@@ -1204,12 +1245,6 @@ function updatePlayerQueueList() {
     list.appendChild(fragment);
 }
 
-function updateQueueList() {
-    console.log(
-        `alias called for updateplayerqueuelist, find the culprit`
-    )
-    updatePlayerQueueList();
-}
 
 // --- DRAG AND DROP FOR QUEUE ---
 
@@ -1462,7 +1497,7 @@ function updateUI() {
         }
     }
     
-    updatePlayerQueueList();
+    updateQueueList();
 }
 
 // --- MOBILE TRANSPORT TOGGLE ---
@@ -1529,21 +1564,27 @@ async function toggleFeedType() {
     const current = PodCube.FEED_TYPE;
     const next = current === 'rss' ? 'json' : 'rss';
     
-    updateStatusIndicator("Switching Protocol...");
+    // Don't toggle if already on that type
+    if (current === next) {
+        log.info("Already using this feed type");
+        return;
+    }
+    
+    updateStatusIndicator(`Switching to ${next.toUpperCase()}...`);
     run(`PodCube.setFeedType('${next}')`);
     
     try {
-        await PodCube.init(true);
+        const changed = await PodCube.init(true);
+        
+        if (!changed) {
+            updateStatusIndicator(`Already on ${next.toUpperCase()}`);
+            return;
+        }
+        
         updateStatusIndicator(`Connected: ${PodCube.FEED_TYPE.toUpperCase()}`);
         
-        // Refresh all data
-        initArchiveControls();
-        updateBrigistics();
-        updateGeoDistribution();
-        updateArchive();
-        showDistribution();
-        updateUI();
-        
+        // Only refresh if feed actually changed
+        refreshAllData();
         logCommand(`// Switched to ${next.toUpperCase()} feed`);
     } catch(e) {
         updateStatusIndicator("Protocol Error");
@@ -1552,6 +1593,28 @@ async function toggleFeedType() {
 }
 
 // --- UTILITIES ---
+
+function refreshAllData() {
+    initArchiveControls();
+    updateBrigistics();
+    updateGeoDistribution();
+    updateArchive();
+    showDistribution();
+    updateUI();
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func.apply(this, args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 function formatTime(s) {
     if (!s) return "0:00";
     const m = Math.floor(s / 60);

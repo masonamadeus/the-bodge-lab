@@ -291,12 +291,16 @@ h1 {
 }
 
 .ep-date { 
-    font-family: "Fustat"; 
+    font-family: "Fustat", sans-serif; 
     font-size: 10px; 
     font-weight: bold;
     color: #888; 
-    margin-left:auto;
     white-space: nowrap; 
+}
+
+.ep-duration{
+    margin-left: auto;
+    font-family: "Fustat", sans-serif;
 }
 
 .ep-meta-row { 
@@ -320,7 +324,7 @@ h1 {
 }
 
 .ep-location {
-    font-size: 10px;
+    font-size: 11px;
     color: #888;
     white-space: nowrap;
     overflow: hidden;
@@ -361,7 +365,7 @@ h1 {
 .integrity-container {
     height: 4px;
     background: #f0f0f0;
-    width: 100px; /* Reduced slightly to fit text */
+    width: 100%;
     overflow: hidden;
 }
 

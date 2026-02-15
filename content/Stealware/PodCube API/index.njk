@@ -123,7 +123,7 @@ uid: podcube
                                 </select>
                             </div>
                             <div>
-                                <label>Timeline</label>
+                                <label>Select Era</label>
                                 <select id="arcYear" onchange="updateArchive()">
                                     <option value="">All Time</option>
                                 </select>
@@ -133,8 +133,8 @@ uid: podcube
                                 <select id="arcSort" onchange="updateArchive()">
                                     <option value="release_desc">Release Date (Newest)</option>
                                     <option value="release_asc">Release Date (Oldest)</option>
-                                    <option value="lore_desc">Lore Date (Newest)</option>
-                                    <option value="lore_asc">Lore Date (Oldest)</option>
+                                    <option value="lore_desc">Origin Date (Newest)</option>
+                                    <option value="lore_asc">Origin Date (Oldest)</option>
                                     <option value="integrity_desc">Integrity (High → Low)</option>
                                     <option value="integrity_asc">Integrity (Low → High)</option>
                                     <option value="duration_desc">Duration (Longest)</option>
@@ -271,7 +271,7 @@ uid: podcube
                                 </span>
                             </button>
                             <button class="player-transport-btn" onclick="run('PodCube.skipForward()')" title="Skip Forward 20s">
-                                <svg viewBox="0 0 24 24" class="icon-svg" style="transform: scaleY(-1);"><path d="M10 19c-3.54 0-6.55-2.31-7.6-5.5l-2.37.78C1.42 18.97 5.35 22 10 22c4.65 0 7.05-.99 8.9-2.6L22 23v-9h-9l3.62 3.62c-1.39 1.16-3.16 1.88-5.12 1.88z"/></svg>
+                                <svg viewbox="0 0 24 24" class="icon-svg" style="transform: scaleX(-1);"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
                             </button>
                             <button class="player-transport-btn" onclick="run('PodCube.next()')" title="Next Track">
                                 <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
@@ -373,7 +373,7 @@ uid: podcube
                         </div>
                     </div>
                     
-                    <h5 class="player-live-data-title">Live Playback Data <span style="font-weight:400; font-size:10px; text-transform:none;">(refreshes every 100ms)</span></h5>
+                    <h5 class="player-live-data-title">Live Playback Data <span style="font-weight:400; font-size:10px; text-transform:none;">(refreshes on PodCube timeupdate event)</span></h5>
                     <pre id="livePlaybackData" class="inspector-code-block live-updating"></pre>
                 </div>
             </div>
@@ -697,6 +697,7 @@ uid: podcube
                     <div class="api-section">
                         <h4>State & Events</h4>
                         <div class="api-methods">
+                            
                             <div class="api-method">
                                 <code class="api-signature">PodCube.nowPlaying</code>
                                 <p>Currently playing Episode object, or null if nothing is playing</p>
@@ -729,6 +730,49 @@ uid: podcube
                                 <p>Subscribe to event once, then automatically unsubscribe</p>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="api-section">
+                        <h4>Event Details</h4>
+                        <p class="text-muted">All event subscriptions return an unsubscribe function.</p>
+                        
+                        
+                        <h5>Playback Events</h5>
+                        <div class="api-method">
+                            <code class="api-signature">play</code>
+                            <p><strong>Payload:</strong> <code>Episode</code> - The episode that started playing</p>
+                            <p><strong>Example:</strong> <code>PodCube.on('play', (ep) => console.log(`Playing: ${ep.title}`))</code></p>
+                        </div>
+                        
+                        <div class="api-method">
+                            <code class="api-signature">pause</code>
+                            <p><strong>Payload:</strong> <code>Episode</code> - The episode that was paused</p>
+                        </div>
+                        
+                        <div class="api-method">
+                            <code class="api-signature">track</code>
+                            <p><strong>Payload:</strong> <code>Episode</code> - The newly loaded episode</p>
+                            <p><strong>Note:</strong> Fires when a new track is loaded, before playback starts</p>
+                        </div>
+                        
+                        <div class="api-method">
+                            <code class="api-signature">timeupdate</code>
+                            <p><strong>Payload:</strong> <code>Status</code> - Complete playback status object</p>
+                            <p><strong>Warning:</strong> Fires ~10 times per second. Debounce expensive operations.</p>
+                        </div>
+                        
+                        <div class="api-method">
+                            <code class="api-signature">queue:changed</code>
+                            <p><strong>Payload:</strong> <code>{ queue: Episode[], index: number }</code></p>
+                            <p>Fired when queue is modified (add, remove, reorder, clear)</p>
+                        </div>
+                        
+                        <div class="api-method">
+                            <code class="api-signature">error</code>
+                            <p><strong>Payload:</strong> <code>{ episode?: Episode, error: Error, event?: string, action?: string }</code></p>
+                            <p>Fired for various error conditions (playback, loading, network)</p>
+                        </div>
+                    
                     </div>
                     <!-- Session Management -->
                     <div class="api-section">
@@ -968,8 +1012,8 @@ uid: podcube
                             <span class="ep-location"></span>
                         </div>
                         <div class="ep-meta-row secondary-meta">
-                            <span class="ep-duration"></span>
                             <div class="ep-date"></div>
+                            <span class="ep-duration"></span>
                         </div>
                         <div class="integrity-wrapper">
                             <div class="integrity-container">
