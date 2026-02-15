@@ -15,6 +15,9 @@ uid: podcube
             href="https://fonts.googleapis.com/css2?family=Fustat:wght@400;600;700&family=Libertinus+Math&display=swap"
             rel="stylesheet">
         <link rel="icon" type="image/png" href="./favicon.png">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><!-- QR CODE GENERATOR FOR SHARING PLAYLISTS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><!-- HTML2CANVAS FOR TURNING PAGE INTO IMAGE -->
+        <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script><!-- QR CODE READER -->
     </head>
     <body>
         <div class="sticky-top">
@@ -42,20 +45,29 @@ uid: podcube
         <div id="overview" class="tab-content active">
             <div class="section brigistics-hero">
                 <div class="hero-actions">
-                    <button class="hero-btn pulse" onclick="run('PodCube.play(PodCube.random); toggleAutoplayMode(true);')">
-                        <span class="hero-btn-icon">◆</span>
-                        <span class="hero-btn-text">
-                            <strong style="">Activate PodCube Radio™</strong>
-                            <span>The Feed Exploration Experience Journey!</span>
-                        </span>
-                    </button>
-                    <button class="hero-btn" onclick="run('PodCube.play(PodCube.getNearestToToday()[0])')">
+                    <button class="hero-btn" onclick="run('PodCube.play(PodCube.getNearestToToday()[0]); toggleAutoplayMode(true);'); logCommand('PodCube.play(PodCube.getNearestToToday()[0])');">
                         <span class="hero-btn-icon">◆</span>
                         <span class="hero-btn-text">
                             <strong style=")">Nearest to Today</strong>
                             <span>Closest to
                                 <b>Now™.</b>
                             </span>
+                        </span>
+                    </button>
+
+                    <button class="hero-btn" onclick="run('PodCube.play(PodCube.latest); toggleAutoplayMode(true);'); logCommand('PodCube.play(PodCube.latest)');">
+                        <span class="hero-btn-icon">◆</span>
+                        <span class="hero-btn-text">
+                            <strong style=")">Latest Transmission</strong>
+                            <span>Most Recently Published.</span>
+                        </span>
+                    </button>
+                    
+                    <button class="hero-btn pulse" onclick="run('PodCube.play(PodCube.random); toggleAutoplayMode(true);'); logCommand('PodCube.play(PodCube.random)');">
+                        <span class="hero-btn-icon">◆</span>
+                        <span class="hero-btn-text">
+                            <strong style="">Random Transmission</strong>
+                            <span>The Feed Exploration Experience Journey!</span>
                         </span>
                     </button>
                 </div>
@@ -336,12 +348,39 @@ uid: podcube
 
                 <!-- Playlists -->
                 <div class="section">
-                    <h4 class="player-section-title">Saved Playlists</h4>
-                    <div class="player-playlist-controls">
-                        <input type="text" id="playlistNameInput" placeholder="Enter playlist name..." class="player-playlist-input">
-                        <button class="player-queue-btn" onclick="saveQueueAsPlaylist()">Save Current Queue</button>
+                    <h4 class="player-section-title">Punchcard Registry</h4>
+                    
+                    <div id="punchcardReader" class="punchcard-reader-wrapper">
+                        
+                        <label class="punchcard-label">
+                            PODCUBE™ PUNCHCARD READER
+                        </label>
+                        
+                        <div class="punchcard-row">
+                            <input type="text" id="playlistImportInput" 
+                                class="punchcard-input"
+                                placeholder="[Drag & Drop Image] or [Ctrl+V] to Insert...">
+                            <button class="punchcard-btn" onclick="importPlaylistFromInput()">
+                                INSERT
+                            </button>
+                        </div>
+
+                        <div class="punchcard-row" style="align-items:center;">
+                            <button class="player-queue-btn" onclick="saveQueueAsPlaylist()">ISSUE PUNCHCARD</button>
+                            <input type="text" id="playlistNameInput" 
+                                class="punchcard-input" 
+                                placeholder="Label for current queue..."
+                                style="font-family: 'Fustat', sans-serif;"> 
+                        </div>
                     </div>
+                    
                     <div id="playlistList" class="playlist-list"></div>
+                </div>
+
+                <!-- Playlist Sharing Panel -->
+                <div id="sharingSectionPanel" class="section" style="display:none;">
+                    <h4 class="player-section-title">Share Playlist</h4>
+                    <div id="sharingContent"></div>
                 </div>
 
                 <!-- Audio Diagnostics (visible, integrated into flow) -->
@@ -972,118 +1011,121 @@ uid: podcube
                 <div class="scrubber-fill" id="scrubberFill"></div>
             </div>
         </div>       
-            <!-- CODE MONITOR -->
-            <div class="code-monitor">
-                <span class="monitor-prompt">>></span>
-                <span class="monitor-text" id="monitorText">System Ready</span>
-                <span class="monitor-timestamp" id="monitorTimestamp"></span>
+        <!-- CODE MONITOR -->
+        <div class="code-monitor">
+            <span class="monitor-prompt">>></span>
+            <span class="monitor-text" id="monitorText">System Ready</span>
+            <span class="monitor-timestamp" id="monitorTimestamp"></span>
+        </div>
+        <!-- TEMPLATES -->
+        <template id="tmpl-stat-box">
+            <div class="stat-box">
+                <div class="stat-num"></div>
+                <div class="stat-lbl"></div>
             </div>
-            <!-- TEMPLATES -->
-            <template id="tmpl-stat-box">
-                <div class="stat-box">
-                    <div class="stat-num"></div>
-                    <div class="stat-lbl"></div>
-                </div>
-            </template>
-            <template id="tmpl-hierarchy-col">
-                <div class="hierarchy-col">
-                    <h4 class="hierarchy-title"></h4>
-                    <div class="hierarchy-list"></div>
-                </div>
-            </template>
-            <template id="tmpl-hierarchy-item">
-                <div class="hierarchy-item">
-                    <span class="hi-name"></span>
-                    <span class="hi-count"></span>
-                </div>
-            </template>
-            <!-- EPISODE CARDS -->
-            <template id="tmpl-ep-card">
-                <div class="ep-card">
-                    <div class="ep-content">
-                        <div class="ep-header">
-                            <div class="ep-title"></div>
+        </template>
+        <template id="tmpl-hierarchy-col">
+            <div class="hierarchy-col">
+                <h4 class="hierarchy-title"></h4>
+                <div class="hierarchy-list"></div>
+            </div>
+        </template>
+        <template id="tmpl-hierarchy-item">
+            <div class="hierarchy-item">
+                <span class="hi-name"></span>
+                <span class="hi-count"></span>
+            </div>
+        </template>
+        <!-- EPISODE CARDS -->
+        <template id="tmpl-ep-card">
+            <div class="ep-card">
+                <div class="ep-content">
+                    <div class="ep-header">
+                        <div class="ep-title"></div>
+                    </div>
+                    <div class="ep-meta-row primary-meta">
+                        <span class="ep-type ep-tag"></span>
+                        <span class="ep-model"></span>
+                    </div>
+                    <div class="ep-meta-row secondary-meta">
+                        <span class="ep-location"></span>
+                    </div>
+                    <div class="ep-meta-row secondary-meta">
+                        <div class="ep-date"></div>
+                        <span class="ep-duration"></span>
+                    </div>
+                    <div class="integrity-wrapper">
+                        <div class="integrity-container">
+                            <div class="integrity-fill"></div>
                         </div>
-                        <div class="ep-meta-row primary-meta">
-                            <span class="ep-type ep-tag"></span>
-                            <span class="ep-model"></span>
-                        </div>
-                        <div class="ep-meta-row secondary-meta">
-                            <span class="ep-location"></span>
-                        </div>
-                        <div class="ep-meta-row secondary-meta">
-                            <div class="ep-date"></div>
-                            <span class="ep-duration"></span>
-                        </div>
-                        <div class="integrity-wrapper">
-                            <div class="integrity-container">
-                                <div class="integrity-fill"></div>
-                            </div>
-                            <div class="integrity-text"></div>
-                        </div>
-                        
+                        <div class="integrity-text"></div>
                     </div>
-                    <div class="ep-actions">
-                        <button class="icon-btn btn-play">PLAY</button>
-                        <button class="icon-btn btn-play-next">PLAY NEXT</button>
-                        <button class="icon-btn btn-queue">QUEUE</button>
-                    </div>
+                    
                 </div>
-            </template>
-            <template id="tmpl-inspector-field">
-                <div class="inspector-field doubleborder">
-                    <div class="inspector-field-value"></div>
+                <div class="ep-actions">
+                    <button class="icon-btn btn-play">PLAY</button>
+                    <button class="icon-btn btn-play-next">PLAY NEXT</button>
+                    <button class="icon-btn btn-queue">QUEUE</button>
                 </div>
-            </template>
-            <template id="tmpl-related-ep">
-                <div class="related-ep-card">
-                    <div class="related-ep-info">
-                        <div class="related-ep-title"></div>
-                        <div class="related-ep-meta"></div>
-                    </div>
-                    <div class="related-ep-score">→</div>
+            </div>
+        </template>
+        <template id="tmpl-inspector-field">
+            <div class="inspector-field doubleborder">
+                <div class="inspector-field-value"></div>
+            </div>
+        </template>
+        <template id="tmpl-related-ep">
+            <div class="related-ep-card">
+                <div class="related-ep-info">
+                    <div class="related-ep-title"></div>
+                    <div class="related-ep-meta"></div>
                 </div>
-            </template>
-            <template id="tmpl-queue-item">
-                <div class="queue-item" draggable="true" data-queue-index="">
-                    <div class="queue-drag-handle">
-                        <svg viewbox="0 0 24 24" class="drag-icon">
-                            <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2
-                            2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9
-                            2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                        </svg>
-                    </div>
-                    <div class="queue-item-info">
-                        <div class="queue-item-title">
-                            <span class="queue-item-number"></span>
-                            <span class="qi-title"></span>
-                        </div>
-                        <div class="queue-item-meta"></div>
-                    </div>
-                    <div class="queue-item-actions">
-                        <button class="icon-btn btn-remove">REMOVE</button>
-                    </div>
+                <div class="related-ep-score">→</div>
+            </div>
+        </template>
+        <template id="tmpl-queue-item">
+            <div class="queue-item" draggable="true" data-queue-index="">
+                <div class="queue-drag-handle">
+                    <svg viewbox="0 0 24 24" class="drag-icon">
+                        <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2
+                        2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9
+                        2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                    </svg>
                 </div>
-            </template>
-            <template id="tmpl-playlist-item">
-                <div class="playlist-item">
-                    <div class="playlist-info">
-                        <div class="playlist-name"></div>
-                        <div class="playlist-meta"></div>
+                <div class="queue-item-info">
+                    <div class="queue-item-title">
+                        <span class="queue-item-number"></span>
+                        <span class="qi-title"></span>
                     </div>
-                    <div class="playlist-actions">
-                        <button class="icon-btn btn-load">LOAD</button>
-                        <button class="icon-btn btn-delete" style="color:var(--danger); border-color:var(--danger);">DEL</button>
-                    </div>
+                    <div class="queue-item-meta"></div>
                 </div>
-            </template>
-            <template id="tmpl-console-output">
-                <div class="console-entry">
-                    <div class="console-prompt"></div>
-                    <pre class="console-result"></pre>
+                <div class="queue-item-actions">
+                    <button class="icon-btn btn-remove">REMOVE</button>
                 </div>
-            </template>
-            <script src="/podcube.js" type="module"></script>
-            <script src="./explorer.js"></script>
-        </body>
+            </div>
+        </template>
+        <template id="tmpl-playlist-item">
+            <div class="playlist-item">
+                <div class="playlist-info">
+                    <div class="playlist-name"></div>
+                    <div class="playlist-meta"></div>
+                </div>
+                <div class="playlist-actions">
+                    <button class="icon-btn btn-share">SHARE</button>
+                    <button class="icon-btn btn-load">LOAD</button>
+                    <button class="icon-btn btn-delete" style="color:var(--danger); border-color:var(--danger);">DEL</button>
+                </div>
+            </div>
+        </template>
+        <template id="tmpl-console-output">
+            <div class="console-entry">
+                <div class="console-prompt"></div>
+                <pre class="console-result"></pre>
+            </div>
+        </template>
+        <script src="/podcube.js" type="module"></script>
+        <script src="./explorer.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="./playlist-sharing.js"></script>
+    </body>
 </html>

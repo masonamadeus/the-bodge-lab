@@ -325,13 +325,28 @@ class FeedNormalizer {
         return meta;
     }
 
+    static extractGUID(rawId) {
+        if (!rawId) return null;
+        try {
+            // 1. Split query params if any
+            const noQuery = rawId.split('?')[0];
+            // 2. Split path and take last segment
+            const segment = noQuery.split('/').pop();
+            // 3. Return segment if valid, otherwise fallback to raw
+            return (segment && segment.trim().length > 0) ? segment.trim() : rawId;
+        } catch (e) {
+            return rawId;
+        }
+    }
+
     /**
      * Normalize a raw feed item (from either RSS or JSON) into a common format
      */
     static normalizeItem(rawItem, format = 'rss') {
         try {
             // Extract format-specific fields with fallbacks
-            const id = rawItem.id || rawItem.guid || null;
+            let rawId = rawItem.id || rawItem.guid || null;
+            const id = this.extractGUID(rawId);
             const title = rawItem.title || "";
             const description = format === 'json'
                 ? (rawItem.content_html || null)
@@ -457,7 +472,7 @@ class Episode {
         if (!this.duration) return "IDK?";
         const m = Math.floor(this.duration / 60);
         const f = ((this.duration % 60) / 60).toFixed(2).substring(1);
-        const suffixes = ["ish", "?", " approx", " +/-", ""];
+        const suffixes = ["ish minutes", " or so minutes", " minutes (+/- a bit)", " minutes and change", " minutes (sorta)", "96722.13 minutes", "-esque minutes"];
         const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
         return `${m}${f}${suffix}`;
     }
@@ -674,6 +689,27 @@ class PodCubeEngine {
             log.error("Init failed:", e);
             throw e;
         }
+    }
+
+    /**
+     * Robustly find an episode by ID, handling URL drift and fuzzy matches.
+     * Returns Episode object or null.
+     */
+    findEpisode(id) {
+        if (!id) return null;
+        if (typeof id === 'object') return id; // Already an object
+
+        // 1. Try exact match (Fastest)
+        let match = this.episodes.find(e => e.id === id);
+        if (match) return match;
+
+        // 2. Try fuzzy match (Handles RSS URL vs JSON UUID differences)
+        const clean = FeedNormalizer.extractGUID(id);
+        if (clean) {
+            match = this.episodes.find(e => e.id.includes(clean));
+        }
+        
+        return match || null;
     }
 
     /**
@@ -1124,14 +1160,10 @@ class PodCubeEngine {
                 return;
             }
 
-            // [Fix 3.1] Race Condition Protection: Increment token to invalidate previous requests
+            // Race Condition Protection: Increment token to invalidate previous requests
             const token = ++this._loadingToken;
             this._isLoading = true;
             this._hasPreloadedNext = false;
-
-            // [Fix 2.1] Remove Blocking Downloads:
-            // We removed the entire fetch/blob/cache logic. 
-            // We now stream directly using standard HTML5 Audio.
             
             // Clean up any previous object URLs if they exist
             if (this._currentObjectUrl) {
@@ -1146,7 +1178,7 @@ class PodCubeEngine {
             // We do not await 'canplay' here to keep the UI responsive.
             // HTML5 audio handles buffering automatically.
 
-            // [Fix 3.1] Check token again before playing
+            // Check token again before playing
             if (token !== this._loadingToken) return; 
 
             if (autoPlay) {
@@ -1397,15 +1429,17 @@ class PodCubeEngine {
     addToQueue(input, playNow = false) {
         try {
             // 1. Normalize input to an array
-            const episodes = Array.isArray(input) ? input : [input];
+            const inputs = Array.isArray(input) ? input : [input];
 
-            // 2. Filter out null/undefined entries
-            const validEpisodes = episodes.filter(ep => ep);
-
-            if (validEpisodes.length === 0) {
-                log.warn("No valid episodes provided to queue");
-                return;
+            // 2. Validate inputs are Episodes (Clean API: Expects Objects)
+            const validEpisodes = inputs.filter(ep => ep instanceof Episode);
+            
+            // If caller passed IDs or something else, warn them
+            if (validEpisodes.length < inputs.length) {
+                log.warn("addToQueue: Some inputs were not valid Episode objects.");
             }
+
+            if (validEpisodes.length === 0) return;
 
             if (playNow) {
                 if (this._queueIndex === -1) {
@@ -1620,13 +1654,19 @@ class PodCubeEngine {
         return playlist;
     }
 
+    /**
+     * Load playlist by name.
+     * Uses centralized findEpisode() for robustness.
+     */
     loadPlaylist(name) {
         const data = localStorage.getItem(`podcube_playlist_${name}`);
         if (!data) return null;
 
         const playlist = JSON.parse(data);
+        
+        // Map stored IDs back to full Episode objects using central helper
         const episodes = playlist.episodes
-            .map(id => this.episodes.find(ep => ep.id === id))
+            .map(id => this.findEpisode(id))
             .filter(Boolean);
 
         return { ...playlist, episodes };
@@ -1649,9 +1689,21 @@ class PodCubeEngine {
         return false;
     }
 
-    /**
-     * Immediately clears queue and plays the specified playlist
-     */
+    renamePlaylist(oldName, newName) {
+        if (!newName || newName.trim() === "" || oldName === newName) return false;
+
+        const data = this.loadPlaylist(oldName);
+        if (data) {
+            // Save the existing episodes under the new name
+            this.savePlaylist(newName, data.episodes);
+            // Delete the old record
+            this.deletePlaylist(oldName);
+            log.info(`Playlist "${oldName}" renamed to "${newName}"`);
+            return true;
+        }
+        return false;
+    }
+
     playPlaylist(name) {
         const pl = this.loadPlaylist(name);
         if (!pl || !pl.episodes.length) return false;
@@ -1661,15 +1713,189 @@ class PodCubeEngine {
         return true;
     }
 
-    /**
-     * Appends playlist to the end of the current queue
-     */
-    queuePlaylist(name) {
-        const pl = this.loadPlaylist(name);
-        if (!pl || !pl.episodes.length) return false;
+    queuePlaylist(input) {
+        let episodes = [];
 
-        this.addToQueue(pl.episodes, false);
+        // Case 1: Input is a string (a playlist name)
+        if (typeof input === 'string') {
+            const pl = this.loadPlaylist(input);
+            if (!pl || !pl.episodes.length) return false;
+            episodes = pl.episodes;
+        }
+        // Case 2: Input is a playlist data object (from export or import)
+        else if (typeof input === 'object' && input !== null && Array.isArray(input.episodes)) {
+            episodes = input.episodes;
+        }
+        else {
+            log.error("Invalid playlist input provided to queuePlaylist");
+            return false;
+        }
+
+        if (episodes.length === 0) return false;
+
+        // Add episodes to queue without clearing or immediate playback
+        this.addToQueue(episodes, false);
         return true;
+    }
+
+    // --- PLAYLIST SHARING / EXPORT ---
+
+    /**
+     * COMPRESS: Nano-GUID v7 (20-bit Stream)
+     * Packs 5 hex chars (20 bits) per episode into a continuous byte stream.
+     * Safety: 1,048,576 combinations (0.4% collision risk @ 100 eps).
+     * Efficiency: ~3.5 chars per episode.
+     */
+    _compressPlaylist(name, episodes) {
+        if (!name || !episodes || episodes.length === 0) return null;
+
+        try {
+            // 1. Encode Name
+            const name64 = btoa(unescape(encodeURIComponent(name)))
+                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+            // 2. Build Continuous Hex Stream (20 bits per ID)
+            let hexStream = "";
+            episodes.forEach(ep => {
+                if (!ep.id) return;
+                // Strip non-hex, lower case, take first 5 chars
+                const cleanHex = ep.id.replace(/[^0-9a-fA-F]/g, '').toLowerCase();
+                hexStream += cleanHex.padEnd(5, '0').substring(0, 5);
+            });
+
+            if (hexStream.length === 0) return null;
+
+            // 3. Pad if odd length (must be byte-aligned for parsing)
+            if (hexStream.length % 2 !== 0) hexStream += '0';
+
+            // 4. Hex Stream -> Byte Array
+            const bytes = new Uint8Array(hexStream.length / 2);
+            for (let i = 0; i < hexStream.length; i += 2) {
+                bytes[i / 2] = parseInt(hexStream.substr(i, 2), 16);
+            }
+
+            // 5. Bytes -> Binary String -> Base64
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            
+            const ids64 = btoa(binary)
+                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+            return `${name64}.${ids64}`;
+
+        } catch (e) {
+            log.error("Compression failed:", e);
+            return null;
+        }
+    }
+
+    /**
+     * DECOMPRESS: Unpacks 20-bit stream
+     */
+    _decompressPlaylist(code) {
+        if (!code) return null;
+
+        try {
+            const parts = code.split('.');
+            if (parts.length !== 2) return null;
+
+            const [name64, ids64] = parts;
+
+            // 1. Decode Name
+            const name = decodeURIComponent(escape(atob(name64.replace(/-/g, '+').replace(/_/g, '/'))));
+
+            // 2. Decode Payload -> Binary String
+            const binary = atob(ids64.replace(/-/g, '+').replace(/_/g, '/'));
+            
+            // 3. Binary -> Hex Stream
+            let hexStream = "";
+            for (let i = 0; i < binary.length; i++) {
+                hexStream += binary.charCodeAt(i).toString(16).padStart(2, '0');
+            }
+
+            // 4. Split into 5-char Chunks
+            const shortIds = [];
+            const CHUNK = 5;
+            for (let i = 0; i < hexStream.length; i += CHUNK) {
+                const chunk = hexStream.substr(i, CHUNK);
+                // Only keep complete chunks (ignore padding 0)
+                if (chunk.length === CHUNK) shortIds.push(chunk);
+            }
+
+            return { name, shortIds };
+
+        } catch (e) {
+            console.error('Failed to decompress:', e);
+            return null;
+        }
+    }
+
+    /**
+     * Import a playlist from a share code
+     */
+    importPlaylist(code) {
+        const cleanCode = code.trim();
+        const data = this._decompressPlaylist(cleanCode);
+        
+        if (!data) return null;
+
+        const foundEpisodes = [];
+        
+        data.shortIds.forEach(shortId => {
+            // Match first 5 chars of hex ID
+            const match = this.episodes.find(ep => 
+                ep.id.replace(/[^0-9a-fA-F]/g, '').toLowerCase().startsWith(shortId.toLowerCase())
+            );
+            if (match) foundEpisodes.push(match);
+        });
+
+
+        return { 
+            name: data.name, 
+            episodes: foundEpisodes, 
+            missingCount: data.shortIds.length - foundEpisodes.length 
+        };
+    }
+
+    /**
+     * Export a playlist for sharing
+     */
+    exportPlaylist(name) {
+        // 1. Load the playlist
+        const pl = this.loadPlaylist(name);
+        
+        if (!pl || !pl.episodes || pl.episodes.length === 0) {
+            console.error(`Export failed: Playlist "${name}" empty or not found.`);
+            return null;
+        }
+
+        // 2. Compress
+        const code = this._compressPlaylist(name, pl.episodes);
+        if (!code) {
+            console.error("Export failed: Compression error.");
+            return null;
+        }
+
+        // 3. Generate URL
+        const url = new URL(window.location.href);
+        url.searchParams.set('importPlaylist', code);
+
+        return {
+            name,
+            episodes: pl.episodes,
+            code,
+            url: url.toString()
+        };
+    }
+
+    getImportCodeFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('importPlaylist');
+        window.history.replaceState({}, document.title, url.toString());
+        return params.get('importPlaylist') || null;
     }
 
     // --- DISCOVERY & BROWSING ---
@@ -1687,34 +1913,73 @@ class PodCubeEngine {
     }
 
     /**
-     * Find episodes related to a given episode by shared metadata
-     * Returns episodes with same model, origin, or tags
+     * Find episodes related to a given episode by shared metadata (fuzzy)
      */
     findRelated(episode, limit = 10) {
         if (!episode) return [];
 
-        // Pre-calculate sets for O(1) lookups
         const targetTags = new Set(episode.tags || []);
+        const modelPrefix = episode.model ? episode.model.substring(0, 3).toLowerCase() : null;
 
-        // Single pass through episodes
-        const scored = this.episodes
-            .filter(e => e !== episode) // Don't match self
+        // Minimum score required to be considered "related" (prevents broad/random matches)
+        const MIN_RELATED_THRESHOLD = 7;
+
+        return this.episodes
+            .filter(e => e !== episode)
             .map(e => {
                 let score = 0;
-                if (e.model === episode.model) score += 3;
-                if (e.origin === episode.origin) score += 2;
-                if (e.tags) {
-                    // Count shared tags
-                    e.tags.forEach(t => { if (targetTags.has(t)) score += 1; });
-                }
-                return { ep: e, score };
-            })
-            .filter(item => item.score > 0)
-            .sort((a, b) => b.score - a.score) // Sort by relevance
-            .slice(0, limit)
-            .map(item => item.ep);
+                const basis = {}; // Debugging object
 
-        return scored;
+                // 1. Model Matching
+                if (e.model === episode.model && e.model) {
+                    score += 12; basis.model = "Exact Match (+12)";
+                } else if (modelPrefix && e.model && e.model.toLowerCase().startsWith(modelPrefix)) {
+                    score += 4; basis.model = "Series Prefix (+4)";
+                }
+
+                // 2. Geographic Tier Matching (The "Baraboo" Logic)
+                if (e.origin === episode.origin && e.origin) {
+                    score += 10; basis.origin = "Origin Match (+10)";
+                }
+                if (e.locale === episode.locale && e.locale) {
+                    score += 6; basis.locale = "Locale Match (+6)";
+                }
+                if (e.region === episode.region && e.region) {
+                    score += 4; basis.region = "Region Match (+4)";
+                }
+                // Planet is excluded or set to 0 to prevent "Everything on Earth" from matching
+                if (e.zone === episode.zone && e.zone && e.zone !== "USA") {
+                    score += 2; basis.zone = "Zone Match (+2)";
+                }
+
+                // 3. Shared Tags
+                let tagMatches = 0;
+                if (e.tags) {
+                    e.tags.forEach(t => {
+                        if (targetTags.has(t)) {
+                            score += 3;
+                            tagMatches++;
+                        }
+                    });
+                }
+                if (tagMatches > 0) basis.tags = `${tagMatches} tags (+${tagMatches * 3})`;
+
+                // 4. Temporal Proximity
+                if (e.date && episode.date && e.date.year === episode.date.year && e.date.year !== 0) {
+                    score += 5; basis.time = "Same Lore Year (+5)";
+                }
+
+                return { ep: e, score, basis };
+            })
+            .filter(item => item.score >= MIN_RELATED_THRESHOLD) // Remove weak matches
+            .sort((a, b) => b.score - a.score)
+            .slice(0, limit)
+            .map(item => {
+                // Attach debug info to a non-enumerable property for the Inspector
+                item.ep._scoreBasis = item.basis;
+                item.ep._totalScore = item.score;
+                return item.ep;
+            });
     }
 
     /**

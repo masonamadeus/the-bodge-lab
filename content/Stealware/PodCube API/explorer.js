@@ -46,11 +46,14 @@ window.addEventListener('PodCube:Ready', async () => {
         updateArchive();
         showDistribution();
         updatePlaylistsUI();
+        checkForPlaylistImport();
         clearInspector();
         initQueueDragAndDrop();
         enableScrubbing('scrubber');        // Global transport scrubber
         enableScrubbing('playerScrubber');  // Player tab scrubber
         refreshSessionInspector();
+        initPasteHandler();
+        initPunchcardDragDrop();
 
         // Attempt to restore session
         const sessionRestored = await PodCube.restoreSession();
@@ -552,7 +555,7 @@ function _performUpdateArchive() {
         
         // Row 1: Model & Duration
         clone.querySelector('.ep-model').textContent = ep.model || 'Unknown Model';
-        clone.querySelector('.ep-duration').textContent = ep.duration ? `${ep.weirdDuration} Minutes` : '0:00';
+        clone.querySelector('.ep-duration').textContent = ep.duration ? `${ep.weirdDuration}` : '0:00';
 
         // Row 2: Location
         clone.querySelector('.ep-location').textContent = ep.location || 'Unknown Location';
@@ -613,13 +616,10 @@ function resetArchive() {
         if (el) el.value = '';
     });
     updateArchive();
-    logCommand('// Filters reset');
 }
 
 function playFilteredResults() {
     if (AppState.filteredResults.length === 0) return;
-    
-    logCommand(`// Playing ${AppState.filteredResults.length} filtered results`);
     
     // Clear queue and add all results
     run('PodCube.clearQueue()', true);
@@ -635,8 +635,6 @@ function playFilteredResults() {
 
 function queueFilteredResults() {
     if (AppState.filteredResults.length === 0) return;
-    
-    logCommand(`// Queuing ${AppState.filteredResults.length} episodes`);
     
     AppState.filteredResults.forEach((ep, i) => {
         run(`PodCube.addToQueue(PodCube.all[${PodCube.getEpisodeIndex(ep)}])`, i > 0);
@@ -684,6 +682,9 @@ function loadEpisodeInspector(ep) {
                         <span class="separator">•</span>
                         <span class="label">Duration</span>
                         <span class="value">${escapeHtml(ep.timestamp || 'N/A')}</span>
+                        <span class="separator">•</span>
+                        <span class="label">Integrity</span>
+                        <span class="value">${escapeHtml(ep.integrity || 'N/A')}</span>
                     </div>
                     <div class="inspector-meta-line">
                         <span class="label">Origin</span>
@@ -704,8 +705,65 @@ function loadEpisodeInspector(ep) {
     body.className = 'inspector-report-body loaded';
     
     let html = '';
+    
+    const episodeIndex = PodCube.getEpisodeIndex(ep);
+    
+// Core Properties Section
+html += '<div class="inspector-section">';
+html += '<h4 class="inspector-section-title">Executive Summary</h4>';
+html += '<div class="inspector-prose">';
+html += `<p>This transmission `;
+if (ep.anniversary) {
+    html += `originated <strong>${escapeHtml(ep.anniversary)}</strong>, and `;
+}
+html += `has been titled "<strong>${escapeHtml(ep.title)}</strong>" by the Brigistics department. `;
 
-        // Tags
+// Narrative Location Data
+html += `<br><br>Geographic metadata indicates it originated from planet <strong>${escapeHtml(ep.planet || 'Unknown')}</strong>, `;
+html += `within the <strong>${escapeHtml(ep.region || 'Unknown')}</strong> region of the <strong>${escapeHtml(ep.zone || 'Unknown')}</strong> zone. `;
+html += `The specific locale is identified as <strong>${escapeHtml(ep.locale || 'Unknown')}</strong>, `;
+html += `with the primary origin point recorded as <strong>"${escapeHtml(ep.origin || 'Unknown')}"</strong>. `;
+
+html += `<br><br>It has been cataloged at index <strong>PodCube.all[${episodeIndex}]</strong> with shortcode date <strong>${escapeHtml(ep.shortcode || 'N/A')}</strong>, `;
+html += `is of the type: <strong>"${escapeHtml(ep.episodeType || 'N/A')}"</strong>, `;
+html += `and carries an integrity rating of <strong>${escapeHtml(ep.integrity || 'N/A')}</strong>`;
+if (ep.integrityValue !== null) {
+    html += ` (${ep.integrityValue}%). `;
+}
+
+html += `<br><br>It runs for <strong>${escapeHtml(ep.timestamp || 'N/A')}</strong> `;
+html += `(${ep.duration ? ep.duration + ' seconds' : 'duration unknown'})`;
+if (ep.weirdDuration) {
+    html += `, or roughly ${escapeHtml(ep.weirdDuration)}`;
+}
+html += `. `;
+if (ep.sizeBytes) {
+    html += `The audio file size is <strong>${formatBytes(ep.sizeBytes)}</strong>. `;
+}
+html += `Audio source is ${ep.audioUrl ? '<strong>present</strong>' : '<strong style="color:var(--danger);">missing</strong>'}. `;
+html += `This transmission's Global Unique ID string is: <strong>"${escapeHtml(ep.id || 'N/A')}"</strong>. `;
+
+//related check
+const related = PodCube.findRelated(ep, 5);
+if (related.length > 0) {
+    const titles = related.map(relEp => `"${escapeHtml(relEp.title)}"`);
+    let relatedTitlesNarrative = "";
+
+    if (titles.length === 1) {
+        relatedTitlesNarrative = titles[0];
+    } else {
+        const lastTitle = titles.pop();
+        relatedTitlesNarrative = titles.join(', ') + ", or " + lastTitle;
+    }
+
+    html += `<br><br>It may or may not be related to ${relatedTitlesNarrative} which will be linked at the bottom of this document.`;
+}
+
+html += `</p></div></div>`;
+
+html += `</p></div></div>`;
+
+    // Tags
     if (ep.tags && ep.tags.length > 0) {
         html += '<div class="inspector-section">';
         html += '<h4 class="inspector-section-title">Classification Tags</h4>';
@@ -717,33 +775,20 @@ function loadEpisodeInspector(ep) {
         html += '</div>';
     }
     
-    // Core Properties Section
-    html += '<div class="inspector-section">';
-    html += '<h4 class="inspector-section-title">Core Properties</h4>';
-    html += '<div class="inspector-prose">';
-    html += `<p>This transmission has been cataloged with shortcode <strong class="code-inline">${escapeHtml(ep.shortcode || 'N/A')}</strong> `;
-    html += `and carries an integrity rating of <strong>${escapeHtml(ep.integrity || 'N/A')}</strong>`;
-    if (ep.integrityValue !== null) {
-        html += ` (${ep.integrityValue}% verified)`;
-    }
-    html += `. The episode's unique identifier is <span class="code-inline">${escapeHtml(ep.id || 'N/A')}</span>.</p>`;
-    html += '</div>';
-    html += '</div>';
-    
     // Temporal Analysis
     html += '<div class="inspector-section">';
     html += '<h4 class="inspector-section-title">Temporal Analysis</h4>';
     html += '<div class="inspector-callout">';
     html += '<div class="inspector-callout-title">Origin Timeline</div>';
     html += '<div class="inspector-callout-content">';
+
+    
     html += `<strong>Origin Date:</strong> ${escapeHtml(ep.date?.toString() || 'Unknown Date')}<br>`;
-    if (ep.date?.year) {
-        html += `<strong>Origin Year:</strong> ${escapeHtml(ep.date.displayYear)}<br>`;
+    if (ep.anniversary) {
+        html += `<strong>Anniversary:</strong> ${escapeHtml(ep.anniversary)}<br>`;
     }
     html += `<strong>Published:</strong> ${ep.published ? new Date(ep.published).toLocaleDateString() + ' at ' + new Date(ep.published).toLocaleTimeString() : 'N/A'}`;
-    if (ep.anniversary) {
-        html += `<br><strong>Anniversary:</strong> ${escapeHtml(ep.anniversary)}`;
-    }
+    
     html += '</div>';
     html += '</div>';
     html += '</div>';
@@ -759,32 +804,14 @@ function loadEpisodeInspector(ep) {
     html += `<div class="data-label">Planet</div><div class="data-value code">${escapeHtml(ep.planet || 'N/A')}</div>`;
     html += '</div>';
     html += '</div>';
-    
-    // Audio Information
-    html += '<div class="inspector-section">';
-    html += '<h4 class="inspector-section-title">Audio Characteristics</h4>';
-    html += '<div class="inspector-prose">';
-    html += `<p>This transmission runs for <strong>${escapeHtml(ep.timestamp || 'N/A')}</strong> `;
-    html += `(${ep.duration ? ep.duration + ' seconds' : 'duration unknown'})`;
-    if (ep.weirdDuration) {
-        html += `, or roughly <em>${escapeHtml(ep.weirdDuration)}</em>`;
-    }
-    html += `. `;
-    if (ep.sizeBytes) {
-        html += `The audio file size is ${formatBytes(ep.sizeBytes)}. `;
-    }
-    html += `Audio source is ${ep.audioUrl ? '<strong>present</strong>' : '<strong style="color:var(--danger);">missing</strong>'}.`;
-    html += `</p>`;
-    html += '</div>';
-    html += '</div>';
 
-    // Related Episodes
-    const related = PodCube.findRelated(ep, 5);
-    if (related.length > 0) {
+    // Related Episodes (10 this time)
+    const related10 = PodCube.findRelated(ep, 10);
+    if (related10.length > 0) {
         html += '<div class="inspector-section">';
         html += '<h4 class="inspector-section-title">Related Transmissions</h4>';
         html += '<div class="inspector-related-list">';
-        related.forEach(relEp => {
+        related10.forEach(relEp => {
             const relIdx = PodCube.getEpisodeIndex(relEp);
             html += `<div class="inspector-related-item" onclick="loadEpisodeInspector(PodCube.all[${relIdx}])">`;
             html += '<div class="inspector-related-item-info">';
@@ -795,15 +822,6 @@ function loadEpisodeInspector(ep) {
             html += '</div>';
         });
         html += '</div>';
-        html += '</div>';
-    }
-    
-    
-    // Description
-    if (ep.description) {
-        html += '<div class="inspector-section">';
-        html += '<h4 class="inspector-section-title">Transmission Description</h4>';
-        html += `<div class="inspector-description-block">${escapeHtml(ep.description)}</div>`;
         html += '</div>';
     }
     
@@ -931,7 +949,6 @@ function toggleAutoplayMode(enabled) {
     }
     
     if (enabled) {
-        logCommand("// RADIO MODE: AUTHORIZED. Continuous transmission active.");
         
         // Don't auto-play on toggle. Let the user press Play, 
         // or let the Hero Button handle the initial play command.
@@ -941,8 +958,6 @@ function toggleAutoplayMode(enabled) {
              checkRadioChain();
         }
         
-    } else {
-        logCommand("// RADIO MODE: DE-AUTHORIZED.");
     }
 }
 
@@ -1385,6 +1400,7 @@ function clearUserSession() {
 }
 
 // --- PLAYLIST MANAGEMENT ---
+
 function saveQueueAsPlaylist() {
     const input = document.getElementById('playlistNameInput');
     const name = input?.value.trim();
@@ -1406,34 +1422,107 @@ function saveQueueAsPlaylist() {
     updatePlaylistsUI();
 }
 
-function updatePlaylistsUI() {
-    const container = document.getElementById('playlistList');
-    const template = document.getElementById('tmpl-playlist-item');
-    if (!container || !template) return;
+function importPlaylistFromInput() {
+    const input = document.getElementById('playlistImportInput');
+    const val = input.value.trim();
     
-    const playlists = PodCube.getPlaylists();
-    container.textContent = '';
-    
-    if (playlists.length === 0) {
-        container.innerHTML = '<div class="text-muted" style="font-size:12px; grid-column: 1/-1; text-align:center; padding:10px;">No saved playlists</div>';
+    // Check if empty
+    if (!val) {
+        alert("PUNCHCARD READER EMPTY.\n\nPlease paste a Punchcard Image [Ctrl+V] or enter a Nano-GUID code.");
+        input.focus();
         return;
     }
+
+    const result = PodCube.importPlaylist(val); 
+    if (result && result.episodes.length > 0) {
+        let finalName = result.name;
+        if (PodCube.loadPlaylist(finalName)) {
+            finalName = `${result.name} (Copy ${new Date().getTime().toString().slice(-4)})`;
+        }
+        PodCube.savePlaylist(finalName, result.episodes);
+        
+        updatePlaylistsUI();
+        input.value = '';
+        
+        // Tone-appropriate log
+        logCommand(`// Punchcard accepted. "${finalName}" registered.`);
+        updateStatusIndicator(`Punchcard Accepted: ${result.episodes.length} Tracks`);
+    } else {
+        alert("INVALID PUNCHCARD.\n\nThe data appears corrupted or unreadable.");
+    }
+}
+
+function updatePlaylistsUI() {
+    const container = document.getElementById('playlistList');
+    if (!container) return;
+    
+    const playlists = PodCube.getPlaylists();
+    container.innerHTML = '';
     
     playlists.forEach(pl => {
-        const clone = document.importNode(template.content, true);
-        clone.querySelector('.playlist-name').textContent = pl.name;
-        clone.querySelector('.playlist-meta').textContent = `${pl.episodes.length} tracks • ${new Date(pl.created).toLocaleDateString()}`;
+        const exportData = PodCube.exportPlaylist(pl.name);
         
-        clone.querySelector('.btn-load').addEventListener('click', () => {
-            loadPlaylistToQueue(pl.name);
-        });
+        // Create the card wrapper
+        const card = document.createElement('div');
+        // We add 'interactive' to enable hover effects defined in CSS
+        card.className = 'pc-share-card-container interactive'; 
         
-        clone.querySelector('.btn-delete').addEventListener('click', () => {
-            deletePlaylist(pl.name);
-        });
+        // Render the "Punchcard" structure
+        card.innerHTML = `
+            <div class="pc-share-header">PodCube™</div>
+            
+            <div class="pc-share-body">
+                <div class="pc-share-title" 
+                     contenteditable="true" 
+                     title="Click to Rename"
+                     onblur="finalizeRename(this, '${escapeForAttribute(pl.name)}')"
+                     onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
+                    ${escapeHtml(pl.name)}
+                </div>
+                
+                <div class="pc-share-meta">${pl.episodes.length} Transmissions</div>
+                
+                <div class="pc-share-qr-frame">
+                    <div id="miniQR_${btoa(pl.name).substring(0,8)}"></div>
+                </div>
+            </div>
+
+            <div class="pc-share-actions">
+                <button class="icon-btn" onclick="run('PodCube.playPlaylist(\\'${escapeForAttribute(pl.name)}\\')')" title="Load into Queue">
+                    INSERT
+                </button>
+                <button class="icon-btn" onclick="PlaylistSharing.exportToClipboard('${escapeForAttribute(pl.name)}')" title="Copy to Clipboard">
+                    EXPORT
+                </button>
+                <button class="icon-btn" style="color:var(--danger); border-color:var(--danger);" onclick="deletePlaylist('${escapeForAttribute(pl.name)}')" title="Delete Forever">
+                    SHRED
+                </button>
+            </div>
+        `;
         
-        container.appendChild(clone);
+        container.appendChild(card);
+        
+        // Generate QR Code
+        if (window.QRCode) {
+            new QRCode(document.getElementById(`miniQR_${btoa(pl.name).substring(0,8)}`), {
+                text: exportData.url,
+                width: 100, // Slightly larger for better scanning
+                height: 100,
+                colorDark: "#1768da", // PodCube Blue
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
     });
+}
+
+function finalizeRename(el, oldName) {
+    const newName = el.textContent.trim();
+    if (newName && newName !== oldName) {
+        PodCube.renamePlaylist(oldName, newName);
+        updatePlaylistsUI();
+        logCommand(`// Reclassified record to "${newName}"`);
+    }
 }
 
 function loadPlaylistToQueue(name) {
@@ -1444,6 +1533,19 @@ function loadPlaylistToQueue(name) {
 function deletePlaylist(name) {
     run(`PodCube.deletePlaylist("${name}")`);
     updatePlaylistsUI();
+}
+
+function renamePlaylist(oldName) {
+    const newName = prompt("Enter new name for playlist:", oldName);
+    if (newName && newName !== oldName) {
+        const data = PodCube.loadPlaylist(oldName);
+        if (data) {
+            PodCube.savePlaylist(newName, data.episodes);
+            PodCube.deletePlaylist(oldName);
+            updatePlaylistsUI();
+            logCommand(`// Renamed playlist to "${newName}"`);
+        }
+    }
 }
 
 // --- UPDATE UI ---
@@ -1710,6 +1812,358 @@ document.addEventListener('keydown', (e) => {
         runConsole();
     }
 });
+
+// --- SHARE CARD FUNCTIONALITY ---
+// --- PLAYLIST SHARING (Refined & Fixed) ---
+
+/**
+ * Color palette - hardcoded to avoid CSS variable issues in JS
+ */
+const COLORS = {
+    primary: '#1768da',
+    primaryDim: '#e1e8f3',
+    primaryDark: '#0d4da1',
+    text: '#1a1a1a',
+    textMuted: '#555555',
+    bg: '#fdfdfc',
+    border: '#1768da'
+};
+
+/**
+ * Generate a QR code and append to container
+ * FIXES: QRCode library requires container as first parameter
+ */
+function generateQRCode(container, text, size = 200) {
+    if (!container) return false;
+    if (typeof QRCode === 'undefined') {
+        console.warn('QRCode library not loaded');
+        return false;
+    }
+
+    try {
+        container.innerHTML = '';
+        new QRCode(container, {
+            text: text,
+            width: size,
+            height: size,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        return true;
+    } catch (e) {
+        console.error('QR code generation failed:', e);
+        return false;
+    }
+}
+
+/**
+ * Copy text to clipboard with visual feedback
+ */
+function copyToClipboard(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    const text = el.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        logCommand('// Copied to clipboard');
+        const btn = el.nextElementSibling;
+        if (btn) {
+            const original = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = original; }, 1500);
+        }
+    }).catch(e => {
+        console.error('Copy failed:', e);
+        logCommand('// Error: Copy failed');
+    });
+}
+
+function importPlaylistFromInput() {
+    const input = document.getElementById('playlistImportInput');
+    const result = PodCube.importPlaylist(input.value.trim()); //
+    if (result && result.episodes.length > 0) {
+        // Automatic Save with de-confliction
+        let finalName = result.name;
+        if (PodCube.loadPlaylist(finalName)) {
+            finalName = `${result.name} (Imported ${new Date().getTime().toString().slice(-4)})`;
+        }
+        PodCube.savePlaylist(finalName, result.episodes); //
+        updatePlaylistsUI();
+        input.value = '';
+        logCommand(`// Imported and saved "${finalName}"`);
+    }
+}
+
+/**
+ * Check for playlist import on page load
+ */
+function checkForPlaylistImport() {
+    const importCode = PodCube.getImportCodeFromUrl();
+    if (!importCode) return;
+
+    const playlistData = PodCube.importPlaylist(importCode);
+    if (!playlistData) {
+        logCommand('// Error: Invalid playlist code');
+        return;
+    }
+
+    showImportNotification(playlistData);
+}
+
+/**
+ * Show import notification with action options
+ */
+function showImportNotification(playlistData) {
+    const playerSection = document.getElementById('player');
+    if (!playerSection) return;
+
+    const notification = document.createElement('div');
+    notification.className = 'import-notification';
+    notification.innerHTML = `
+        <div class="import-notification-content">
+            <div class="import-notification-info">
+                <strong>${escapeHtml(playlistData.name)}</strong>
+                <span class="import-notification-count">${playlistData.episodes.length} tracks</span>
+            </div>
+            <div class="import-notification-actions">
+                <button class="import-action-btn" onclick="performPlaylistImport('add', this)">Add Queue</button>
+                <button class="import-action-btn" onclick="performPlaylistImport('replace', this)">Replace Queue</button>
+                <button class="import-action-btn" onclick="performPlaylistImport('save', this)">Save New</button>
+                <button class="import-action-close" onclick="this.closest('.import-notification').remove()">Close</button>
+            </div>
+        </div>
+    `;
+
+    playerSection.insertBefore(notification, playerSection.firstChild);
+}
+
+/**
+ * Execute the playlist import action
+ */
+function performPlaylistImport(action, button) {
+    const notification = button.closest('.import-notification');
+    const nameEl = notification.querySelector('strong');
+    const name = nameEl.textContent;
+
+    const importCode = PodCube.getImportCodeFromUrl();
+    const playlistData = PodCube.importPlaylist(importCode);
+
+    if (!playlistData || playlistData.episodes.length === 0) {
+        logCommand('// Error: No episodes to import');
+        return;
+    }
+
+    try {
+        if (action === 'add') {
+            // Call API directly with objects
+            PodCube.queuePlaylist(playlistData)
+            // Log manually for the user
+            logCommand(`// Added "${name}" (${episodes.length} tracks) to queue`);
+        } else if (action === 'replace') {
+            PodCube.clearQueue();
+            PodCube.addToQueue(episodes, true);
+            logCommand(`// Replaced queue with "${name}"`);
+        } else if (action === 'save') {
+            const saveName = prompt('Save playlist as:', name);
+            if (saveName && saveName.trim()) {
+                PodCube.savePlaylist(saveName, episodes);
+                updatePlaylistsUI();
+                logCommand(`// Saved as "${saveName}"`);
+            }
+            return;
+        }
+
+        updateQueueList();
+        notification.remove();
+        logCommand(`const playlistData = PodCube.importPlaylist('...'); // playlistData { name, episodes, missingCount }`);
+    } catch (e) {
+        console.error('Import action failed:', e);
+        logCommand(`// Error: Import failed`);
+    }
+}
+
+function initPasteHandler() {
+    document.addEventListener('paste', async (e) => {
+        // 1. Check what is on the clipboard
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        let blob = null;
+
+        // 2. Search for an image item
+        for (const item of items) {
+            if (item.type.indexOf('image') === 0) {
+                blob = item.getAsFile();
+                break; // Found an image, stop looking
+            }
+        }
+
+        // 3. Logic Branch:
+        if (blob) {
+            // A. IT IS AN IMAGE: Intercept it everywhere!
+            // This prevents the browser from doing nothing (or weird stuff) when pasting 
+            // an image into a text input.
+            e.preventDefault();
+            updateStatusIndicator("Scanning pasted Punchcard...");
+            await scanPastedImage(blob);
+        } else {
+            // B. IT IS TEXT (or something else):
+            // Let the event bubble normally.
+            // This allows the user to paste a text code (Nano-GUID) into the input box
+            // without us interfering.
+        }
+    });
+}
+
+/**
+ * Initialize Drag-and-Drop for Punchcards
+ * Adds visual cues and handling to the reader area
+ */
+function initPunchcardDragDrop() {
+    const reader = document.getElementById('punchcardReader');
+    const input = document.getElementById('playlistImportInput');
+    
+    if (!reader) return;
+
+    // 1. Drag Over / Enter (Visual Cue)
+    ['dragenter', 'dragover'].forEach(eventName => {
+        reader.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            reader.classList.add('drag-active');
+        }, false);
+    });
+
+    // 2. Drag Leave / End (Remove Cue)
+    ['dragleave', 'dragend'].forEach(eventName => {
+        reader.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            reader.classList.remove('drag-active');
+        }, false);
+    });
+
+    // 3. Drop (The Action)
+    reader.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        reader.classList.remove('drag-active');
+
+        const dt = e.dataTransfer;
+        const files = dt.files;
+
+        if (files && files.length > 0) {
+            const file = files[0];
+            if (file.type.startsWith('image/')) {
+                updateStatusIndicator("Scanning dropped Punchcard...");
+                await scanPastedImage(file); // Reuses the Paste logic!
+            } else {
+                alert("INVALID OBJECT.\n\nThe reader only accepts Image files (PNG/JPG).");
+            }
+        }
+    }, false);
+}
+
+async function scanPastedImage(imageBlob) {
+    const img = new Image();
+    const url = URL.createObjectURL(imageBlob);
+
+    img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // Force white background to handle transparency
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        if (window.jsQR) {
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+            if (code && code.data) {
+                handlePastedCode(code.data);
+            } else {
+                // More helpful error message
+                alert("SCAN FAILED.\n\nImage received, but no Nano-GUID could be decoded.\nTry pasting a clearer image or the raw text code.");
+                updateStatusIndicator("Error: No QR code found in pasted image.");
+            }
+        } else {
+            console.error("jsQR library not loaded.");
+            alert("System Error: Scanner library missing.");
+        }
+        URL.revokeObjectURL(url);
+    };
+    
+    img.src = url;
+}
+
+function handlePastedCode(data) {
+    let codeToImport = data;
+
+    // Smart-extract: If the QR contains a full URL (like our share links), grab just the code
+    if (data.includes('importPlaylist=')) {
+        try {
+            const url = new URL(data);
+            codeToImport = url.searchParams.get('importPlaylist');
+        } catch (e) {
+            // If URL parsing fails, just use the raw data
+            console.warn("Regex parse fallback", e);
+        }
+    }
+
+    const input = document.getElementById('playlistImportInput');
+    if (input) {
+        // Visual feedback: Put the code in the box
+        input.value = codeToImport;
+        // Auto-submit
+        importPlaylistFromInput(); 
+    }
+}
+
+/**
+ * Save active tab preference to localStorage
+ */
+function saveTabPreference(tabId) {
+    if (tabId) {
+        localStorage.setItem('podCube_activeTab', tabId);
+    }
+}
+
+/**
+ * Restore active tab from localStorage
+ */
+function restoreTabPreference() {
+    const savedTab = localStorage.getItem('podCube_activeTab');
+    if (savedTab) {
+        const tabElement = document.getElementById(savedTab);
+        if (tabElement) {
+            // Switch to saved tab
+            const tabBtn = document.querySelector(`[data-tab="${savedTab}"]`);
+            if (tabBtn) {
+                tabBtn.click();
+            }
+        }
+    }
+}
+
+// Initialize tab preference restoration on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Attach save handler to all tab buttons
+    document.querySelectorAll('[data-tab]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const tabId = btn.getAttribute('data-tab');
+            saveTabPreference(tabId);
+        });
+    });
+
+    // Restore previously active tab
+    setTimeout(() => restoreTabPreference(), 100);
+});
+
 
 // --- CSS for Hierarchy Hover ---
 const style = document.createElement('style');

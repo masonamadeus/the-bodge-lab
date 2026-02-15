@@ -603,8 +603,7 @@ h1 {
 }
 
 .inspector-prose strong {
-    font-weight: 700;
-    color: var(--primary);
+    font-weight: 500;
 }
 
 .inspector-prose .code-inline {
@@ -1606,66 +1605,53 @@ h1 {
 
 .playlist-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
 }
 
-.playlist-item {
+.playlist-card {
+    border: 3px double var(--primary);
+    background: #fff;
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    padding: 12px;
-    border: 1px solid var(--primary);
-    background: #fff;
-    transition: all 0.15s ease;
-    position: relative;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.1s ease;
 }
 
-.playlist-item:hover {
-    border-color: var(--primary);
+.playlist-card:hover {
+    transform: translateY(-2px);
     background: var(--primary-dim);
-    box-shadow: 2px 2px 0 rgba(23, 104, 218, 0.1);
 }
 
-.playlist-info {
-    flex: 1;
-    margin-bottom: 12px;
+.mini-qr-container {
+    width: 100px;
+    height: 100px;
+    background: #fff;
+    border: 1px solid var(--primary);
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.playlist-name {
-    font-weight: 700;
-    font-size: 13px;
-    margin-bottom: 4px;
-    color: var(--primary);
+.playlist-card .playlist-name {
+    font-size: 14px;
+    height: 34px; /* Limits to ~2 lines */
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    margin-bottom: 4px;
 }
 
-.playlist-meta {
-    font-size: 10px;
-    color: #888;
-    font-family: "Fustat";
-    display: flex;
-    gap: 8px;
-}
-
-.playlist-actions {
-    display: flex;
-    gap: 6px;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-}
-
-.playlist-actions button {
-    flex: 1;
-    min-width: 60px;
-    padding: 5px 8px;
-    font-size: 9px;
-    margin: 0;
+.playlist-card .playlist-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    width: 100%;
 }
 
 /* Empty state for playlists */
-.empty-state {
+.playlist-empty-state {
     padding: 40px 20px;
     text-align: center;
     color: #999;
@@ -1673,6 +1659,131 @@ h1 {
     background: #f8f8f8;
     border: 1px dashed var(--primary-dim);
     font-family: "Fustat";
+}
+
+.playlist-import-controls {
+    background: #f0f4f8;
+    border: 1px solid #d1d9e6;
+    padding: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.playlist-import-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.playlist-import-row input {
+    margin-bottom: 0;
+    background: #fff;
+    font-family: monospace;
+    font-size: 11px;
+}
+
+/* --- PUNCHCARD READER (New & Clean) --- */
+.punchcard-reader-wrapper {
+    background: var(--primary-dim);
+    border: 3px double var(--primary);
+    padding: 15px;
+    margin-bottom: 20px;
+    position: relative;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Drag & Drop Hover State */
+.punchcard-reader-wrapper.drag-active {
+    background: #fff;
+    box-shadow: 0 0 15px var(--primary);
+    border-color: var(--primary-dark);
+}
+
+.punchcard-reader-wrapper.drag-active::after {
+    content: "DROP PUNCHCARD IMAGE HERE";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(23, 104, 218, 0.9);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Fustat", sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.punchcard-label {
+    margin-bottom: 8px; 
+    display: block; 
+    font-weight: 700; 
+    letter-spacing: 0.05em; 
+    color: var(--primary-dark);
+}
+
+.punchcard-row {
+    display: flex; 
+    gap: 10px; 
+    margin-bottom: 15px;
+}
+
+.punchcard-row:last-child {
+    margin-bottom: 0;
+}
+
+.punchcard-input {
+    margin: 0; 
+    flex: 1; 
+    font-family: monospace; 
+    border: 1px solid var(--primary);
+    background: #fff;
+}
+
+.punchcard-btn {
+    background: var(--primary); 
+    color: white; 
+    padding: 0 20px;
+    border: 1px solid var(--primary);
+    font-family: "Fustat", sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.punchcard-btn:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.punchcard-issue-btn {
+    /* Styles for the "Issue" button specifically if needed, inheriting from above */
+    background: #fff;
+    color: var(--primary);
+}
+
+.punchcard-issue-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .punchcard-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .punchcard-btn {
+        width: 100%;
+        padding: 10px;
+    }
 }
 
 /* ========== BUFFER & AUDIO STATE SECTION ========== */
@@ -2888,7 +2999,7 @@ label {
 
 /* Document Annotation */
 .brigistics-hero::before {
-    content: "Fast Access Random Transmissions";
+    content: "Fast Access Ready Transmissions";
     position: absolute;
     top: -10px;
     left: 10px;
@@ -2911,7 +3022,7 @@ label {
 
 .hero-logo {
     flex: 0 1 200px; /* Allows logo to shrink but sets base size */
-    max-height: 180px;
+    max-height: 230px;
     width: auto;
     object-fit: contain;
     background: var(--bg-body);
@@ -2963,6 +3074,344 @@ label {
     text-transform: uppercase;
 }
 
+/* --- PLAYLIST SHARING --- */
+
+/* Sharing Panel */
+#sharingSectionPanel {
+    margin-top: 20px;
+}
+
+.sharing-playlist-header {
+    padding: 12px;
+    background: var(--primary-dim);
+    border-left: 3px solid var(--primary);
+    margin-bottom: 16px;
+}
+
+.sharing-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--primary);
+    margin-bottom: 4px;
+}
+
+.sharing-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: "Fustat";
+}
+
+.sharing-qr-section {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    background: #f9f9f9;
+    border: 1px solid var(--primary-dim);
+    margin-bottom: 16px;
+    min-height: 240px;
+}
+
+.sharing-qr {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sharing-qr canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+.sharing-code-section,
+.sharing-url-section {
+    margin-bottom: 16px;
+}
+
+.sharing-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-family: "Fustat";
+    letter-spacing: 0.5px;
+}
+
+.sharing-code-box {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    background: var(--code-bg);
+    padding: 10px;
+    border: 1px solid var(--primary);
+}
+
+.sharing-code-box code {
+    flex: 1;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--code-text);
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.sharing-code-box .icon-btn {
+    flex-shrink: 0;
+    padding: 5px 8px;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--code-text);
+    color: var(--code-text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sharing-code-box .icon-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.sharing-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.sharing-actions .player-queue-btn {
+    flex: 1;
+    min-width: 100px;
+}
+
+/* Import Notification */
+.import-notification {
+    background: var(--primary-dim);
+    border: 2px solid var(--primary);
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.import-notification-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.import-notification-text {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-main);
+    font-family: "Fustat";
+}
+
+.import-notification-text strong {
+    color: var(--primary);
+}
+
+.import-btn-add,
+.import-btn-replace,
+.import-btn-save {
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: "Fustat";
+    background: var(--primary);
+    color: white;
+    border: 1px solid var(--primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.import-btn-add:hover,
+.import-btn-replace:hover,
+.import-btn-save:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.import-btn-close {
+    padding: 2px 6px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.15s ease;
+}
+
+.import-btn-close:hover {
+    color: var(--primary);
+}
+
+/* --- PLAYLIST SHARING CARD (Generated dynamically) --- */
+.pc-share-card-container {
+    font-family: "Fustat", sans-serif;
+    color: #fff;
+    background: var(--bg-body);
+    border: 4px double #1768da;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    box-sizing: border-box;
+    overflow: hidden;
+        filter: drop-shadow(2px 4px 2px rgba(0,0,0,0.3));
+}
+
+/* Background grid effect */
+.pc-share-card-bg {
+    pointer-events: none;
+}
+
+.pc-share-header {
+    background: #1768da;
+    color: #fff;
+    font-family: "Libertinus Math";
+    padding: 15px;
+    font-weight: 800;
+    font-size: 24px;
+    z-index: 1;
+    border-bottom: 2px solid #fff;
+}
+
+.pc-share-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1;
+}
+
+.pc-share-title {
+    font-family: "Libertinus Math", serif;
+    font-size: 28px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
+    line-height: 1.1;
+    color: #000;
+}
+
+.pc-share-meta {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    margin-bottom: 25px;
+    letter-spacing: 0.05em;
+}
+
+.pc-share-qr-frame {
+    background: #fff;
+    padding: 10px;
+    border: 2px solid #1768da;
+    margin-bottom: 25px;
+}
+
+.pc-share-footer {
+    background: #1768da;
+    color: #fff;
+    padding: 15px;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 1;
+    text-align: center;
+}
+
+.pc-share-code-box {
+    color: #fff;
+    font-family: "Fustat";
+    font-size: 10px;
+    word-break: break-all;
+    margin-top: 5px;
+}
+
+.pc-share-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 5px;
+}
+
+
+
+/* The Action Bar (Replaces the Import Code footer) */
+.pc-share-actions {
+    background: var(--primary-dim);
+    border-top: 2px solid var(--primary);
+    padding: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 5px;
+}
+
+.pc-share-actions .icon-btn {
+    width: 100%;
+    justify-content: center;
+    background: #fff;
+    font-size: 9px;
+    padding: 6px 0;
+    margin: 0;
+}
+
+.pc-share-actions .icon-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* Hover effect only for the interactive on-screen ones */
+.pc-share-card-container.interactive:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(23, 104, 218, 0.15);
+}
+
+/* mini cards used in UI */
+.playlist-mini-card {
+    border: 3px double var(--primary);
+    background: #fff;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.2s ease;
+}
+
+.mini-qr-preview {
+    width: 80px;
+    height: 80px;
+    background: #f5f5f5;
+    border: 1px solid var(--primary-dim);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sharing-qr-section {
+        min-height: 200px;
+    }
+
+    .import-notification-text {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sharing-actions {
+        flex-direction: column;
+    }
+
+    .sharing-actions .player-queue-btn {
+        width: 100%;
+    }
+}
 
 /* --- UTILITY CLASSES --- */
 .mb-10 { margin-bottom: 10px; }
