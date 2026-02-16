@@ -6,10 +6,16 @@ const PlaylistSharing = {
     createCardElement: function(exportData) {
         const card = document.createElement('div');
         card.className = 'pc-share-card-container';
-        card.style.position = 'fixed';
-        card.style.left = '-9999px'; 
+        
+        // FIX: Use absolute positioning at 0,0 with deep negative z-index
+        // This prevents viewport clipping issues common with 'fixed' off-screen elements
+        card.style.position = 'absolute';
+        card.style.left = '0'; 
         card.style.top = '0';
-        card.style.zIndex = '-1'; 
+        card.style.zIndex = '-9999'; 
+        
+        // Force width to match CSS
+        card.style.width = '400px'; 
         
         card.innerHTML = `
             <div class="pc-share-card-bg"></div>
@@ -22,7 +28,7 @@ const PlaylistSharing = {
                 </div>
             </div>
             <div class="pc-share-footer">
-                <span class="pc-share-label">COPY/PASTE THIS IMAGE INTO POWEREDBYPODCUBE.COM</span>
+                <span class="pc-share-label">COPY/PASTE THIS IMAGE INTO BODGELAB.COM/S/PODCUBE</span>
                 <div class="pc-share-code-box">${exportData.code}</div>
             </div>
         `;
@@ -43,11 +49,72 @@ const PlaylistSharing = {
     },
 
     /**
-     * Open the sharing diagnostic panel
+     * ROBUST PUNCH: Creates a new canvas and clips the image to the specific shape.
+     * CSS Reference: clip-path: polygon(0 0, calc(100% - 100px) 0, 100% 125px, 100% 100%, 0 100%);
      */
+    reshapeCanvas: function(sourceCanvas) {
+        // Config
+        const padding = 40; 
+        const shadowBlur = 25;
+        
+        // 1. Setup Destination Canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = sourceCanvas.width + (padding * 2);
+        canvas.height = sourceCanvas.height + (padding * 2);
+        const ctx = canvas.getContext('2d');
+
+        const x = padding;
+        const y = padding;
+        const w = sourceCanvas.width;
+        const h = sourceCanvas.height;
+        
+        // Cut Size (Scale 2x)
+        const cutW = 125 * 2; 
+        const cutH = 125 * 2; 
+
+        // 2. DEFINE THE SHAPE PATH
+        // We reuse this path for both the shadow and the clip
+        ctx.beginPath();
+        ctx.moveTo(x, y);                   // Top Left
+        ctx.lineTo(x + w - cutW, y);        // Top Edge (Start of Cut)
+        ctx.lineTo(x + w, y + cutH);        // Right Edge (End of Cut)
+        ctx.lineTo(x + w, y + h);           // Bottom Right
+        ctx.lineTo(x, y + h);               // Bottom Left
+        ctx.closePath();
+
+        // 3. DRAW SHADOW (Before Clipping)
+        ctx.save();
+        ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+        ctx.shadowBlur = shadowBlur;
+        ctx.shadowOffsetX = 12;
+        ctx.shadowOffsetY = 12;
+        ctx.fillStyle = "#ffffff";
+        ctx.fill(); // Draws the white shape + shadow
+        ctx.restore();
+
+        // 4. CLIP & DRAW CONTENT
+        // Anything drawn after this will be confined to the shape
+        ctx.save();
+        ctx.clip(); 
+        ctx.drawImage(sourceCanvas, x, y);
+        ctx.restore(); // Release the clip so we can draw the border on top
+
+        // 5. DRAW BORDER
+        // We redraw the path just to stroke the line
+        ctx.beginPath();
+        ctx.moveTo(x + w - cutW, y+4);      // Start of cut
+        ctx.lineTo(x + w-4, y + cutH);      // End of cut
+        
+        ctx.lineWidth = 8;               // 16px (matches CSS 8px visual at 2x scale)
+        ctx.strokeStyle = "#1768da";
+        ctx.lineCap = "round";
+        ctx.stroke();
+
+        return canvas;
+    },
+
     open: function(playlistName) {
         const exportData = PodCube.exportPlaylist(playlistName);
-        
         if (!exportData) {
             alert("Could not export playlist. It may be empty or invalid.");
             return;
@@ -55,36 +122,35 @@ const PlaylistSharing = {
 
         const panel = document.getElementById('sharingSectionPanel');
         const content = document.getElementById('sharingContent');
-        
         if (!panel || !content) return;
 
-        // Render the UI Panel
         content.innerHTML = `
-    <div class="sharing-diagnostic-wrapper">
-        <div class="card-preview-area">
-             <div class="pc-share-card-container active-preview">
-                <div class="pc-share-header">PodCube™ PUNCHCARD</div> <div class="pc-share-body">
-                    <div class="pc-share-title">${escapeHtml(exportData.name)}</div>
-                    <div id="qrPreviewContainer"></div>
+            <div class="sharing-diagnostic-wrapper">
+                <div class="card-preview-area">
+                     <div class="pc-share-card-container active-preview">
+                        <div class="pc-share-header">PodCube™ PUNCHCARD</div>
+                        <div class="pc-share-body">
+                            <div class="pc-share-title">${escapeHtml(exportData.name)}</div>
+                            <div id="qrPreviewContainer"></div>
+                        </div>
+                        <div class="pc-share-footer" onclick="copyToClipboard('shareCodeTarget')">
+                            <span class="pc-share-label">CLICK TO COPY NANO-GUID</span>
+                            <div class="pc-share-code-box" id="shareCodeTarget">${exportData.code}</div>
+                        </div>
+                     </div>
                 </div>
-                <div class="pc-share-footer" onclick="copyToClipboard('shareCodeTarget')">
-                    <span class="pc-share-label">CLICK TO COPY NANO-GUID</span>
-                    <div class="pc-share-code-box" id="shareCodeTarget">${exportData.code}</div>
+                <div class="sharing-controls">
+                    <button class="hero-btn" onclick="PlaylistSharing.exportToClipboard('${escapeForAttribute(playlistName)}')">
+                        <strong>EXPORT PUNCHCARD</strong>
+                        <span>Copy Link & Card Image</span>
+                    </button>
+                    <button class="hero-btn" onclick="renamePlaylistUI('${escapeForAttribute(playlistName)}')">
+                        <strong>RECLASSIFY RECORD</strong>
+                        <span>Rename Punchcard</span>
+                    </button>
                 </div>
-             </div>
-        </div>
-        <div class="sharing-controls">
-            <button class="hero-btn" onclick="PlaylistSharing.exportToClipboard('${escapeForAttribute(playlistName)}')">
-                <strong>EXPORT PUNCHCARD</strong>
-                <span>Copy Link & Card Image</span>
-            </button>
-            <button class="hero-btn" onclick="renamePlaylistUI('${escapeForAttribute(playlistName)}')">
-                <strong>RECLASSIFY RECORD</strong>
-                <span>Rename Punchcard</span>
-            </button>
-        </div>
-    </div>
-`;
+            </div>
+        `;
 
         setTimeout(() => {
             const container = document.getElementById('qrPreviewContainer');
@@ -94,7 +160,7 @@ const PlaylistSharing = {
                     text: exportData.url,
                     width: 150,
                     height: 150,
-                    colorDark: "#1768da",
+                    colorDark: "#000000",
                     colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.M
                 });
@@ -105,111 +171,103 @@ const PlaylistSharing = {
         panel.scrollIntoView({ behavior: 'smooth' });
     },
 
-
-    /**
- * EXPORT: Image + Text to Clipboard with Visual Feedback
- */
-exportToClipboard: async function(playlistName) {
-    if (!window.html2canvas || !navigator.clipboard || !navigator.clipboard.write) {
-         alert("Clipboard features unavailable. Downloading image instead.");
-         this.downloadImage(playlistName);
-         return;
-    }
-
-    const exportData = PodCube.exportPlaylist(playlistName);
-    if (!exportData) return;
-
-    // 1. IMMEDIATE UI FEEDBACK (Before heavy work)
-    const cards = document.querySelectorAll('.pc-share-card-container');
-    let targetCard = null;
-    cards.forEach(c => {
-        if (c.querySelector('.pc-share-title')?.textContent.trim() === playlistName) {
-            targetCard = c;
+    exportToClipboard: async function(playlistName) {
+        if (!window.html2canvas || !navigator.clipboard || !navigator.clipboard.write) {
+             alert("Clipboard features unavailable. Downloading image instead.");
+             this.downloadImage(playlistName);
+             return;
         }
-    });
 
-    const btn = event?.currentTarget;
-    const originalBtnText = btn ? btn.textContent : 'EXPORT';
+        const exportData = PodCube.exportPlaylist(playlistName);
+        if (!exportData) return;
 
-    let overlay = null;
-    if (targetCard) {
-        overlay = document.createElement('div');
-        overlay.className = 'pc-exporting-overlay';
-        overlay.innerHTML = `
-            <div class="pc-export-scanner-line"></div>
-            <div class="pc-export-status-text">GENERATING PHYSICAL RECORD...</div>
-        `;
-        targetCard.appendChild(overlay);
-    }
-    
-    if (btn) {
-        btn.classList.add('is-exporting');
-        btn.textContent = '...';
-    }
+        // UI Feedback (Scanning Line)
+        const cards = document.querySelectorAll('.pc-share-card-container');
+        let targetCard = null;
+        cards.forEach(c => {
+            if (c.querySelector('.pc-share-title')?.textContent.trim() === playlistName) targetCard = c;
+        });
 
-    if (typeof logCommand !== 'undefined') logCommand(`// Initiating record generation for "${playlistName}"...`);
+        const btn = event?.currentTarget;
+        const originalBtnText = btn ? btn.textContent : 'EXPORT';
+        let overlay = null;
 
-    // 2. DELAY HEAVY WORK: Wrap in setTimeout to let UI render the overlay first
-    setTimeout(async () => {
-        const cardElement = this.createCardElement(exportData);
-        document.body.appendChild(cardElement);
+        if (targetCard) {
+            overlay = document.createElement('div');
+            overlay.className = 'pc-exporting-overlay';
+            overlay.innerHTML = `
+                <div class="pc-export-scanner-line"></div>
+                <div class="pc-export-status-text">GENERATING PHYSICAL RECORD...</div>
+            `;
+            targetCard.appendChild(overlay);
+        }
+        
+        if (btn) {
+            btn.classList.add('is-exporting');
+            btn.textContent = '...';
+        }
 
-        try {
-            const canvas = await html2canvas(cardElement, { 
-                scale: 2, 
-                backgroundColor: "#ffffff",
-                useCORS: true,
-                logging: false
-            });
-            
-            const imageBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-            const textBlob = new Blob([exportData.url], {type: 'text/plain'});
+        // Delay to allow UI render
+        setTimeout(async () => {
+            const cardElement = this.createCardElement(exportData);
+            document.body.appendChild(cardElement);
 
-            const item = new ClipboardItem({ 
-                "image/png": imageBlob,
-                "text/plain": textBlob 
-            });
+            try {
+                // 1. Capture Raw Square
+                const rawCanvas = await html2canvas(cardElement, { 
+                    scale: 2, 
+                    backgroundColor: null, 
+                    useCORS: true,
+                    logging: false,
+                    scrollX: 0, // Force top-left capture
+                    scrollY: 0
+                });
 
-            await navigator.clipboard.write([item]);
-            
-            if (typeof logCommand !== 'undefined') logCommand(`// EXPORT SUCCESS: PUNCHCARD ADDED TO CLIPBOARD.`);
-            
-            // 3. SUCCESS STATE: Hang on the "COPIED" screen for 3 seconds
-            if (btn) btn.textContent = 'COPIED!';
-            if (overlay) {
-                overlay.querySelector('.pc-export-scanner-line').style.display = 'none';
-                overlay.querySelector('.pc-export-status-text').innerHTML = `
-                    COPIED TO CLIPBOARD.<br>
-                    PASTE ANYWHERE TO SHARE.<br>
-                    PASTE INTO PUNCH CARD READER TO UPLOAD.
-                `;
-                overlay.style.background = 'rgba(23, 104, 218, 0.9)'; // More solid blue on success
+                // 2. Apply The Geometry (Reshape)
+                const finalCanvas = this.reshapeCanvas(rawCanvas);
+                
+                const imageBlob = await new Promise(res => finalCanvas.toBlob(res, 'image/png'));
+                const textBlob = new Blob([exportData.url], {type: 'text/plain'});
+
+                const item = new ClipboardItem({ 
+                    "image/png": imageBlob,
+                    "text/plain": textBlob 
+                });
+
+                await navigator.clipboard.write([item]);
+                
+                if (typeof logCommand !== 'undefined') logCommand(`// EXPORT SUCCESS: PUNCHCARD ADDED TO CLIPBOARD.`);
+                
+                if (btn) btn.textContent = 'COPIED!';
+                if (overlay) {
+                    overlay.querySelector('.pc-export-scanner-line').style.display = 'none';
+                    overlay.querySelector('.pc-export-status-text').innerHTML = `
+                        COPIED TO CLIPBOARD.<br>
+                        PASTE ANYWHERE TO SHARE.<br>
+                        PASTE INTO PUNCH CARD READER TO UPLOAD.
+                    `;
+                    overlay.style.background = 'rgba(23, 104, 218, 0.9)';
+                }
+
+                setTimeout(() => {
+                    if (cardElement.parentNode) cardElement.parentNode.removeChild(cardElement);
+                    if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                    if (btn) {
+                        btn.classList.remove('is-exporting');
+                        btn.textContent = originalBtnText;
+                    }
+                }, 3500);
+
+            } catch (e) {
+                console.error("Rich export failed", e);
+                if (btn) btn.textContent = 'FAILED';
+                this.downloadImage(playlistName);
+                if (cardElement.parentNode) cardElement.parentNode.removeChild(cardElement);
+                if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
             }
+        }, 50);
+    },
 
-            // Extended delay for readability
-            setTimeout(() => cleanup(), 3500);
-
-        } catch (e) {
-            console.error("Rich export failed", e);
-            if (btn) btn.textContent = 'FAILED';
-            this.downloadImage(playlistName);
-            cleanup();
-        }
-
-        function cleanup() {
-            if (cardElement.parentNode) cardElement.parentNode.removeChild(cardElement);
-            if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            if (btn) {
-                btn.classList.remove('is-exporting');
-                btn.textContent = originalBtnText;
-            }
-        }
-    }, 50); // Small 50ms delay is enough to let the browser paint the overlay
-},
-
-    /**
-     * Fallback: Download the image as a file
-     */
     downloadImage: async function(playlistName) {
         if (!window.html2canvas) {
              alert("Visualization library missing (html2canvas).");
@@ -224,10 +282,20 @@ exportToClipboard: async function(playlistName) {
         await new Promise(r => setTimeout(r, 150));
 
         try {
-            const canvas = await html2canvas(card, { scale: 2, backgroundColor: null, useCORS: true });
+            const rawCanvas = await html2canvas(card, { 
+                scale: 2, 
+                backgroundColor: null, 
+                useCORS: true,
+                scrollX: 0,
+                scrollY: 0
+            });
+
+            // Apply Punch
+            const finalCanvas = this.reshapeCanvas(rawCanvas);
+            
             const link = document.createElement('a');
             link.download = `PodCube_Card_${playlistName.replace(/\s+/g, '_')}.png`;
-            link.href = canvas.toDataURL("image/png");
+            link.href = finalCanvas.toDataURL("image/png");
             link.click();
         } catch (e) {
             console.error("Download failed", e);

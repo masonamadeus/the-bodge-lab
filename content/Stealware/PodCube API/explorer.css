@@ -1245,7 +1245,7 @@ h1 {
 
 .player-diagnostic-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 15px;
 }
 
@@ -1598,9 +1598,11 @@ h1 {
 
 .playlist-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 15px;
     margin-top:10px;
+    
+    filter: drop-shadow(4px 4px 3px rgba(0,0,0,0.2)); 
 }
 
 .playlist-card {
@@ -1891,9 +1893,7 @@ h1 {
         gap: 8px;
     }
 
-    .playlist-list {
-        grid-template-columns: 1fr;
-    }
+    
 
     .stat-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -2459,12 +2459,6 @@ label {
     background: #f9f9f9;
     padding: 10px;
     border: 1px solid #eee;
-}
-
-.playlist-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 10px;
 }
 
 .playlist-item {
@@ -3247,6 +3241,7 @@ label {
     color: var(--primary);
 }
 
+
 /* --- PLAYLIST SHARING CARD (Generated dynamically) --- */
 .pc-share-card-container {
     font-family: "Fustat", sans-serif;
@@ -3260,7 +3255,48 @@ label {
     padding: 5px;
     box-sizing: border-box;
     overflow: hidden;
-        filter: drop-shadow(2px 4px 2px rgba(0,0,0,0.3));
+        
+        clip-path: polygon(
+        0 0,                    /* Top Left */
+        calc(100% - 125px) 0,    /* Top Right Start */
+        100% 125px,              /* Right Side Drop */
+        100% 100%,              /* Bottom Right */
+        0 100%                  /* Bottom Left */
+    );
+    margin: 2em;
+    transition: transform 0.2s ease, filter 0.2s ease;
+
+}
+
+.pc-share-card-container.interactive::after {
+    content: "";
+    position: absolute;
+    
+    /* VERTICAL FIX: Moves up to overlap the top border */
+    top: -10px; 
+    
+    /* HORIZONTAL FIX: 
+       100% is the padding-box width. 
+       We subtract 121px (125px cut size minus 4px border width).
+       This lands exactly on the start of the cut. 
+    */
+    left: calc(100% - 110px);
+    
+    /* Length: Hypotenuse of 125x125 is ~177px. We use 180px to be safe. */
+    width: 180px; 
+    
+    /* Thickness */
+    height: 16px; 
+    
+    background: #1768da;
+    
+    /* ROTATION: Pivot around the top-left corner of the bar */
+    transform-origin: top left;
+    transform: rotate(45deg);
+    
+    /* Layering */
+    z-index: 20;
+    pointer-events: none;
 }
 
 /* Background grid effect */
@@ -3372,7 +3408,7 @@ label {
 /* Hover effect only for the interactive on-screen ones */
 .pc-share-card-container.interactive:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(23, 104, 218, 0.15);
+    filter: drop-shadow(12px 12px 16px rgba(23, 104, 218, 0.3));
 }
 
 /* mini cards used in UI */
@@ -3412,6 +3448,74 @@ label {
     .sharing-actions .player-queue-btn {
         width: 100%;
     }
+}
+
+.pc-queue-preview {
+    background: #fff;
+    border: 1px dashed var(--primary);
+    padding: 10px;
+    margin-bottom: 15px;
+    max-height: 120px;
+    overflow-y: auto;
+    font-family: "Fustat", sans-serif;
+}
+
+.pc-preview-header {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 2px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.pc-preview-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.pc-preview-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-main);
+    padding: 2px 0;
+    border-bottom: 1px dotted #f0f0f0;
+}
+
+.pc-preview-item:last-child {
+    border-bottom: none;
+}
+
+.pc-preview-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+    font-weight: 600;
+}
+
+.pc-preview-meta {
+    color: #888;
+    font-family: monospace;
+}
+
+.pc-preview-empty {
+    color: #999;
+    font-style: italic;
+    font-size: 10px;
+    text-align: center;
+    padding: 10px 0;
+}
+
+/* Ensure the punchcard reader wrapper accommodates the new element gracefully */
+.punchcard-reader-wrapper {
+    display: flex;
+    flex-direction: column;
 }
 
 /* --- PUNCHCARD EXPORT ANIMATION --- */
@@ -3469,6 +3573,7 @@ label {
     cursor: wait;
 }
 
+
 /* --- UTILITY CLASSES --- */
 .mb-10 { margin-bottom: 10px; }
 .mb-20 { margin-bottom: 20px; }
@@ -3478,3 +3583,68 @@ label {
 .text-primary { color: var(--primary); }
 .text-center { text-align: center; }
 .margin-left-auto {margin-left:auto;}
+
+
+/* --- PRINTER ANIMATION --- */
+
+.pc-printer-mask {
+    position: fixed;
+    z-index: 9000;
+    overflow: hidden; 
+    
+    /* SLOT VISUALS */
+    background: transparent;
+    border-top: 3px double var(--primary-dark);
+    box-shadow: 0 10px 20px rgba(0,0,0,0);
+    
+    /* SMOOTH SLOT OPENING */
+    transition: height 2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    
+    /* Ensure it receives clicks if user tries to grab it (optional) */
+    pointer-events: none; 
+}
+
+/* The card inside the mask */
+.pc-printer-mask .pc-share-card-container {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%); /* Center it */
+    margin: 0 !important;
+    
+    /* CRITICAL: Force dimensions so it can't be "narrow" */
+    
+    min-width: 300px !important;
+    box-sizing: border-box;
+    
+    /* PRINTING ANIMATION (Slide Down) */
+    transition: top 1.5s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+.pc-share-card-container.pop-in {
+    animation: gridPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    opacity: 0;
+}
+
+@keyframes gridPop {
+    0% { opacity: 0; transform: scale(1.5) translateY(20px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* PHYSICS DROP STATE */
+.pc-share-card-container.falling {
+    position: fixed !important;
+    z-index: 9999 !important;
+    pointer-events: none;
+    margin: 0 !important;
+    
+    /* Explicitly lock width again to prevent snapping */
+    width: 300px !important; 
+    
+    /* The Drop */
+    animation: gravityDrop 0.8s ease-in forwards;
+}
+
+@keyframes gravityDrop {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(120vh) rotate(10deg); opacity: 1; }
+}

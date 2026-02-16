@@ -95,6 +95,7 @@ window.addEventListener('PodCube:Ready', async () => {
 
         PodCube.on('queue:changed', () => {
             updateQueueList();
+            updatePunchcardPreview();
             updateArchive();
             // Ensure the chain is maintained if the user deletes the next track
             if (AppState.radioMode) {
@@ -1206,6 +1207,48 @@ function updatePlayerBufferInfo() {
     }
 }
 
+function updatePunchcardPreview() {
+    const list = document.getElementById('pcPreviewList');
+    const countLabel = document.getElementById('pcPreviewCount');
+    if (!list || !countLabel) return;
+
+    const q = PodCube.queueItems;
+    
+    // Update count
+    countLabel.textContent = `${q.length} Item${q.length !== 1 ? 's' : ''}`;
+    
+    // Clear list
+    list.innerHTML = '';
+
+    if (q.length === 0) {
+        list.innerHTML = '<div class="pc-preview-empty">Buffer empty. Add transmissions to queue to issue card.</div>';
+        return;
+    }
+
+    // Populate simplified list
+    // We limit to 50 items for performance in the mini view
+    const previewItems = q.slice(0, 50);
+    
+    previewItems.forEach((ep, i) => {
+        const div = document.createElement('div');
+        div.className = 'pc-preview-item';
+        div.innerHTML = `
+            <span class="pc-preview-title">${i + 1}. ${escapeHtml(ep.title)}</span>
+            <span class="pc-preview-meta">${ep.timestamp || '0:00'}</span>
+        `;
+        list.appendChild(div);
+    });
+
+    if (q.length > 50) {
+        const more = document.createElement('div');
+        more.className = 'pc-preview-item';
+        more.style.justifyContent = 'center';
+        more.style.color = '#888';
+        more.textContent = `...and ${q.length - 50} more...`;
+        list.appendChild(more);
+    }
+}
+
 function updateQueueList() {
     const q = PodCube.queueItems;
     const list = document.getElementById('playerQueueList');
@@ -1417,8 +1460,7 @@ function clearUserSession() {
 // --- PLAYLIST MANAGEMENT ---
 
 /**
- * Saves the current queue as a named punchcard.
- * Automatically handles duplicate names by adding (1), (2), etc.
+ * Saves the current queue and triggers the "Printing" animation.
  */
 function saveQueueAsPlaylist() {
     const input = document.getElementById('playlistNameInput');
@@ -1429,23 +1471,211 @@ function saveQueueAsPlaylist() {
         return;
     }
 
-    // --- DUPLICATE HANDLING LOGIC ---
+    // De-duplicate name
     let finalName = baseName;
     let counter = 1;
-
-    // Check if the name already exists in the registry
     while (PodCube.loadPlaylist(finalName)) {
         finalName = `${baseName} (${counter})`;
         counter++;
     }
-    // --------------------------------
 
-    PodCube.savePlaylist(finalName, PodCube.queueItems);
-    logCommand(`PodCube.savePlaylist("${finalName}", [Array(${PodCube.queueItems.length})])`);
+    const playlist = PodCube.savePlaylist(finalName, PodCube.queueItems);
+    logCommand(`PodCube.savePlaylist("${finalName}", ...)`);
     
     if (input) input.value = '';
-    updatePlaylistsUI();
+    animatePunchcardIssue(playlist);
 }
+
+
+/**
+ * ANIMATION: Printer Slot -> Print -> Drop -> Pop
+ */
+function animatePunchcardIssue(playlist) {
+    const input = document.getElementById('playlistNameInput');
+    if (!input) {
+        updatePlaylistsUI(playlist.name);
+        return;
+    }
+
+    // 1. Calculate Geometry
+    const rect = input.getBoundingClientRect();
+    const cardWidth = 300; 
+    const maskWidth = 320; // Extra room so card fits easily
+    const maskHeight = 480; // Enough height for card + drop shadow
+    
+    // Center mask relative to input
+    const maskLeft = (rect.left + (rect.width / 2)) - (maskWidth / 2);
+    const maskTop = rect.bottom; 
+
+    // 2. Create Mask (Start Closed)
+    const mask = document.createElement('div');
+    mask.className = 'pc-printer-mask';
+    mask.style.left = `${maskLeft}px`;
+    mask.style.top = `${maskTop}px`;
+    mask.style.width = `${maskWidth}px`;
+    mask.style.height = '0px'; // Explicitly closed at start
+    
+    // 3. Create Card (Start Hidden)
+    const card = renderPunchcardDOM(playlist, 'anim');
+    
+    // FORCE INITIAL STATE IMMEDIATELY (Prevents "Shooting Up" glitch)
+    card.style.opacity = '0'; // [MODIFIED] Start invisible
+    card.style.position = 'absolute';
+    card.style.top = '-110%'; // Way up inside the machine
+    card.style.left = '50%';
+    card.style.transform = 'translateX(-50%)';
+    card.style.width = `${cardWidth}px`; // Force width now
+    
+    // 4. Mount to DOM
+    mask.appendChild(card);
+    document.body.appendChild(mask);
+    
+    // Force browser repaint so it registers the "Closed" and "Hidden" states
+    void mask.offsetWidth; 
+
+    // --- ANIMATION SEQUENCE ---
+
+    // Step 1: Open the Slot
+    requestAnimationFrame(() => {
+        mask.style.height = `${maskHeight}px`;
+    });
+
+    // Step 2: Print (Slide Out)
+    // Wait 100ms for slot to begin opening, then slide card
+    setTimeout(() => {
+        card.style.opacity = '1'; // [MODIFIED] Turn visible right as movement starts
+        card.style.top = '20px'; // Slide down to visible position
+    }, 800);
+
+    // Step 3: Detach & Drop (The "Handoff")
+    // Wait for print slide (1.0s + buffer)
+    setTimeout(() => {
+        // 1. Get exact onscreen coordinates before we touch anything
+        const dropRect = card.getBoundingClientRect();
+        
+        // 2. Kill the mask (Clean up DOM)
+        if (mask.parentNode) mask.parentNode.removeChild(mask);
+        
+        // 3. Re-attach card to body in "Physics Mode"
+        document.body.appendChild(card);
+        
+        // 4. Apply Fixed Coordinates (Seamless Match)
+        card.style.position = 'fixed';
+        card.style.left = `${dropRect.left}px`;
+        card.style.top = `${dropRect.top}px`;
+        
+        // CRITICAL: Re-apply width to prevent "narrow snap"
+        card.style.width = `${cardWidth}px`; 
+        card.style.minWidth = `${cardWidth}px`;
+        
+        card.style.margin = '0';
+        card.style.transform = 'none'; // Remove the centering transform
+        
+        // 5. Trigger Gravity
+        requestAnimationFrame(() => {
+            card.classList.add('falling');
+        });
+
+        // Step 4: Grid Pop-in
+        setTimeout(() => {
+            if (card.parentNode) card.parentNode.removeChild(card);
+            
+            updatePlaylistsUI(playlist.name);
+            
+        }, 400); 
+
+    }, 2300); 
+}
+
+/**
+ * Helper to generate card DOM.
+ */
+function renderPunchcardDOM(pl, indexSuffix) {
+    const exportData = PodCube.exportPlaylist(pl.name);
+    const uniqueId = `qr_${Date.now()}_${indexSuffix}`;
+    
+    const card = document.createElement('div');
+    card.className = 'pc-share-card-container interactive'; 
+    
+    card.innerHTML = `
+        <div class="pc-share-header">PodCube™</div>
+        <div class="pc-share-body">
+            <div class="pc-share-title" 
+                 contenteditable="true" 
+                 title="Click to Rename"
+                 onblur="finalizeRename(this, '${escapeForAttribute(pl.name)}')"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
+                ${escapeHtml(pl.name)}
+            </div>
+            <div class="pc-share-meta">${pl.episodes.length} Transmissions</div>
+            <div class="pc-share-qr-frame">
+                <div id="${uniqueId}"></div>
+            </div>
+        </div>
+        <div class="pc-share-actions">
+            <button class="icon-btn" data-action="load" data-name="${escapeForAttribute(pl.name)}" title="Load into Queue">INSERT</button>
+            <button class="icon-btn" data-action="export" data-name="${escapeForAttribute(pl.name)}" title="Copy to Clipboard">EXPORT</button>
+            <button class="icon-btn" style="color:var(--danger); border-color:var(--danger);" data-action="delete" data-name="${escapeForAttribute(pl.name)}" title="Delete Forever">SHRED</button>
+        </div>
+    `;
+    
+    // Bind Events
+    card.querySelectorAll('button[data-action]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const action = e.currentTarget.dataset.action;
+            const name = e.currentTarget.dataset.name;
+            
+            if (action === 'load') run(`PodCube.playPlaylist("${escapeForJs(name)}")`);
+            if (action === 'export') PlaylistSharing.exportToClipboard(name);
+            if (action === 'delete') deletePlaylist(name);
+        });
+    });
+
+    // Generate QR
+    if (window.QRCode) {
+        setTimeout(() => {
+            const qrTarget = document.getElementById(uniqueId);
+            if (qrTarget) {
+                new QRCode(qrTarget, {
+                    text: exportData.url,
+                    width: 100,
+                    height: 100,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+        }, 0);
+    }
+    return card;
+}
+
+function updatePlaylistsUI(highlightName = null) {
+    const container = document.getElementById('playlistList');
+    if (!container) return;
+    
+    const playlists = PodCube.getPlaylists();
+    container.innerHTML = '';
+
+    if (playlists.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1; border: 1px dashed var(--primary-dim);">
+                <div class="empty-state-icon">🅿</div>
+                <div>Issue a new punchcard or insert one into the reader to begin cataloging.</div>
+            </div>
+        `;
+        return;
+    }
+    
+    playlists.forEach((pl, index) => {
+        const card = renderPunchcardDOM(pl, index);
+        if (highlightName && pl.name === highlightName) {
+            card.classList.add('pop-in');
+        }
+        container.appendChild(card);
+    });
+}
+
 
 function importPlaylistFromInput() {
     const input = document.getElementById('playlistImportInput');
@@ -1476,78 +1706,13 @@ function importPlaylistFromInput() {
     }
 }
 
-function updatePlaylistsUI() {
-    const container = document.getElementById('playlistList');
-    if (!container) return;
-    
-    const playlists = PodCube.getPlaylists();
-    container.innerHTML = '';
-
-    if (playlists.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state" style="grid-column: 1 / -1; border: 1px dashed var(--primary-dim);">
-                <div class="empty-state-icon">🅿</div>
-                <div>Issue a new Punchcard or insert one into the reader to begin cataloging.</div>
-            </div>
-        `;
-        return;
-    }
-    
-    playlists.forEach(pl => {
-        const exportData = PodCube.exportPlaylist(pl.name);
-        const uniqueId = `qr_${Date.now()}`;
-        // Create the card wrapper
-        const card = document.createElement('div');
-        // We add 'interactive' to enable hover effects defined in CSS
-        card.className = 'pc-share-card-container interactive'; 
-        
-        // Render the "Punchcard" structure
-        card.innerHTML = `
-            <div class="pc-share-header">PodCube™</div>
-            
-            <div class="pc-share-body">
-                <div class="pc-share-title" 
-                     contenteditable="true" 
-                     title="Click to Rename"
-                     onblur="finalizeRename(this, '${escapeForAttribute(pl.name)}')"
-                     onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
-                    ${escapeHtml(pl.name)}
-                </div>
-                
-                <div class="pc-share-meta">${pl.episodes.length} Transmissions</div>
-                
-                <div class="pc-share-qr-frame">
-                    <div id="miniQR_${uniqueId}"></div>
-                </div>
-            </div>
-
-            <div class="pc-share-actions">
-                <button class="icon-btn" onclick="run('PodCube.playPlaylist(\\'${escapeForAttribute(pl.name)}\\')')" title="Load into Queue">
-                    INSERT
-                </button>
-                <button class="icon-btn" onclick="PlaylistSharing.exportToClipboard('${escapeForAttribute(pl.name)}')" title="Copy to Clipboard">
-                    EXPORT
-                </button>
-                <button class="icon-btn" style="color:var(--danger); border-color:var(--danger);" onclick="deletePlaylist('${escapeForAttribute(pl.name)}')" title="Delete Forever">
-                    SHRED
-                </button>
-            </div>
-        `;
-        
-        container.appendChild(card);
-        
-        // Generate QR Code
-        if (window.QRCode) {
-            new QRCode(document.getElementById(`miniQR_${uniqueId}`), {
-                text: exportData.url,
-                width: 100, // Slightly larger for better scanning
-                height: 100,
-                colorDark: "#1768da", // PodCube Blue
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.M
-            });
-        }
-    });
+/**
+ * Escapes double quotes and backslashes for use inside JavaScript strings.
+ * Required for passing names into run() commands. This might be a red flag of bad code.
+ */
+function escapeForJs(text) {
+    if (!text) return "";
+    return text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
 function finalizeRename(el, oldName) {
@@ -1616,7 +1781,7 @@ function updateUI() {
     // Update now playing title
     const titleEl = document.getElementById('transTitle');
     if (titleEl) {
-        titleEl.textContent = PodCube.nowPlaying ? PodCube.nowPlaying.title : 'System Idle';
+        titleEl.textContent = PodCube.nowPlaying ? PodCube.nowPlaying.title : 'Select a Transmission...';
     }
 
     const playerTitle = document.getElementById('playerNowPlayingTitle');
@@ -1628,11 +1793,11 @@ function updateUI() {
             // Display Model • Origin or similar metadata
             playerMeta.textContent = `${PodCube.nowPlaying.model || 'Unknown Model'} • ${PodCube.nowPlaying.timestamp || '0:00'}`;
         } else {
-            playerTitle.textContent = 'System Idle';
-            playerMeta.textContent = 'No transmission loaded';
+            playerTitle.textContent = 'Select a Transmission';
+            playerMeta.textContent = 'Click on the transmissions tab above.';
         }
     }
-    
+    updatePunchcardPreview();
     updateQueueList();
 }
 
@@ -1823,13 +1988,16 @@ document.addEventListener('click', (e) => {
 
 // --- KEYBOARD SHORTCUTS ---
 document.addEventListener('keydown', (e) => {
-    // Space: play/pause
-    if (e.code === 'Space' && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
-        e.preventDefault();
+    // Check if user is typing in an input, textarea, OR a contenteditable element (like Punchcard titles)
+    const isTyping = ['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable;
+
+    // Space: play/pause (Only if NOT typing)
+    if (e.code === 'Space' && !isTyping) {
+        e.preventDefault(); // Stop page scroll
         run('PodCube.toggle()');
     }
     
-    // Arrow keys with Ctrl
+    // Arrow keys with Ctrl (Skip)
     if (e.code === 'ArrowLeft' && e.ctrlKey) {
         e.preventDefault();
         run('PodCube.skipBack()');
@@ -2083,17 +2251,50 @@ function initPunchcardDragDrop() {
         reader.classList.remove('drag-active');
 
         const dt = e.dataTransfer;
+        const text = dt.getData('text');
         const files = dt.files;
 
+        // --- 1. INTELLIGENT TEXT CHECK (Mobile/Rich Drop Support) ---
+        // If the drop contains text (like a URL or Share Code), test it first.
+        if (text) {
+            let candidate = text.trim();
+            
+            // Clean URL if present (reusing logic from handlePastedCode)
+            if (candidate.includes('importPlaylist=')) {
+                try {
+                    const url = new URL(candidate);
+                    candidate = url.searchParams.get('importPlaylist') || candidate;
+                } catch (e) {}
+            }
+
+            // "Dry Run" Import: check if valid without alerting
+            // We use the raw engine API for this silent check
+            const check = PodCube.importPlaylist(candidate);
+            
+            if (check && check.episodes && check.episodes.length > 0) {
+                logCommand("// Valid Punchcard code detected in drop data...");
+                handlePastedCode(text); // Pass to main handler to populate UI
+                return; // STOP here, do not scan files
+            }
+        }
+
+        // --- 2. STANDARD IMAGE SCAN ---
+        // If text was invalid or missing, check for physical files
         if (files && files.length > 0) {
             const file = files[0];
             if (file.type.startsWith('image/')) {
-                logCommand("// Scanning dropped Punchcard...");
-                await scanPastedImage(file); // Reuses the Paste logic!
-            } else {
-                alert("INVALID OBJECT.\n\nThe reader only accepts Image files (PNG/JPG).");
-            }
+                logCommand("// Scanning dropped Punchcard image...");
+                await scanPastedImage(file);
+                return;
+            } 
         }
+        
+        // --- 3. FAILURE STATE ---
+        // Only alert if we actually received data but couldn't use it
+        if ((text && text.length > 0) || (files && files.length > 0)) {
+            alert("INVALID OBJECT.\n\nThe reader accepts Punchcard Images (PNG/JPG) or valid Nano-GUID Share Codes.");
+        }
+
     }, false);
 }
 

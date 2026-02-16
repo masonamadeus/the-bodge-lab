@@ -475,7 +475,7 @@ class Episode {
         if (!this.duration) return "IDK?";
         const m = Math.floor(this.duration / 60);
         const f = ((this.duration % 60) / 60).toFixed(2).substring(1);
-        const suffixes = ["ish minutes", " or so minutes", " minutes (+/- a bit)", " minutes and change", " minutes (sorta)", "96722.13 minutes", "-esque minutes"];
+        const suffixes = ["ish minutes", " or so minutes", " minutes (+/- a bit)", " minutes and change", " minutes (sorta)", ".3333 minutes", "-esque minutes"];
         const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
         return `${m}${f}${suffix}`;
     }
@@ -1752,40 +1752,38 @@ class PodCubeEngine {
     _compressPlaylist(name, episodes) {
         if (!name || !episodes || episodes.length === 0) return null;
         try {
-            // 1. Encode Name
-            const name64 = btoa(unescape(encodeURIComponent(name)))
-                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            // 1. Enforce 32 char limit
+            const safeName = name.trim().substring(0, 32); 
 
-            // 2. Build Hex Stream
-            // We join the pre-padded IDs into one continuous river of hex digits.
-            // This preserves the "2.5 bytes per episode" bitstreaming efficiency
-            // because the byte packing happens on the whole stream, not per-ID.
+            // 2. Plaintext Encoding (URL Safe)
+            // We MUST escape dots (.) because we use dot as the delimiter in the final string
+            // encodeURIComponent leaves dots alone, so we handle them manually.
+            const encodedName = encodeURIComponent(safeName).replace(/\./g, '%2E');
+
+            // 3. Build Hex Stream (ID Packing)
             let hexStream = episodes
                 .filter(ep => ep && ep.nanoId)
                 .map(ep => ep.nanoId)
                 .join('');
-
             if (hexStream.length === 0) return null;
 
-            // 3. Pad stream to byte alignment (if total nibbles is odd)
             if (hexStream.length % 2 !== 0) hexStream += '0';
-
-            // 4. Hex Stream -> Byte Array (Bitpacking happens here)
+            
             const bytes = new Uint8Array(hexStream.length / 2);
             for (let i = 0; i < hexStream.length; i += 2) {
                 bytes[i / 2] = parseInt(hexStream.substr(i, 2), 16);
             }
 
-            // 5. Bytes -> Base64
             let binary = '';
             for (let i = 0; i < bytes.byteLength; i++) {
                 binary += String.fromCharCode(bytes[i]);
             }
             
+            // ID payload uses Base64URL
             const ids64 = btoa(binary)
                 .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-            return `${name64}.${ids64}`;
+            return `${encodedName}.${ids64}`;
 
         } catch (e) {
             log.error("Compression failed:", e);
@@ -1794,40 +1792,40 @@ class PodCubeEngine {
     }
 
     /**
-     * DECOMPRESS: Unpacks 20-bit stream
+     * DECOMPRESS: Unpacks 20-bit stream & Plaintext Titles
      */
     _decompressPlaylist(code) {
         if (!code) return null;
-
         try {
             const parts = code.split('.');
             if (parts.length !== 2) return null;
 
-            const [name64, ids64] = parts;
-
-            // 1. Decode Name
-            const name = decodeURIComponent(escape(atob(name64.replace(/-/g, '+').replace(/_/g, '/'))));
-
-            // 2. Decode Payload -> Binary String
-            const binary = atob(ids64.replace(/-/g, '+').replace(/_/g, '/'));
+            const [namePayload, ids64] = parts;
             
-            // 3. Binary -> Hex Stream
+            // 1. Decode Name (Plaintext)
+            let name = namePayload;
+            try {
+                name = decodeURIComponent(namePayload);
+            } catch (e) {
+                // If decoding fails (rare), keep the raw string
+                console.warn("Name decode failed, using raw");
+            }
+
+            // 2. Decode IDs
+            const binary = atob(ids64.replace(/-/g, '+').replace(/_/g, '/'));
             let hexStream = "";
             for (let i = 0; i < binary.length; i++) {
                 hexStream += binary.charCodeAt(i).toString(16).padStart(2, '0');
             }
 
-            // 4. Split into 5-char Chunks
             const shortIds = [];
             const CHUNK = 5;
             for (let i = 0; i < hexStream.length; i += CHUNK) {
                 const chunk = hexStream.substr(i, CHUNK);
-                // Only keep complete chunks (ignore padding 0)
                 if (chunk.length === CHUNK) shortIds.push(chunk);
             }
 
             return { name, shortIds };
-
         } catch (e) {
             console.error('Failed to decompress:', e);
             return null;

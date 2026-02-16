@@ -35,6 +35,7 @@ uid: podcube
             </header>
             <nav class="tabs">
                 <button class="tab-button active" data-tab="overview">Brigistics</button>
+                <button class="tab-button" data-tab="punchcards">Punch Cards</button>
                 <button class="tab-button" data-tab="player">Player</button>
                 <button class="tab-button" data-tab="archive">Transmissions</button>
                 <button class="tab-button" data-tab="inspector">Inspector</button>
@@ -255,8 +256,8 @@ uid: podcube
                             <span id="playerTimeStart">0:00</span> / <span id="playerTimeEnd">0:00</span>
                         </div>
                     </div>
-                    <div id="playerNowPlayingTitle" class="player-card-title">System Idle</div>
-                    <div id="playerNowPlayingMeta" class="player-card-meta">No transmission loaded</div>
+                    <div id="playerNowPlayingTitle" class="player-card-title">Select a transmission</div>
+                    <div id="playerNowPlayingMeta" class="player-card-meta">Click the transmissions tab above to browse.</div>
                     
                     <div class="player-scrubber-wrapper">
                         <div class="playback-scrubber" id="playerScrubber">
@@ -315,25 +316,46 @@ uid: podcube
                 <div id="playerQueueList" class="player-queue-list"></div>
             </div>
 
-            <div class="section">
-                <div id="punchcardReader" class="punchcard-reader-wrapper">
-                    <label class="punchcard-label">PODCUBE™ PUNCHCARD READER</label>
-                    <div class="punchcard-row">
-                        <input type="text" id="playlistImportInput" class="punchcard-input" placeholder="PASTE PUNCH CARD HERE">
-                        <button class="punchcard-btn" onclick="importPlaylistFromInput()">INSERT</button>
-                    </div>
-                    <div class="punchcard-row">
-                        <button class="player-queue-btn" onclick="saveQueueAsPlaylist()">ISSUE PUNCHCARD</button>
-                        <input type="text" id="playlistNameInput" class="punchcard-input" placeholder="NAME AND SAVE QUEUE TO PUNCHCARD">
-                    </div>
+            
+        </div>
+
+        <div id="punchcards" class="tab-content">
+    
+    <div class="section">
+        <div id="punchcardReader" class="punchcard-reader-wrapper">
+            <label class="punchcard-label">PODCUBE™ PUNCHCARD MACHINE</label>
+            
+            <div class="pc-queue-preview" id="pcQueuePreview">
+                <div class="pc-preview-header">
+                    <span>Write Buffer</span>
+                    <span id="pcPreviewCount">0 Items</span>
+                </div>
+                <div id="pcPreviewList">
+                    <div class="pc-preview-empty">Buffer empty. Add transmissions to queue.</div>
                 </div>
             </div>
 
-            <div class="section">
-                <h4 class="player-section-title">Punchcard Registry</h4>
-                <div id="playlistList" class="playlist-list"></div>
+            <div class="punchcard-row">
+                <button class="punchcard-btn punchcard-issue-btn" onclick="saveQueueAsPlaylist()">ISSUE PUNCHCARD</button>
+                <input type="text" id="playlistNameInput" class="punchcard-input" placeholder="NAME THIS PUNCHCARD (OPTIONAL)">
+                <button class="punchcard-btn" onclick="run('PodCube.clearQueue()')" style="color:var(--danger); border-color:var(--danger); background-color:white;" title="Clear Write Buffer">CLEAR</button>
+            </div>
+            
+            <div style="border-top: 1px dashed var(--primary); margin: 15px 0;"></div>
+            
+            <label class="punchcard-label">READER / IMPORT SLOT</label>
+            <div class="punchcard-row">
+                <input type="text" id="playlistImportInput" class="punchcard-input" placeholder="PASTE PUNCH CARD IMAGE OR CODE HERE">
+                <button class="punchcard-btn" onclick="importPlaylistFromInput()">READ</button>
             </div>
         </div>
+    </div>
+
+    <div class="section">
+        <h4 class="player-section-title">Punchcard Registry</h4>
+        <div id="playlistList" class="playlist-list"></div>
+    </div>
+</div>
             <!-- API REFERENCE TAB -->
             <div id="api" class="tab-content">
 
@@ -373,7 +395,7 @@ uid: podcube
                         Execute PodCube API commands directly. Press Enter or click Execute.
                     </p>
                     <div class="console-input-container">
-                        <input type="text" id="consoleInput" placeholder="PodCube.all.length" style="font-family:monospace; font-size:12px;">
+                        <input type="text" id="consoleInput" placeholder="PodCube.all.length" style="font-family:monospace; font-size:12px;" >
                         <button class="icon-btn" onclick="runConsole()">Execute</button>
                     </div>
                     <div id="consoleOutput" class="console-output">
@@ -896,7 +918,7 @@ uid: podcube
                     </svg>
                 </button>
                 <div class="transport-info">
-                    <div class="transport-title" id="transTitle">System Idle</div>
+                    <div class="transport-title" id="transTitle">Select a transmission...</div>
                     <div class="meta" id="transTime" style="font-size:11px; color:#888;">0:00 / 0:00</div>
                 </div>
                 <div class="transport-controls">
