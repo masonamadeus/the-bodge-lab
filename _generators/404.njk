@@ -56,10 +56,15 @@ download: false
         if (response.ok) {
           const links = await response.json();
           if (links[uid]) {
-            // SUCCESS: Redirect
-            resultsContainer.innerHTML = `<p><i>Shortlink found! Redirecting...</i></p>`;
-            window.location.replace(links[uid]);
-            return; // Stop execution here
+              // SUCCESS: Redirect
+              resultsContainer.innerHTML = `<p><i>Shortlink found! Redirecting...</i></p>`;
+              
+              // CAPTURE EXISTING QUERY PARAMS
+              const currentQuery = window.location.search; 
+              const destination = links[uid] + currentQuery;
+              
+              window.location.replace(destination);
+              return; 
           }
         }
       } catch (e) {

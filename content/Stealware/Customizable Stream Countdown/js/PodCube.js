@@ -401,6 +401,9 @@ class Episode {
         try {
             // Identifiers
             this.id = normalized.id || null;
+
+            const cleanHex = (this.id || "").replace(/[^0-9a-fA-F]/g, '').toLowerCase();
+            this.nanoId = cleanHex.substring(0, 5).padEnd(5, '0');
             this.title = normalized.title || null;
             this.shortcode = normalized.shortcode || null;
             this.episodeType = normalized.episodeType || EPISODE_TYPES.NONE;
@@ -1740,33 +1743,32 @@ class PodCubeEngine {
      */
     _compressPlaylist(name, episodes) {
         if (!name || !episodes || episodes.length === 0) return null;
-
         try {
             // 1. Encode Name
             const name64 = btoa(unescape(encodeURIComponent(name)))
                 .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-            // 2. Build Continuous Hex Stream (20 bits per ID)
-            let hexStream = "";
-            episodes.forEach(ep => {
-                if (!ep.id) return;
-                // Strip non-hex, lower case, take first 5 chars
-                const cleanHex = ep.id.replace(/[^0-9a-fA-F]/g, '').toLowerCase();
-                hexStream += cleanHex.padEnd(5, '0').substring(0, 5);
-            });
+            // 2. Build Hex Stream
+            // We join the pre-padded IDs into one continuous river of hex digits.
+            // This preserves the "2.5 bytes per episode" bitstreaming efficiency
+            // because the byte packing happens on the whole stream, not per-ID.
+            let hexStream = episodes
+                .filter(ep => ep && ep.nanoId)
+                .map(ep => ep.nanoId)
+                .join('');
 
             if (hexStream.length === 0) return null;
 
-            // 3. Pad if odd length (must be byte-aligned for parsing)
+            // 3. Pad stream to byte alignment (if total nibbles is odd)
             if (hexStream.length % 2 !== 0) hexStream += '0';
 
-            // 4. Hex Stream -> Byte Array
+            // 4. Hex Stream -> Byte Array (Bitpacking happens here)
             const bytes = new Uint8Array(hexStream.length / 2);
             for (let i = 0; i < hexStream.length; i += 2) {
                 bytes[i / 2] = parseInt(hexStream.substr(i, 2), 16);
             }
 
-            // 5. Bytes -> Binary String -> Base64
+            // 5. Bytes -> Base64
             let binary = '';
             for (let i = 0; i < bytes.byteLength; i++) {
                 binary += String.fromCharCode(bytes[i]);
@@ -1834,15 +1836,12 @@ class PodCubeEngine {
         if (!data) return null;
 
         const foundEpisodes = [];
-        
         data.shortIds.forEach(shortId => {
-            // Match first 5 chars of hex ID
-            const match = this.episodes.find(ep => 
-                ep.id.replace(/[^0-9a-fA-F]/g, '').toLowerCase().startsWith(shortId.toLowerCase())
-            );
+            // O(1) Lookup speed improvement
+            // We match against the pre-calculated nanoId instead of regexing on the fly
+            const match = this.episodes.find(ep => ep.nanoId === shortId.toLowerCase());
             if (match) foundEpisodes.push(match);
         });
-
 
         return { 
             name: data.name, 
@@ -1857,7 +1856,6 @@ class PodCubeEngine {
     exportPlaylist(name) {
         // 1. Load the playlist
         const pl = this.loadPlaylist(name);
-        
         if (!pl || !pl.episodes || pl.episodes.length === 0) {
             console.error(`Export failed: Playlist "${name}" empty or not found.`);
             return null;
@@ -1870,8 +1868,17 @@ class PodCubeEngine {
             return null;
         }
 
-        // 3. Generate URL
-        const url = new URL(window.location.href);
+        // 3. Generate URL with Domain Detection
+        let baseUrl;
+        // Check if we are running on the main lab domain
+        if (window.location.hostname === "bodgelab.com") {
+            baseUrl = "https://bodgelab.com/s/podcube/";
+        } else {
+            // Fallback for local testing or poweredbypodcube.com
+            baseUrl = window.location.origin + window.location.pathname;
+        }
+
+        const url = new URL(baseUrl);
         url.searchParams.set('importPlaylist', code);
 
         return {

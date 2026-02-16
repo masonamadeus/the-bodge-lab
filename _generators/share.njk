@@ -68,7 +68,11 @@ layout: false
           var isBot = botSignals.some(function (s) { return ua.toLowerCase().indexOf(s.toLowerCase()) !== -1; });
           // If we don't detect a bot, redirect humans immediately to the original page
           if (!isBot) {
-            window.location.replace("{{ p.url | safe }}");
+              // CAPTURE EXISTING QUERY PARAMS
+              const currentQuery = window.location.search;
+              const destination = "{{ p.url | safe }}" + currentQuery;
+              
+              window.location.replace(destination);
           }
         } catch (e) {
           // On error, perform a safe replace so humans still get redirected

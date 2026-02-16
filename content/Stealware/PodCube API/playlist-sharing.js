@@ -22,7 +22,7 @@ const PlaylistSharing = {
                 </div>
             </div>
             <div class="pc-share-footer">
-                <span class="pc-share-label">Import Code</span>
+                <span class="pc-share-label">COPY/PASTE THIS IMAGE INTO POWEREDBYPODCUBE.COM</span>
                 <div class="pc-share-code-box">${exportData.code}</div>
             </div>
         `;
@@ -105,64 +105,107 @@ const PlaylistSharing = {
         panel.scrollIntoView({ behavior: 'smooth' });
     },
 
+
     /**
-     * THE "FANTASY" EXPORT:
-     * Creates a single ClipboardItem containing BOTH the PNG Blob and the Text Blob.
-     */
-    exportToClipboard: async function(playlistName) {
-        // Feature detection
-        if (!window.html2canvas || !navigator.clipboard || !navigator.clipboard.write) {
-             alert("Your browser doesn't support advanced clipboard features. Downloading image instead.");
-             this.downloadImage(playlistName);
-             return;
+ * EXPORT: Image + Text to Clipboard with Visual Feedback
+ */
+exportToClipboard: async function(playlistName) {
+    if (!window.html2canvas || !navigator.clipboard || !navigator.clipboard.write) {
+         alert("Clipboard features unavailable. Downloading image instead.");
+         this.downloadImage(playlistName);
+         return;
+    }
+
+    const exportData = PodCube.exportPlaylist(playlistName);
+    if (!exportData) return;
+
+    // 1. IMMEDIATE UI FEEDBACK (Before heavy work)
+    const cards = document.querySelectorAll('.pc-share-card-container');
+    let targetCard = null;
+    cards.forEach(c => {
+        if (c.querySelector('.pc-share-title')?.textContent.trim() === playlistName) {
+            targetCard = c;
         }
+    });
 
-        const exportData = PodCube.exportPlaylist(playlistName);
-        if (!exportData) return;
-        
-        if (typeof logCommand !== 'undefined') logCommand(`// Initiating rich export for "${playlistName}"...`);
+    const btn = event?.currentTarget;
+    const originalBtnText = btn ? btn.textContent : 'EXPORT';
 
-        // 1. Generate Image Blob
-        const card = this.createCardElement(exportData);
-        document.body.appendChild(card);
-        await new Promise(r => setTimeout(r, 150)); // Render wait
+    let overlay = null;
+    if (targetCard) {
+        overlay = document.createElement('div');
+        overlay.className = 'pc-exporting-overlay';
+        overlay.innerHTML = `
+            <div class="pc-export-scanner-line"></div>
+            <div class="pc-export-status-text">GENERATING PHYSICAL RECORD...</div>
+        `;
+        targetCard.appendChild(overlay);
+    }
+    
+    if (btn) {
+        btn.classList.add('is-exporting');
+        btn.textContent = '...';
+    }
+
+    if (typeof logCommand !== 'undefined') logCommand(`// Initiating record generation for "${playlistName}"...`);
+
+    // 2. DELAY HEAVY WORK: Wrap in setTimeout to let UI render the overlay first
+    setTimeout(async () => {
+        const cardElement = this.createCardElement(exportData);
+        document.body.appendChild(cardElement);
 
         try {
-            const canvas = await html2canvas(card, { 
+            const canvas = await html2canvas(cardElement, { 
                 scale: 2, 
-                backgroundColor: null, 
+                backgroundColor: "#ffffff",
                 useCORS: true,
                 logging: false
             });
             
-            // Generate PNG Blob
             const imageBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+            const textBlob = new Blob([exportData.url], {type: 'text/plain'});
 
-            // 2. Generate Text Blob
-            // We wrap the string in a Blob because strict implementations require it
-            //const textBlob = new Blob([exportData.url], {type: 'text/plain'});
-
-            // 3. Create the multi-MIME ClipboardItem
-            // This is the magic key: one item, two representations
-            const item = new ClipboardItem({
+            const item = new ClipboardItem({ 
                 "image/png": imageBlob,
-                //"text/plain": textBlob
+                "text/plain": textBlob 
             });
 
-            // 4. Write the combined item to the clipboard
             await navigator.clipboard.write([item]);
             
-            if (typeof logCommand !== 'undefined') logCommand(`// EXPORT SUCCESS: PUNCHCARD ADDED TO YOUR CLIPBOARD.`);
-            alert(":: PUNCHCARD ADDED TO CLIPBOARD.\n // PASTE ANYWHERE TO SHARE.\n // PASTE HERE TO IMPORT.\n // Thank you for choosing, or having already chosen, \nPodCube™");
+            if (typeof logCommand !== 'undefined') logCommand(`// EXPORT SUCCESS: PUNCHCARD ADDED TO CLIPBOARD.`);
+            
+            // 3. SUCCESS STATE: Hang on the "COPIED" screen for 3 seconds
+            if (btn) btn.textContent = 'COPIED!';
+            if (overlay) {
+                overlay.querySelector('.pc-export-scanner-line').style.display = 'none';
+                overlay.querySelector('.pc-export-status-text').innerHTML = `
+                    COPIED TO CLIPBOARD.<br>
+                    PASTE ANYWHERE TO SHARE.<br>
+                    PASTE INTO PUNCH CARD READER TO UPLOAD.
+                `;
+                overlay.style.background = 'rgba(23, 104, 218, 0.9)'; // More solid blue on success
+            }
+
+            // Extended delay for readability
+            setTimeout(() => cleanup(), 3500);
 
         } catch (e) {
             console.error("Rich export failed", e);
-            if (typeof logCommand !== 'undefined') logCommand(`// ERROR: Rich export failed. Falling back to download.`);
+            if (btn) btn.textContent = 'FAILED';
             this.downloadImage(playlistName);
-        } finally {
-            if (card.parentNode) card.parentNode.removeChild(card);
+            cleanup();
         }
-    },
+
+        function cleanup() {
+            if (cardElement.parentNode) cardElement.parentNode.removeChild(cardElement);
+            if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            if (btn) {
+                btn.classList.remove('is-exporting');
+                btn.textContent = originalBtnText;
+            }
+        }
+    }, 50); // Small 50ms delay is enough to let the browser paint the overlay
+},
 
     /**
      * Fallback: Download the image as a file

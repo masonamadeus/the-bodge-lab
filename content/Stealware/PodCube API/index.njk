@@ -247,175 +247,93 @@ uid: podcube
 
             <!-- PLAYBACK CONTROL TAB -->
             <div id="player" class="tab-content">
-                <!-- Now Playing Card (keeps double border) -->
-                <div class="section">
-                    <div class="player-now-playing-card">
-                        <div class="player-card-header">
-                            <span class="player-card-label">Now Playing</span>
-                            <div class="player-card-time">
-                                <span id="playerTimeStart">0:00</span>
-                                <span class="time-separator">/</span>
-                                <span id="playerTimeEnd">0:00</span>
-                            </div>
+            <div class="section">
+                <div class="player-now-playing-card">
+                    <div class="player-card-header">
+                        <span class="player-card-label">Now Playing</span>
+                        <div class="player-card-time">
+                            <span id="playerTimeStart">0:00</span> / <span id="playerTimeEnd">0:00</span>
                         </div>
-                        <div id="playerNowPlayingTitle" class="player-card-title">System Idle</div>
-                        <div id="playerNowPlayingMeta" class="player-card-meta">No transmission loaded</div>
-                        
-                        <!-- Scrubber -->
-                        <div class="player-scrubber-wrapper">
-                            <div class="playback-scrubber" id="playerScrubber" onclick="seekPlayer(event)">
-                                <div class="playback-scrubber-fill" id="playerScrubberFill"></div>
-                                <div class="playback-scrubber-handle" id="playerScrubberHandle"></div>
-                            </div>
+                    </div>
+                    <div id="playerNowPlayingTitle" class="player-card-title">System Idle</div>
+                    <div id="playerNowPlayingMeta" class="player-card-meta">No transmission loaded</div>
+                    
+                    <div class="player-scrubber-wrapper">
+                        <div class="playback-scrubber" id="playerScrubber">
+                            <div class="playback-scrubber-fill" id="playerScrubberFill"></div>
+                            <div class="playback-scrubber-handle" id="playerScrubberHandle"></div>
+                        </div>
+                    </div>
+
+                    <div class="player-transport-row">
+                        <div class="player-transport-main-group">
+                            <button class="player-transport-btn" onclick="run('PodCube.prev()')"><svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                            <button class="player-transport-btn" onclick="run('PodCube.skipBack()')"><svg viewbox="0 0 24 24" class="icon-svg"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+                            <button class="player-transport-btn player-transport-btn-play" id="playerPlayBtn" onclick="run('PodCube.toggle()')">
+                                <span id="playerPlayIcon"><svg viewbox="0 0 24 24" class="icon-svg"><path d="M8 5v14l11-7z"/></svg></span>
+                            </button>
+                            <button class="player-transport-btn" onclick="run('PodCube.skipForward()')"><svg viewbox="0 0 24 24" class="icon-svg" style="transform: scaleX(-1);"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+                            <button class="player-transport-btn" onclick="run('PodCube.next()')"><svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
                         </div>
 
-                        <!-- Transport Controls -->
-                        <div class="player-transport-controls">
-                            <button class="player-transport-btn" onclick="run('PodCube.prev()')" title="Previous Track">
-                                <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-                            </button>
-                            <button class="player-transport-btn" onclick="run('PodCube.skipBack()')" title="Skip Back 7s">
-                                <svg viewbox="0 0 24 24" class="icon-svg"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
-                            </button>
-                            <button class="player-transport-btn player-transport-btn-play" id="playerPlayBtn" onclick="run('PodCube.toggle()')" title="Play/Pause">
-                                <span id="playerPlayIcon">
-                                    <svg viewbox="0 0 24 24" class="icon-svg"><path d="M8 5v14l11-7z"/></svg>
+                        <div class="player-radio-section">
+                            <label class="player-radio-toggle">
+                                <input type="checkbox" id="autoplayRandom" onchange="toggleAutoplayMode(this.checked)">
+                                <span class="player-radio-label">
+                                    <strong>Radio Mode</strong>
+                                    <span class="player-radio-desc">Continuous playback</span>
                                 </span>
-                            </button>
-                            <button class="player-transport-btn" onclick="run('PodCube.skipForward()')" title="Skip Forward 20s">
-                                <svg viewbox="0 0 24 24" class="icon-svg" style="transform: scaleX(-1);"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
-                            </button>
-                            <button class="player-transport-btn" onclick="run('PodCube.next()')" title="Next Track">
-                                <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-                            </button>
+                            </label>
                         </div>
+                    </div>
 
-                        <!-- Playback Settings -->
-                        <div class="player-settings-bar">
-                            <div class="player-setting-group">
-                                <label class="player-setting-label">Volume</label>
-                                <input type="range" class="player-setting-slider" id="playerVolume" min="0" max="100" value="100" oninput="updatePlayerVolume(this.value)">
-                                <span class="player-setting-value" id="playerVolumeValue">100%</span>
-                            </div>
-                            <div class="player-setting-group">
-                                <label class="player-setting-label">Speed</label>
-                                <select class="player-setting-select" id="playerSpeed" onchange="updatePlayerSpeed(this.value)">
-                                    <option value="0.25">0.25×</option>
-                                    <option value="0.5">0.5×</option>
-                                    <option value="0.75">0.75×</option>
-                                    <option value="1" selected>1.0×</option>
-                                    <option value="1.25">1.25×</option>
-                                    <option value="1.5">1.5×</option>
-                                    <option value="1.75">1.75×</option>
-                                    <option value="2">2.0×</option>
-                                    <option value="3">3.0×</option>
-                                </select>
-                            </div>
+                    <div class="player-settings-bar">
+                        <div class="player-setting-group">
+                            <label class="player-setting-label">Volume</label>
+                            <input type="range" class="player-setting-slider" id="playerVolume" min="0" max="100" value="100" oninput="updatePlayerVolume(this.value)">
+                        </div>
+                        <div class="player-setting-group">
+                            <label class="player-setting-label">Speed</label>
+                            <select class="player-setting-select" id="playerSpeed" onchange="updatePlayerSpeed(this.value)">
+                                <option value="0.5">0.5×</option>
+                                <option value="1" selected>1.0×</option>
+                                <option value="2">2.0×</option>
+                            </select>
                         </div>
                     </div>
-                </div>
-
-                <!-- Queue Section (document style, no double border) -->
-                <div class="section">
-                    <div class="player-section-header">
-                        <h3>Transmission Queue</h3>
-                        <div class="player-queue-actions">
-                            <button class="player-queue-btn" onclick="run('PodCube.shuffleQueue()')">Shuffle</button>
-                            <button class="player-queue-btn" onclick="run('PodCube.clearQueue()')">Clear All</button>
-                        </div>
-                    </div>
-                    
-                    <div class="player-queue-stats-bar">
-                        <span class="queue-stat-item" id="queueCount">0 tracks</span>
-                        <span class="queue-stat-separator">•</span>
-                        <span class="queue-stat-item" id="queueDuration">0:00 total</span>
-                        <span class="queue-stat-separator">•</span>
-                        <span class="queue-stat-item" id="queuePosition">Position: -</span>
-                    </div>
-                    
-                    <div id="playerQueueList" class="player-queue-list"></div>
-                    
-                    <div class="player-radio-section">
-                        <label class="player-radio-toggle">
-                            <input type="checkbox" id="autoplayRandom" onchange="toggleAutoplayMode(this.checked)">
-                            <span class="player-radio-label">
-                                <strong>Radio Mode</strong>
-                                <span class="player-radio-desc">Continuous random playback</span>
-                            </span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Playlists -->
-                <div class="section">
-                    <h4 class="player-section-title">Punchcard Registry</h4>
-                    
-                    <div id="punchcardReader" class="punchcard-reader-wrapper">
-                        
-                        <label class="punchcard-label">
-                            PODCUBE™ PUNCHCARD READER
-                        </label>
-                        
-                        <div class="punchcard-row">
-                            <input type="text" id="playlistImportInput" 
-                                class="punchcard-input"
-                                placeholder="[Drag & Drop Image] or [Ctrl+V] to Insert...">
-                            <button class="punchcard-btn" onclick="importPlaylistFromInput()">
-                                INSERT
-                            </button>
-                        </div>
-                        <div class="spacer"></div>
-                        <div class="punchcard-row" style="align-items:center;">
-                            <button class="player-queue-btn" onclick="saveQueueAsPlaylist()">ISSUE PUNCHCARD</button>
-                            <input type="text" id="playlistNameInput" 
-                                class="punchcard-input" 
-                                placeholder="Label for current queue..."
-                                style="font-family: 'Fustat', sans-serif;"> 
-                        </div>
-                    </div>
-                    
-                    <div id="playlistList" class="playlist-list"></div>
-                </div>
-
-                <!-- Playlist Sharing Panel -->
-                <div id="sharingSectionPanel" class="section" style="display:none;">
-                    <h4 class="player-section-title">Share Playlist</h4>
-                    <div id="sharingContent"></div>
-                </div>
-
-                <!-- Audio Diagnostics (visible, integrated into flow) -->
-                <div class="section">
-                    <h4 class="player-section-title">Audio System Diagnostics</h4>
-                    
-                    <div class="player-diagnostic-prose">
-                        <p>The playback engine maintains continuous monitoring of buffer states, network conditions, and audio readiness. Current system status is reported below.</p>
-                    </div>
-                    
-                    <div class="player-diagnostic-callout">
-                        <div class="player-diagnostic-grid">
-                            <div class="player-diagnostic-item">
-                                <span class="player-diagnostic-label">Buffer State</span>
-                                <span class="player-diagnostic-value" id="playerBufferState">IDLE</span>
-                            </div>
-                            <div class="player-diagnostic-item">
-                                <span class="player-diagnostic-label">Ready State</span>
-                                <span class="player-diagnostic-value" id="playerReadyState">0</span>
-                            </div>
-                            <div class="player-diagnostic-item">
-                                <span class="player-diagnostic-label">Network State</span>
-                                <span class="player-diagnostic-value" id="playerNetworkState">0</span>
-                            </div>
-                            <div class="player-diagnostic-item">
-                                <span class="player-diagnostic-label">Buffered Ranges</span>
-                                <span class="player-diagnostic-value" id="playerBufferedRanges">0</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <h5 class="player-live-data-title">Live Playback Data <span style="font-weight:400; font-size:10px; text-transform:none;">(refreshes on PodCube timeupdate event)</span></h5>
-                    <pre id="livePlaybackData" class="inspector-code-block live-updating"></pre>
                 </div>
             </div>
+
+            <div class="section">
+                <div class="player-section-header">
+                    <h3>Transmission Queue</h3>
+                    <div class="player-queue-actions">
+                        <button class="player-queue-btn" onclick="run('PodCube.shuffleQueue()')">Shuffle</button>
+                        <button class="player-queue-btn" onclick="run('PodCube.clearQueue()')">Clear All</button>
+                    </div>
+                </div>
+                <div id="playerQueueList" class="player-queue-list"></div>
+            </div>
+
+            <div class="section">
+                <div id="punchcardReader" class="punchcard-reader-wrapper">
+                    <label class="punchcard-label">PODCUBE™ PUNCHCARD READER</label>
+                    <div class="punchcard-row">
+                        <input type="text" id="playlistImportInput" class="punchcard-input" placeholder="PASTE PUNCH CARD HERE">
+                        <button class="punchcard-btn" onclick="importPlaylistFromInput()">INSERT</button>
+                    </div>
+                    <div class="punchcard-row">
+                        <button class="player-queue-btn" onclick="saveQueueAsPlaylist()">ISSUE PUNCHCARD</button>
+                        <input type="text" id="playlistNameInput" class="punchcard-input" placeholder="NAME AND SAVE QUEUE TO PUNCHCARD">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h4 class="player-section-title">Punchcard Registry</h4>
+                <div id="playlistList" class="playlist-list"></div>
+            </div>
+        </div>
             <!-- API REFERENCE TAB -->
             <div id="api" class="tab-content">
 

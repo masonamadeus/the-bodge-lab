@@ -95,11 +95,21 @@ window.addEventListener('PodCube:Ready', async () => {
 
         PodCube.on('queue:changed', () => {
             updateQueueList();
+            updateArchive();
             // Ensure the chain is maintained if the user deletes the next track
             if (AppState.radioMode) {
                 checkRadioChain();
             }
         });
+
+
+        const lastInspectedId = localStorage.getItem('podcube_last_inspected');
+        if (!PodCube.nowPlaying && lastInspectedId) {
+            const lastEp = PodCube.findEpisode(lastInspectedId);
+            if (lastEp) loadEpisodeInspector(lastEp);
+        } else if (PodCube.nowPlaying) {
+            loadEpisodeInspector(PodCube.nowPlaying);
+        }
         
     } catch (e) {
         updateStatusIndicator(`Error: ${e.message}`);
@@ -544,10 +554,11 @@ function _performUpdateArchive() {
         const idx = PodCube.getEpisodeIndex(ep);
         const intVal = ep.integrityValue;
         const intColor = intVal < 50 ? 'var(--danger)' : (intVal < 90 ? 'var(--warning)' : 'var(--success)');
-        
+        const isInQueue = PodCube.queueItems.some(qEp => qEp.id === ep.id);
+
         const clone = document.importNode(tCard.content, true);
         const card = clone.querySelector('.ep-card');
-        
+
         // Populate text (safe from XSS)
         clone.querySelector('.ep-title').textContent = ep.title;
         clone.querySelector('.ep-date').textContent = ep.date?.toString() || 'No Date';
@@ -570,8 +581,7 @@ function _performUpdateArchive() {
 
         // State classes
         if (PodCube.nowPlaying === ep) card.classList.add('playing');
-        if (AppState.selectedEpisode === ep) card.classList.add('selected');
-
+        if (isInQueue) card.classList.add('selected');
         // Events
         card.addEventListener('click', () => handleEpisodeClick(idx));
 
@@ -649,6 +659,8 @@ function loadEpisodeInspector(ep) {
     }
     
     AppState.selectedEpisode = ep;
+    // Save to localStorage for session persistence
+    localStorage.setItem('podcube_last_inspected', ep.id);
     updateArchive();
     
     const idx = PodCube.getEpisodeIndex(ep);
@@ -813,7 +825,7 @@ html += `</p></div></div>`;
         html += '<div class="inspector-related-list">';
         related10.forEach(relEp => {
             const relIdx = PodCube.getEpisodeIndex(relEp);
-            html += `<div class="inspector-related-item" onclick="loadEpisodeInspector(PodCube.all[${relIdx}])">`;
+            html += `<div class="inspector-related-item" onclick="loadEpisodeInspector(PodCube.all[${relIdx}]); window.scrollTo({ top: 0, behavior: 'instant' });">`; // yeah i know this is bad shut up
             html += '<div class="inspector-related-item-info">';
             html += `<div class="inspector-related-item-title">${escapeHtml(relEp.title)}</div>`;
             html += `<div class="inspector-related-item-meta">${escapeHtml(relEp.model || 'Unknown')} • ${escapeHtml(relEp.origin || 'Unknown')}</div>`;
@@ -1401,24 +1413,34 @@ function clearUserSession() {
 
 // --- PLAYLIST MANAGEMENT ---
 
+/**
+ * Saves the current queue as a named punchcard.
+ * Automatically handles duplicate names by adding (1), (2), etc.
+ */
 function saveQueueAsPlaylist() {
     const input = document.getElementById('playlistNameInput');
-    const name = input?.value.trim();
-    
-    if (!name) {
-        logCommand('// Error: Playlist name required');
-        return;
-    }
+    let baseName = input?.value.trim() || "Untitled";
     
     if (PodCube.queueItems.length === 0) {
         logCommand('// Error: Queue is empty');
         return;
     }
+
+    // --- DUPLICATE HANDLING LOGIC ---
+    let finalName = baseName;
+    let counter = 1;
+
+    // Check if the name already exists in the registry
+    while (PodCube.loadPlaylist(finalName)) {
+        finalName = `${baseName} (${counter})`;
+        counter++;
+    }
+    // --------------------------------
+
+    PodCube.savePlaylist(finalName, PodCube.queueItems);
+    logCommand(`PodCube.savePlaylist("${finalName}", [Array(${PodCube.queueItems.length})])`);
     
-    PodCube.savePlaylist(name, PodCube.queueItems);
-    logCommand(`PodCube.savePlaylist("${name}", [Array(${PodCube.queueItems.length})])`);
-    
-    input.value = '';
+    if (input) input.value = '';
     updatePlaylistsUI();
 }
 
@@ -1446,7 +1468,6 @@ function importPlaylistFromInput() {
         
         // Tone-appropriate log
         logCommand(`// Punchcard accepted. "${finalName}" registered.`);
-        updateStatusIndicator(`Punchcard Accepted: ${result.episodes.length} Tracks`);
     } else {
         alert("INVALID PUNCHCARD.\n\nThe data appears corrupted or unreadable.");
     }
@@ -1458,10 +1479,20 @@ function updatePlaylistsUI() {
     
     const playlists = PodCube.getPlaylists();
     container.innerHTML = '';
+
+    if (playlists.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1; border: 1px dashed var(--primary-dim);">
+                <div class="empty-state-icon">🅿</div>
+                <div>Issue a new Punchcard or insert one into the reader to begin cataloging.</div>
+            </div>
+        `;
+        return;
+    }
     
     playlists.forEach(pl => {
         const exportData = PodCube.exportPlaylist(pl.name);
-        
+        const uniqueId = `qr_${Date.now()}`;
         // Create the card wrapper
         const card = document.createElement('div');
         // We add 'interactive' to enable hover effects defined in CSS
@@ -1483,7 +1514,7 @@ function updatePlaylistsUI() {
                 <div class="pc-share-meta">${pl.episodes.length} Transmissions</div>
                 
                 <div class="pc-share-qr-frame">
-                    <div id="miniQR_${btoa(pl.name).substring(0,8)}"></div>
+                    <div id="miniQR_${uniqueId}"></div>
                 </div>
             </div>
 
@@ -1504,7 +1535,7 @@ function updatePlaylistsUI() {
         
         // Generate QR Code
         if (window.QRCode) {
-            new QRCode(document.getElementById(`miniQR_${btoa(pl.name).substring(0,8)}`), {
+            new QRCode(document.getElementById(`miniQR_${uniqueId}`), {
                 text: exportData.url,
                 width: 100, // Slightly larger for better scanning
                 height: 100,
@@ -2003,7 +2034,7 @@ function initPasteHandler() {
             // This prevents the browser from doing nothing (or weird stuff) when pasting 
             // an image into a text input.
             e.preventDefault();
-            updateStatusIndicator("Scanning pasted Punchcard...");
+            logCommand("// Scanning pasted Punchcard...");
             await scanPastedImage(blob);
         } else {
             // B. IT IS TEXT (or something else):
@@ -2054,7 +2085,7 @@ function initPunchcardDragDrop() {
         if (files && files.length > 0) {
             const file = files[0];
             if (file.type.startsWith('image/')) {
-                updateStatusIndicator("Scanning dropped Punchcard...");
+                logCommand("// Scanning dropped Punchcard...");
                 await scanPastedImage(file); // Reuses the Paste logic!
             } else {
                 alert("INVALID OBJECT.\n\nThe reader only accepts Image files (PNG/JPG).");
@@ -2089,7 +2120,7 @@ async function scanPastedImage(imageBlob) {
             } else {
                 // More helpful error message
                 alert("SCAN FAILED.\n\nImage received, but no Nano-GUID could be decoded.\nTry pasting a clearer image or the raw text code.");
-                updateStatusIndicator("Error: No QR code found in pasted image.");
+                logCommand("// Error: No QR code found in pasted image.");
             }
         } else {
             console.error("jsQR library not loaded.");

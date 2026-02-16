@@ -414,25 +414,7 @@ h1 {
     width:100%;
 }
 
-.radio-btn {
-    padding: 10px; 
-    background-color: var(--primary-dim);
-    display: flex; 
-    justify-content: right;
-    
-    gap: 10px;
-    margin-bottom: 10px;
-}
 
-.radio-btn label{
-    font-family: Fustat, sans-serif;
-    font-size:12px;
-    color: var(--text-main);
-}
-
-.radio-btn input{
-    accent-color: var(--orange);
-}
 
 /* --- INSPECTOR STYLES --- */
 .inspector-header {
@@ -978,6 +960,19 @@ h1 {
     margin-bottom: 20px;
 }
 
+.player-transport-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    flex-wrap: wrap; /* Allows wrapping on mobile */
+}
+
+
+
 .player-transport-controls {
     display: flex;
     gap: 20px;
@@ -1013,6 +1008,35 @@ h1 {
 
 .player-transport-btn-play:hover {
     background: var(--primary-dark);
+}
+
+.player-transport-main-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Radio section alignment */
+.player-radio-section {
+    padding: 5px 15px;
+    background: var(--primary-dim);
+    border-right: 3px double var(--primary);
+
+}
+
+/* Mobile logic: Force the Radio Mode to a new row */
+@media (max-width: 768px) {
+    .player-transport-row {
+        flex-direction: column; /* Stack the groups vertically */
+        gap: 15px;
+    }
+
+    .player-transport-main-group {
+        width: 100%;
+        justify-content: flex-start; /* Buttons fill the width on mobile */
+    }
+
 }
 
 .player-settings-bar {
@@ -1138,8 +1162,7 @@ h1 {
     padding: 5px 15px;
     background: var(--primary-dim);
     border-right: 3px double var(--primary);
-    margin-top: 15px;
-    direction:rtl;
+    margin-left: auto;
 }
 
 .player-radio-toggle {
@@ -1464,6 +1487,7 @@ h1 {
     margin-bottom: 20px;
     max-height: 400px;
     overflow-y: auto;
+    margin-left: 15px;
     background: #fff;
 }
 
@@ -1548,38 +1572,7 @@ h1 {
     color: #fff;
 }
 
-/* Autoplay checkbox styling */
-.radio-btn {
-    padding: 12px 15px;
-    background: var(--primary-dim);
-    border: 1px solid var(--primary);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-}
 
-.radio-btn label {
-    margin: 0;
-    font-family: "Fustat", sans-serif;
-    font-size: 11px;
-    color: var(--text-main);
-    display: flex;
-    align-items: center;
-}
-
-.radio-btn label strong {
-    margin-right: 4px;
-    text-transform: uppercase;
-    font-weight: 700;
-}
-
-.radio-btn input {
-    width: auto;
-    margin: 0;
-    accent-color: var(--primary);
-    cursor: pointer;
-}
 
 /* ========== PLAYLISTS SECTION ========== */
 
@@ -1607,6 +1600,7 @@ h1 {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 15px;
+    margin-top:10px;
 }
 
 .playlist-card {
@@ -3256,6 +3250,7 @@ label {
 /* --- PLAYLIST SHARING CARD (Generated dynamically) --- */
 .pc-share-card-container {
     font-family: "Fustat", sans-serif;
+    width:400px;
     color: #fff;
     background: var(--bg-body);
     border: 4px double #1768da;
@@ -3370,6 +3365,10 @@ label {
     color: #fff;
 }
 
+.pc-share-card-container.interactive{
+    width: auto!important;
+}
+
 /* Hover effect only for the interactive on-screen ones */
 .pc-share-card-container.interactive:hover {
     transform: translateY(-3px);
@@ -3413,6 +3412,61 @@ label {
     .sharing-actions .player-queue-btn {
         width: 100%;
     }
+}
+
+/* --- PUNCHCARD EXPORT ANIMATION --- */
+
+/* The overlay container that appears during export */
+.pc-exporting-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(23, 104, 218, 0.1);
+    z-index: 20;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* The horizontal scanning line */
+.pc-export-scanner-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--primary);
+    box-shadow: 0 0 15px var(--primary);
+    animation: pc-scan-move 1.5s linear infinite;
+}
+
+/* Status text that appears over the card */
+.pc-export-status-text {
+    background: var(--primary);
+    color: #fff;
+    font-family: "Fustat", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 4px 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    z-index: 21;
+}
+
+@keyframes pc-scan-move {
+    0% { top: 0%; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+
+/* Button loading state */
+.icon-btn.is-exporting {
+    background: var(--primary-dim) !important;
+    color: var(--primary) !important;
+    cursor: wait;
 }
 
 /* --- UTILITY CLASSES --- */
