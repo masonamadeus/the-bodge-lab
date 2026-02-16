@@ -736,12 +736,7 @@ html += `within the <strong>${escapeHtml(ep.region || 'Unknown')}</strong> regio
 html += `The specific locale is identified as <strong>${escapeHtml(ep.locale || 'Unknown')}</strong>, `;
 html += `with the primary origin point recorded as <strong>"${escapeHtml(ep.origin || 'Unknown')}"</strong>. `;
 
-html += `<br><br>It has been cataloged at index <strong>PodCube.all[${episodeIndex}]</strong> with shortcode date <strong>${escapeHtml(ep.shortcode || 'N/A')}</strong>, `;
-html += `is of the type: <strong>"${escapeHtml(ep.episodeType || 'N/A')}"</strong>, `;
-html += `and carries an integrity rating of <strong>${escapeHtml(ep.integrity || 'N/A')}</strong>`;
-if (ep.integrityValue !== null) {
-    html += ` (${ep.integrityValue}%). `;
-}
+
 
 html += `<br><br>It runs for <strong>${escapeHtml(ep.timestamp || 'N/A')}</strong> `;
 html += `(${ep.duration ? ep.duration + ' seconds' : 'duration unknown'})`;
@@ -754,6 +749,14 @@ if (ep.sizeBytes) {
 }
 html += `Audio source is ${ep.audioUrl ? '<strong>present</strong>' : '<strong style="color:var(--danger);">missing</strong>'}. `;
 html += `This transmission's Global Unique ID string is: <strong>"${escapeHtml(ep.id || 'N/A')}"</strong>. `;
+
+
+html += `<br><br>It has been cataloged at index <strong>PodCube.all[${episodeIndex}]</strong> with shortcode date <strong>${escapeHtml(ep.shortcode || 'N/A')}</strong>, `;
+html += `is of the type: <strong>"${escapeHtml(ep.episodeType || 'N/A')}"</strong>, `;
+html += `and carries an integrity rating of <strong>${escapeHtml(ep.integrity || 'N/A')}</strong>`;
+if (ep.integrityValue !== null) {
+    html += ` (${ep.integrityValue}%). `;
+}
 
 //related check
 const related = PodCube.findRelated(ep, 5);
