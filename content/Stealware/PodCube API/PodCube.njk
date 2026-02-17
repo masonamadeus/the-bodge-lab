@@ -1363,6 +1363,16 @@ class PodCubeEngine {
                 this._loadAndPlay();
             } else {
                 log.info("Queue finished");
+
+                // If we're in Radio Mode, pick another track at random.
+                if (this._radioMode){
+                    const nextTrack = this.random;
+                    if (nextTrack) {
+                        this.addToQueue(nextTrack, false);
+                        this.next();
+                        return;
+                    }
+                }
                 this.pause();
                 this._emit('queueEnd'); // Optional: new event
             }
