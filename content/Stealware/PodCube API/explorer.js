@@ -90,19 +90,13 @@ window.addEventListener('PodCube:Ready', async () => {
         refreshSessionInspector();
         initPasteHandler();
         initPunchcardDragDrop();
-        initNavigation();
+        initNavigation(); // This handles all tab navigation, history, and preference restoration
 
         // 5. Check for Import Code (Punchcards)
         const importCode = PodCube.getImportCodeFromUrl();
         if (importCode) handleIncomingPlaylistCode(importCode);
 
-        // 6. Restore Tab Preference
-        document.querySelectorAll('[data-tab]').forEach(btn => {
-            btn.addEventListener('click', () => saveTabPreference(btn.getAttribute('data-tab')));
-        });
-        setTimeout(() => restoreTabPreference(), 100);
-
-        // 7. Load Inspector if track exists
+        // 6. Load Inspector if track exists
         if (PodCube.nowPlaying) {
              loadEpisodeInspector(PodCube.nowPlaying);
         }
@@ -2436,32 +2430,6 @@ async function scanPastedImage(imageBlob) {
 
 function handlePastedCode(data) {
     handleIncomingPlaylistCode(data);
-}
-
-/**
- * Save active tab preference to localStorage
- */
-function saveTabPreference(tabId) {
-    if (tabId) {
-        localStorage.setItem('podCube_activeTab', tabId);
-    }
-}
-
-/**
- * Restore active tab from localStorage
- */
-function restoreTabPreference() {
-    const savedTab = localStorage.getItem('podCube_activeTab');
-    if (savedTab) {
-        const tabElement = document.getElementById(savedTab);
-        if (tabElement) {
-            // Switch to saved tab
-            const tabBtn = document.querySelector(`[data-tab="${savedTab}"]`);
-            if (tabBtn) {
-                tabBtn.click();
-            }
-        }
-    }
 }
 
 
