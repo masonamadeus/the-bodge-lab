@@ -1287,9 +1287,17 @@ class PodCubeEngine {
             if (episode) {
                 this.addToQueue(episode, true);
                 return;
-            } 
-            
-            // Guard: Prevent playing if queue is empty
+            }
+
+            // If empty but in Radio Mode, fetch a track before failing
+            if (!this.nowPlaying && this._radioMode) {
+                const nextTrack = this.random;
+                if (nextTrack) {
+                    this.addToQueue(nextTrack, true);
+                    return;
+                }
+            }
+
             if (!this.nowPlaying) {
                 log.warn("Cannot play: Queue is empty.");
                 return;
@@ -1445,17 +1453,30 @@ class PodCubeEngine {
         this._radioMode = !!enabled;
         log.info(`Radio Mode set to: ${this._radioMode}`);
 
-        // Immediate check: If we enabled it and we are ALREADY at the end, trigger next
-        if (this._radioMode && this._queue.length > 0 && this._queueIndex >= this._queue.length - 1) {
+        // Check if queue is empty or finished
+        const isQueueEmpty = this._queue.length === 0;
+        const isQueueFinished = this._queueIndex >= this._queue.length - 1;
+
+        if (this._radioMode && (isQueueEmpty || isQueueFinished)) {
             const nextTrack = this.random;
+            
             if (nextTrack) {
+                // Add track to queue (this emits queue:changed with the OLD index)
                 this.addToQueue(nextTrack, false);
-                // Only play if we are currently playing (don't auto-start if paused)
-                if (!this._audio.paused) this.next();
+
+                if (this._queueIndex === -1) {
+                    this._queueIndex = 0;
+                    
+                    // Passing 'false' prevents it from blasting audio immediately.
+                    this._loadAndPlay(false); 
+                    
+                    // Sync the session immediately
+                    this._saveSession();
+                } 
+                // If we were just at the end of the list, we don't auto-load 
             }
         }
     }
-
     setPlaybackRate(rate) {
         try {
             if (rate < 0.02 || rate > 16) {
@@ -1686,9 +1707,10 @@ class PodCubeEngine {
         this._saveSession();
     }
 
+
     /**
- * Move a track from one position to another in the queue
- */
+      * Move a track from one position to another in the queue
+      */
     moveInQueue(fromIndex, toIndex) {
         try {
             // Validate indices
@@ -1698,45 +1720,50 @@ class PodCubeEngine {
                 return false;
             }
 
-            // Can't move the currently playing track
-            if (fromIndex === this._queueIndex) {
-                log.warn("Cannot move currently playing track");
-                return false;
-            }
-
-            // Can't move TO the currently playing position
-            if (toIndex === this._queueIndex) {
-                log.warn("Cannot move track to currently playing position");
-                return false;
-            }
-
             if (fromIndex === toIndex) return true;
+
+            // Track if we are moving the currently playing song
+            const isMovingCurrent = (fromIndex === this._queueIndex);
 
             // Remove track from old position
             const [track] = this._queue.splice(fromIndex, 1);
 
-            // Adjust toIndex if we removed something before it
-            const adjustedToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
-
             // Insert at new position
-            this._queue.splice(adjustedToIndex, 0, track);
+            this._queue.splice(toIndex, 0, track);
 
-            // Adjust current index if needed
-            if (fromIndex < this._queueIndex && adjustedToIndex >= this._queueIndex) {
-                this._queueIndex--;
-            } else if (fromIndex > this._queueIndex && adjustedToIndex <= this._queueIndex) {
-                this._queueIndex++;
+            // --- INDEX CORRECTION ---
+            if (isMovingCurrent) {
+                // If we moved the active track, the index simply becomes the new position
+                this._queueIndex = toIndex;
+            } else {
+                // If we moved a DIFFERENT track, we might need to shift the pointer
+                // 1. Moved from ABOVE current to BELOW current -> Pointer must go DOWN (-1)
+                if (fromIndex < this._queueIndex && toIndex >= this._queueIndex) {
+                    this._queueIndex--;
+                }
+                // 2. Moved from BELOW current to ABOVE current -> Pointer must go UP (+1)
+                else if (fromIndex > this._queueIndex && toIndex <= this._queueIndex) {
+                    this._queueIndex++;
+                }
             }
 
             this._emit('queue:changed', { queue: this._queue, index: this._queueIndex });
             this._saveSession(); // Save queue to session
-            log.info(`Moved track from ${fromIndex} to ${adjustedToIndex}`);
-
+            log.info(`Moved track from ${fromIndex} to ${toIndex}`);
             return true;
         } catch (e) {
             log.error("Move failed:", e);
             return false;
         }
+    }
+
+    /**
+     * Jump to a specific index in the queue
+     */
+    skipTo(index) {
+        if (index < 0 || index >= this._queue.length) return;
+        this._queueIndex = index;
+        this._loadAndPlay();
     }
 
   

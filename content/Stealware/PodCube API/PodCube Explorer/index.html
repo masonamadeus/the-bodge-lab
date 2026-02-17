@@ -1,25 +1,22 @@
----
-title: "PodCube Explorer"
-layout: false
-uid: podcube
-share_poster: "./podcubeogimg.jpg"
-description: "The PodCube™ Explorer is our custom 4D-Adiabatic Q-bit Streaming Anaylsis and Feed Exploration Experience Journey browser, designed in-house by the engineers at the PodCube™ Research & Innovation Campus. Try making a punchcard!"
----
-
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, viewport-fit=cover">
         <title>PodCube™ Explorer</title>
         <link rel="stylesheet" href="./explorer.css">
         <link
             href="https://fonts.googleapis.com/css2?family=Fustat:wght@400;600;700&family=Libertinus+Math&display=swap"
             rel="stylesheet">
         <link rel="icon" type="image/png" href="./favicon.png">
-        <script src="./qrcode.min.js"></script><!-- QR CODE GENERATOR FOR SHARING PLAYLISTS -->
-        <script src="./html2canvas.min.js"></script><!-- HTML2CANVAS FOR TURNING PAGE INTO IMAGE -->
-        <script src="./jsQR.min.js"></script><!-- QR CODE READER -->
+        <script src="./libraries/qrcode.min.js"></script><!-- QR CODE GENERATOR FOR SHARING PLAYLISTS -->
+        <script src="./libraries/html2canvas.min.js"></script><!-- HTML2CANVAS FOR TURNING PAGE INTO IMAGE -->
+        <script src="./libraries/jsQR.min.js"></script><!-- QR CODE READER -->
+
+        
+        <script src="/podcube.js" type="module"></script>
+        <script src="./explorer.js"></script>
+        <script src="./playlist-sharing.js"></script>
     </head>
     <body>
         <div class="sticky-top">
@@ -481,51 +478,51 @@ description: "The PodCube™ Explorer is our custom 4D-Adiabatic Q-bit Streaming
  FRAME IT LIKE ANYTHING YOU'RE DOING IS ACTUALLY TECHNICALLY "WORKING" FOR PODCUBE
 
 -->
-<script src="./snake.js"></script>
+
+<script src="./interactive/interactive.js"></script>
+<link rel="stylesheet" href="./interactive/interactive.css">
 <div id="interactive" class="tab-content">
-    <div class="section">
-        <div class="doubleborder" data-label="Spatial Coordination Training">
-            
-            <div class="game-layout-wrapper">
+    
+    <div id="pc-menu-view" class="section">
+        <h3>Productivity Modules</h3>
+        <p class="text-muted mb-20">Select a task. Compliance is mandatory.</p>
+        <div id="pc-cartridge-slot" class="game-menu-grid"></div>
+        <div id="pc-loading" class="meta text-muted" style="text-align:center;">INITIALIZING...</div>
+    </div>
+
+    <div id="pc-machine-view" class="game-stage" style="display:none;">
+        
+        <div class="game-navbar">
+                <button class="icon-btn" onclick="Interactive.eject()">EJECT MODULE</button>
+        </div>
+
+        <div class="pc-game-container">
+            <div class="pc-game-hud pc-hud">
+                <div><span class="pc-hud-label">STATUS</span><span class="pc-hud-val" id="pc-hud-status">READY</span></div>
+                <div style="text-align:right"><span class="pc-hud-label">DATA</span><span class="pc-hud-val" id="pc-hud-score">0</span></div>
+            </div>
+
+            <div class="pc-game-board">
+                <canvas id="pc-canvas" width="400" height="300" class="pc-game-canvas"></canvas>
                 
-                <div class="game-header">
-                    <div>
-                        <h3 style="margin-bottom:0;">Directional Efficiency Test</h3>
-                        <p class="text-muted" style="font-size:11px;">Collect data packets. Avoid collisions.</p>
-                    </div>
+                <div id="pc-dom-layer" class="pc-layer-dom"></div>
 
-                    <div class="game-score-board">
-                        <div>
-                            <div class="text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Peak Efficiency</div>
-                            <div id="snakeHighScore" style="font-family:'Libertinus Math'; font-size:24px; font-weight:700; color:#999; line-height:1;">0</div>
-                        </div>
-                        <div>
-                            <div class="text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Current</div>
-                            <div id="snakeScore" style="font-family:'Libertinus Math'; font-size:24px; font-weight:700; color:var(--primary); line-height:1;">0</div>
-                        </div>
-                    </div>
+                <div id="pc-overlay" class="pc-overlay">
+                    <div class="pc-text-title" id="pc-overlay-msg">READY</div>
+                    <p class="pc-text-body" id="pc-overlay-desc">System Ready.</p>
+                    <button class="pc-btn primary" id="pc-overlay-btn">INITIALIZE</button>
                 </div>
-
-                <div class="snake-stage-wrapper">
-                    <canvas id="snakeCanvas" width="400" height="300"></canvas>
-                    <div id="snakeOverlay" class="snake-overlay">
-                        <div class="snake-msg" id="snakeMsg">AWAITING INPUT</div>
-                        <button class="icon-btn" onclick="initSnakeGame()">INITIATE TEST</button>
-                    </div>
-                </div>
-
-                <div class="game-controls">
-                    <p class="text-muted" style="font-size:10px; margin:0;">
-                        <strong>CONTROLS</strong><br>
-                        WASD / ARROWS<br>
-                        SWIPE (TOUCH)
-                    </p>
-                </div>
-
-            </div> 
+            </div>
+            
+            <div class="pc-game-controls-help" id="pc-controls-help">
+                <p>MOVE: ARROWS / SWIPE / WASD </p>
+                <p>ACTION: SPACE / TAP</p>
+            </div>
         </div>
     </div>
 </div>
+
+
 
 <!-- API REFERENCE TAB -->
             <div id="api" class="tab-content">
@@ -1243,7 +1240,7 @@ description: "The PodCube™ Explorer is our custom 4D-Adiabatic Q-bit Streaming
             </div>
         </template>
         <template id="tmpl-queue-item">
-            <div class="queue-item" draggable="true" data-queue-index="">
+            <div class="queue-item" data-queue-index="">
                 <div class="queue-drag-handle">
                     <svg viewbox="0 0 24 24" class="drag-icon">
                         <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2
@@ -1282,9 +1279,5 @@ description: "The PodCube™ Explorer is our custom 4D-Adiabatic Q-bit Streaming
                 <pre class="console-result"></pre>
             </div>
         </template>
-        <script src="/podcube.js" type="module"></script>
-        <script src="./explorer.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-        <script src="./playlist-sharing.js"></script>
     </body>
 </html>

@@ -44,7 +44,7 @@ body {
     font-family: "Libertinus Math", serif;
     background: var(--bg-body);
     color: var(--text-main);
-    padding: 30px 40px calc(var(--transport-height) + var(--monitor-height) + 20px) 40px;
+    padding: 30px 40px calc(var(--transport-height) + var(--monitor-height) + 20px + env(safe-area-inset-bottom, 0px)) 40px;
     
     /* GLOBAL SCROLL: Allow the window to handle scrolling */
     min-height: 100vh;
@@ -2033,7 +2033,7 @@ label {
 /* --- GLOBAL TRANSPORT --- */
 .global-transport {
     position: fixed;
-    bottom: var(--monitor-height);
+    bottom: calc(var(--monitor-height) + env(safe-area-inset-bottom, 0px));
     left: 0; 
     right: 0;
     height: var(--transport-height);
@@ -2197,7 +2197,9 @@ label {
     bottom: 0; 
     left: 0; 
     right: 0;
-    height: var(--monitor-height);
+    height: calc(var(--monitor-height) + env(safe-area-inset-bottom, 0px));
+    /* Add padding so the text stays centered in the usable area */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     background: var(--code-bg);
     color: var(--code-text);
     display: flex;
@@ -2625,8 +2627,14 @@ label {
 
 /* --- DRAG AND DROP --- */
 
+#playerQueueList {
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: pan-y; /* Allow vertical scroll, block horizontal/zoom */
+}
+
 .queue-drag-handle {
-    display:none!important;
+    display:flex!important;
     width: 24px;
     height: 24px;
     display: flex;
@@ -2636,7 +2644,16 @@ label {
     transition: opacity 0.2s ease;
     flex-shrink: 0;
     margin-right: 8px;
-    pointer-events: none; /* Handle is decorative, whole item is draggable */
+    touch-action: none;
+    cursor: grab;
+}
+
+.queue-item {
+    touch-action: pan-y;
+    user-select: none;
+    /* Ensure no native dragging */
+    -webkit-user-drag: none; 
+    cursor: pointer;
 }
 
 .queue-item:hover .queue-drag-handle {
@@ -2658,6 +2675,21 @@ label {
     background: var(--primary-dim);
     border: 2px dashed var(--primary);
     cursor: grabbing;
+}
+
+.dragging-ghost {
+    position: fixed;
+    z-index: 99999;
+    pointer-events: none; /* Allows code to see what is underneath the ghost */
+    opacity: 0.95;
+    background: #fff;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    border: 1px solid var(--primary);
+    list-style: none;
+    margin: 0;
+    padding: 10px;
+    display: flex;
+    align-items: center;
 }
 
 .queue-drop-indicator {
@@ -2694,7 +2726,7 @@ label {
     }
 
     body {
-        padding: 15px 15px calc(var(--transport-height) + var(--monitor-height) + 10px) 15px;
+        padding: 15px 15px calc(var(--transport-height) + var(--monitor-height) + 10px + env(safe-area-inset-bottom, 0px)) 15px;
         /* SCROLL FIX: Allow body to scroll naturally on mobile */
         height: auto;
         overflow-y: auto;
@@ -3616,138 +3648,3 @@ label {
         width: 350px!important;
         box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
-
-    /* --- SNAKE GAME (OFFICE STYLE) --- */
-.snake-stage-wrapper {
-    position: relative;
-    border: 1px solid var(--primary);
-    background: var(--bg-body);
-    /* subtle grid pattern for 'schematic' look */
-    background-image: 
-        linear-gradient(var(--primary-dim) 1px, transparent 1px),
-        linear-gradient(90deg, var(--primary-dim) 1px, transparent 1px);
-    background-size: 20px 20px;
-    margin: 0 auto;
-    max-width: 400px;
-}
-
-#snakeCanvas {
-    display: block;
-    width: 100%;
-    height: auto;
-}
-
-.snake-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255,255,255,0.85);
-    display: flex;
-    font-family: "Fustat", sans-serif;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    backdrop-filter: blur(2px);
-}
-
-.snake-overlay.hidden {
-    display: none;
-}
-
-.snake-msg {
-    font-family: "Libertinus Math", serif;
-    font-weight: 700;
-    font-size: 24px;
-    color: var(--primary);
-    text-transform: uppercase;
-}
-
-
-/* --- SNAKE GAME RESPONSIVE LAYOUT (3-CHAMBER) --- */
-
-/* 1. The Wrapper: Defaults to Mobile (Column) */
-.game-layout-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    align-items: stretch;
-}
-
-/* 2. Header: Defaults to Mobile (Row) */
-.game-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 20px;
-}
-
-/* 3. Scoreboard: Defaults to Mobile (Row) */
-.game-score-board {
-    display: flex;
-    gap: 15px;
-    text-align: right;
-}
-
-/* 4. Controls: Defaults to Mobile (Centered Row) */
-.game-controls {
-    text-align: center;
-    border-top: 1px solid #eee;
-    padding-top: 15px;
-}
-
-/* --- DESKTOP VIEW (Width > 900px) --- */
-@media (min-width: 900px) {
-    .game-layout-wrapper {
-        flex-direction: row;       /* Horizontal Layout */
-        align-items: center;       /* Center Vertically */
-        justify-content: center;   /* Center Horizontally */
-        gap: 30px;
-        padding: 10px;
-    }
-
-    /* Left Chamber: Header */
-    .game-header {
-        flex-direction: column;    /* Stack Title & Scores */
-        align-items: flex-end;     /* Right align text (towards game) */
-        text-align: right;
-        width: 180px;              /* Fixed sidebar width */
-        gap: 20px;
-    }
-
-    .game-score-board {
-        flex-direction: column;    /* Vertical Scores */
-        border-top: 1px dashed var(--primary-dim);
-        padding-top: 15px;
-        width: 100%;
-        align-items: flex-end;     /* Right align numbers */
-    }
-
-    /* Right Chamber: Controls */
-    .game-controls {
-        width: 120px;              /* Narrow column */
-        text-align: left;          /* Left align text */
-        border-top: none;          /* Remove mobile divider */
-        padding-top: 0;
-        border-left: 1px dashed var(--primary-dim); /* Vertical divider */
-        padding-left: 15px;
-        display: flex;
-        align-items: center;       /* Vertically center the text block */
-    }
-}
-
-/* --- MOBILE TWEAKS --- */
-@media (max-width: 600px) {
-    .game-header {
-        flex-direction: column;
-        align-items: stretch;
-        text-align: left;
-    }
-    
-    .game-score-board {
-        justify-content: space-between;
-        border-top: 1px dashed #ccc;
-        padding-top: 10px;
-        margin-top: 5px;
-        width: 100%;
-    }
-}

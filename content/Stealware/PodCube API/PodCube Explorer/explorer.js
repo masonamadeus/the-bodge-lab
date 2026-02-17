@@ -72,7 +72,7 @@ window.addEventListener('PodCube:Ready', async () => {
         // 4. Static UI Setup & Initial Render
         // Run these once to ensure UI is populated even if no events fired
         updateQueueList(); 
-        renderSystemInfo(); // Fixes the API tab "Total Episodes"
+        renderSystemInfo(); 
         renderTimeDisplays(PodCube.status);
         renderTransportState(PodCube.status);
         renderTrackMetadata(PodCube.nowPlaying);
@@ -178,7 +178,7 @@ function updateBrigistics() {
     const stats = PodCube.getStatistics();
 
     const display = [
-        { l: 'Total Episodes', v: stats.totalEpisodes },
+        { l: 'Transmissions', v: stats.totalEpisodes },
         { l: 'Unique Models', v: stats.models },
         { l: 'Origin Points', v: stats.origins },
         { l: 'Avg Integrity', v: stats.averageIntegrity + '%' }
@@ -1062,6 +1062,8 @@ function updatePunchcardPreview() {
     }
 }
 
+// --- QUEUE RENDERING & INTERACTION ---
+
 function updateQueueList() {
     const q = PodCube.queueItems;
     const list = document.getElementById('playerQueueList');
@@ -1069,8 +1071,7 @@ function updateQueueList() {
     
     if (!list || !template) return;
     
-    
-    // Update queue stats
+    // Update Stats Headers
     const countEl = document.getElementById('queueCount');
     const durationEl = document.getElementById('queueDuration');
     const positionEl = document.getElementById('queuePosition');
@@ -1084,45 +1085,56 @@ function updateQueueList() {
         positionEl.textContent = PodCube.queueIndex >= 0 ? `Position: ${PodCube.queueIndex + 1}/${q.length}` : 'Position: -';
     }
     
-    list.textContent = ''; // Clear
+    list.innerHTML = ''; 
 
     if (q.length === 0) {
-        list.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">🅿</div>
-                <div>Queue is empty</div>
-            </div>
-        `;
+        list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🅿</div><div>Queue is empty</div></div>`;
         return;
     }
     
     const fragment = document.createDocumentFragment();
 
-    const displayQueue = [...q].reverse();
-
-    displayQueue.forEach((ep, i) => {
-        // Calculate the actual original index since we reversed the array
-        const originalIndex = (q.length - 1) - i;
-        const isCur = originalIndex === PodCube.queueIndex;
-        
+    q.forEach((ep, i) => {
+        const isCur = (i === PodCube.queueIndex);
         const clone = document.importNode(template.content, true);
         const item = clone.querySelector('.queue-item');
         
-        item.dataset.queueIndex = originalIndex;
+        // --- CRITICAL FIX: Disable Native Drag ---
+        // We handle drag manually via JS. Native drag causes the red cursor issue.
+        item.removeAttribute('draggable'); 
+        item.dataset.queueIndex = i;
+        item.dataset.id = ep.id;
         
         if (isCur) {
             item.classList.add('current');
-            item.removeAttribute('draggable');
+            item.style.borderLeft = "4px solid var(--primary)";
+            item.style.backgroundColor = "var(--primary-dim)";
         }
 
-        // Display the user-facing number (1 at top, etc)
-        clone.querySelector('.queue-item-number').textContent = `${originalIndex + 1}.`;
-        
+        // Populate Info
+        clone.querySelector('.queue-item-number').textContent = `${i + 1}.`;
         clone.querySelector('.qi-title').textContent = ep.title;
-        clone.querySelector('.queue-item-meta').textContent = `${ep.model || 'Unknown'} • ${ep.timestamp || 'Unknown duration'}`;
+        clone.querySelector('.queue-item-meta').textContent = `${ep.model || 'Unknown'} • ${ep.timestamp || '0:00'}`;
         
-        clone.querySelector('.btn-remove').addEventListener('click', () => {
-            run(`PodCube.removeFromQueue(${originalIndex})`);
+        // --- CLICK TO PLAY (Switch Track) ---
+        const infoDiv = clone.querySelector('.queue-item-info');
+        infoDiv.style.cursor = 'pointer';
+        infoDiv.title = "Tap to play this track";
+        infoDiv.onclick = (e) => {
+            // Only trigger if we aren't currently dragging
+            if (dragState.active) return;
+            e.stopPropagation(); 
+            if (isCur) {
+                run('PodCube.toggle()');
+            } else {
+                run(`PodCube.skipTo(${i})`);
+            }
+        };
+
+        // --- REMOVE BUTTON ---
+        clone.querySelector('.btn-remove').addEventListener('click', (e) => {
+            e.stopPropagation();
+            run(`PodCube.removeFromQueue(${i})`);
         });
 
         fragment.appendChild(clone);
@@ -1132,109 +1144,177 @@ function updateQueueList() {
 }
 
 
-// --- DRAG AND DROP FOR QUEUE ---
+// --- HYBRID DRAG AND DROP SYSTEM (Mobile + Desktop) ---
 
-let dragState = {
-    draggedIndex: null,
-    draggedElement: null,
-    dropIndicator: null
+const dragState = {
+    active: false,
+    item: null,       // The real DOM element we are moving
+    ghost: null,      // The floating visual copy
+    startIndex: -1,   // Array index where we started
+    offsetY: 0,       // Distance from finger to top of item
+    listRect: null,   // Cached bounds of the container
+    scroller: null,   // Interval ID for auto-scrolling
+    scrollSpeed: 0
 };
 
 function initQueueDragAndDrop() {
     const list = document.getElementById('playerQueueList');
     if (!list) return;
+
+    // Remove old listeners if any to prevent duplicates
+    list.removeEventListener('mousedown', onDragStart);
+    list.removeEventListener('touchstart', onDragStart);
+
+    // 1. Desktop Mouse
+    list.addEventListener('mousedown', onDragStart);
     
-    // Create drop indicator
-    if (!dragState.dropIndicator) {
-        dragState.dropIndicator = document.createElement('div');
-        dragState.dropIndicator.className = 'queue-drop-indicator';
-    }
-    
-    // Event delegation
-    list.addEventListener('dragstart', handleQueueDragStart);
-    list.addEventListener('dragend', handleQueueDragEnd);
-    list.addEventListener('dragover', handleQueueDragOver);
-    list.addEventListener('drop', handleQueueDrop);
-    list.addEventListener('dragleave', handleQueueDragLeave);
+    // 2. Mobile Touch (passive: false is REQUIRED to block scrolling)
+    list.addEventListener('touchstart', onDragStart, { passive: false });
 }
 
-function handleQueueDragStart(e) {
-    const queueItem = e.target.closest('.queue-item');
-    if (!queueItem || queueItem.classList.contains('current')) {
-        e.preventDefault();
-        return;
-    }
+function onDragStart(e) {
+    // A. Filter Targets: Only allow drag on the Handle or Number
+    // This allows the user to scroll the list normally by touching the text area
+    const target = e.target;
+    const handle = target.closest('.queue-drag-handle, .queue-item-number');
     
-    dragState.draggedIndex = parseInt(queueItem.dataset.queueIndex);
-    dragState.draggedElement = queueItem;
-    
-    queueItem.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-}
+    if (!handle) return; 
 
-function handleQueueDragEnd(e) {
-    e.target.closest('.queue-item')?.classList.remove('dragging');
-    document.querySelectorAll('.queue-drop-indicator').forEach(el => el.remove());
-    dragState.draggedIndex = null;
-    dragState.draggedElement = null;
-}
+    const item = handle.closest('.queue-item');
+    if (!item) return;
 
-function handleQueueDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    const queueItem = e.target.closest('.queue-item');
-    if (!queueItem || queueItem === dragState.draggedElement) return;
-    
-    if (queueItem.classList.contains('current')) {
-        e.dataTransfer.dropEffect = 'none';
-        return;
+    // B. Stop Browser from Scrolling/Selecting
+    if (e.type === 'touchstart') {
+        e.preventDefault(); 
     }
+
+    // C. Normalize Coordinates
+    const point = e.touches ? e.touches[0] : e;
+    const rect = item.getBoundingClientRect();
+
+    // D. Initialize State
+    dragState.active = true;
+    dragState.item = item;
+    dragState.startIndex = parseInt(item.dataset.queueIndex);
+    dragState.offsetY = point.clientY - rect.top;
+    dragState.listRect = document.getElementById('playerQueueList').getBoundingClientRect();
+
+    // E. Create Ghost
+    dragState.ghost = item.cloneNode(true);
+    dragState.ghost.classList.add('dragging-ghost');
     
-    // Show drop indicator
-    const rect = queueItem.getBoundingClientRect();
-    const insertBefore = e.clientY < rect.top + rect.height / 2;
+    // Apply exact dimensions and position to ghost
+    Object.assign(dragState.ghost.style, {
+        position: 'fixed',
+        top: `${rect.top}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+        zIndex: '10000',
+        opacity: '0.9',
+        backgroundColor: '#ffffff',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+        pointerEvents: 'none', // Critical: Lets us detect element BELOW the ghost
+        transform: 'scale(1.02)'
+    });
     
-    document.querySelectorAll('.queue-drop-indicator').forEach(el => el.remove());
-    
-    if (insertBefore) {
-        queueItem.parentNode.insertBefore(dragState.dropIndicator, queueItem);
+    document.body.appendChild(dragState.ghost);
+
+    // F. Dim Original
+    item.style.opacity = '0.0'; // Invisible but keeps layout space
+
+    // G. Attach Global Move/End Listeners
+    if (e.type === 'touchstart') {
+        window.addEventListener('touchmove', onDragMove, { passive: false });
+        window.addEventListener('touchend', onDragEnd);
     } else {
-        queueItem.parentNode.insertBefore(dragState.dropIndicator, queueItem.nextSibling);
+        window.addEventListener('mousemove', onDragMove);
+        window.addEventListener('mouseup', onDragEnd);
     }
 }
 
-function handleQueueDragLeave(e) {
+function onDragMove(e) {
+    if (!dragState.active) return;
+    
+    // Prevent scrolling while dragging
+    if (e.cancelable && e.type === 'touchmove') e.preventDefault();
+
+    const point = e.touches ? e.touches[0] : e;
+
+    // 1. Move Ghost
+    dragState.ghost.style.top = `${point.clientY - dragState.offsetY}px`;
+
+    // 2. Auto-Scroll Logic
     const list = document.getElementById('playerQueueList');
-    if (!list.contains(e.relatedTarget)) {
-        document.querySelectorAll('.queue-drop-indicator').forEach(el => el.remove());
+    const zone = 60; // Hit zone size in pixels
+    
+    dragState.scrollSpeed = 0;
+    if (point.clientY < dragState.listRect.top + zone) {
+        dragState.scrollSpeed = -10; // Scroll Up
+    } else if (point.clientY > dragState.listRect.bottom - zone) {
+        dragState.scrollSpeed = 10;  // Scroll Down
+    }
+
+    if (dragState.scrollSpeed !== 0 && !dragState.scroller) {
+        dragState.scroller = setInterval(() => {
+            list.scrollTop += dragState.scrollSpeed;
+        }, 16);
+    } else if (dragState.scrollSpeed === 0 && dragState.scroller) {
+        clearInterval(dragState.scroller);
+        dragState.scroller = null;
+    }
+
+    // 3. Live Reordering (DOM Swapping)
+    // We look for the list item currently underneath our cursor
+    const elementBelow = document.elementFromPoint(point.clientX, point.clientY);
+    const targetItem = elementBelow?.closest('.queue-item');
+
+    if (targetItem && targetItem !== dragState.item && list.contains(targetItem)) {
+        // We found a new spot. Swap the DOM elements.
+        const children = Array.from(list.children);
+        const currentIndex = children.indexOf(dragState.item);
+        const targetIndex = children.indexOf(targetItem);
+
+        if (currentIndex < targetIndex) {
+            list.insertBefore(dragState.item, targetItem.nextSibling);
+        } else {
+            list.insertBefore(dragState.item, targetItem);
+        }
     }
 }
 
-function handleQueueDrop(e) {
-    e.preventDefault();
+function onDragEnd(e) {
+    if (!dragState.active) return;
+
+    // 1. Clean up Listeners
+    window.removeEventListener('touchmove', onDragMove);
+    window.removeEventListener('touchend', onDragEnd);
+    window.removeEventListener('mousemove', onDragMove);
+    window.removeEventListener('mouseup', onDragEnd);
+
+    // 2. Clean up Visuals
+    if (dragState.scroller) clearInterval(dragState.scroller);
+    dragState.scroller = null;
     
-    const queueItem = e.target.closest('.queue-item');
-    if (!queueItem || queueItem === dragState.draggedElement) return;
-    
-    const fromIndex = dragState.draggedIndex;
-    const toIndex = parseInt(queueItem.dataset.queueIndex);
-    
-    if (fromIndex === null) return;
-    
-    // Determine insert position
-    const rect = queueItem.getBoundingClientRect();
-    const insertBefore = e.clientY < rect.top + rect.height / 2;
-    
-    let finalToIndex = insertBefore ? toIndex : toIndex + 1;
-    if (fromIndex < toIndex && !insertBefore) {
-        finalToIndex = toIndex;
+    if (dragState.ghost) dragState.ghost.remove();
+    if (dragState.item) dragState.item.style.opacity = '1';
+
+    // 3. Commit Change to Engine
+    // We determine the new index by checking where our item ended up in the DOM
+    const list = document.getElementById('playerQueueList');
+    const newIndex = Array.from(list.children).indexOf(dragState.item);
+
+    if (newIndex !== -1 && newIndex !== dragState.startIndex) {
+        // Tell PodCube engine to match the UI state
+        run(`PodCube.moveInQueue(${dragState.startIndex}, ${newIndex})`);
+    } else {
+        // If we didn't actually move it, force a re-render to clean up styles
+        updateQueueList();
     }
-    
-    // Move via API
-    run(`PodCube.moveInQueue(${fromIndex}, ${finalToIndex})`);
-    
-    document.querySelectorAll('.queue-drop-indicator').forEach(el => el.remove());
+
+    dragState.active = false;
+    dragState.item = null;
+    dragState.ghost = null;
 }
 
 /**
