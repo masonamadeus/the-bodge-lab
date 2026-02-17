@@ -2178,6 +2178,14 @@ document.addEventListener('keydown', (e) => {
     const isTyping = ['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable;
     if (isTyping) return;
 
+    // BLOCK NAVIGATION IF SNAKE GAME IS ACTIVE
+    // We check if the "interactive" tab is currently active
+    const interactiveTab = document.getElementById('interactive');
+    if (interactiveTab && interactiveTab.classList.contains('active')) {
+        // Stop here so the game gets the key press instead
+        return;
+    }
+
     // Desktop Tab Navigation (Arrow Keys)
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         // Ignore if shift is held (audio scrubbing)

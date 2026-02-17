@@ -758,6 +758,9 @@ h1 {
     padding: 15px 12px 12px 12px;
     margin-top: 10px;
     position:relative;
+    max-width:fit-content;
+    margin-left:auto;
+    margin-right:auto;
 }
 
 .doubleborder::after {
@@ -3632,3 +3635,79 @@ label {
         width: 350px!important;
         box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
+
+    /* --- SNAKE GAME (OFFICE STYLE) --- */
+.snake-stage-wrapper {
+    position: relative;
+    border: 1px solid var(--primary);
+    background: var(--bg-body);
+    /* subtle grid pattern for 'schematic' look */
+    background-image: 
+        linear-gradient(var(--primary-dim) 1px, transparent 1px),
+        linear-gradient(90deg, var(--primary-dim) 1px, transparent 1px);
+    background-size: 20px 20px;
+    margin: 0 auto;
+    max-width: 400px;
+}
+
+#snakeCanvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.snake-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.85);
+    display: flex;
+    font-family: "Fustat", sans-serif;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    backdrop-filter: blur(2px);
+}
+
+.snake-overlay.hidden {
+    display: none;
+}
+
+.snake-msg {
+    font-family: "Libertinus Math", serif;
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--primary);
+    text-transform: uppercase;
+}
+
+/* --- SNAKE GAME RESPONSIVE HEADER --- */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 15px;
+    gap: 20px;
+}
+
+.game-score-board {
+    display: flex;
+    gap: 15px;
+    text-align: right;
+}
+
+/* Mobile Breakpoint */
+@media (max-width: 600px) {
+    .game-header {
+        flex-direction: column;
+        align-items: stretch; /* Force full width */
+        gap: 10px;
+    }
+
+    .game-score-board {
+        justify-content: space-between; /* Push Peak to left, Current to right */
+        border-top: 1px dashed #ccc;    /* "Tear-off" line style */
+        padding-top: 10px;
+        margin-top: 5px;
+    }
+}
