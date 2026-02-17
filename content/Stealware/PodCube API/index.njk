@@ -486,40 +486,43 @@ description: "The PodCube™ Explorer is our custom 4D-Adiabatic Q-bit Streaming
     <div class="section">
         <div class="doubleborder" data-label="Spatial Coordination Training">
             
-            <div class="game-header">
-    
-    <div>
-        <h3 style="margin-bottom:0;">Directional Efficiency Test</h3>
-        <p class="text-muted" style="font-size:11px;">Collect data packets. Avoid collisions.</p>
-    </div>
-
-    <div class="game-score-board">
-        <div>
-            <div class="text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Peak Efficiency</div>
-            <div id="snakeHighScore" style="font-family:'Libertinus Math'; font-size:24px; font-weight:700; color:#999; line-height:1;">0</div>
-        </div>
-        <div>
-            <div class="text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Current</div>
-            <div id="snakeScore" style="font-family:'Libertinus Math'; font-size:24px; font-weight:700; color:var(--primary); line-height:1;">0</div>
-        </div>
-    </div>
-
-</div>
-
-            <div class="snake-stage-wrapper">
-                <canvas id="snakeCanvas" width="400" height="300"></canvas>
+            <div class="game-layout-wrapper">
                 
-                <div id="snakeOverlay" class="snake-overlay">
-                    <div class="snake-msg" id="snakeMsg">AWAITING INPUT</div>
-                    <button class="icon-btn" onclick="initSnakeGame()">INITIATE TEST</button>
-                </div>
-            </div>
+                <div class="game-header">
+                    <div>
+                        <h3 style="margin-bottom:0;">Directional Efficiency Test</h3>
+                        <p class="text-muted" style="font-size:11px;">Collect data packets. Avoid collisions.</p>
+                    </div>
 
-            <div style="margin-top:15px; display:flex; gap:10px; justify-content:center; border-top:1px solid #eee; padding-top:15px;">
-                <p class="text-muted" style="font-size:10px; margin:0; align-self:center;">
-                    CONTROLS: SWIPE, WASD, OR ARROW KEYS.
-                </p>
-            </div>
+                    <div class="game-score-board">
+                        <div>
+                            <div class="text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Peak Efficiency</div>
+                            <div id="snakeHighScore" style="font-family:'Libertinus Math'; font-size:24px; font-weight:700; color:#999; line-height:1;">0</div>
+                        </div>
+                        <div>
+                            <div class="text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Current</div>
+                            <div id="snakeScore" style="font-family:'Libertinus Math'; font-size:24px; font-weight:700; color:var(--primary); line-height:1;">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="snake-stage-wrapper">
+                    <canvas id="snakeCanvas" width="400" height="300"></canvas>
+                    <div id="snakeOverlay" class="snake-overlay">
+                        <div class="snake-msg" id="snakeMsg">AWAITING INPUT</div>
+                        <button class="icon-btn" onclick="initSnakeGame()">INITIATE TEST</button>
+                    </div>
+                </div>
+
+                <div class="game-controls">
+                    <p class="text-muted" style="font-size:10px; margin:0;">
+                        <strong>CONTROLS</strong><br>
+                        WASD / ARROWS<br>
+                        SWIPE (TOUCH)
+                    </p>
+                </div>
+
+            </div> 
         </div>
     </div>
 </div>

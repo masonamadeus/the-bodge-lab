@@ -272,3 +272,24 @@ function changeDirection(dir) {
         snakeState.dy = snakeState.grid;
     }
 }
+
+// LOAD HIGH SCORE ON PAGE LOAD, RUN AUTOMATICALLY
+function loadHighScore() {
+    try {
+        const saved = localStorage.getItem('podcube_snake_highscore');
+        const display = document.getElementById('snakeHighScore');
+        if (display) {
+            display.textContent = saved ? saved : '0';
+        }
+    } catch (e) {
+        console.warn("Could not load high score:", e);
+    }
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+    try {
+        loadHighScore();
+    } catch (e) {
+        console.warn("Could not load high score:", e);
+    }
+});
