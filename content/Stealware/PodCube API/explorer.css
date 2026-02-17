@@ -49,9 +49,9 @@ body {
     /* GLOBAL SCROLL: Allow the window to handle scrolling */
     min-height: 100vh;
     height: auto;
-    overflow-y: scroll; /* Force scrollbar to prevent layout shift */
+    overflow-y: auto; /* Force scrollbar to prevent layout shift */
     display: block;     /* Remove flex column constraint */
-    max-width: 1100px;
+    max-width: 950px;
     margin:auto;
     border: 1px solid var(--primary-dim);
 
@@ -113,26 +113,37 @@ h1 {
     color: #666; 
 }
 
-/* --- TABS --- */
+/* --- TABS --- */ 
+
 .sticky-top {
-    position: sticky;
-    top: 0;
+    display: contents;
+    position: relative;
     background: var(--bg-body);
     z-index: 12;
-    padding-top: 10px;
-    padding-bottom: 1px;
+    padding-top: 0px;
+    padding-bottom: 0px;
 }
 
 .tabs {
-    flex: 0 0 auto;
-    display: flex;
-    gap: 5px;
-    border-bottom: 1px solid var(--primary);
-    margin-bottom: 20px;
+    position: sticky;
+    top: 0;
     z-index: 50;
     background: var(--bg-body);
-    overflow-y:visible;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    margin: 0 -8px 20px -8px;
+    /* Bleed to edges */
+    padding: 5px 15px 5px 15px;
+    border-bottom: 1px solid var(--primary);
+    max-width:950px;
+    /* Hide scrollbars */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
+
 
 .tab-button {
     padding: 8px 20px;
@@ -2035,7 +2046,7 @@ label {
     padding: 12px 30px;
     z-index: 100;
     transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    max-width: 1100px;
+    max-width: 950px;
     margin: 0 auto;
 }
 
@@ -2195,7 +2206,7 @@ label {
     font-family: monospace;
     font-size: 12px;
     z-index: 101;
-    max-width: 1100px;
+    max-width: 950px;
     margin: 0 auto;
     border-top: 2px solid var(--primary-dark);
 }
@@ -2690,32 +2701,7 @@ label {
         display: block;
     }
 
-    .sticky-top {
-            position: relative;
-            background: var(--bg-body);
-            z-index: 12;
-            padding-top: 0px;
-            padding-bottom: 0px;
-        }
-    
-    .tabs {
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        background: var(--bg-body);
-        
-        overflow-x: auto;
-        overflow-y:hidden;
-        white-space: nowrap;
-        flex-wrap: nowrap;
-        margin: 0 -8px 20px -8px; /* Bleed to edges */
-        padding: 5px 15px 0px 15px;
-        border-bottom: 1px solid #eee;
-        
-        /* Hide scrollbars */
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
+   
 
     /* SCROLL FIX: Remove internal tab scrolling */
     .tab-content {
@@ -2726,11 +2712,6 @@ label {
 
     .tab-content.active {
         display: block; /* Stack content naturally */
-    }
-
-    .sticky-top {
-        /* "Unwrap" the container so tabs can stick independently of the header */
-        display: contents;
     }
 
     /* 2. Header: Stack Logo & Text */

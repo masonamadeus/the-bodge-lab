@@ -60,7 +60,7 @@ function gameLoop() {
     
     // Wall Collision (Game Over)
     if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
-        endGame("CALIBRATION COMPLETE");
+        endGame("ASSESSMENT COMPLETE");
         return;
     }
 

@@ -1744,11 +1744,16 @@ async function deletePlaylist(name, cardElement) {
         }, 600);
     }
 
-    // 2. IMMEDIATE DELETION
-    PodCube.deletePlaylist(name);
+    // make the card transparent but hold its place in the grid temporarily
+    cardElement.style.opacity = 0;
+    // DELETION
+    setTimeout(() => { 
+        PodCube.deletePlaylist(name);
+        updatePlaylistsUI();
+    }, 700);
+
     logCommand(`PodCube.deletePlaylist("${escapeForJs(name)}")`);
     
-    updatePlaylistsUI();
 }
 
 
@@ -2070,15 +2075,18 @@ function getTabOrder() {
         .map(btn => btn.dataset.tab);
 }
 
+
 /**
- * Helper: Updates DOM classes and restores scroll. 
- * Separated from history logic to prevent loops.
+ * Helper: Updates DOM classes and restores scroll.
+ * INTELLIGENT SCROLL: If the header is hidden, keep it hidden.
  */
 function performUISwitch(targetId) {
     const btn = document.querySelector(`.tab-button[data-tab="${targetId}"]`);
     const content = document.getElementById(targetId);
+    // Select the header to use as our static reference point
+    const header = document.querySelector('header');
     
-    if (!btn || !content) return;
+    if (!btn || !content || !header) return;
 
     // 1. Snapshot Scroll (only if leaving Archive)
     const currentTab = document.querySelector('.tab-content.active');
@@ -2093,11 +2101,25 @@ function performUISwitch(targetId) {
     btn.classList.add('active');
     content.classList.add('active');
 
-    // 3. Restore/Reset Scroll
+    // 3. INTELLIGENT SCROLL CALCULATION
     if (targetId === 'archive') {
         window.scrollTo({ top: lastArchiveScroll, behavior: 'instant' });
     } else {
-        window.scrollTo({ top: 0, behavior: 'instant' });
+        // Calculate the exact pixel where the tabs *should* stick.
+        // This is the Header's offset + Header's height + Header's bottom margin (20px).
+        // We use computed style to be precise about the 20px margin defined in CSS.
+        const headerStyle = window.getComputedStyle(header);
+        const headerMarginBottom = parseInt(headerStyle.marginBottom);
+        
+        // This value represents the exact scroll Y position where the header 
+        // has completely scrolled out of view and the tabs hit the top.
+        const stickyPoint = header.offsetTop + header.offsetHeight + headerMarginBottom;
+
+        // If we are scrolled DEEPER than the sticky point, snap back to it.
+        // If we are seeing the header (scrollY < stickyPoint), scroll to top (0).
+        const targetScroll = (window.scrollY > stickyPoint) ? stickyPoint : 0;
+        
+        window.scrollTo({ top: targetScroll, behavior: 'instant' });
     }
 
     // 4. Persist preference
