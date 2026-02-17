@@ -50,6 +50,22 @@ const log = {
 // UTILITY HELPERS
 // ==========================================
 
+// FNV-1a Hash Implementation: Reduces collision risk for short IDs
+function fnv1aHash(str) {
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+        hash ^= str.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193);
+    }
+    // Return unsigned 32-bit hex, truncated to 5 chars (20 bits)
+    return (hash >>> 0).toString(16).padStart(8, '0').substring(0, 5);
+}
+
+
+// ===========================================
+// PODCUBE CUSTOM DATE OBJECT
+// ===========================================
+
 class PodCubeDate {
     constructor(input) {
         this.year = 0;
@@ -401,9 +417,7 @@ class Episode {
         try {
             // Identifiers
             this.id = normalized.id || null;
-
-            const cleanHex = (this.id || "").replace(/[^0-9a-fA-F]/g, '').toLowerCase();
-            this.nanoId = cleanHex.substring(0, 5).padEnd(5, '0');
+            this.nanoId = this.id ? fnv1aHash(this.id) : "00000";
             this.title = normalized.title || null;
             this.shortcode = normalized.shortcode || null;
             this.episodeType = normalized.episodeType || EPISODE_TYPES.NONE;
@@ -586,11 +600,23 @@ class PodCubeEngine {
         this._queueIndex = -1;
         this._stopAfterCurrent = false;
         this._volume = 1.0;
-
+        this._radioMode = false;
         this._listeners = {};
 
         this._audio.addEventListener('ended', () => {
             const isLastTrack = this._queueIndex >= this._queue.length - 1;
+
+            // Radio Mode Logic
+            // NEED TO CHANGE THIS SO THAT IT ONLY ADDS THE NEXT TRACK 30 SECONDS BEFORE THE END OF THE CURRENT ONE
+            if (isLastTrack && this._radioMode) {
+                log.info("Radio Mode: Auto-queueing random track.");
+                const nextTrack = this.random;
+                if (nextTrack) {
+                    this.addToQueue(nextTrack, false);
+                    this.next();
+                    return; // Skip standard session clearing
+                }
+            }
 
             if (isLastTrack) {
                 // At end of queue - clear the session
@@ -998,41 +1024,86 @@ class PodCubeEngine {
         }
     }
 
-    where(filters = {}) {
+    where(filters = {}, sort = null) {
         try {
-            return this.episodes.filter(e => {
-                // Apply episode type filter if specified
-                if (filters.episodeType) {
-                    const allowedTypes = Array.isArray(filters.episodeType)
-                        ? filters.episodeType
-                        : [filters.episodeType];
-                    if (!allowedTypes.includes(e.episodeType)) return false;
-                }
+            let results = this.episodes;
 
-                for (const key in filters) {
-                    if (key === 'episodeType') continue; // Already handled above
-                    if (key === 'year' && Array.isArray(filters[key])) {
-                        const [min, max] = filters[key];
-                        if (!e.date || !e.date.year || e.date.year < min || e.date.year > max) return false;
+            // --- 1. FILTERING ---
+            // Only iterate if we actually have filters
+            if (filters && Object.keys(filters).length > 0) {
+                results = results.filter(e => {
+                    for (const key in filters) {
+                        const value = filters[key];
+                        // Skip empty values (e.g. from empty UI selects)
+                        if (value === "" || value === null || value === undefined) continue;
+
+                        // A. Special: "Issues" Flag
+                        if (key === 'episodeType' && value === 'issues') {
+                            if (!e.hasIssues) return false;
+                        }
+                        // B. Special: Full-Text Search
+                        else if (key === 'search') {
+                            const q = value.toLowerCase();
+                            const match = (e.title && e.title.toLowerCase().includes(q)) ||
+                                          (e.description && e.description.toLowerCase().includes(q)) ||
+                                          (e.tags && e.tags.some(t => t.toLowerCase().includes(q)));
+                            if (!match) return false;
+                        }
+                        // C. Special: Year Ranges (Array [min, max])
+                        else if ((key === 'year' || key === 'yearRange') && Array.isArray(value)) {
+                            const [min, max] = value;
+                            if (!e.date || !e.date.year || e.date.year < min || e.date.year > max) return false;
+                        }
+                        // D. Special: Tags (Exact Match in Array)
+                        else if (key === 'tag' || key === 'tags') {
+                            const searchTags = Array.isArray(value) ? value : [value];
+                            if (!searchTags.some(t => e.tags && e.tags.includes(t))) return false;
+                        }
+                        // E. Standard Properties
+                        else {
+                            // If filter value is an array, check if episode property is IN that array
+                            if (Array.isArray(value)) {
+                                if (!value.includes(e[key])) return false;
+                            } 
+                            // Otherwise strict equality
+                            else if (e[key] !== value) {
+                                return false;
+                            }
+                        }
                     }
-                    else if (key === 'tag' || key === 'tags') {
-                        const searchTags = Array.isArray(filters[key]) ? filters[key] : [filters[key]];
-                        if (!searchTags.some(t => e.tags && e.tags.includes(t))) return false;
+                    return true;
+                });
+            }
+
+            // --- 2. SORTING ---
+            if (sort) {
+                const [field, direction] = sort.split('_'); // e.g. "release_desc"
+                const isDesc = direction === 'desc';
+
+                results.sort((a, b) => {
+                    let valA, valB;
+
+                    // Map UI sort keys to data properties
+                    switch(field) {
+                        case 'release': valA = a.published; valB = b.published; break;
+                        case 'lore': 
+                            valA = a.date ? a.date.year : -999999; 
+                            valB = b.date ? b.date.year : -999999; 
+                            break;
+                        case 'duration': valA = a.duration || 0; valB = b.duration || 0; break;
+                        case 'integrity': valA = a.integrityValue || 0; valB = b.integrityValue || 0; break;
+                        default: valA = a[field]; valB = b[field]; break;
                     }
 
-                    else if (Array.isArray(filters[key]) && typeof e[key] === 'number') {
-                        const [min, max] = filters[key];
-                        if (e[key] < min || e[key] > max) return false;
-                    }
+                    if (valA < valB) return isDesc ? 1 : -1;
+                    if (valA > valB) return isDesc ? -1 : 1;
+                    return 0;
+                });
+            }
 
-                    else if (e[key] !== filters[key]) {
-                        return false;
-                    }
-                }
-                return true;
-            });
+            return results;
         } catch (e) {
-            log.error("Failed to filter episodes:", e);
+            log.error("PodCube.where() failed:", e);
             return [];
         }
     }
@@ -1352,6 +1423,21 @@ class PodCubeEngine {
         log.info("Soft stop cancelled");
     }
 
+    setRadioMode(enabled) {
+        this._radioMode = !!enabled;
+        log.info(`Radio Mode set to: ${this._radioMode}`);
+
+        // Immediate check: If we enabled it and we are ALREADY at the end, trigger next
+        if (this._radioMode && this._queue.length > 0 && this._queueIndex >= this._queue.length - 1) {
+            const nextTrack = this.random;
+            if (nextTrack) {
+                this.addToQueue(nextTrack, false);
+                // Only play if we are currently playing (don't auto-start if paused)
+                if (!this._audio.paused) this.next();
+            }
+        }
+    }
+
     setPlaybackRate(rate) {
         try {
             if (rate < 0.02 || rate > 16) {
@@ -1640,10 +1726,13 @@ class PodCubeEngine {
     // --- PLAYLIST CREATION AND MANAGEMENT ---
 
     savePlaylist(name, episodes) {
+
+        const saveableEpisodes = episodes.filter(ep => !ep._excludeFromImport);
         const playlist = {
             name,
             created: new Date().toISOString(),
-            episodes: episodes.map(ep => ep.id)
+            episodes: saveableEpisodes.map(ep => ep.id),
+            totalDuration: saveableEpisodes.reduce((acc, ep) => acc + (ep.duration || 0), 0)
         };
         localStorage.setItem(`podcube_playlist_${name}`, JSON.stringify(playlist));
         return playlist;
@@ -1741,10 +1830,6 @@ class PodCubeEngine {
      * Safety: 1,048,576 combinations (0.4% collision risk @ 100 eps).
      * Efficiency: ~3.5 chars per episode.
      */
-    /**
-     * COMPRESS: Nano-GUID v7 (Plaintext Title + 20-bit ID Stream)
-     * Uses standard URI encoding for titles to minimize bloat.
-     */
     _compressPlaylist(name, episodes) {
         if (!name || !episodes || episodes.length === 0) return null;
         try {
@@ -1786,6 +1871,8 @@ class PodCubeEngine {
             return null;
         }
     }
+
+    
 
     /**
      * DECOMPRESS: Unpacks 20-bit stream & Plaintext Titles
@@ -1848,6 +1935,7 @@ class PodCubeEngine {
         return { 
             name: data.name, 
             episodes: foundEpisodes, 
+            totalDuration: foundEpisodes.reduce((acc, ep) => acc + (ep.duration || 0), 0),
             missingCount: data.shortIds.length - foundEpisodes.length 
         };
     }
@@ -1863,8 +1951,10 @@ class PodCubeEngine {
             return null;
         }
 
+        const exportableEpisodes = pl.episodes.filter(ep => !ep._excludeFromExport);
+
         // 2. Compress
-        const code = this._compressPlaylist(name, pl.episodes);
+        const code = this._compressPlaylist(name, exportableEpisodes);
         if (!code) {
             console.error("Export failed: Compression error.");
             return null;
@@ -1885,8 +1975,9 @@ class PodCubeEngine {
 
         return {
             name,
-            episodes: pl.episodes,
+            episodes: exportableEpisodes,
             code,
+            totalDuration: pl.totalDuration,
             url: url.toString()
         };
     }
@@ -2395,6 +2486,7 @@ async restoreSession() {
 
 
 const PodCubeInstance = new PodCubeEngine();
+PodCubeInstance.Episode = Episode;
 
 
 if (typeof window !== 'undefined') {

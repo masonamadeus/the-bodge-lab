@@ -1,5 +1,3 @@
-// explorer.js - PodCube Explorer (Polished Production Version)
-
 // --- STATE MANAGEMENT ---
 const AppState = {
     selectedEpisode: null,
@@ -9,6 +7,8 @@ const AppState = {
     liveDataInterval: null,
     radioMode: false,
 };
+
+const QR_CACHE = new Map(); // Stores generated QR DOM nodes to prevent re-rendering
 
 // --- ICONS (SVG) ---
 const ICONS = {
@@ -22,99 +22,95 @@ const ICONS = {
 };
 
 // --- INITIALIZATION ---
-// WINDOW INITIALIZATION
 window.addEventListener('PodCube:Ready', async () => {
     try {
+        // 1. Initialize Engine (Must be first)
         await PodCube.init();
-        updateStatusIndicator(`Connected: ${PodCube.FEED_TYPE.toUpperCase()}`);
+        updateStatusIndicator(`Connected to ${PodCube.FEED_TYPE.toUpperCase()} Feed`);
 
-        const logo = document.getElementById('headerLogo');
-        const heroLogo = document.querySelector('.hero-logo');
-        if (PodCube.logo) {
-            if (logo) {
-                logo.src = PodCube.logo;
-                logo.style.display = 'block';
-            }
-            if (heroLogo) {
-                heroLogo.src = PodCube.logo;
-            }
-        }
+        // 2. REGISTER LISTENERS (Must be before restoring session!)
         
+        // High Frequency: Time & Scrubber
+        PodCube.on('timeupdate', (status) => renderTimeDisplays(status));
+
+        // Medium Frequency: Transport State
+        const updateTransport = () => renderTransportState(PodCube.status);
+        PodCube.on('play', updateTransport);
+        PodCube.on('pause', updateTransport);
+        PodCube.on('error', updateTransport);
+
+        // Low Frequency: Track Changes
+        PodCube.on('track', (ep) => {
+            renderTrackMetadata(ep);
+            updateTransport();
+            updateQueueList();
+            syncArchiveUI();
+            if (ep) loadEpisodeInspector(ep);
+        });
+
+        // Batched Queue Updates
+        PodCube.on('queue:changed', () => {
+            requestAnimationFrame(() => {
+                updateQueueList(); 
+                updatePunchcardPreview();
+                syncArchiveUI();
+            });
+        });
+
+        // 3. Restore Session & Sync State
+        // Now that listeners are active, they will catch the events fired here
+        await PodCube.restoreSession();
+        
+        // Update status based on session restoration
+        const queueSize = PodCube.queue?.length || 0;
+        if (queueSize > 0) {
+            updateStatusIndicator(`Session Restored • ${queueSize} item${queueSize === 1 ? '' : 's'} in queue`);
+        } else {
+            updateStatusIndicator(`${PodCube.FEED_TYPE.toUpperCase()} Feed • ${PodCube.episodes.length} transmissions available`);
+        }
+
+        // 4. Static UI Setup & Initial Render
+        // Run these once to ensure UI is populated even if no events fired
+        updateQueueList(); 
+        renderSystemInfo(); // Fixes the API tab "Total Episodes"
+        renderTimeDisplays(PodCube.status);
+        renderTransportState(PodCube.status);
+        renderTrackMetadata(PodCube.nowPlaying);
+        
+        // Static Content
         initArchiveControls();
         updateBrigistics();
         updateGeoDistribution();
         updateArchive();
         showDistribution();
         updatePlaylistsUI();
-        checkForPlaylistImport();
-        clearInspector();
         initQueueDragAndDrop();
-        enableScrubbing('scrubber');        // Global transport scrubber
-        enableScrubbing('playerScrubber');  // Player tab scrubber
+        enableScrubbing('scrubber');
+        enableScrubbing('playerScrubber');
         refreshSessionInspector();
         initPasteHandler();
         initPunchcardDragDrop();
+        initNavigation();
 
-        // Attempt to restore session
-        const sessionRestored = await PodCube.restoreSession();
-        if (sessionRestored) {
-            updateStatusIndicator("Session Restored");
-        }
+        // 5. Check for Import Code (Punchcards)
+        const importCode = PodCube.getImportCodeFromUrl();
+        if (importCode) handleIncomingPlaylistCode(importCode);
 
-        // Load inspector only if we have a now playing episode
-        // (this happens after session restore, so don't call it twice)
+        // 6. Restore Tab Preference
+        document.querySelectorAll('[data-tab]').forEach(btn => {
+            btn.addEventListener('click', () => saveTabPreference(btn.getAttribute('data-tab')));
+        });
+        setTimeout(() => restoreTabPreference(), 100);
+
+        // 7. Load Inspector if track exists
         if (PodCube.nowPlaying) {
-            loadEpisodeInspector(PodCube.nowPlaying);
-        }
-
-        updateUI();
-        startLiveDataMonitor();
-        
-        // Event Listeners
-        PodCube.on('play', updateUI);
-        PodCube.on('pause', updateUI);
-        PodCube.on('track', (ep) => { 
-            updateUI(); 
-            loadEpisodeInspector(ep);
-            if (AppState.radioMode) {
-                checkRadioChain();
-            }
-        });
-        PodCube.on('track', (ep) => {
-            updateUI();
-            loadEpisodeInspector(ep);
-        });
-
-        PodCube.on('timeupdate', (status) => {
-            updateProgress(status);
-            // Pick the next episode when 30 seconds are remaining
-            if (AppState.radioMode && status.remaining < 30) {
-                checkRadioChain();
-            }
-        });
-
-        PodCube.on('queue:changed', () => {
-            updateQueueList();
-            updatePunchcardPreview();
-            updateArchive();
-            // Ensure the chain is maintained if the user deletes the next track
-            if (AppState.radioMode) {
-                checkRadioChain();
-            }
-        });
-
-
-        const lastInspectedId = localStorage.getItem('podcube_last_inspected');
-        if (!PodCube.nowPlaying && lastInspectedId) {
-            const lastEp = PodCube.findEpisode(lastInspectedId);
-            if (lastEp) loadEpisodeInspector(lastEp);
-        } else if (PodCube.nowPlaying) {
-            loadEpisodeInspector(PodCube.nowPlaying);
+             loadEpisodeInspector(PodCube.nowPlaying);
         }
         
     } catch (e) {
-        updateStatusIndicator(`Error: ${e.message}`);
-        console.error(e);
+        console.error("Initialization Failed:", e);
+        const ind = document.getElementById('statusIndicator');
+        if(ind) ind.textContent = `System Failure: ${e.message || 'Unknown error'}`;
     }
 });
 
@@ -164,7 +160,26 @@ function updateStatusIndicator(text) {
     if (indicator) indicator.textContent = text;
 }
 
-// --- OVERVIEW / BRIGISTICS ---
+// --- UI SUBRENDERERS ---
+function renderSystemInfo() {
+    // Populate API Tab Statistics
+    const totalEl = document.getElementById('confTotal');
+    if (totalEl) totalEl.textContent = PodCube.episodes.length;
+
+    const feedEl = document.getElementById('confFeed');
+    if (feedEl) feedEl.textContent = PodCube.FEED_TYPE.toUpperCase();
+
+    const debugEl = document.getElementById('confDebug');
+    if (debugEl) debugEl.textContent = PodCube.DEBUG ? "ON" : "OFF";
+    
+    // Update the feed toggle button text
+    const toggleBtn = document.getElementById('feedToggleBtn');
+    if (toggleBtn) {
+        const nextType = PodCube.FEED_TYPE === 'rss' ? 'JSON' : 'RSS';
+        toggleBtn.textContent = `Switch to ${nextType}`;
+    }
+}
+
 function updateBrigistics() {
     const stats = PodCube.getStatistics();
 
@@ -393,7 +408,7 @@ function initArchiveControls() {
 }
 
 function updateYearOptions() {
-    const groupSize = parseInt(document.getElementById('arcYearGroup')?.value) || 5;
+    const groupSize = parseInt(document.getElementById('arcYearGroup')?.value) || 10;
     const groups = PodCube.getYearGroups(groupSize);
     const sel = document.getElementById('arcYear');
     if (!sel) return;
@@ -419,117 +434,41 @@ function updateArchive() {
 
 
 function _performUpdateArchive() {
-    const search = document.getElementById('arcSearch')?.value.toLowerCase() || '';
-    const model = document.getElementById('arcModel')?.value || '';
-    const origin = document.getElementById('arcOrigin')?.value || '';
-    const region = document.getElementById('arcRegion')?.value || '';
-    const zone = document.getElementById('arcZone')?.value || '';
-    const planet = document.getElementById('arcPlanet')?.value || '';
-    const locale = document.getElementById('arcLocale')?.value || '';
-    const type = document.getElementById('arcType')?.value || '';
-    const sort = document.getElementById('arcSort')?.value || 'release_desc';
-    const yearRange = document.getElementById('arcYear')?.value || '';
-    
-    // --- API Call Visualization ---
-    let apiCall = '';
-    const filters = {};
-
-    if (type === 'issues') {
-        apiCall = 'PodCube.getIssues()';
-    } else {
-        if(model) filters.model = model;
-        if(origin) filters.origin = origin;
-        if(region) filters.region = region;
-        if(zone) filters.zone = zone;
-        if(planet) filters.planet = planet;
-        if(locale) filters.locale = locale;
-        if(type) filters.episodeType = type;
-
-        if (Object.keys(filters).length > 0) {
-            const filterStr = Object.entries(filters)
-                .map(([k, v]) => `${k}: "${v}"`)
-                .join(', ');
-            apiCall = `PodCube.where({ ${filterStr} })`;
-        } else {
-            apiCall = 'PodCube.all';
-        }
-    }
-    
-    if(yearRange) {
-        const [min, max] = JSON.parse(yearRange);
-        apiCall += `.filter(ep => ep.date?.year >= ${min} && ep.date?.year <= ${max})`;
-    }
-    
-    if(search) {
-        apiCall += `.filter(ep => /* search: "${search}" */)`;
-    }
-    
-    // Add sort info
-    const sortMap = {
-        'release_desc': 'sort by release (newest)',
-        'release_asc': 'sort by release (oldest)',
-        'lore_desc': 'sort by origin date (newest)',
-        'lore_asc': 'sort by origin date (oldest)',
-        'integrity_desc': 'sort by integrity (high→low)',
-        'integrity_asc': 'sort by integrity (low→high)',
-        'duration_desc': 'sort by duration (longest)',
-        'duration_asc': 'sort by duration (shortest)'
+    // 1. Gather Filter State
+    const filters = {
+        search: document.getElementById('arcSearch')?.value || '',
+        model: document.getElementById('arcModel')?.value || '',
+        origin: document.getElementById('arcOrigin')?.value || '',
+        region: document.getElementById('arcRegion')?.value || '',
+        zone: document.getElementById('arcZone')?.value || '',
+        planet: document.getElementById('arcPlanet')?.value || '',
+        locale: document.getElementById('arcLocale')?.value || '',
+        episodeType: document.getElementById('arcType')?.value || ''
     };
-    
-    if (sort && sort !== 'release_desc') {
-        apiCall += ` // ${sortMap[sort]}`;
+
+    // Handle Year Range (UI stores JSON array in value)
+    const yearRangeVal = document.getElementById('arcYear')?.value;
+    if (yearRangeVal) {
+        filters.year = JSON.parse(yearRangeVal);
     }
-    
-    logCommand(apiCall);
 
-    // --- Filtering Logic ---
-    let results = PodCube.all.filter(ep => {
-        if (model && ep.model !== model) return false;
-        if (origin && ep.origin !== origin) return false;
-        if (region && ep.region !== region) return false;
-        if (zone && ep.zone !== zone) return false;
-        if (planet && ep.planet !== planet) return false;
-        if (locale && ep.locale !== locale) return false;
-        
-        // Correctly handle the 'issues' pseudo-type
-        if (type === 'issues') {
-            if (!ep.hasIssues) return false;
-        } else if (type && ep.episodeType !== type) {
-            return false;
-        }
-        
-        if (yearRange) {
-            const [min, max] = JSON.parse(yearRange);
-            if (!ep.date || !ep.date.year) return false;
-            if (ep.date.year < min || ep.date.year > max) return false;
-        }
+    // 2. Gather Sort State
+    const sortMode = document.getElementById('arcSort')?.value || 'release_desc';
 
-        if (search) {
-            const str = (ep.title + ' ' + ep.shortcode + ' ' + ep.description + ' ' + (ep.tags || []).join(' ')).toLowerCase();
-            if (!str.includes(search)) return false;
-        }
-        
-        return true;
-    });
+    // 3. Execute API Call
+    // Now passing 'filters' AND 'sortMode' to the improved where()
+    const results = PodCube.where(filters, sortMode);
 
-    // Sorting
-    results.sort((a, b) => {
-        if (sort === 'release_desc') return b.published - a.published;
-        if (sort === 'release_asc') return a.published - b.published;
-        if (sort === 'integrity_asc') return (a.integrityValue || 0) - (b.integrityValue || 0);
-        if (sort === 'integrity_desc') return (b.integrityValue || 0) - (a.integrityValue || 0);
-        if (sort === 'duration_desc') return (b.duration || 0) - (a.duration || 0);
-        if (sort === 'duration_asc') return (a.duration || 0) - (b.duration || 0);
-        if (sort.startsWith('lore')) {
-            const da = a.date && a.date.year ? a.date.year : -99999;
-            const db = b.date && b.date.year ? b.date.year : -99999;
-            return sort === 'lore_desc' ? db - da : da - db;
-        }
-        return 0;
-    });
-
+    // 4. Update UI
     AppState.filteredResults = results;
+    renderArchiveResults(results); // (Ensure you have extracted the rendering logic as discussed previously)
+    
+    // Debug Logging
+    const activeFilters = Object.keys(filters).filter(k => filters[k]).length;
+    logCommand(`PodCube.where({ ${activeFilters} filters }, "${sortMode}") // Found ${results.length}`);
+}
 
+function renderArchiveResults(results) {
     const resCount = document.getElementById('resCount');
     if (resCount) resCount.textContent = `${results.length} Records`;
     
@@ -537,7 +476,7 @@ function _performUpdateArchive() {
     const tCard = document.getElementById('tmpl-ep-card');
     if (!list || !tCard) return;
     
-    list.textContent = ''; // Clear existing
+    list.textContent = ''; 
 
     if (results.length === 0) {
         list.innerHTML = `
@@ -559,20 +498,16 @@ function _performUpdateArchive() {
 
         const clone = document.importNode(tCard.content, true);
         const card = clone.querySelector('.ep-card');
+        const queueBtn = card.querySelector('.btn-queue');
+        card.dataset.epId = ep.id;
 
-        // Populate text (safe from XSS)
         clone.querySelector('.ep-title').textContent = ep.title;
         clone.querySelector('.ep-date').textContent = ep.date?.toString() || 'No Date';
         clone.querySelector('.ep-type').textContent = ep.episodeType || 'unknown';
-        
-        // Row 1: Model & Duration
         clone.querySelector('.ep-model').textContent = ep.model || 'Unknown Model';
         clone.querySelector('.ep-duration').textContent = ep.duration ? `${ep.weirdDuration}` : '0:00';
-
-        // Row 2: Location
         clone.querySelector('.ep-location').textContent = ep.location || 'Unknown Location';
         
-        // Integrity Bar & Text
         const fill = clone.querySelector('.integrity-fill');
         fill.style.width = `${intVal}%`;
         fill.style.backgroundColor = intColor;
@@ -580,36 +515,65 @@ function _performUpdateArchive() {
         clone.querySelector('.integrity-text').textContent = `${intVal}% INTEGRITY`;
         clone.querySelector('.integrity-container').title = `Data Integrity: ${intVal}%`;
 
-        // State classes
+        // REMOVE THIS LATER
         if (PodCube.nowPlaying === ep) card.classList.add('playing');
-        if (isInQueue) card.classList.add('selected');
-        // Events
+        if (isInQueue) queueBtn.classList.add('selected');
+
         card.addEventListener('click', () => handleEpisodeClick(idx));
 
-        // Wire up PLAY
         clone.querySelector('.btn-play').addEventListener('click', (e) => {
             e.stopPropagation();
             run(`PodCube.play(PodCube.all[${idx}])`);
         });
 
-        // Wire up PLAY NEXT
         clone.querySelector('.btn-play-next').addEventListener('click', (e) => {
             e.stopPropagation();
             run(`PodCube.addNextInQueue(PodCube.all[${idx}])`);
         });
 
-        // Wire up QUEUE
         clone.querySelector('.btn-queue').addEventListener('click', (e) => {
             e.stopPropagation();
             run(`PodCube.addToQueue(PodCube.all[${idx}])`);
         });
 
-        
-
         fragment.appendChild(clone);
     });
 
     list.appendChild(fragment);
+    syncArchiveUI();
+}
+
+/**
+ * TARGETED UPDATE: Syncs visual state (Queue/Playing) without re-rendering DOM.
+ * Prevents 'weirdDuration' churn and layout thrashing.
+ */
+function syncArchiveUI() {
+    // 1. Create a Lookup Set (O(1) access speed)
+    const queueIds = new Set(PodCube.queueItems.map(ep => ep.id));
+    const playingId = PodCube.nowPlaying?.id;
+
+    // 2. Update existing nodes only
+    const cards = document.querySelectorAll('#archiveList .ep-card');
+    
+    cards.forEach(card => {
+        const queueBtn = card.querySelector('.btn-queue');
+        const id = card.dataset.epId;
+        if (!id) return;
+
+        // Toggle "In Queue" styling
+        if (queueIds.has(id)) {
+            queueBtn.classList.add('selected');
+        } else {
+            queueBtn.classList.remove('selected');
+        }
+
+        // Toggle "Now Playing" styling
+        if (id === playingId) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+    });
 }
 
 function handleEpisodeClick(index) {
@@ -769,13 +733,11 @@ if (related.length > 0) {
         relatedTitlesNarrative = titles[0];
     } else {
         const lastTitle = titles.pop();
-        relatedTitlesNarrative = titles.join(', ') + ", or " + lastTitle;
+        relatedTitlesNarrative = titles.join(', ') + ", and/or " + lastTitle;
     }
 
     html += `<br><br>It may or may not be related to ${relatedTitlesNarrative} which will be linked at the bottom of this document.`;
 }
-
-html += `</p></div></div>`;
 
 html += `</p></div></div>`;
 
@@ -956,25 +918,10 @@ function clearInspector() {
 // --- PLAYBACK TAB ---
 
 function toggleAutoplayMode(enabled) {
-    AppState.radioMode = enabled;
-    
-    // FIX: Sync the UI checkbox state (from previous fix)
+    PodCube.setRadioMode(enabled);
+    // Sync UI
     const checkbox = document.getElementById('autoplayRandom');
-    if (checkbox) {
-        checkbox.checked = enabled;
-    }
-    
-    if (enabled) {
-        
-        // Don't auto-play on toggle. Let the user press Play, 
-        // or let the Hero Button handle the initial play command.
-        
-        // If something IS playing, we check chain immediately to ensure buffer.
-        if (PodCube.nowPlaying) {
-             checkRadioChain();
-        }
-        
-    }
+    if (checkbox) checkbox.checked = enabled;
 }
 
 /**
@@ -1010,28 +957,11 @@ function playNextRandom() {
 function updatePlayerVolume(value) {
     const vol = value / 100;
     run(`PodCube.setVolume(${vol.toFixed(2)})`, true);
-    
-    // Update all volume displays
-    ['playerVolumeValue', 'transportVolumeValue'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = value + '%';
-    });
-    
-    // Sync sliders
-    ['playerVolume', 'transportVolume'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el && el.value != value) el.value = value;
-    });
+
 }
 
 function updatePlayerSpeed(value) {
     run(`PodCube.setPlaybackRate(${value})`, true);
-    
-    // Sync selectors
-    ['playerSpeed', 'transportSpeed'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el && el.value != value) el.value = value;
-    });
 }
 
 // MAIN PLAYER SCREEN (THESE ARE REDUNDANT)
@@ -1052,32 +982,7 @@ function seek(e) {
     run(`PodCube.seek(${time.toFixed(1)})`);
 }
 
-function updateProgress(status) {
-    // Update both transport and player scrubbers
-    const fills = ['scrubberFill', 'playerScrubberFill'];
-    const times = ['transTime', 'playerTimeStart', 'playerTimeEnd'];
-    
-    if (status.duration) {
-        fills.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.width = status.percent + '%';
-        });
 
-        const handle = document.getElementById('playerScrubberHandle');
-        if (handle) {
-            handle.style.left = status.percent + '%';
-        }
-        
-        const timeText = formatTime(status.time) + ' / ' + formatTime(status.duration);
-        const el = document.getElementById('transTime');
-        if (el) el.textContent = timeText;
-        
-        const start = document.getElementById('playerTimeStart');
-        const end = document.getElementById('playerTimeEnd');
-        if (start) start.textContent = formatTime(status.time);
-        if (end) end.textContent = formatTime(status.duration);
-    }
-}
 
 function enableScrubbing(elementId) {
     const el = document.getElementById(elementId);
@@ -1119,92 +1024,6 @@ function enableScrubbing(elementId) {
     document.addEventListener('mouseup', () => {
         isDragging = false;
     });
-}
-
-function startLiveDataMonitor() {
-
-    // Remove aggressive polling loop
-    if (AppState.liveDataInterval) {
-        clearInterval(AppState.liveDataInterval);
-        AppState.liveDataInterval = null;
-    }
-    
-    // Bind to audio engine events instead
-    // 'timeupdate' fires naturally during playback (approx 4Hz-60Hz depending on browser)
-    PodCube.on('timeupdate', () => {
-        updateLivePlaybackData();
-        updatePlayerBufferInfo();
-    });
-
-    // Ensure status updates immediately on state changes
-    const updateAll = () => {
-        updateLivePlaybackData();
-        updatePlayerBufferInfo();
-    };
-
-    PodCube.on('play', updateAll);
-    PodCube.on('pause', updateAll);
-    PodCube.on('ended', updateAll);
-    PodCube.on('error', updateAll);
-}
-
-function updateLivePlaybackData() {
-    const container = document.getElementById('livePlaybackData');
-    if (!container) return;
-    
-    const audio = PodCube._audio;
-    if (!audio) return;
-    
-    // Get buffered ranges
-    const buffered = [];
-    for (let i = 0; i < audio.buffered.length; i++) {
-        buffered.push({
-            start: audio.buffered.start(i).toFixed(2),
-            end: audio.buffered.end(i).toFixed(2)
-        });
-    }
-    
-    const data = {
-        status: PodCube.status.playing ? 'PLAYING' : 'PAUSED',
-        currentTime: audio.currentTime.toFixed(2),
-        duration: audio.duration ? audio.duration.toFixed(2) : 0,
-        buffered: buffered,
-        playing: !audio.paused,
-        volume: audio.volume.toFixed(2),
-        playbackRate: audio.playbackRate.toFixed(2),
-        readyState: audio.readyState,
-        networkState: audio.networkState,
-        currentEpisode: PodCube.nowPlaying ? PodCube.nowPlaying.title : null
-    };
-    
-    container.textContent = JSON.stringify(data, null, 2);
-}
-
-function updatePlayerBufferInfo() {
-    const audio = PodCube._audio;
-    if (!audio) return;
-    
-    const stateEl = document.getElementById('playerBufferState');
-    if (stateEl) {
-        stateEl.textContent = audio.paused ? 'IDLE' : 'ACTIVE';
-    }
-    
-    const readyEl = document.getElementById('playerReadyState');
-    if (readyEl) {
-        const states = ['HAVE_NOTHING', 'HAVE_METADATA', 'HAVE_CURRENT_DATA', 'HAVE_FUTURE_DATA', 'HAVE_ENOUGH_DATA'];
-        readyEl.textContent = states[audio.readyState] || audio.readyState;
-    }
-    
-    const networkEl = document.getElementById('playerNetworkState');
-    if (networkEl) {
-        const states = ['NETWORK_EMPTY', 'NETWORK_IDLE', 'NETWORK_LOADING', 'NETWORK_NO_SOURCE'];
-        networkEl.textContent = states[audio.networkState] || audio.networkState;
-    }
-    
-    const rangesEl = document.getElementById('playerBufferedRanges');
-    if (rangesEl) {
-        rangesEl.textContent = audio.buffered.length.toString();
-    }
 }
 
 function updatePunchcardPreview() {
@@ -1428,20 +1247,15 @@ function handleQueueDrop(e) {
  * Reads PodCube session data from localStorage and updates the inspector display.
  */
 function refreshSessionInspector() {
-    const sessionRaw = localStorage.getItem('podcube_session');
     const display = document.getElementById('sessionDataDisplay');
     
-    if (sessionRaw) {
+
         try {
-            const parsed = JSON.parse(sessionRaw);
-            display.textContent = JSON.stringify(parsed, null, 2);
+            display.textContent = JSON.stringify(PodCube.status, null, 2);
             display.classList.remove('text-muted');
         } catch (e) {
-            display.textContent = "// Error parsing session data";
+            display.textContent = "// Error parsing session data: " +e;
         }
-    } else {
-        display.textContent = "// No active session found in localStorage";
-    }
     logCommand("// Session Inspector Refreshed");
 }
 
@@ -1458,6 +1272,62 @@ function clearUserSession() {
 }
 
 // --- PLAYLIST MANAGEMENT ---
+
+/**
+ * Unified Internal Handler for ALL playlist imports.
+ * Takes a raw Nano-GUID or URL, validates it, saves it, and triggers the animation.
+ */
+function handleIncomingPlaylistCode(rawInput) {
+    if (!rawInput) return false;
+
+    let codeToImport = rawInput.trim();
+
+    // 1. Smart-extract: If it's a full URL, grab just the parameter
+    if (codeToImport.includes('importPlaylist=')) {
+        try {
+            const url = new URL(codeToImport);
+            codeToImport = url.searchParams.get('importPlaylist') || codeToImport;
+        } catch (e) {
+            console.warn("URL parse failed during import, trying raw string.");
+        }
+    }
+
+    // 2. Validate using the Engine API
+    const result = PodCube.importPlaylist(codeToImport); 
+    if (result && result.episodes.length > 0) {
+        
+        // 3. Switch to Punchcards Tab immediately so the user sees the "Printing"
+        const tabBtn = document.querySelector('.tab-button[data-tab="punchcards"]');
+        if (tabBtn && !tabBtn.classList.contains('active')) {
+            tabBtn.click();
+        }
+
+        // 4. De-duplicate naming
+        let finalName = result.name;
+        let counter = 1;
+        while (PodCube.loadPlaylist(finalName)) {
+            finalName = `${result.name} (${counter})`;
+            counter++;
+        }
+        
+        // 5. Save to the Engine/LocalStorage
+        const playlist = PodCube.savePlaylist(finalName, result.episodes);
+        
+        // 6. Visual Feedback: Trigger the Printing Animation
+        // Delay slightly to allow the tab switch to render layout
+        setTimeout(() => {
+            animatePunchcardIssue(playlist);
+        }, 100);
+        
+        logCommand(`// Punchcard accepted. "${finalName}" registered.`);
+        return true;
+    } else {
+        // Only log error, let caller decide if they want to alert()
+        console.error("Invalid Punchcard data provided.");
+        return false;
+    }
+}
+
 
 /**
  * Saves the current queue and triggers the "Printing" animation.
@@ -1519,7 +1389,7 @@ function animatePunchcardIssue(playlist) {
     const card = renderPunchcardDOM(playlist, 'anim');
     
     // FORCE INITIAL STATE IMMEDIATELY (Prevents "Shooting Up" glitch)
-    card.style.opacity = '0'; // [MODIFIED] Start invisible
+    card.style.opacity = '0'; // Start invisible
     card.style.position = 'absolute';
     card.style.top = '-110%'; // Way up inside the machine
     card.style.left = '50%';
@@ -1535,36 +1405,41 @@ function animatePunchcardIssue(playlist) {
 
     // --- ANIMATION SEQUENCE ---
 
-    // Step 1: Open the Slot
     requestAnimationFrame(() => {
-        mask.style.height = `${maskHeight}px`;
+        mask.classList.add('open-slot');
     });
 
-    // Step 2: Print (Slide Out)
-    // Wait 100ms for slot to begin opening, then slide card
+    // Step 1: Open the Slot (Carve out the height)
     setTimeout(() => {
-        card.style.opacity = '1'; // [MODIFIED] Turn visible right as movement starts
-        card.style.top = '20px'; // Slide down to visible position
+        mask.style.height = `${maskHeight}px`;
+    }, 100); // Small delay after border appears
+
+    // Step 2: Print (Slide Out)
+    setTimeout(() => {
+        card.style.opacity = '1';
+        card.style.top = '20px'; // Card pushes down through the slot
     }, 800);
 
     // Step 3: Detach & Drop (The "Handoff")
     // Wait for print slide (1.0s + buffer)
     setTimeout(() => {
-        // 1. Get exact onscreen coordinates before we touch anything
+
+        mask.classList.remove('open-slot');
+        mask.classList.add('close-slot');
+
+        // Get exact onscreen coordinates before we touch anything
         const dropRect = card.getBoundingClientRect();
         
-        // 2. Kill the mask (Clean up DOM)
-        if (mask.parentNode) mask.parentNode.removeChild(mask);
         
-        // 3. Re-attach card to body in "Physics Mode"
+        // Re-attach card to body in "Physics Mode"
         document.body.appendChild(card);
         
-        // 4. Apply Fixed Coordinates (Seamless Match)
+        // Apply Fixed Coordinates (Seamless Match)
         card.style.position = 'fixed';
         card.style.left = `${dropRect.left}px`;
         card.style.top = `${dropRect.top}px`;
         
-        // CRITICAL: Re-apply width to prevent "narrow snap"
+        // Re-apply width to prevent "narrow snap"
         card.style.width = `${cardWidth}px`; 
         card.style.minWidth = `${cardWidth}px`;
         
@@ -1581,85 +1456,153 @@ function animatePunchcardIssue(playlist) {
             if (card.parentNode) card.parentNode.removeChild(card);
             
             updatePlaylistsUI(playlist.name);
-            
+
+            // 2. Kill the mask (Clean up DOM)
+            if (mask.parentNode) mask.parentNode.removeChild(mask);
         }, 400); 
 
     }, 2300); 
 }
 
+
 /**
  * Helper to generate card DOM.
  */
 function renderPunchcardDOM(pl, indexSuffix) {
+    // Generate export data once
     const exportData = PodCube.exportPlaylist(pl.name);
+    
+    // Safety check if export fails (e.g. empty playlist)
+    const safeUrl = exportData ? exportData.url : "";
+    
     const uniqueId = `qr_${Date.now()}_${indexSuffix}`;
+    const totalDur = formatTime(pl.totalDuration);
     
     const card = document.createElement('div');
     card.className = 'pc-share-card-container interactive'; 
     
+    // Note: We removed the inline onclick/onblur handlers here
     card.innerHTML = `
         <div class="pc-share-header">PodCube™</div>
         <div class="pc-share-body">
             <div class="pc-share-title" 
                  contenteditable="true" 
-                 title="Click to Rename"
-                 onblur="finalizeRename(this, '${escapeForAttribute(pl.name)}')"
-                 onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
+                 title="Click to Rename">
                 ${escapeHtml(pl.name)}
             </div>
             <div class="pc-share-meta">${pl.episodes.length} Transmissions</div>
-            <div class="pc-share-qr-frame">
-                <div id="${uniqueId}"></div>
-            </div>
+            <div class="pc-share-meta">Duration: ${totalDur}</div>
+            <div class="pc-share-qr-frame"></div>
         </div>
         <div class="pc-share-actions">
-            <button class="icon-btn" data-action="load" data-name="${escapeForAttribute(pl.name)}" title="Load into Queue">INSERT</button>
-            <button class="icon-btn" data-action="export" data-name="${escapeForAttribute(pl.name)}" title="Copy to Clipboard">EXPORT</button>
-            <button class="icon-btn" style="color:var(--danger); border-color:var(--danger);" data-action="delete" data-name="${escapeForAttribute(pl.name)}" title="Delete Forever">SHRED</button>
+            <button class="icon-btn btn-load" title="Load into Queue">INSERT</button>
+            <button class="icon-btn btn-export" title="Copy to Clipboard">EXPORT</button>
+            <button class="icon-btn btn-delete" style="color:var(--danger); border-color:var(--danger);" title="Delete Forever">SHRED</button>
         </div>
     `;
     
-    // Bind Events
-    card.querySelectorAll('button[data-action]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const action = e.currentTarget.dataset.action;
-            const name = e.currentTarget.dataset.name;
+    const qrFrame = card.querySelector('.pc-share-qr-frame');
+    
+    // --- QR CODE CACHING STRATEGY ---
+    // We key by the specific Export URL. If the name changes, the URL changes, 
+    // automatically invalidating the cache for the new card.
+    const cacheKey = safeUrl;
+
+    if (QR_CACHE.has(cacheKey)) {
+        // HIT: Move the existing DOM node here. 
+        // DO NOT use cloneNode(true) because it wipes <canvas> content!
+        qrFrame.appendChild(QR_CACHE.get(cacheKey));
+    } else {
+        // MISS: Generate new QR
+        if (window.QRCode && safeUrl) {
+            const qrContainer = document.createElement('div');
+            // Ensure container fills frame
+            qrContainer.style.width = "100%";
+            qrContainer.style.height = "100%";
             
-            if (action === 'load') run(`PodCube.playPlaylist("${escapeForJs(name)}")`);
-            if (action === 'export') PlaylistSharing.exportToClipboard(name);
-            if (action === 'delete') deletePlaylist(name);
-        });
+            new QRCode(qrContainer, {
+                text: safeUrl,
+                width: 100,
+                height: 100,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+            
+            // Store actual node in cache
+            QR_CACHE.set(cacheKey, qrContainer);
+            qrFrame.appendChild(qrContainer);
+        }
+    }
+
+
+    card.querySelector('.btn-load').addEventListener('click', () => {
+        PodCube.playPlaylist(pl.name);
+        // We log a "sanitized" version for visual effect, but execute the real one above
+        logCommand(`PodCube.playPlaylist("${pl.name.replace(/"/g, '\\"')}")`);
     });
 
-    // Generate QR
-    if (window.QRCode) {
-        setTimeout(() => {
-            const qrTarget = document.getElementById(uniqueId);
-            if (qrTarget) {
-                new QRCode(qrTarget, {
-                    text: exportData.url,
-                    width: 100,
-                    height: 100,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
-                });
-            }
-        }, 0);
-    }
+    card.querySelector('.btn-export').addEventListener('click', () => {
+        PlaylistSharing.exportToClipboard(pl.name);
+    });
+
+    card.querySelector('.btn-delete').addEventListener('click', () => {
+        deletePlaylist(pl.name, card);
+    });
+
+    // --- RENAME LOGIC ---
+    const titleEl = card.querySelector('.pc-share-title');
+    
+    const submitRename = () => {
+        const newName = titleEl.textContent.trim();
+        
+        // Compare new input against the ORIGINAL name from the scope
+        if (newName && newName !== pl.name) {
+            handleRename(pl.name, newName);
+        } else {
+            // Revert visual change if invalid or unchanged
+            titleEl.textContent = pl.name; 
+        }
+    };
+
+    titleEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            titleEl.blur(); // Triggers the blur event below
+        }
+    });
+
+    titleEl.addEventListener('blur', submitRename);
+
     return card;
+}
+
+function handleRename(oldName, newName) {
+
+    const success = PodCube.renamePlaylist(oldName, newName);
+    
+    if (success) {
+        updatePlaylistsUI();
+        logCommand(`// Reclassified record to "${newName}"`);
+    } else {
+        logCommand(`// Error: Could not rename to "${newName}"`);
+        updatePlaylistsUI(); // Revert UI
+    }
 }
 
 function updatePlaylistsUI(highlightName = null) {
     const container = document.getElementById('playlistList');
     if (!container) return;
     
-    const playlists = PodCube.getPlaylists();
+    // Get raw list
+    let playlists = PodCube.getPlaylists();
+    
     container.innerHTML = '';
 
     if (playlists.length === 0) {
+        container.classList.add('empty');
         container.innerHTML = `
-            <div class="empty-state" style="grid-column: 1 / -1; border: 1px dashed var(--primary-dim);">
+            <div class="empty-state" style="border: 1px dashed var(--primary-dim);">
                 <div class="empty-state-icon">🅿</div>
                 <div>Issue a new punchcard or insert one into the reader to begin cataloging.</div>
             </div>
@@ -1667,12 +1610,25 @@ function updatePlaylistsUI(highlightName = null) {
         return;
     }
     
+    // Remove empty class when we have playlists
+    container.classList.remove('empty');
+    
+    // Sort by Creation Date (Oldest First)
+    playlists.sort((a, b) => {
+        const dateA = new Date(a.created || 0);
+        const dateB = new Date(b.created || 0);
+        return dateA - dateB;
+    });
+    
     playlists.forEach((pl, index) => {
         const card = renderPunchcardDOM(pl, index);
+        
         if (highlightName && pl.name === highlightName) {
             card.classList.add('pop-in');
         }
-        container.appendChild(card);
+        
+        // Add to top of list
+        container.prepend(card);
     });
 }
 
@@ -1681,28 +1637,15 @@ function importPlaylistFromInput() {
     const input = document.getElementById('playlistImportInput');
     const val = input.value.trim();
     
-    // Check if empty
     if (!val) {
-        alert("PUNCHCARD READER EMPTY.\n\nPlease paste a Punchcard Image [Ctrl+V] or enter a Nano-GUID code.");
-        input.focus();
+        alert("READER EMPTY. Please paste an image or enter a code.");
         return;
     }
 
-    const result = PodCube.importPlaylist(val); 
-    if (result && result.episodes.length > 0) {
-        let finalName = result.name;
-        if (PodCube.loadPlaylist(finalName)) {
-            finalName = `${result.name} (Copy ${new Date().getTime().toString().slice(-4)})`;
-        }
-        PodCube.savePlaylist(finalName, result.episodes);
-        
-        updatePlaylistsUI();
-        input.value = '';
-        
-        // Tone-appropriate log
-        logCommand(`// Punchcard accepted. "${finalName}" registered.`);
+    if (handleIncomingPlaylistCode(val)) {
+        input.value = ''; // Only clear if successful
     } else {
-        alert("INVALID PUNCHCARD.\n\nThe data appears corrupted or unreadable.");
+        alert("INVALID PUNCHCARD. The data is unreadable.");
     }
 }
 
@@ -1715,90 +1658,210 @@ function escapeForJs(text) {
     return text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-function finalizeRename(el, oldName) {
-    const newName = el.textContent.trim();
-    if (newName && newName !== oldName) {
-        PodCube.renamePlaylist(oldName, newName);
-        updatePlaylistsUI();
-        logCommand(`// Reclassified record to "${newName}"`);
-    }
-}
-
 function loadPlaylistToQueue(name) {
-    // We delegate the heavy lifting to the API
-    run(`PodCube.queuePlaylist("${name}")`);
+    // 1. Direct Execution
+    PodCube.queuePlaylist(name);
+    
+    // 2. Manual Logging
+    logCommand(`PodCube.queuePlaylist("${escapeForJs(name)}")`);
 }
 
-function deletePlaylist(name) {
-    run(`PodCube.deletePlaylist("${name}")`);
+async function deletePlaylist(name, cardElement) {
+    // 1. Prepare Animation (if DOM element exists)
+    if (cardElement) {
+        // Capture exact geometry
+        const rect = cardElement.getBoundingClientRect();
+        
+        // Find canvas source
+        const sourceCanvas = cardElement.querySelector('canvas');
+        
+        // Helper to fix canvas content on clones
+        const fixCanvas = (clone) => {
+            if (sourceCanvas) {
+                const destCanvas = clone.querySelector('canvas');
+                if (destCanvas) {
+                    const ctx = destCanvas.getContext('2d');
+                    ctx.drawImage(sourceCanvas, 0, 0);
+                }
+            }
+        };
+
+        // Factory: Creates a Wrapper (Rip Shape) containing a Clone (Card Shape)
+        const createShredPiece = (clipPath) => {
+            // A. The Wrapper: Handles the Animation & The "Rip" Cut
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('rip-piece');
+            
+            // Force Wrapper to exact original screen coordinates
+            wrapper.style.position = 'fixed';
+            wrapper.style.left = `${rect.left}px`;
+            wrapper.style.top = `${rect.top}px`;
+            wrapper.style.width = `${rect.width}px`;
+            wrapper.style.height = `${rect.height}px`;
+            wrapper.style.zIndex = '9999';
+            wrapper.style.boxSizing = 'border-box';
+            
+            // Apply the jagged seam to the WRAPPER
+            wrapper.style.clipPath = clipPath;
+
+            // B. The Clone: Keeps original CSS styling (corners, colors)
+            const clone = cardElement.cloneNode(true);
+            fixCanvas(clone);
+            
+            // Reset layout so clone fills the wrapper perfectly
+            // We use !important to ensure no CSS overrides this
+            clone.style.setProperty('position', 'absolute', 'important');
+            clone.style.setProperty('top', '0', 'important');
+            clone.style.setProperty('left', '0', 'important');
+            clone.style.setProperty('width', '100%', 'important');
+            clone.style.setProperty('height', '100%', 'important');
+            clone.style.setProperty('margin', '0', 'important');
+            clone.style.setProperty('transform', 'none', 'important');
+            clone.style.setProperty('opacity', '1', 'important');
+            
+            // Remove interactive noise
+            clone.querySelectorAll('button, input').forEach(b => b.remove());
+
+            wrapper.appendChild(clone);
+            return wrapper;
+        };
+
+        // Define jagged seam
+        const seam = "100% 50%, 85% 55%, 70% 45%, 55% 55%, 40% 45%, 25% 55%, 10% 45%, 0% 50%";
+        
+        // Create the two halves
+        const topWrapper = createShredPiece(`polygon(0% 0%, 100% 0%, ${seam})`);
+        const btmWrapper = createShredPiece(`polygon(0% 100%, 100% 100%, ${seam})`);
+
+        // Mount to body
+        document.body.appendChild(topWrapper);
+        document.body.appendChild(btmWrapper);
+
+        // Animate the WRAPPERS
+        requestAnimationFrame(() => {
+            topWrapper.style.animation = "ripTop 0.6s ease-in forwards";
+            btmWrapper.style.animation = "ripBottom 0.6s ease-in forwards";
+        });
+
+        // Cleanup
+        setTimeout(() => {
+            topWrapper.remove();
+            btmWrapper.remove();
+        }, 600);
+    }
+
+    // 2. IMMEDIATE DELETION
+    PodCube.deletePlaylist(name);
+    logCommand(`PodCube.deletePlaylist("${escapeForJs(name)}")`);
+    
     updatePlaylistsUI();
 }
 
-function renamePlaylist(oldName) {
-    const newName = prompt("Enter new name for playlist:", oldName);
-    if (newName && newName !== oldName) {
-        const data = PodCube.loadPlaylist(oldName);
-        if (data) {
-            PodCube.savePlaylist(newName, data.episodes);
-            PodCube.deletePlaylist(oldName);
-            updatePlaylistsUI();
-            logCommand(`// Renamed playlist to "${newName}"`);
+
+// --- OPTIMIZED RENDER SYSTEM ---
+
+const UI_CACHE = {
+    lastTime: null,
+    lastPlayState: null,
+    lastTrackId: null,
+    lastQueueHash: null,
+    lastVolume: null,
+    lastRate: null
+};
+
+// 1. HIGH FREQUENCY: Time & Progress (Ticks 10x per second)
+// Only updates text and width styles. No heavy DOM construction.
+function renderTimeDisplays(status) {
+    if (status.currentTimeFormatted === UI_CACHE.lastTime) return;
+
+    // Main Transport
+    const transTime = document.getElementById('transTime');
+    if (transTime) transTime.textContent = `${status.currentTimeFormatted} / ${status.durationFormatted}`;
+
+    // Player Tab
+    const tStart = document.getElementById('playerTimeStart');
+    const tEnd = document.getElementById('playerTimeEnd');
+    if (tStart) tStart.textContent = status.currentTimeFormatted;
+    if (tEnd) tEnd.textContent = status.durationFormatted;
+
+    // Scrubbers (CSS Transform is cheaper than width, but width is fine here)
+    const pct = `${status.percent}%`;
+    ['scrubberFill', 'playerScrubberFill'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.width = pct;
+    });
+
+    const handle = document.getElementById('playerScrubberHandle');
+    if (handle) handle.style.left = pct;
+
+    UI_CACHE.lastTime = status.currentTimeFormatted;
+}
+
+// 2. MEDIUM FREQUENCY: Play/Pause State & Volume
+// Triggered on play, pause, or manual volume change
+function renderTransportState(status) {
+    // Play/Pause Icons
+    if (status.playing !== UI_CACHE.lastPlayState) {
+        const playIcon = status.playing ? ICONS.pause : ICONS.play;
+        
+        ['playBtn', 'playerPlayBtn'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.innerHTML !== playIcon) el.innerHTML = playIcon;
+        });
+
+        const playerIconContainer = document.getElementById('playerPlayIcon');
+        if (playerIconContainer) playerIconContainer.innerHTML = playIcon;
+        
+        UI_CACHE.lastPlayState = status.playing;
+    }
+
+    // Volume / Speed (Only if changed)
+    if (status.volume !== UI_CACHE.lastVolume) {
+        if (document.activeElement.id !== 'transportVolume' && document.activeElement.id !== 'playerVolume') {
+            const volInt = Math.round(status.volume * 100);
+            ['transportVolume', 'playerVolume'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = volInt;
+            });
+            const volVal = document.getElementById('transportVolumeValue');
+            if (volVal) volVal.textContent = `${volInt}%`;
         }
+        UI_CACHE.lastVolume = status.volume;
     }
 }
 
-// --- UPDATE UI ---
+// 3. LOW FREQUENCY: Track Metadata
+// Triggered only when the track changes
+function renderTrackMetadata(ep) {
+    if (ep?.id === UI_CACHE.lastTrackId) return;
 
-function updateUI() {
-    // Update play buttons
-    const playBtns = ['playBtn', 'playerPlayBtn'];
-    const icon = PodCube.status.playing ? ICONS.pause : ICONS.play;
-    
-    playBtns.forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) btn.innerHTML = icon;
-    });
-    
-    const playerIcon = document.getElementById('playerPlayIcon');
-    if (playerIcon) playerIcon.innerHTML = icon;
-    
-    // Update config displays
-    const feedEl = document.getElementById('confFeed');
-    const debugEl = document.getElementById('confDebug');
-    const totalEl = document.getElementById('confTotal');
-    
-    if (feedEl) feedEl.textContent = PodCube.FEED_TYPE.toUpperCase();
-    if (debugEl) debugEl.textContent = PodCube.DEBUG ? "ON" : "OFF";
-    if (totalEl) totalEl.textContent = PodCube.all.length;
-    
-    // Update feed toggle button text
-    const feedBtn = document.getElementById('feedToggleBtn');
-    if (feedBtn) {
-        const nextType = PodCube.FEED_TYPE === 'rss' ? 'JSON' : 'RSS';
-        feedBtn.textContent = `Switch to ${nextType}`;
-    }
-    
-    // Update now playing title
-    const titleEl = document.getElementById('transTitle');
-    if (titleEl) {
-        titleEl.textContent = PodCube.nowPlaying ? PodCube.nowPlaying.title : 'Select a Transmission...';
-    }
+    const titleText = ep ? ep.title : 'Select a transmission...';
 
+    // Global Title
+    const transTitle = document.getElementById('transTitle');
+    if (transTitle) transTitle.textContent = titleText;
+
+    // Player Tab Title
     const playerTitle = document.getElementById('playerNowPlayingTitle');
-    const playerMeta = document.getElementById('playerNowPlayingMeta');
+    if (playerTitle) playerTitle.textContent = titleText;
 
-    if (playerTitle && playerMeta) {
-        if (PodCube.nowPlaying) {
-            playerTitle.textContent = PodCube.nowPlaying.title;
-            // Display Model • Origin or similar metadata
-            playerMeta.textContent = `${PodCube.nowPlaying.model || 'Unknown Model'} • ${PodCube.nowPlaying.timestamp || '0:00'}`;
+    // Rich Metadata
+    const playerMeta = document.getElementById('playerNowPlayingMeta');
+    if (playerMeta) {
+        if (ep) {
+            const parts = [
+                `<strong>${ep.model || 'Unknown Model'}</strong>`,
+                ep.origin,
+                ep.weirdDuration,
+                ep.anniversary
+            ].filter(Boolean);
+            playerMeta.innerHTML = parts.join(' <span style="opacity:0.3; margin:0 5px;">•</span> ');
         } else {
-            playerTitle.textContent = 'Select a Transmission';
-            playerMeta.textContent = 'Click on the transmissions tab above.';
+            playerMeta.innerHTML = '<span class="text-muted">Queue is empty. Visit the Transmissions tab.</span>';
         }
     }
-    updatePunchcardPreview();
-    updateQueueList();
+
+    UI_CACHE.lastTrackId = ep?.id;
 }
 
 // --- MOBILE TRANSPORT TOGGLE ---
@@ -1858,7 +1921,7 @@ function formatConsoleOutput(value) {
 function toggleDebug() {
     const current = PodCube.DEBUG;
     run(`PodCube.setDebug(${!current})`);
-    updateUI();
+    renderSystemInfo();
 }
 
 async function toggleFeedType() {
@@ -1867,42 +1930,29 @@ async function toggleFeedType() {
     
     // Don't toggle if already on that type
     if (current === next) {
-        log.info("Already using this feed type");
+        logCommand("// Already using this feed type");
         return;
     }
     
     updateStatusIndicator(`Switching to ${next.toUpperCase()}...`);
-    run(`PodCube.setFeedType('${next}')`);
+    logCommand(`// Switching to ${next.toUpperCase()} feed...`);
     
     try {
-        const changed = await PodCube.init(true);
+        await run(`PodCube.setFeedType('${next}')`);
+        await run(`PodCube.init(true)`);
         
-        if (!changed) {
-            updateStatusIndicator(`Already on ${next.toUpperCase()}`);
-            return;
-        }
+        updateStatusIndicator(`Reloading with ${next.toUpperCase()} feed...`);
         
-        updateStatusIndicator(`Connected: ${PodCube.FEED_TYPE.toUpperCase()}`);
-        
-        // Only refresh if feed actually changed
-        refreshAllData();
-        logCommand(`// Switched to ${next.toUpperCase()} feed`);
+        // Reload page to refresh all data with new feed
+        setTimeout(() => window.location.reload(), 500);
     } catch(e) {
-        updateStatusIndicator("Protocol Error");
+        updateStatusIndicator("Feed Switch Error");
         logCommand(`// ERROR switching feed: ${e.message}`);
+        console.error('Feed switch error:', e);
     }
 }
 
-// --- UTILITIES ---
-
-function refreshAllData() {
-    initArchiveControls();
-    updateBrigistics();
-    updateGeoDistribution();
-    updateArchive();
-    showDistribution();
-    updateUI();
-}
+// -- UTILITIES --
 
 function debounce(func, wait) {
     let timeout;
@@ -1918,9 +1968,10 @@ function debounce(func, wait) {
 
 function formatTime(s) {
     if (!s) return "0:00";
-    const m = Math.floor(s / 60);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
     const sec = Math.floor(s % 60);
-    return `${m}:${sec < 10 ? '0' + sec : sec}`;
+    return `${h<1? '' : h+':'}${m}:${sec < 10 ? '0' + sec : sec}`;
 }
 
 function formatBytes(bytes) {
@@ -1943,35 +1994,177 @@ function escapeForAttribute(text) {
     return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
-// --- TAB SWITCHING ---
-let lastArchiveScroll = 0; // Stores the position of the Transmissions list
-document.querySelectorAll('.tab-button').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const targetId = btn.dataset.tab;
-        const currentTab = document.querySelector('.tab-content.active');
-        
-        // 1. If we are leaving the 'archive' tab, save its scroll position
-        if (currentTab && currentTab.id === 'archive') {
-            lastArchiveScroll = window.scrollY;
-        }
+// --- NAVIGATION ---
+let lastArchiveScroll = 0;
+let isRewritingHistory = false;
+let pendingNavigation = null;
 
-        // 2. Perform the Switch
-        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        
-        btn.classList.add('active');
-        document.getElementById(targetId).classList.add('active');
+function initNavigation() {
+    // Prevent browser scroll jumping during the history rewrite
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
-        // 3. Handle Scroll Behavior
-        if (targetId === 'archive') {
-            // If returning to Transmissions, restore the saved position
-            window.scrollTo({ top: lastArchiveScroll, behavior: 'instant' });
+    // 1. Click Listeners
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab, true));
+    });
+
+    // 2. Popstate Handler (The Rewrite Engine)
+    window.addEventListener('popstate', (e) => {
+        if (isRewritingHistory && pendingNavigation) {
+            // We have successfully stepped back to Depth 1.
+            // Now we rewrite the stack to: [Previous, Target]
+            
+            // Step A: Overwrite the current entry (which was the entry point) with the Previous Tab
+            history.replaceState(
+                { tab: pendingNavigation.previousTab, depth: 1 }, 
+                '', 
+                `#${pendingNavigation.previousTab}`
+            );
+
+            // Step B: Push the Target Tab
+            history.pushState(
+                { tab: pendingNavigation.targetTab, depth: 2 }, 
+                '', 
+                `#${pendingNavigation.targetTab}`
+            );
+
+            // Step C: Update UI
+            performUISwitch(pendingNavigation.targetTab);
+
+            // Reset
+            isRewritingHistory = false;
+            pendingNavigation = null;
         } else {
-            // For all other tabs, snap to the top for a fresh view
-            window.scrollTo({ top: 0, behavior: 'instant' });
+            // Standard Back Button behavior
+            const target = (e.state && e.state.tab) ? e.state.tab : 'overview';
+            switchTab(target, false);
         }
     });
-});
+
+    // 3. Initial Load State
+    const hashTab = window.location.hash.replace('#', '');
+    const savedTab = localStorage.getItem('podCube_activeTab');
+    
+    // Determine start tab, default to 'overview' if invalid
+    const tabOrder = getTabOrder();
+    let startTab = tabOrder.includes(hashTab) ? hashTab : 
+                   (tabOrder.includes(savedTab) ? savedTab : 'overview');
+
+    // Establish the "Root" of the rolling history
+    history.replaceState({ tab: startTab, depth: 1 }, '', `#${startTab}`);
+    performUISwitch(startTab);
+
+    // 4. Swipe Gestures
+    let touchStartX = 0;
+    let touchStartY = 0;
+    document.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, {passive: true});
+
+    document.addEventListener('touchend', (e) => {
+        handleSwipe(touchStartX, touchStartY, e.changedTouches[0].screenX, e.changedTouches[0].screenY, e.target);
+    }, {passive: true});
+}
+
+/**
+ * Helper: Dynamically gets the list of tab IDs based on the DOM order.
+ * This ensures Swipe/Keyboard navigation always matches the visual order.
+ */
+function getTabOrder() {
+    return Array.from(document.querySelectorAll('.tab-button'))
+        .map(btn => btn.dataset.tab);
+}
+
+/**
+ * Helper: Updates DOM classes and restores scroll. 
+ * Separated from history logic to prevent loops.
+ */
+function performUISwitch(targetId) {
+    const btn = document.querySelector(`.tab-button[data-tab="${targetId}"]`);
+    const content = document.getElementById(targetId);
+    
+    if (!btn || !content) return;
+
+    // 1. Snapshot Scroll (only if leaving Archive)
+    const currentTab = document.querySelector('.tab-content.active');
+    if (currentTab && currentTab.id === 'archive' && targetId !== 'archive') {
+        lastArchiveScroll = window.scrollY;
+    }
+
+    // 2. Update Classes
+    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    
+    btn.classList.add('active');
+    content.classList.add('active');
+
+    // 3. Restore/Reset Scroll
+    if (targetId === 'archive') {
+        window.scrollTo({ top: lastArchiveScroll, behavior: 'instant' });
+    } else {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
+    // 4. Persist preference
+    localStorage.setItem('podCube_activeTab', targetId);
+}
+
+function switchTab(targetId, isNewNavigation = true) {
+    const currentTab = document.querySelector('.tab-button.active')?.dataset.tab;
+    if (currentTab === targetId) return;
+
+    if (isNewNavigation) {
+        const currentDepth = history.state?.depth || 1;
+
+        if (currentDepth === 1) {
+            // Standard Navigation: Just push the new tab
+            history.pushState({ tab: targetId, depth: 2 }, '', `#${targetId}`);
+            performUISwitch(targetId);
+        } 
+        else if (currentDepth === 2) {
+            // Rolling Navigation: We are already deep.
+            // 1. Set flags to intercept the 'popstate' event
+            isRewritingHistory = true;
+            pendingNavigation = {
+                previousTab: currentTab, // This becomes the new "Back" destination
+                targetTab: targetId      // This becomes the new "Current"
+            };
+            // 2. Physically go back in browser history to index 0
+            history.back(); 
+        }
+    } else {
+        // Simple UI update (User pressed Back button manually)
+        performUISwitch(targetId);
+    }
+}
+
+// --- SWIPE LOGIC ---
+function handleSwipe(startX, startY, endX, endY, targetElement) {
+    const diffX = endX - startX;
+    const diffY = endY - startY;
+    
+    if (Math.abs(diffX) < 120) return; 
+    if (Math.abs(diffY) > 40) return; 
+
+    if (isHorizontallyScrollable(targetElement) || 
+        targetElement.closest('.scrubber') || 
+        targetElement.closest('.transport-slider')) return;
+
+    // Get order dynamically
+    const tabOrder = getTabOrder();
+    const currentTab = document.querySelector('.tab-button.active')?.dataset.tab;
+    const currentIndex = tabOrder.indexOf(currentTab);
+    
+    if (currentIndex === -1) return;
+
+    const direction = diffX > 0 ? -1 : 1; 
+    const nextIndex = currentIndex + direction;
+
+    if (nextIndex >= 0 && nextIndex < tabOrder.length) {
+        switchTab(tabOrder[nextIndex], true);
+    }
+}
 
 // --- DATA TAB SWITCHING ---
 document.addEventListener('click', (e) => {
@@ -1988,8 +2181,29 @@ document.addEventListener('click', (e) => {
 
 // --- KEYBOARD SHORTCUTS ---
 document.addEventListener('keydown', (e) => {
-    // Check if user is typing in an input, textarea, OR a contenteditable element (like Punchcard titles)
     const isTyping = ['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable;
+    if (isTyping) return;
+
+    // Desktop Tab Navigation (Arrow Keys)
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        // Ignore if shift is held (audio scrubbing)
+        if (e.shiftKey) return;
+
+        const tabOrder = getTabOrder();
+        const currentTab = document.querySelector('.tab-button.active')?.dataset.tab;
+        const currentIndex = tabOrder.indexOf(currentTab);
+        
+        if (currentIndex !== -1) {
+            const direction = e.key === 'ArrowLeft' ? -1 : 1;
+            const nextIndex = currentIndex + direction;
+            
+            if (nextIndex >= 0 && nextIndex < tabOrder.length) {
+                e.preventDefault();
+                switchTab(tabOrder[nextIndex], true);
+                return;
+            }
+        }
+    }
 
     // Space: play/pause (Only if NOT typing)
     if (e.code === 'Space' && !isTyping) {
@@ -2016,20 +2230,6 @@ document.addEventListener('keydown', (e) => {
 });
 
 // --- SHARE CARD FUNCTIONALITY ---
-// --- PLAYLIST SHARING (Refined & Fixed) ---
-
-/**
- * Color palette - hardcoded to avoid CSS variable issues in JS
- */
-const COLORS = {
-    primary: '#1768da',
-    primaryDim: '#e1e8f3',
-    primaryDark: '#0d4da1',
-    text: '#1a1a1a',
-    textMuted: '#555555',
-    bg: '#fdfdfc',
-    border: '#1768da'
-};
 
 /**
  * Generate a QR code and append to container
@@ -2081,109 +2281,7 @@ function copyToClipboard(elementId) {
     });
 }
 
-function importPlaylistFromInput() {
-    const input = document.getElementById('playlistImportInput');
-    const result = PodCube.importPlaylist(input.value.trim()); //
-    if (result && result.episodes.length > 0) {
-        // Automatic Save with de-confliction
-        let finalName = result.name;
-        if (PodCube.loadPlaylist(finalName)) {
-            finalName = `${result.name} (Imported ${new Date().getTime().toString().slice(-4)})`;
-        }
-        PodCube.savePlaylist(finalName, result.episodes); //
-        updatePlaylistsUI();
-        input.value = '';
-        logCommand(`// Imported and saved "${finalName}"`);
-    }
-}
 
-/**
- * Check for playlist import on page load
- */
-function checkForPlaylistImport() {
-    const importCode = PodCube.getImportCodeFromUrl();
-    if (!importCode) return;
-
-    const playlistData = PodCube.importPlaylist(importCode);
-    if (!playlistData) {
-        logCommand('// Error: Invalid playlist code');
-        return;
-    }
-
-    showImportNotification(playlistData);
-}
-
-/**
- * Show import notification with action options
- */
-function showImportNotification(playlistData) {
-    const playerSection = document.getElementById('player');
-    if (!playerSection) return;
-
-    const notification = document.createElement('div');
-    notification.className = 'import-notification';
-    notification.innerHTML = `
-        <div class="import-notification-content">
-            <div class="import-notification-info">
-                <strong>${escapeHtml(playlistData.name)}</strong>
-                <span class="import-notification-count">${playlistData.episodes.length} tracks</span>
-            </div>
-            <div class="import-notification-actions">
-                <button class="import-action-btn" onclick="performPlaylistImport('add', this)">Add Queue</button>
-                <button class="import-action-btn" onclick="performPlaylistImport('replace', this)">Replace Queue</button>
-                <button class="import-action-btn" onclick="performPlaylistImport('save', this)">Save New</button>
-                <button class="import-action-close" onclick="this.closest('.import-notification').remove()">Close</button>
-            </div>
-        </div>
-    `;
-
-    playerSection.insertBefore(notification, playerSection.firstChild);
-}
-
-/**
- * Execute the playlist import action
- */
-function performPlaylistImport(action, button) {
-    const notification = button.closest('.import-notification');
-    const nameEl = notification.querySelector('strong');
-    const name = nameEl.textContent;
-
-    const importCode = PodCube.getImportCodeFromUrl();
-    const playlistData = PodCube.importPlaylist(importCode);
-
-    if (!playlistData || playlistData.episodes.length === 0) {
-        logCommand('// Error: No episodes to import');
-        return;
-    }
-
-    try {
-        if (action === 'add') {
-            // Call API directly with objects
-            PodCube.queuePlaylist(playlistData)
-            // Log manually for the user
-            logCommand(`// Added "${name}" (${episodes.length} tracks) to queue`);
-        } else if (action === 'replace') {
-            PodCube.clearQueue();
-            PodCube.addToQueue(episodes, true);
-            logCommand(`// Replaced queue with "${name}"`);
-        } else if (action === 'save') {
-            const saveName = prompt('Save playlist as:', name);
-            if (saveName && saveName.trim()) {
-                PodCube.savePlaylist(saveName, episodes);
-                updatePlaylistsUI();
-                logCommand(`// Saved as "${saveName}"`);
-            }
-            return;
-        }
-
-        updateQueueList();
-        notification.remove();
-        logCommand(`const playlistData = PodCube.importPlaylist('...'); // playlistData { name, episodes, missingCount }`);
-    } catch (e) {
-        console.error('Import action failed:', e);
-        logCommand(`// Error: Import failed`);
-    }
-}
 
 function initPasteHandler() {
     document.addEventListener('paste', async (e) => {
@@ -2292,7 +2390,7 @@ function initPunchcardDragDrop() {
         // --- 3. FAILURE STATE ---
         // Only alert if we actually received data but couldn't use it
         if ((text && text.length > 0) || (files && files.length > 0)) {
-            alert("INVALID OBJECT.\n\nThe reader accepts Punchcard Images (PNG/JPG) or valid Nano-GUID Share Codes.");
+            input.value = "INVALID OBJECT.\n\nThe reader accepts Punchcard Images (PNG/JPG) or valid Nano-GUID Share Codes.";
         }
 
     }, false);
@@ -2301,6 +2399,7 @@ function initPunchcardDragDrop() {
 async function scanPastedImage(imageBlob) {
     const img = new Image();
     const url = URL.createObjectURL(imageBlob);
+    const input = document.getElementById('playlistImportInput');
 
     img.onload = () => {
         const canvas = document.createElement('canvas');
@@ -2323,8 +2422,7 @@ async function scanPastedImage(imageBlob) {
                 handlePastedCode(code.data);
             } else {
                 // More helpful error message
-                alert("SCAN FAILED.\n\nImage received, but no Nano-GUID could be decoded.\nTry pasting a clearer image or the raw text code.");
-                logCommand("// Error: No QR code found in pasted image.");
+                input.value = "// Error: No QR code found in pasted image.";
             }
         } else {
             console.error("jsQR library not loaded.");
@@ -2337,26 +2435,7 @@ async function scanPastedImage(imageBlob) {
 }
 
 function handlePastedCode(data) {
-    let codeToImport = data;
-
-    // Smart-extract: If the QR contains a full URL (like our share links), grab just the code
-    if (data.includes('importPlaylist=')) {
-        try {
-            const url = new URL(data);
-            codeToImport = url.searchParams.get('importPlaylist');
-        } catch (e) {
-            // If URL parsing fails, just use the raw data
-            console.warn("Regex parse fallback", e);
-        }
-    }
-
-    const input = document.getElementById('playlistImportInput');
-    if (input) {
-        // Visual feedback: Put the code in the box
-        input.value = codeToImport;
-        // Auto-submit
-        importPlaylistFromInput(); 
-    }
+    handleIncomingPlaylistCode(data);
 }
 
 /**
@@ -2385,20 +2464,58 @@ function restoreTabPreference() {
     }
 }
 
-// Initialize tab preference restoration on DOM ready
-document.addEventListener('DOMContentLoaded', () => {
-    // Attach save handler to all tab buttons
-    document.querySelectorAll('[data-tab]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const tabId = btn.getAttribute('data-tab');
-            saveTabPreference(tabId);
-        });
-    });
 
-    // Restore previously active tab
-    setTimeout(() => restoreTabPreference(), 100);
-});
+function playHistorySong() {
+    // Normalize the raw data to match what the Feed Parser usually produces
+    // The Episode constructor expects a specific "normalized" structure
+    const raw = {
 
+        title: "The PodCube History Song",
+        description: "An official musical chronicle of PodCube's development and deployment history, as performed by our in-house Historical Documentation Chorus.",
+        audioUrl: "./podcube-history-song.mp3",
+        duration: 0, // Will be set when loaded
+        type: "podcube_internal",
+        model: "PodCube Orange Abominable Snowman",
+        origin: "PodCube Research & Innovation Campus",
+        locale: "Miami",
+        region: "FL",
+        zone: "USA",
+        planet: "Earth",
+        date: "2048-01-15",
+
+        // prevents inclusion in punchcards/exports
+        _excludeFromExport: true,
+        _internal: true
+    };
+    
+    const normalizedData = {
+        id: "podcube_history_song", // Needs a unique ID
+        title: raw.title,
+        description: raw.description,
+        episodeType: raw.type, // "podcube_internal"
+        audioUrl: raw.audioUrl,
+        duration: raw.duration, // 0 is fine, engine updates it on load
+        metadata: {
+            // Mapping flattened properties to where the class expects them
+            model: raw.model,
+            origin: raw.origin || "PodCube HQ",
+            date: raw.date,
+            integrity: "100" // It's official, so it's pure
+        }
+    };
+
+    // 2. Create a valid instance using the class we exposed in Step 1
+    // This passes the "instanceof Episode" check in addToQueue()
+    const validEpisode = new PodCube.Episode(normalizedData);
+
+    // 3. Re-attach special flags (The constructor doesn't copy custom flags automatically)
+    validEpisode._excludeFromExport = true;
+    validEpisode._internal = true;
+
+    // 4. Play it
+    PodCube.play(validEpisode);
+    logCommand('// Playing internal history song');
+}
 
 // --- CSS for Hierarchy Hover ---
 const style = document.createElement('style');

@@ -10,8 +10,8 @@ const PlaylistSharing = {
         // FIX: Use absolute positioning at 0,0 with deep negative z-index
         // This prevents viewport clipping issues common with 'fixed' off-screen elements
         card.style.position = 'absolute';
-        card.style.left = '0'; 
-        card.style.top = '0';
+        card.style.left = '-9999'; 
+        card.style.top = '-9999';
         card.style.zIndex = '-9999'; 
         
         // Force width to match CSS
@@ -23,12 +23,13 @@ const PlaylistSharing = {
             <div class="pc-share-body">
                 <div class="pc-share-title">${escapeHtml(exportData.name)}</div>
                 <div class="pc-share-meta">${exportData.episodes.length} Transmissions</div>
+                <div class="pc-share-meta">Duration: ${formatTime(exportData.totalDuration)}</div>
                 <div class="pc-share-qr-frame">
                     <div class="cardQrTarget"></div>
                 </div>
             </div>
             <div class="pc-share-footer">
-                <span class="pc-share-label">COPY/PASTE THIS IMAGE INTO BODGELAB.COM/S/PODCUBE</span>
+                <span class="pc-share-label">COPY/PASTE THIS CARD INTO BODGELAB.COM/S/PODCUBE</span>
                 <div class="pc-share-code-box">${exportData.code}</div>
             </div>
         `;
