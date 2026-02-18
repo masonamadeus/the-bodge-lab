@@ -20,8 +20,8 @@ class Food extends Entity {
         let valid = false;
         // Keep trying random spots until we find a clear one
         while (!valid) {
-            this.x = PC.randInt(0, COLS - 1);
-            this.y = PC.randInt(0, ROWS - 1);
+            this.x = PC.randInt(0, COLS - 2);
+            this.y = PC.randInt(0, ROWS - 2); // never spawn against walls
             valid = !snakeBody.some(s => s.x === this.x && s.y === this.y);
         }
     }
@@ -30,8 +30,8 @@ class Food extends Entity {
         const px = this.x * CELL + CELL / 2;
         const py = this.y * CELL + CELL / 2;
         // Draw a glow and the food dot
-        gfx.circle(px, py, 4, 'rgba(255, 150, 0, 0.4)');
-        gfx.circle(px, py, 2.5, '#ff9900');
+        gfx.circle(px, py, 6, 'rgba(255, 150, 0, 0.4)');
+        gfx.circle(px, py, 4, '#ff9900');
     }
 }
 

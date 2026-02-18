@@ -86,8 +86,28 @@
    remains interactive; re-enabled on individual components via inline style. */
 .pc-layer-dom {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    
+    /* 1. LOCK THE RESOLUTION */
+    width: 400px;
+    height: 300px;
+    
+    /* 2. PREPARE FOR SCALING */
+    transform-origin: top left;
+    
+    /* 3. ALLOW CLICKS (We toggle this on specific elements usually, but base should be pass-through) */
     pointer-events: none;
+}
+
+#pc-machine-view.pc-game-active {
+    overflow: hidden;           /* 1. Prevents scrolling the page */
+    overscroll-behavior: none;  /* 2. Prevents "Swipe Back" and "Rubber Banding" */
+    touch-action: none;         /* 3. Disables pinch-zoom and pan gestures globally */
+}
+
+#pc-machine-view {
+    width: 100%;
 }
 
 

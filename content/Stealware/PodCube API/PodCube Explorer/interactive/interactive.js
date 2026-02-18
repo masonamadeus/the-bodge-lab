@@ -504,7 +504,7 @@ window.Interactive = (() => {
         start() {
             API._hideOverlay(); 
             UI.clear();
-            
+            document.getElementById('pc-machine-view').classList.add('pc-game-active')
             // Cleanup previous game (prevents zombie state)
             if (_activeGame && _activeGame.onCleanup) _activeGame.onCleanup();
             
@@ -543,7 +543,9 @@ window.Interactive = (() => {
             _activeGame = null; 
             _activeId = null; 
             UI.clear();
-            document.getElementById('pc-machine-view').style.display = 'none';
+            const view = document.getElementById('pc-machine-view');
+            view.style.display = 'none';
+            view.classList.remove("pc-game-active");
             document.getElementById('pc-menu-view').style.display = 'grid';
         },
 
@@ -589,9 +591,30 @@ window.Interactive = (() => {
             const btn = document.getElementById('pc-overlay-btn');
             btn.textContent = b;
             btn.onclick = fn;
+
+            // Keyboard Shortcut (Enter / Space) ===
+            // Safety check: remove old listener if it somehow stuck around
+            if (_handlers.overlayKey) window.removeEventListener('keydown', _handlers.overlayKey);
+
+            // Define the temporary handler
+            _handlers.overlayKey = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fn(); // Trigger the button's action (e.g., API.start())
+                }
+            };
+
+            // Bind it
+            window.addEventListener('keydown', _handlers.overlayKey);
         },
 
-        _hideOverlay() { document.getElementById('pc-overlay').classList.add('hidden'); },
+        _hideOverlay() {
+            document.getElementById('pc-overlay').classList.add('hidden');
+            if (_handlers.overlayKey) {
+                window.removeEventListener('keydown', _handlers.overlayKey);
+                _handlers.overlayKey = null;
+            }
+         },
 
         // Internal: Renders the menu card for a registered game
         _renderCard(id, Class) {
@@ -604,7 +627,7 @@ window.Interactive = (() => {
             card.className = 'game-card';
             card.onclick = () => API.load(id);
             card.innerHTML = `
-                <div class="game-card-meta">MODULE ${id.toUpperCase()}</div>
+                <div class="game-card-meta">MODULE: ${id.toUpperCase()}</div>
                 <div class="game-card-title">${meta.title}</div>
                 <div style="font-family:'Fustat'; font-size:11px; color:#666; margin-top:4px; line-height:1.4;">${meta.desc || "No description."}</div>
                 <div class="game-card-score">RECORD: ${best}</div>
@@ -699,7 +722,7 @@ window.Interactive = (() => {
         b.addEventListener('pointerup', _handlers.ptrUp);
     }
 
-    // === NEW: Cleanup Function ===
+    // Cleanup Function
     function _unbind() {
         if (_handlers.keydown) window.removeEventListener('keydown', _handlers.keydown);
         if (_handlers.keyup) window.removeEventListener('keyup', _handlers.keyup);
@@ -711,6 +734,20 @@ window.Interactive = (() => {
         }
         _handlers = {};
         _boundBoard = null;
+    }
+
+    // ── Resizing Logic ───────────────────────────────────────────────────────
+    function _handleResize() {
+        const board = document.querySelector('.pc-game-board');
+        const dom = document.getElementById('pc-dom-layer');
+        if (!board || !dom) return;
+
+        // Calculate the ratio: Actual Screen Width / Logical Game Width (400)
+        // Example: If phone is 350px wide, scale = 0.875
+        const currentWidth = board.clientWidth;
+        const scale = currentWidth / W; 
+
+        dom.style.transform = `scale(${scale})`;
     }
 
     // ── Initialization ───────────────────────────────────────────────────────
@@ -727,6 +764,10 @@ window.Interactive = (() => {
         
         // Setup Input
         _bind();
+
+        // Resize canvas to fit screen
+        window.addEventListener('resize', _handleResize); // Adjust when phone rotates
+        _handleResize(); // Adjust immediately on load
         
         // Export Classes globally for cartridges to use
         window.Game = Game; 
