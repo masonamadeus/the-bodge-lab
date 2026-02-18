@@ -2174,6 +2174,19 @@ function performUISwitch(targetId) {
         lastArchiveScroll = window.scrollY;
     }
 
+    // Destroy interactive when leaving
+    if (Interactive && currentTab &&
+        currentTab.id === 'interactive' &&
+        targetId !== 'interactive'){
+        Interactive.destroy();
+    }
+
+    // Init interactive when arriving
+    if (Interactive && currentTab &&
+        currentTab.id !== 'interactive' &&
+        targetId === 'interactive'
+    ){ Interactive.init() }
+
     // 2. Update Classes
     document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -2309,11 +2322,7 @@ document.addEventListener('keydown', (e) => {
         }
     }
 
-    // Space: play/pause (Only if NOT typing)
-    if (e.code === 'Space' && !isTyping) {
-        e.preventDefault(); // Stop page scroll
-        run('PodCube.toggle()');
-    }
+   
     
     // Arrow keys with Ctrl (Skip)
     if (e.code === 'ArrowLeft' && e.ctrlKey) {

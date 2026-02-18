@@ -254,8 +254,11 @@ window.Interactive = (() => {
     let _loopId;            // requestAnimationFrame ID
     let _lastTime = 0;      // Timestamp of the last frame
     let _inputLocked = false; // Prevents accidental clicks during menu transitions
+    let _scriptsLoaded = false; // Prevent re-attaching scripts on re-initialization
 
-    // Input State Container
+    // Input Handling
+    let _handlers = {};
+    let _boundBoard = null;
     const input = { 
         pressed: {},  // True only on the specific frame a key was pressed
         held: {},     // True as long as the key is held down
@@ -633,65 +636,88 @@ window.Interactive = (() => {
 
     // ── Input Binding ────────────────────────────────────────────────────────
     function _bind() {
-        // KEYBOARD
-        window.addEventListener('keydown', e => { 
+        // Define handlers (so we can remove them later)
+        _handlers.keydown = e => { 
             if(KEY_MAP[e.key] && !_inputLocked) { 
                 e.preventDefault(); 
                 if(!input.held[KEY_MAP[e.key]]) input.pressed[KEY_MAP[e.key]] = true; 
                 input.held[KEY_MAP[e.key]] = true; 
             }
-        });
-        window.addEventListener('keyup', e => { 
+        };
+
+        _handlers.keyup = e => { 
             if(KEY_MAP[e.key]) input.held[KEY_MAP[e.key]] = false; 
-        });
+        };
+
+        // Bind to Window
+        window.addEventListener('keydown', _handlers.keydown);
+        window.addEventListener('keyup', _handlers.keyup);
 
         const b = document.querySelector('.pc-game-board');
         if(!b) return;
+        _boundBoard = b; // Remember which element we bound to
 
-        // MOUSE / TOUCH
+        // Helper for mouse pos
         const u = (e) => { 
             const r = _canvas.getBoundingClientRect(); 
-            // Normalize coordinates to the logical resolution (400x300)
             input.mouse.x = (e.clientX - r.left)*(W/r.width); 
             input.mouse.y = (e.clientY - r.top)*(H/r.height); 
         };
 
-        b.addEventListener('pointerdown', e => { 
-            // CRITICAL: Ignore clicks on buttons/overlays so we don't hijack the click
+        // Define Pointer Handlers
+        _handlers.ptrDown = e => { 
             if(e.target.closest('.pc-overlay') || e.target.closest('button')) return; 
             if(_inputLocked) return; 
-            
             b.setPointerCapture(e.pointerId); 
             input.mouse.down = true; 
             input._sx = e.clientX; 
             input._sy = e.clientY; 
             u(e); 
-        });
+        };
 
-        b.addEventListener('pointermove', e => { 
+        _handlers.ptrMove = e => { 
             if(input.mouse.down) e.preventDefault(); 
             u(e); 
-        });
+        };
 
-        b.addEventListener('pointerup', e => { 
+        _handlers.ptrUp = e => { 
             if(_inputLocked) return; 
             input.mouse.down = false; 
             input.mouse.clicked = true; 
-            
-            // Swipe Detection Logic
             const dx = e.clientX - input._sx; 
             const dy = e.clientY - input._sy; 
             if(Math.abs(dx)>30 || Math.abs(dy)>30) { 
-                // Convert swipe to directional key press
                 input.pressed[Math.abs(dx)>Math.abs(dy)?(dx>0?'RIGHT':'LEFT'):(dy>0?'DOWN':'UP')] = true; 
             } else { 
                 input.pressed['ACTION'] = true; 
             } 
-        });
+        };
+
+        // 4. Bind Pointer Events
+        b.addEventListener('pointerdown', _handlers.ptrDown);
+        b.addEventListener('pointermove', _handlers.ptrMove);
+        b.addEventListener('pointerup', _handlers.ptrUp);
+    }
+
+    // === NEW: Cleanup Function ===
+    function _unbind() {
+        if (_handlers.keydown) window.removeEventListener('keydown', _handlers.keydown);
+        if (_handlers.keyup) window.removeEventListener('keyup', _handlers.keyup);
+        
+        if (_boundBoard) {
+            if (_handlers.ptrDown) _boundBoard.removeEventListener('pointerdown', _handlers.ptrDown);
+            if (_handlers.ptrMove) _boundBoard.removeEventListener('pointermove', _handlers.ptrMove);
+            if (_handlers.ptrUp) _boundBoard.removeEventListener('pointerup', _handlers.ptrUp);
+        }
+        _handlers = {};
+        _boundBoard = null;
     }
 
     // ── Initialization ───────────────────────────────────────────────────────
     function init() {
+
+        _unbind();
+
         // Setup Canvas
         _canvas = document.getElementById('pc-canvas'); 
         _ctx = _canvas.getContext('2d'); 
@@ -706,13 +732,16 @@ window.Interactive = (() => {
         window.Game = Game; 
         window.Entity = Entity; 
 
-        // Dynamically load game cartridges
-        ['snake', 'quiz', 'bouncingbox'].forEach(id => { 
-            const s = document.createElement('script'); 
-            s.src = `./interactive/games/${id}.js`; 
-            document.body.appendChild(s); 
-        });
-
+        // Only reload scripts if needed
+        if (!_scriptsLoaded){
+            // Dynamically load game cartridges
+            ['snake', 'quiz', 'bouncingbox'].forEach(id => { 
+                const s = document.createElement('script'); 
+                s.src = `./interactive/games/${id}.js`; 
+                document.body.appendChild(s); 
+            });
+            _scriptsLoaded = true;
+        }
         // Hide Loading Screen
         setTimeout(() => { 
             const l = document.getElementById('pc-loading'); 
@@ -720,7 +749,12 @@ window.Interactive = (() => {
         }, 500);
     }
 
-    return { init, register: API.register, eject: API.eject, gameOps: API.gameOps };
+    return { init, 
+        register: API.register, 
+        eject: API.eject, 
+        gameOps: API.gameOps, 
+        destroy: () => {
+            API.eject(); // Stop any running game
+            _unbind();   // Clean up global listeners
+        } };
 })();
-
-document.addEventListener('DOMContentLoaded', Interactive.init);

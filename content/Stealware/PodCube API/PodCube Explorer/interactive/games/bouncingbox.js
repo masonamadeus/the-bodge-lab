@@ -63,7 +63,7 @@ class BouncingBox extends Entity {
         const centerY = this.y + (this.size / 2);
 
         // 3. Draw centered text
-        gfx.text("P™", centerX, centerY + 6, {
+        gfx.text("P", centerX, centerY + 6, {
             color: '#fff',
             size: 16,
             align: 'center' // This makes the horizontal math work

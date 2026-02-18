@@ -35,7 +35,7 @@
 
 /* ── Game stage (hidden until a game is inserted) ──────────── */
 
-.game-stage        { display:none; width:100%; max-width:600px; margin:0 auto; }
+.game-stage        { display:none; width:100%; max-width:600px; margin:0 auto; user-select: none; }
 .game-stage.active { display:block; animation:fadeStage 0.25s ease; }
 
 @keyframes fadeStage {
@@ -130,6 +130,10 @@
 }
 
 .pc-overlay.hidden { opacity:0; pointer-events:none; }
+
+.pc-overlay.hidden * {
+    pointer-events: none !important;
+}
 
 .pc-text-title {
     font-family: "Libertinus Math";
