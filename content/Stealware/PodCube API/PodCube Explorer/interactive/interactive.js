@@ -492,6 +492,9 @@ window.Interactive = (() => {
             // Switch DOM views
             document.getElementById('pc-menu-view').style.display = 'none';
             document.getElementById('pc-machine-view').style.display = 'block';
+
+            // Reisze the canvas around our new game
+            _handleResize();
             
             // Show Overlay
             API._overlay(meta?.title||'Game', meta?.instructions||'Ready?', 'START', () => API.start());
