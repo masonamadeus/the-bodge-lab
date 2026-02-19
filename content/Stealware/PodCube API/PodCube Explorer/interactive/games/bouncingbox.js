@@ -11,9 +11,12 @@ class BouncingBox extends Entity {
         this.api = game.api;
         this.size = 30;
         
-        // Velocity (pixels per second)
+        this.w = 30;
+        this.h = 30;
+        
         this.vx = 100;
         this.vy = 100;
+       
     }
 
     /**
@@ -38,12 +41,12 @@ class BouncingBox extends Entity {
         const W = this.api.W;
         const H = this.api.H;
 
-        if (this.x < 0 || this.x + this.size > W) {
-            this.vx *= -1; // Reverse horizontal direction
-            this.game.addPoints(1); // Call a method on the main game class
+        if (this.x < 0 || this.x + this.w > W) {
+            this.vx *= -1;
+            this.game.addPoints(1);
         }
-        if (this.y < 0 || this.y + this.size > H) {
-            this.vy *= -1; // Reverse vertical direction
+        if (this.y < 0 || this.y + this.h > H) {
+            this.vy *= -1;
             this.game.addPoints(1);
         }
     }
@@ -56,11 +59,11 @@ class BouncingBox extends Entity {
     draw(gfx) {
 
 
-        gfx.rect(this.x, this.y, this.size, this.size, '#1768da');
+        gfx.rect(this.x, this.y, this.w, this.h, '#1768da');
 
         // 2. Calculate the center of the box
-        const centerX = this.x + (this.size / 2);
-        const centerY = this.y + (this.size / 2);
+        const centerX = this.x + (this.w / 2);
+        const centerY = this.y + (this.h / 2);
 
         // 3. Draw centered text
         gfx.text("P", centerX, centerY + 6, {
@@ -80,9 +83,10 @@ class BouncingBoxGame extends Game {
     
     // Metadata displayed in the menu
     static meta = { 
-        title: "Bouncing Box", 
+        id: "bouncing-box",
+        title: "Supervised Cubic Motion", 
         desc: "Watch the box bounce. Maybe it will hit a corner.",
-        instructions: "Hold SPACE to speed up. Watch it bounce." 
+        instructions: "Watch it bounce. Report any anomolous behavior." 
     };
     
     constructor(api) {
@@ -134,4 +138,4 @@ class BouncingBoxGame extends Game {
 
 // 3. REGISTER THE GAME
 // This adds it to the PodCube menu.
-Interactive.register('bouncingbox', BouncingBoxGame);
+Interactive.register(BouncingBoxGame);

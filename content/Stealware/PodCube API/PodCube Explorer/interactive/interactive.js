@@ -1,5 +1,5 @@
 // =============================================================================
-// Interactive Engine v3.5 — Fully Documented
+// Interactive Engine v3.5
 // =============================================================================
 //
 // A lightweight, class-based game engine designed for "cartridge" style games.
@@ -70,7 +70,7 @@
 
 /**
  * =============================================================================
- * 1. GLOBAL UTILITY BELT (window.PC)
+ * GLOBAL UTILITY BELT (window.PC)
  * =============================================================================
  *
  * Small, dependency-free helpers shared by all cartridges.
@@ -103,6 +103,10 @@ window.PC = {
         a.y < b.y + b.h &&
         a.y + a.h > b.y,
 
+    pointInRect: (px, py, r) => {
+        return px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+    },
+
     /**
      * Creates a fixed-interval accumulator timer.
      * Immune to drift caused by variable frame times.
@@ -123,9 +127,11 @@ window.PC = {
     }),
 };
 
+
+
 /**
  * =============================================================================
- * 2. ENTITY BASE CLASS
+ * ENTITY BASE CLASS
  * =============================================================================
  *
  * Atomic unit of simulation.
@@ -159,7 +165,7 @@ class Entity {
 
 /**
  * =============================================================================
- * 3. GAME BASE CLASS (CARTRIDGE)
+ * GAME BASE CLASS (CARTRIDGE)
  * =============================================================================
  *
  * Owns all entities and high-level game state.
@@ -200,6 +206,10 @@ class Game {
         return entity;
     }
 
+    clearEntities() {
+        this.entities = [];
+    }
+
     /**
      * Finds first entity of given class
      * @template T
@@ -223,15 +233,194 @@ class Game {
         this.entities = this.entities.filter(e => !e.dead);
     }
 
+    /**
+     * Finds the top-most entity at (x,y).
+     * @param {number} x - World X
+     * @param {number} y - World Y
+     * @param {Class} [Type] - Filter by class (optional)
+     * @param {number} [padding=0] - Hitbox expansion for easier clicking
+     */
+    pick(x, y, Type, padding = 0) {
+        // Iterate backwards to find the one drawn on "top"
+        for (let i = this.entities.length - 1; i >= 0; i--) {
+            const e = this.entities[i];
+            if (e.dead) continue;
+            if (Type && !(e instanceof Type)) continue;
+            
+            // Use the engine's existing collision helper
+            if (this.api.pointInEntity(x, y, e, padding)) {
+                return e;
+            }
+        }
+        return null;
+    }
+
     /** Renders all entities */
     draw(gfx) {
         for (const e of this.entities) e.draw(gfx);
     }
+
+    /**
+     * Checks if 'entity' overlaps with any other entity of type 'Type'.
+     * Returns the first valid hit (or null).
+     * @param {Entity} entity - The entity asking for the check (to avoid self-collision)
+     * @param {Class} Type - The class to check for (e.g., Lemming, Enemy). Pass null for ANY.
+     * @returns {Entity|null}
+     */
+    collide(entity, Type) {
+        // Enforce AABB requirement
+        if (entity.w === undefined || entity.h === undefined) return null;
+
+        for (const other of this.entities) {
+            // 1. Skip self and dead entities
+            if (other === entity || other.dead) continue;
+
+            // 2. Check Type (if provided)
+            if (Type && !(other instanceof Type)) continue;
+
+            // 3. Check AABB (using existing global helper)
+            if (other.w !== undefined && other.h !== undefined) {
+                if (window.PC.hitRect(entity, other)) return other;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Same as collide, but returns an ARRAY of all overlaps.
+     */
+    collideAll(entity, Type) {
+        if (entity.w === undefined || entity.h === undefined) return [];
+        
+        // Filter the entire list efficiently
+        return this.entities.filter(other => 
+            other !== entity && 
+            !other.dead && 
+            (other.w !== undefined && other.h !== undefined) &&
+            (!Type || other instanceof Type) &&
+            window.PC.hitRect(entity, other)
+        );
+    }
+
+    /**
+     * Checks if a point (x,y) is inside any entity of type Type.
+     * Useful for mouse clicks.
+     */
+    collidePoint(x, y, Type) {
+        return this.entities.find(e => 
+            !e.dead &&
+            (!Type || e instanceof Type) &&
+            x >= e.x && x <= e.x + e.w &&
+            y >= e.y && y <= e.y + e.h
+        );
+    }
 }
+
+
+// =============================================================================
+// PHYSICS MODULE (Tile-Based)
+// =============================================================================
+const Physics = {
+    // The World Grid
+    World: class {
+        constructor(cols, rows, tileSize) {
+            this.cols = cols;
+            this.rows = rows;
+            this.size = tileSize;
+            this.data = new Uint8Array(cols * rows).fill(0); // 0=Air, 1=Solid
+        }
+
+        get(x, y) {
+            if (x < 0 || x >= this.cols || y < 0 || y >= this.rows) return 1; // Bounds are solid
+            return this.data[y * this.cols + x];
+        }
+
+        set(x, y, val) {
+            if (x >= 0 && x < this.cols && y >= 0 && y < this.rows) {
+                this.data[y * this.cols + x] = val;
+            }
+        }
+
+        // Helper: Pixel coordinate to Grid coordinate
+        toGrid(px) { return Math.floor(px / this.size); }
+        
+        // Helper: Collides with solid?
+        // Checks the 4 corners of the entity's bounding box
+        overlap(x, y, w, h) {
+            const l = this.toGrid(x);
+            const r = this.toGrid(x + w - 0.1);
+            const t = this.toGrid(y);
+            const b = this.toGrid(y + h - 0.1);
+            
+            // If any tile in this range is solid (>0), return true
+            for (let gy = t; gy <= b; gy++) {
+                for (let gx = l; gx <= r; gx++) {
+                    if (this.get(gx, gy) > 0) return true;
+                }
+            }
+            return false;
+        }
+    },
+
+    // The Physical Actor (Lemming, Box, etc)
+    Actor: class extends Entity {
+        constructor(x, y, w, h) {
+            super(x, y);
+            this.x = x; this.y = y;
+            this.w = w; this.h = h;
+            this.vx = 0; this.vy = 0;
+            this.grounded = false;
+            this.remainderX = 0; // Sub-pixel accumulator
+            this.remainderY = 0;
+        }
+
+        // Standard Platformer Physics Step
+        updatePhysics(dt, world, gravity = 800) {
+            this.vy += gravity * dt;
+
+            // Move X
+            this.remainderX += this.vx * dt;
+            let moveX = Math.round(this.remainderX);
+            if (moveX !== 0) {
+                this.remainderX -= moveX;
+                const sign = Math.sign(moveX);
+                while (moveX !== 0) {
+                    if (!world.overlap(this.x + sign, this.y, this.w, this.h)) {
+                        this.x += sign;
+                        moveX -= sign;
+                    } else {
+                        this.vx = 0; // Hit wall
+                        this.onWallHit?.(sign); // Callback if defined
+                        break;
+                    }
+                }
+            }
+
+            // Move Y
+            this.remainderY += this.vy * dt;
+            let moveY = Math.round(this.remainderY);
+            if (moveY !== 0) {
+                this.remainderY -= moveY;
+                const sign = Math.sign(moveY);
+                while (moveY !== 0) {
+                    if (!world.overlap(this.x, this.y + sign, this.w, this.h)) {
+                        this.y += sign;
+                        moveY -= sign;
+                        this.grounded = false;
+                    } else {
+                        if (sign > 0) this.grounded = true; // Hit floor
+                        this.vy = 0;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+};
 
 /**
  * =============================================================================
- * 4. INTERACTIVE ENGINE CORE (Singleton)
+ * INTERACTIVE ENGINE CORE (Singleton)
  * =============================================================================
  *
  * Orchestrates:
@@ -259,6 +448,11 @@ window.Interactive = (() => {
     // Input Handling
     let _handlers = {};
     let _boundBoard = null;
+    let _inputPending = {
+        pressed: {},
+        clicked: false,
+        sx: 0, sy: 0 // Swipe coords
+    };
     const input = { 
         pressed: {},  // True only on the specific frame a key was pressed
         held: {},     // True as long as the key is held down
@@ -294,6 +488,24 @@ window.Interactive = (() => {
          * @param {string} [c='#111'] - CSS color string (hex, rgba, named).
          */
         clear(c='#111') { _ctx.fillStyle=c; _ctx.fillRect(0,0,W,H); },
+
+        /**
+         * Draws a line between two points.
+         * @param {number} x1 - Start X.
+         * @param {number} y1 - Start Y.
+         * @param {number} x2 - End X.
+         * @param {number} y2 - End Y.
+         * @param {string} [c='#fff'] - Color.
+         * @param {number} [w=1] - Line width.
+         */
+        line(x1, y1, x2, y2, c='#fff', w=1) {
+            _ctx.beginPath();
+            _ctx.moveTo(x1, y1);
+            _ctx.lineTo(x2, y2);
+            _ctx.strokeStyle = c;
+            _ctx.lineWidth = w;
+            _ctx.stroke();
+        },
         
         /**
          * Draws a filled rectangle.
@@ -360,6 +572,18 @@ window.Interactive = (() => {
             container.className = 'pc-ui-col';
             components.forEach(def => container.appendChild(UI._make(def)));
             _domLayer.appendChild(container);
+        },
+
+        // Add this new method:
+        setText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        },
+
+        // Add this to update styles easily
+        setStyle(id, styleProp, value) {
+            const el = document.getElementById(id);
+            if (el) el.style[styleProp] = value;
         },
         
         /**
@@ -476,9 +700,22 @@ window.Interactive = (() => {
          * @param {string} id - Unique identifier (e.g., 'snake').
          * @param {class} GameClass - The class extending Game.
          */
-        register(id, GameClass) { 
-            _registry[id] = GameClass; 
-            API._renderCard(id, GameClass); 
+        register(GameClass) {
+            // 1. Validate metadata exists
+            if (!GameClass.meta || !GameClass.meta.id) {
+                console.error("[Interactive] Failed to register game: Missing static meta.id");
+                return;
+            }
+
+            const id = GameClass.meta.id;
+
+            // 2. Store the CLASS itself, not the title
+            _registry[id] = GameClass;
+
+            // 3. Render the UI card
+            API._renderCard(GameClass);
+
+            console.log(`[Interactive] Registered module: ${id}`);
         },
 
         /**
@@ -542,10 +779,30 @@ window.Interactive = (() => {
          */
         eject() {
             cancelAnimationFrame(_loopId);
+            if (_activeId) {
+                // Read the latest score from storage
+                const best = parseInt(localStorage.getItem(`pc_hi_${_activeId}`) || '0');
+
+                // Find the card in the menu using the data attribute we added
+                const card = document.querySelector(`.game-card[data-id="${_activeId}"]`);
+
+                // Update the high score text
+                if (card) {
+                    const scoreEl = card.querySelector('.game-card-score');
+                    if (scoreEl) scoreEl.textContent = `RECORD: ${best}`;
+                }
+            }
+            // Cleanup the previous game
             if (_activeGame && _activeGame.onCleanup) _activeGame.onCleanup();
+
+            // Remove the cartridge, clear the screen
             _activeGame = null; 
             _activeId = null; 
+            this.gameOps.setStatus(null);
+            this.gameOps.setLabel(null);
             UI.clear();
+
+            // Switch back to the menu
             const view = document.getElementById('pc-machine-view');
             view.style.display = 'none';
             view.classList.remove("pc-game-active");
@@ -565,24 +822,65 @@ window.Interactive = (() => {
                     if (s > best) localStorage.setItem(k, s);
                 }
             },
+
             getHighScore() {
                 if (!_activeId) return 0;
                 return parseInt(localStorage.getItem(`pc_hi_${_activeId}`) || '0');
             },
+
+            saveData(key, val) { localStorage.setItem(`pc_data_${_activeId}_${key}`, JSON.stringify(val)); },
+
+            getData(key) {
+                const d = localStorage.getItem(`pc_data_${_activeId}_${key}`);
+                return d ? JSON.parse(d) : null;
+            },
+
+            // Precise collision helper for entities vs non-rect points
+            pointInEntity(px, py, e, padding = 0) {
+                return px >= e.x - padding && px <= e.x + e.w + padding &&
+                    py >= e.y - padding && py <= e.y + e.h + padding;
+            },
+
             setStatus(s) { document.getElementById('pc-hud-status').textContent = s; },
 
-            // UPDATED: Set _loopId to null so the loop knows to stop
+            setLabel(s) { 
+                const el = document.getElementById('pc-hud-aux');
+                if (el) {
+                    el.textContent = s; 
+                    el.style.display = s ? 'block' : 'none';
+                }
+            },
+
+            // Set _loopId to null so the loop knows to stop
             gameOver(msg) {
                 cancelAnimationFrame(_loopId);
                 _loopId = null;
-                API._overlay(msg, 'Game Over', 'RETRY', () => API.start());
+                API._overlay(msg, 'Module Aborted', 'RESET', () => API.start());
             },
 
-            // UPDATED: Set _loopId to null so the loop knows to stop
+            newStage(title, desc, btnText, callback) {
+                // Pause the engine
+                cancelAnimationFrame(_loopId);
+                _loopId = null;
+
+                // 2. Show the overlay
+                API._overlay(title, desc, btnText, () => {
+                    // 3. On Click: Resume
+                    API._hideOverlay();
+                    
+                    // 4. Run the level setup logic passed by the game
+                    if (callback) callback();
+
+                    // 5. Restart the loop (using existing game instance)
+                    _lastTime = performance.now();
+                    _loopId = requestAnimationFrame(_tick);
+                });
+            },
+
             win(msg) {
                 cancelAnimationFrame(_loopId);
                 _loopId = null;
-                API._overlay(msg, 'Victory!', 'PLAY AGAIN', () => API.start());
+                API._overlay(msg, 'Module Completed Successfully', 'RESET', () => API.start());
             }
         },
 
@@ -620,21 +918,26 @@ window.Interactive = (() => {
          },
 
         // Internal: Renders the menu card for a registered game
-        _renderCard(id, Class) {
+        _renderCard(Class) {
             const slot = document.getElementById('pc-cartridge-slot');
-            if(!slot) return;
-            const meta = Class.meta || { title: id };
-            const best = localStorage.getItem(`pc_hi_${id}`) || '—';
-            
+            if (!slot) return;
+
+            const meta = Class.meta;
+
+            // FIX: Use meta.id, not 'id'
+            const best = localStorage.getItem(`pc_hi_${meta.id}`) || '—';
+
             const card = document.createElement('div');
             card.className = 'game-card';
-            card.onclick = () => API.load(id);
+            card.dataset.id = meta.id;
+            card.onclick = () => API.load(meta.id);
+
             card.innerHTML = `
-                <div class="game-card-meta">MODULE: ${id.toUpperCase()}</div>
-                <div class="game-card-title">${meta.title}</div>
-                <div style="font-family:'Fustat'; font-size:11px; color:#666; margin-top:4px; line-height:1.4;">${meta.desc || "No description."}</div>
-                <div class="game-card-score">RECORD: ${best}</div>
-            `;
+        <div class="game-card-meta">MODULE: ${meta.id.toUpperCase()}</div>
+        <div class="game-card-title">${meta.title}</div>
+        <div style="font-family:'Fustat'; font-size:11px; color:#666; margin-top:4px; line-height:1.4;">${meta.desc || "No description."}</div>
+        <div class="game-card-score">RECORD: ${best}</div>
+    `;
             slot.appendChild(card);
         }
     };
@@ -643,15 +946,20 @@ window.Interactive = (() => {
 
     function _tick(now) {
         if (!_activeGame) return;
-        
+
         const dt = Math.min((now - _lastTime) / 1000, 0.1);
         _lastTime = now;
-        
+
+        // LATCH INPUTS AT START OF FRAME
+        input.pressed = { ..._inputPending.pressed };
+        input.mouse.clicked = _inputPending.clicked;
+
+        // Clear pending
+        _inputPending.pressed = {};
+        _inputPending.clicked = false;
+
         _activeGame.update(dt, input);
         _activeGame.draw(GFX);
-        
-        input.pressed = {}; 
-        input.mouse.clicked = false;
         
         // Only request the next frame if the loop is still active
         // (i.e., gameOver() hasn't been called)
@@ -663,11 +971,12 @@ window.Interactive = (() => {
     // ── Input Binding ────────────────────────────────────────────────────────
     function _bind() {
         // Define handlers (so we can remove them later)
-        _handlers.keydown = e => { 
-            if(KEY_MAP[e.key] && !_inputLocked) { 
-                e.preventDefault(); 
-                if(!input.held[KEY_MAP[e.key]]) input.pressed[KEY_MAP[e.key]] = true; 
-                input.held[KEY_MAP[e.key]] = true; 
+        _handlers.keydown = e => {
+            if (KEY_MAP[e.key] && !_inputLocked) {
+                e.preventDefault();
+                // Write to pending, not live input
+                _inputPending.pressed[KEY_MAP[e.key]] = true;
+                input.held[KEY_MAP[e.key]] = true;
             }
         };
 
@@ -706,17 +1015,20 @@ window.Interactive = (() => {
             u(e); 
         };
 
-        _handlers.ptrUp = e => { 
-            if(_inputLocked) return; 
-            input.mouse.down = false; 
-            input.mouse.clicked = true; 
-            const dx = e.clientX - input._sx; 
-            const dy = e.clientY - input._sy; 
-            if(Math.abs(dx)>30 || Math.abs(dy)>30) { 
-                input.pressed[Math.abs(dx)>Math.abs(dy)?(dx>0?'RIGHT':'LEFT'):(dy>0?'DOWN':'UP')] = true; 
-            } else { 
-                input.pressed['ACTION'] = true; 
-            } 
+        _handlers.ptrUp = e => {
+            if (_inputLocked) return;
+            input.mouse.down = false;
+
+            // Store in pending
+            _inputPending.clicked = true;
+
+            const dx = e.clientX - input._sx;
+            const dy = e.clientY - input._sy;
+            if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
+                _inputPending.pressed[Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'RIGHT' : 'LEFT') : (dy > 0 ? 'DOWN' : 'UP')] = true;
+            } else {
+                _inputPending.pressed['ACTION'] = true;
+            }
         };
 
         // 4. Bind Pointer Events
@@ -754,7 +1066,7 @@ window.Interactive = (() => {
     }
 
     // ── Initialization ───────────────────────────────────────────────────────
-    function init() {
+    async function init() {
 
         _unbind();
 
@@ -777,14 +1089,29 @@ window.Interactive = (() => {
         window.Entity = Entity; 
 
         // Only reload scripts if needed
-        if (!_scriptsLoaded){
-            // Dynamically load game cartridges
-            ['snake', 'quiz', 'bouncingbox'].forEach(id => { 
-                const s = document.createElement('script'); 
-                s.src = `./interactive/games/${id}.js`; 
-                document.body.appendChild(s); 
-            });
-            _scriptsLoaded = true;
+        if (!_scriptsLoaded) {
+            try {
+                // 1. Fetch the registry from the JSON file
+                // Note: Path is relative to index.html
+                const response = await fetch('./interactive/games/active-games.json');
+                if (!response.ok) throw new Error("Manifest missing");
+                
+                const games = await response.json();
+
+                // 2. Load every game listed in the manifest
+                games.forEach(id => { 
+                    const s = document.createElement('script'); 
+                    s.src = `./interactive/games/${id}.js`; 
+                    s.onerror = () => console.warn(`[Interactive] Module '${id}' listed in manifest but file not found.`);
+                    document.body.appendChild(s); 
+                });
+
+                _scriptsLoaded = true;
+                console.log(`[Interactive] System initialized. Loading ${games.length} modules...`);
+
+            } catch (e) {
+                console.error("[Interactive] Cartridge slot error:", e);
+            }
         }
         // Hide Loading Screen
         setTimeout(() => { 

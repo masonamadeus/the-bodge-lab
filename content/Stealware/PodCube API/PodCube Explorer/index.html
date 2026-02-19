@@ -493,13 +493,24 @@
     <div id="pc-machine-view" class="game-stage" style="display:none;">
         
         <div class="game-navbar">
-                <button class="icon-btn pc-btn danger" onclick="Interactive.eject()">EJECT MODULE</button>
+            <button class="icon-btn pc-btn danger" onclick="Interactive.eject()">EJECT MODULE</button>
         </div>
 
         <div class="pc-game-container">
             <div class="pc-game-hud pc-hud">
-                <div><span class="pc-hud-label">STATUS</span><span class="pc-hud-val" id="pc-hud-status">READY</span></div>
-                <div style="text-align:right"><span class="pc-hud-label">DATA</span><span class="pc-hud-val" id="pc-hud-score">0</span></div>
+                <div class="pc-hud-cell">
+                    <span class="pc-hud-label">STATUS</span>
+                    <span class="pc-hud-val" id="pc-hud-status">READY</span>
+                </div>
+
+                <div class="pc-hud-cell" style="flex:1; align-items:center; justify-content:flex-end; padding-bottom:4px;">
+                     <span id="pc-hud-aux" style="font-family:'Fustat'; font-weight:700; font-size:12px; color:var(--primary); text-transform:uppercase; letter-spacing:0.05em; display:none;"></span>
+                </div>
+
+                <div class="pc-hud-cell">
+                    <span class="pc-hud-label">DATA</span>
+                    <span class="pc-hud-val" id="pc-hud-score">0</span>
+                </div>
             </div>
 
             <div class="pc-game-board">
@@ -507,7 +518,7 @@
                 
                 <div id="pc-dom-layer" class="pc-layer-dom"></div>
 
-                <div id="pc-overlay" class="pc-overlay">
+                <div id="pc-overlay" class="pc-overlay hidden">
                     <div class="pc-text-title" id="pc-overlay-msg">READY</div>
                     <p class="pc-text-body" id="pc-overlay-desc">System Ready.</p>
                     <button class="pc-btn primary" id="pc-overlay-btn">INITIALIZE</button>

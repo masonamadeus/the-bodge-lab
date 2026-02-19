@@ -5,9 +5,10 @@
 class QuizGame extends Game {
 
     static meta = {
+        id: 'quiz',
         title: "PodCube™ Trivia",
-        desc: "Test your knowledge of PodCube™ with ten randomly selected questions (out of 100+)",
-        instructions: "Select the correct answer before time runs out. Each test is 10 questions, randomly selected from over 100."
+        desc: "Answer as many questions as you can about PodCube™. 15 seconds per question, no incorrect answers allowed. Randomized each time.",
+        instructions: "Select the correct answer before time runs out.\nThe test will end when you have selected an incorrect response.\nEach test is randomized."
     };
 
     constructor(api) {
@@ -46,7 +47,7 @@ class QuizGame extends Game {
             { q: "What is the time-travel method used to go to the future?", a: ["The Wormhole method", "The Pinch method", "The Slingshot method"], c: 1 },
             { q: "What is the time-travel method used to go to the past?", a: ["The Wormhole method", "The Pinch method", "The Loop method"], c: 0 },
             { q: "What is the Bit Depth of the audio passed across time before reconstruction?", a: ["16 bits", "8 q-bits", "4 D-bits"], c: 1 },
-            { q: "Which AI productivity bot was put in sleep mode after creating 'diarrhea poison'?", a: ["Crummy13", "Tyler", "Olivia"], c: 1 },
+            { q: "Which AI productivity bot was put in sleep mode after creating 'diarrhea poison'?", a: ["Crummy13", "Tyler", "Jay6"], c: 1 },
             { q: "Who is the only person working in the Alignment department?", a: ["Dandelion Whoelf Ouedes", "Swartz Plander", "Gillian Shea"], c: 0 },
             { q: "Which department developed teleporters that 'don't quite work'?", a: ["Brigistics", "R&D&R&P", "F.L.U.R.C.H."], c: 1 },
             { q: "What was Jimley Huffman’s genetics passion project before he discovered Sprot™?", a: ["Moon Potatoes", "Turbacco", "Synthetic Geese"], c: 1 },
@@ -86,7 +87,7 @@ class QuizGame extends Game {
             { q: "What is the name of the 'scary' villain that causes a rift between writers Roger and Jeff?", a: ["The Unbidden Ember", "Admiral Gleepglorp", "The Is-Worm"], c: 1 },
             { q: "What planet is the origin for the KitFox War Machine cockpit recording?", a: ["Jauboris IV", "Vandross 5", "Mars 2"], c: 0 },
             { q: "The mech 'Blood Murder Falcon' is warned that its system is alerting it in which language?", a: ["English", "Spanish", "Binary"], c: 1 },
-            { q: "What is the name of the robot who attempts to borrow money while drinking IPAs with Mason?", a: ["J6 Richards", "Crummy13", "Tyler"], c: 0 },
+            { q: "What is the name of the robot who attempts to borrow money while drinking IPAs with Mason?", a: ["Jay6 Richards", "Crummy13", "Tyler"], c: 0 },
             { q: "A florist in East Longmeadow hates flowers so much he compares himself to what?", a: ["A garbage man", "A poop seller", "A funeral director"], c: 1 },
             { q: "Which employee won the 'Quality of Life Enrichment' award for memorizing all of Chandler's lines from Friends?", a: ["Pemberley Laudern", "Gillian Shea", "Dandelion Whole Foods"], c: 0 },
             { q: "In the game 'Seneschal of Scion,' teabagging a dead rabbit six times causes what?", a: ["A hidden boss to appear", "The game to crash", "A charisma boost"], c: 1 },
@@ -101,8 +102,8 @@ class QuizGame extends Game {
             { q: "What is the name of the 'last vape' flavor intended for the deathbed?", a: ["Baked Beans", "Formaldehyde", "Martian Ale"], c: 1 },
             { q: "What is the 'Drip House' in New York City?", a: ["A dry coffee shop", "A luxurious bathroom reservation establishment", "A fashion boutique for geese"], c: 1 },
             { q: "What is the 'Sprot Minimum' beverage?", a: ["Sprot for kids", "Sprot with only 11,000 minerals", "Clear Sprot"], c: 1 },
-            { q: "What is the name of the 'newest sommelier' who can hear Datsun hums through wine?", a: ["Cosmic Ron", "The Drano Guy", "Matilde"], c: 1 },
-            { q: "Which PSEC Director gives instructions on implementing a security patch involving rubber bands?", a: ["Dr. Rickelodeon Velveetus", "Jimley Huffman", "Swartz Plander"], c: 0 },
+            { q: "What is the name of the 'newest sommelier' who can hear things in wine?", a: ["Cosmic Ron", "The Drano Guy", "Matilde"], c: 1 },
+            { q: "Which PodCube™ employee gives instructions on implementing a security patch involving rubber bands?", a: ["Dr. Rickelodeon Velveetus", "Jimley Huffman", "Swartz Plander"], c: 0 },
             { q: "What is the name of the 'vampire hunter' who accepts tea from a count on Prince Edward Island?", a: ["Damien Van Helsing", "Jacob", "Jack Higgins"], c: 0 },
             { q: "Which store sells ceramic bears and figurines through a complex pneumatic system?", a: ["Tubes", "Purple Culeus", "SupaDupam"], c: 0 },
             { q: "What iconic American single is debated during a fight at a combination Denny's and Blockbuster?", a: ["All I Want for Christmas Is You", "Stayin' Alive", "Single Ladies"], c: 0 },
@@ -129,11 +130,7 @@ class QuizGame extends Game {
             { q: "What brand of cupcakes is available as a snack on the PodCube campus?", a: ["Jimley's Prodigy Pies", "Tom Birthday’s Every Day Cupcakes", "Dusty’s Mud Pie Minis"], c: 1 },
         ];
 
-        this.questions = this.allQuestions
-            .sort(() => Math.random() - 0.5)
-            .slice(0, 10);
-
-        this.QUESTION_TIME = 10;
+        this.QUESTION_TIME = 15;
 
     }
 
@@ -142,7 +139,8 @@ class QuizGame extends Game {
     onInit() {
         this.score = 0;
         this.qIndex = 0;
-        this.correctCount = 0;
+        
+        this.questions = [...this.allQuestions].sort(()=> Math.random() - 0.5);
 
         this.api.setScore(0);
         this.api.setStatus('ACTIVE');
@@ -150,13 +148,18 @@ class QuizGame extends Game {
     }
 
     showQuestion() {
+        // Grab a question
         const q = this.questions[this.qIndex];
 
         // Reset Timer
         this.timeLeft = this.QUESTION_TIME;
 
+        // Shuffle answer positions
+        const indices = q.a.map((_, i) => i).sort(() => Math.random() - 0.5);
+
+
         this.api.UI.build([
-            { type: 'title', text: `Question ${this.qIndex + 1} / ${this.questions.length}` },
+            { type: 'title', text: `Question ${this.qIndex + 1}` },
             // Timer Bar
             { type: 'progress', id: 'timer', value: 1, color: '#22c55e' },
             { type: 'spacer', size: 10 },
@@ -164,10 +167,12 @@ class QuizGame extends Game {
             { type: 'spacer', size: 20 },
             {
                 type: 'grid', cols: 1, gap: 10,
-                children: q.a.map((ans, i) => ({
+                // Map over the SHUFFLED indices to generate buttons
+                children: indices.map((originalIndex) => ({
                     type: 'button',
-                    text: ans,
-                    onClick: () => this.handleAnswer(i === q.c)
+                    text: q.a[originalIndex],
+                    // We pass the event 'e' to the handler
+                    onClick: (e) => this.handleAnswer(e, originalIndex === q.c)
                 }))
             }
         ]);
@@ -177,6 +182,8 @@ class QuizGame extends Game {
         // Decrease timer
         if (this.timeLeft > 0) {
             this.timeLeft -= dt;
+
+            if (this.processing) { return; }
 
             // Visual Update: Find the bar by ID and set width
             const bar = document.getElementById('timer-bar');
@@ -194,40 +201,46 @@ class QuizGame extends Game {
         }
     }
 
-    handleAnswer(isCorrect) {
-        // 1. Initialize a correct counter if it doesn't exist
-        this.correctCount = this.correctCount || 0;
+    handleAnswer(e, isCorrect) {
+        // Prevent double clicks
+        if (this.processing) return;
+        this.processing = true;
 
-        if (isCorrect) {
-            this.correctCount++; // Increment the successful answer count
-            const bonus = Math.floor(this.timeLeft * 10);
-            this.score += 100 + bonus;
-            this.api.setScore(this.score);
+        // Visual Feedback
+        if (e && e.target) {
+            const btn = e.target;
+            // Immediate style change
+            btn.style.backgroundColor = isCorrect ? '#22c55e' : '#ef4444';
+            btn.style.borderColor = isCorrect ? '#15803d' : '#b91c1c';
+            btn.style.color = 'white';
         }
 
-        this.qIndex++;
+        // Delay logic by 800ms
+        setTimeout(() => {
+            this.processing = false;
 
-        if (this.qIndex >= this.questions.length) {
-            // 2. Determine the variety message based on performance
-            let performanceMsg = "";
-            const accuracy = this.correctCount;
-
-            if (accuracy === 10) performanceMsg = "Are you Crummy13?!";
-            else if (accuracy >= 7) performanceMsg = "Solid PRIC knowledge.";
-            else if (accuracy >= 4) performanceMsg = "Drink more Sprot™.";
-            else performanceMsg = "Report to Alignment department.";
-
-            // 3. Show the final tally (e.g., "7 / 10 CORRECT")
-            const finalResults = `${accuracy} / ${this.questions.length} CORRECT | SCORE: ${this.score}`;
-
-            // Use win() for high scores, or you could use gameOver() for failures
-            this.api.win(`${performanceMsg}\n${finalResults}`);
-        } else {
-            this.showQuestion();
-        }
+            if (isCorrect) {
+                // Correct: Add score and continue
+                const bonus = Math.floor(this.timeLeft * 100);
+                this.score += 1000 + bonus;
+                this.api.setScore(this.score);
+                
+                this.qIndex++;
+                if (this.qIndex >= this.questions.length) {
+                    this.api.win(`YOU MUST HAVE CHEATED. PERFECT RUN.\nFINAL SCORE: ${this.score}`);
+                } else {
+                    this.showQuestion();
+                }
+            } else {
+                // Incorrect: Sudden Death
+                const best = this.api.getHighScore();
+                const msg = isCorrect ? "" : "INCORRECT ANSWER DETECTED.";
+                this.api.gameOver(`${msg}\nQuestions Answered: ${this.qIndex}\nFinal Score: ${this.score}\nBest Score: ${best}`);
+            }
+        }, 800);
     }
 
     draw(gfx) { gfx.clear('#f4f4f4'); }
 }
 
-Interactive.register('quiz', QuizGame);
+Interactive.register(QuizGame);

@@ -2,9 +2,10 @@
 // SNAKE - Cartridge
 // =============================================================================
 
-const CELL = 10;
-const COLS = 40;
-const ROWS = 30;
+// grid is 400 x 300
+const CELL = 16;
+const COLS = 400/CELL;
+const ROWS = 300/CELL;
 
 /**
  * FOOD ENTITY
@@ -118,6 +119,7 @@ class Snake extends Entity {
 class SnakeGame extends Game {
 
     static meta = {
+        id: "snake",
         title: "Directional Efficiency Test",
         desc: "Pilot the ISWORM across spacetime. Collect delicious q-bits. Avoid recursion.",
         instructions: "Arrow Keys or Swipe to Move. Collect the orange q-bits."
@@ -166,4 +168,4 @@ class SnakeGame extends Game {
     }
 }
 
-Interactive.register('snake', SnakeGame);
+Interactive.register(SnakeGame);
