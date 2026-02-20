@@ -51,6 +51,7 @@
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 3px double var(--primary);
+    user-select:none;
 }
 
 .game-navbar .icon-btn {
@@ -122,6 +123,7 @@
     margin-bottom: 10px;
     border-bottom: 1px dashed var(--primary-dim);
     font-family: "Fustat", sans-serif;
+    user-select: none;
 }
 
 .pc-hud-cell { display:flex; flex-direction:column; }
@@ -165,6 +167,7 @@
     text-transform: uppercase;
     letter-spacing: 0.02em;
     white-space: pre-wrap;
+    user-select: none;
 }
 
 .pc-text-body {
@@ -175,6 +178,7 @@
     max-width: 80%;
     margin: 0;
     white-space:pre-wrap;
+    user-select: none;
 }
 
 
@@ -191,6 +195,7 @@
     color: var(--text-muted);
     border-top: 1px dashed var(--primary-dim);
     padding-top: 8px;
+    user-select: none;
 }
 
 
