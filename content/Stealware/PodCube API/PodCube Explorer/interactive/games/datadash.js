@@ -374,7 +374,7 @@
                     port.filled = true;
                     this.game.scorePort(this); return;
                 } else if (!this.isMoving) {
-                    this.game.killPlayer(this); return; // Can't park on a full port
+                    // this.game.killPlayer(this); return; // Can't park on a full port, do nothing
                 }
             }
 
