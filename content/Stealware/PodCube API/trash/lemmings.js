@@ -1,5 +1,5 @@
 // =============================================================================
-// POD-LEMMINGS: REDUX (Refactored & Optimized)
+// POD-LEMMINGS
 // =============================================================================
 
 const TILE = 8;
@@ -213,7 +213,7 @@ class Lemming extends Physics.Actor {
         if (this.grounded) this.fallStartY = this.y;
 
         // Auto-Climb (Walker/Floater)
-        if ((this.role === 'WALKER' || this.role === 'FLOATER') && Math.abs(this.vx) > 1 && this.grounded) {
+        if (Math.abs(this.vx) > 1 && this.grounded) {
             if (this.canStepUp(world)) {
                 this.y -= TILE;
                 this.x += this.dir * 2;
@@ -524,7 +524,7 @@ class LemmingsGame extends Game {
             {
                 type: 'grid', cols: 9, gap: 1, 
                 children: tools.map(t => {
-                    const count = this.inventory[t.id];
+                    const count = Infinity;// this.inventory[t.id]; // temporarily bypassed 
                     let label = t.lbl;
                     if (count !== undefined && count !== Infinity) label = `${count}\n${label}`;
                     else if (count === Infinity) label = `∞\n${label}`;
@@ -575,7 +575,7 @@ class LemmingsGame extends Game {
             if (!btn) return;
             
             // 1. Update Text
-            const count = this.inventory[t.id];
+            const count = Infinity; // this.inventory[t.id]; temporarily bypassed
             let label = t.lbl;
             if (count !== undefined && count !== Infinity) label = `${count}\n${label}`;
             else if (count === Infinity) label = `∞\n${label}`;

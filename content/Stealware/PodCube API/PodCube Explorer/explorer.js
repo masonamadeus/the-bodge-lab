@@ -918,28 +918,6 @@ function toggleAutoplayMode(enabled) {
     if (checkbox) checkbox.checked = enabled;
 }
 
-/**
- * Ensures there is always at least one "next" track in the queue 
- * if Radio Mode is active.
- */
-function checkRadioChain() {
-    if (!AppState.radioMode) return;
-    
-    const q = PodCube.queueItems; //
-    const idx = PodCube.queueIndex; //
-    
-    // If the currently playing track is the last one in the queue, 
-    // append a new random one to the end.
-    if (idx >= q.length - 1) {
-        const nextRandom = PodCube.random; //
-        if (nextRandom) {
-            const epIdx = PodCube.getEpisodeIndex(nextRandom);
-            // Append to queue without interrupting current playback (playNow = false)
-            run(`PodCube.addToQueue(PodCube.all[${epIdx}], false)`, true);
-        }
-    }
-}
-
 function playNextRandom() {
     const nextEp = PodCube.random;
     if (nextEp) {

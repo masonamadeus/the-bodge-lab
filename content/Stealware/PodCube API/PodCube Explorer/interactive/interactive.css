@@ -22,11 +22,12 @@
     overflow: hidden;
 }
 
+@media (hover: hover){
 .game-card:hover {
     background: var(--primary-dim);
     transform: translateY(-3px);
     box-shadow: 4px 4px 0 rgba(23, 104, 218, 0.15);
-}
+}}
 
 .game-card-meta  { font-family:"Fustat"; font-size:10px; font-weight:700; color:#bbb; text-transform:uppercase; letter-spacing:0.08em; }
 .game-card-title { font-family:"Libertinus Math", serif; font-size:1.4em; font-weight:700; color:var(--primary); line-height:1.1; }
@@ -210,14 +211,24 @@
     pointer-events: auto;
 }
 
-.pc-btn:hover  { background:var(--primary); color:#fff; }
+
 .pc-btn:active { transform:scale(0.95); }
 
 .pc-btn.primary { background:var(--primary); color:#fff; border-color:var(--primary-dark); }
-.pc-btn.primary:hover { background:var(--primary-dark); }
+
 
 .pc-btn.danger       { border-color:#e53e3e; color:#e53e3e; }
-.pc-btn.danger:hover { background:#e53e3e; color:#fff; }
+
+@media (hover: hover) {
+    .pc-btn.danger:hover {
+        background: #e53e3e;
+        color: #fff;
+    }
+
+    .pc-btn.primary:hover { background:var(--primary-dark); }
+
+    .pc-btn:hover  { background:var(--primary); color:#fff; }
+}
 
 .pc-btn.wide { width:100%; }
 

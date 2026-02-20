@@ -3,7 +3,7 @@
 // SECTOR 7: DATA STREAM (Refactored Logic)
 // =============================================================================
 
-const TILE = 8;
+const TILE = 7;
 const UI_HEIGHT = 40;
 
 // TERRAIN TYPES
@@ -235,7 +235,7 @@ class Bit extends Physics.Actor {
         const tx = gx + this.dir;
         const ty = gy - 1; 
         if (world.get(tx, ty) !== T_NULL) return false;
-        const block = this.dir > 0 ? T_CODE_R : T_CODE_L;
+        const block = this.dir > 0 ? T_DATA : T_DATA;
         world.set(tx, gy, block); 
         this.x = (tx * TILE) + (this.dir > 0 ? 0 : 2);
         this.y = (gy * TILE) - this.h - 0.1;
@@ -311,10 +311,10 @@ class UploadPort extends Entity {
 class DataStreamGame extends Game {
 
     static meta = {
-        id: "lemmings", // Overwrites slot
-        title: "DATA STREAM",
+        id: "datastream", // Overwrites slot
+        title: "q-Bit Data Adventure",
         desc: "Guide packets to the upload port.\nCollect Orange Packets for bonus units.",
-        instructions: "Tap tools to assign functions.\n→ STREAM: Walk  |  ↓ DRILL: Dig Down\n✕ MUTEX: Block  |  ↗ PATCH: Build"
+        instructions: "Tap tools to assign functions.\nDon't give up."
     };
 
     onInit() {
@@ -333,14 +333,14 @@ class DataStreamGame extends Game {
         this.world = new Physics.World(cols, rows, TILE);
         
         this.tools = [
-            { id: 'STREAM', lbl: '→',   name: 'WALK',  cost: 0 },
-            { id: 'BRUTE',  lbl: '⇶',   name: 'BASH',  cost: 10 },
-            { id: 'DRILL',  lbl: '↓',   name: 'DIG',   cost: 10 },
-            { id: 'PATCH',  lbl: '↗',   name: 'BLD',   cost: 10 },
-            { id: 'BUFFER', lbl: '∿',   name: 'FLOAT', cost: 10 },
-            { id: 'MUTEX',  lbl: '✕',   name: 'HALT',  cost: 10 },
-            { id: 'GLITCH', lbl: '✷',   name: 'BOMB',  cost: 5 },
-            { id: 'NUKE',   lbl: '☢',   name: 'NUKE',  cost: 0 },
+            { id: 'STREAM', lbl: 'PING',   name: 'WALK',  cost: 0 },
+            { id: 'BRUTE',  lbl: 'HACK',   name: 'BASH',  cost: 0 },
+            { id: 'DRILL',  lbl: 'MINE',   name: 'DIG',   cost: 0 },
+            { id: 'PATCH',  lbl: 'CODE',   name: 'BLD',   cost: 0 },
+            { id: 'BUFFER', lbl: 'FLOAT',   name: 'FLOAT', cost: 0 },
+            { id: 'MUTEX',  lbl: 'HALT',   name: 'HALT',  cost: 0 },
+            { id: 'GLITCH', lbl: 'ERROR',   name: 'BOMB',  cost: 0 },
+            { id: 'NUKE',   lbl: 'ABORT',   name: 'NUKE',  cost: 0 },
             { id: 'FF',     lbl: '>>',  name: 'FAST',  cost: 0 }
         ];
         

@@ -646,6 +646,19 @@ class PodCubeEngine {
                 this.lastSave = now;
             }
 
+            // Media session lock screen scrubber
+            if ('mediaSession' in navigator && this._audio.duration) {
+                try {
+                    navigator.mediaSession.setPositionState({
+                        duration: this._audio.duration,
+                        playbackRate: this._audio.playbackRate,
+                        position: this._audio.currentTime
+                    });
+                } catch (e) {
+                    // Ignore errors (some browsers throw if duration isn't fully resolved yet)
+                }
+            }
+
             // Emit status as usual
             this._emit('timeupdate', this.status);
 
@@ -702,6 +715,17 @@ class PodCubeEngine {
             const format = CONFIG.FEED_TYPE === "json" ? "json" : "rss";
 
             await this._loadFromFeed(rawFeed, format);
+
+            // Media session setup
+            if ('mediaSession' in navigator) {
+                // Bind native OS controls directly to the engine's methods
+                navigator.mediaSession.setActionHandler('play', () => this.play());
+                navigator.mediaSession.setActionHandler('pause', () => this.pause());
+                navigator.mediaSession.setActionHandler('previoustrack', () => this.prev());
+                navigator.mediaSession.setActionHandler('nexttrack', () => this.next());
+                navigator.mediaSession.setActionHandler('seekbackward', () => this.skipBack());
+                navigator.mediaSession.setActionHandler('seekforward', () => this.skipForward());
+            }
 
             this.isReady = true;
             log.info(`Ready. Loaded ${this.episodes.length} episodes via ${CONFIG.FEED_TYPE.toUpperCase()}.`);
@@ -1247,6 +1271,21 @@ class PodCubeEngine {
             // Check token again before playing
             if (token !== this._loadingToken) return; 
 
+            if ('mediaSession' in navigator && ep) {
+                // Determine artwork: use feed image if parsed, otherwise fallback to local asset
+                const artworkUrl = this.logo || './PODCUBE.png';
+
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: ep.title,
+                    artist: ep.model || 'PodCube™ Transmission',
+                    album: ep.location || 'Unknown Origin',
+                    artwork: [
+                        { src: artworkUrl, sizes: '512x512', type: 'image/png' },
+                        { src: artworkUrl, sizes: '192x192', type: 'image/png' }
+                    ]
+                });
+            }
+
             if (autoPlay) {
                 try {
                     await this._audio.play();
@@ -1652,6 +1691,10 @@ class PodCubeEngine {
             this._currentObjectUrl = null;
         }
         this._audio.removeAttribute('src');
+
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = null;
+        }
 
         this._emit('queue:changed', {queue: [], index: -1});
 

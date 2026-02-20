@@ -779,6 +779,7 @@ window.Interactive = (() => {
          */
         eject() {
             cancelAnimationFrame(_loopId);
+            _loopId = null;
             if (_activeId) {
                 // Read the latest score from storage
                 const best = parseInt(localStorage.getItem(`pc_hi_${_activeId}`) || '0');

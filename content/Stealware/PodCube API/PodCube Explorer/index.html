@@ -5,18 +5,23 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, viewport-fit=cover">
         <title>PodCube™ Explorer</title>
         <link rel="stylesheet" href="./explorer.css">
+        <link rel="stylesheet" href="./interactive/interactive.css">
         <link
             href="https://fonts.googleapis.com/css2?family=Fustat:wght@400;600;700&family=Libertinus+Math&display=swap"
             rel="stylesheet">
         <link rel="icon" type="image/png" href="./favicon.png">
+        <link rel="manifest" href="./manifest.json">
+        <meta name="theme-color" content="#1768da">
+        <link rel="apple-touch-icon" href="./PODCUBE.png">
         <script src="./libraries/qrcode.min.js"></script><!-- QR CODE GENERATOR FOR SHARING PLAYLISTS -->
         <script src="./libraries/html2canvas.min.js"></script><!-- HTML2CANVAS FOR TURNING PAGE INTO IMAGE -->
         <script src="./libraries/jsQR.min.js"></script><!-- QR CODE READER -->
 
-        
         <script src="/podcube.js" type="module"></script>
         <script src="./explorer.js"></script>
         <script src="./playlist-sharing.js"></script>
+        <script src="./interactive/interactive.js"></script>
+        
     </head>
     <body>
         <div class="sticky-top">
@@ -210,7 +215,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        
             <!-- EPISODE INSPECTOR TAB -->
             <div id="inspector" class="tab-content">
                 <!-- Header Card -->
@@ -264,13 +269,13 @@
 
                     <div class="player-transport-row">
                         <div class="player-transport-main-group">
-                            <button class="player-transport-btn" onclick="run('PodCube.prev()')"><svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
-                            <button class="player-transport-btn" onclick="run('PodCube.skipBack()')"><svg viewbox="0 0 24 24" class="icon-svg"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+                            <button class="player-transport-btn" onclick="run('PodCube.prev()')"><svg viewBox="0 0 24 24" class="icon-svg"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                            <button class="player-transport-btn" onclick="run('PodCube.skipBack()')"><svg viewBox="0 0 24 24" class="icon-svg"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
                             <button class="player-transport-btn player-transport-btn-play" id="playerPlayBtn" onclick="run('PodCube.toggle()')">
-                                <span id="playerPlayIcon"><svg viewbox="0 0 24 24" class="icon-svg"><path d="M8 5v14l11-7z"/></svg></span>
+                                <span id="playerPlayIcon"><svg viewBox="0 0 24 24" class="icon-svg"><path d="M8 5v14l11-7z"/></svg></span>
                             </button>
-                            <button class="player-transport-btn" onclick="run('PodCube.skipForward()')"><svg viewbox="0 0 24 24" class="icon-svg" style="transform: scaleX(-1);"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
-                            <button class="player-transport-btn" onclick="run('PodCube.next()')"><svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                            <button class="player-transport-btn" onclick="run('PodCube.skipForward()')"><svg viewBox="0 0 24 24" class="icon-svg" style="transform: scaleX(-1);"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+                            <button class="player-transport-btn" onclick="run('PodCube.next()')"><svg viewBox="0 0 24 24" class="icon-svg"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
                         </div>
 
                         <div class="player-radio-section">
@@ -479,15 +484,13 @@
 
 -->
 
-<script src="./interactive/interactive.js"></script>
-<link rel="stylesheet" href="./interactive/interactive.css">
 <div id="interactive" class="tab-content">
     
     <div id="pc-menu-view" class="section">
         <h3>Productivity Modules</h3>
         <p class="text-muted mb-20">Select a task. Performance is monitored.</p>
         <div id="pc-cartridge-slot" class="game-menu-grid"></div>
-        <div id="pc-loading" class="meta text-muted" style="text-align:center;">INITIALIZING...</div>
+        <!-- <div id="pc-loading" class="meta text-muted" style="text-align:center;">INITIALIZING...</div>-->
     </div>
 
     <div id="pc-machine-view" class="game-stage" style="display:none;">
@@ -622,7 +625,8 @@
                             </div>
                             <div class="api-method">
                                 <code class="api-signature">PodCube.where(filters, sort)</code>
-                                <p>Filter and optionally sort episodes. Filters object supports:
+                                <div style="font-size: 12px; color: #666; margin: 0;">
+                                    Filter and optionally sort episodes. Filters object supports:
                                     <ul style="margin-left:20px; margin-top:8px;">
                                         <li><code>episodeType: 'issues'</code> - Special flag to filter hasIssues=true episodes</li>
                                         <li><code>search: "query"</code> - Full-text search across title, description, and tags</li>
@@ -631,9 +635,11 @@
                                         <li>Any episode field with array value - Checks if episode property is IN that array</li>
                                         <li>Any episode field with scalar value - Exact match</li>
                                     </ul>
-                                    <p>Sort parameter (optional): "field_direction" where field is 'release', 'lore', 'duration', or 'integrity', and direction is 'asc' or 'desc'. Example:
-                                    <code>PodCube.where({ model: ["Beta Build 0.4", "A65v.14"], year: [2020, 2025] }, "lore_desc")</code></p>
-                                </p>
+                                    <p>Sort parameter (optional): "field_direction" where field is 'release', 'lore', 'duration', or 'integrity',
+                                        and direction is 'asc' or 'desc'. Example:<br>
+                                        <code>PodCube.where({ model: ["Beta Build 0.4", "A65v.14"], year: [2020, 2025] }, "lore_desc")</code>
+                                    </p>
+                                </div>   
                             </div>
                             <div class="api-method">
                                 <code class="api-signature">PodCube.search(query)</code>
@@ -1128,20 +1134,20 @@
 <!-- GLOBAL TRANSPORT -->
             <div id="global-transport" class="global-transport">
             <button class="transport-toggle-btn" id="transportToggleBtn" onclick="toggleTransport()">
-                <svg viewbox="0 0 24 24" class="icon-svg"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                <svg viewBox="0 0 24 24" class="icon-svg"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
                 </svg>
             </button>
             <div class="transport-main">
                 <button class="control-btn" onclick="run('PodCube.prev()')" title="Previous">
-                    <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                    <svg viewBox="0 0 24 24" class="icon-svg"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
                     </svg>
                 </button>
                 <button class="control-btn control-btn-play" id="playBtn" onclick="run('PodCube.toggle()')" title="Play/Pause">
-                    <svg viewbox="0 0 24 24" class="icon-svg"><path d="M8 5v14l11-7z"/>
+                    <svg viewBox="0 0 24 24" class="icon-svg"><path d="M8 5v14l11-7z"/>
                     </svg>
                 </button>
                 <button class="control-btn" onclick="run('PodCube.next()')" title="Next">
-                    <svg viewbox="0 0 24 24" class="icon-svg"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                    <svg viewBox="0 0 24 24" class="icon-svg"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
                     </svg>
                 </button>
                 <div class="transport-info">
@@ -1253,7 +1259,7 @@
         <template id="tmpl-queue-item">
             <div class="queue-item" data-queue-index="">
                 <div class="queue-drag-handle">
-                    <svg viewbox="0 0 24 24" class="drag-icon">
+                    <svg viewBox="0 0 24 24" class="drag-icon">
                         <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2
                         2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9
                         2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
@@ -1290,5 +1296,15 @@
                 <pre class="console-result"></pre>
             </div>
         </template>
+
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(reg => console.log('Service Worker registered'))
+                        .catch(err => console.error('Service Worker registration failed:', err));
+                });
+            }
+        </script>
     </body>
 </html>

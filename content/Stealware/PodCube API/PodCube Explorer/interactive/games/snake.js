@@ -21,8 +21,8 @@ class Food extends Entity {
         let valid = false;
         // Keep trying random spots until we find a clear one
         while (!valid) {
-            this.x = PC.randInt(0, COLS - 2);
-            this.y = PC.randInt(0, ROWS - 2); // never spawn against walls
+            this.x = PC.randInt(1, COLS - 2);
+            this.y = PC.randInt(1, ROWS - 2); // never spawn against walls
             valid = !snakeBody.some(s => s.x === this.x && s.y === this.y);
         }
     }
