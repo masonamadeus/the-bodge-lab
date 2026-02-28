@@ -613,16 +613,18 @@ class PodCubeEngine {
         this._listeners = {};
 
         this._audio.addEventListener('ended', () => {
+            const finishedEp = this.nowPlaying;
             const isLastTrack = this._queueIndex >= this._queue.length - 1;
 
             // Radio Mode Logic
-            // NEED TO CHANGE THIS SO THAT IT ONLY ADDS THE NEXT TRACK 30 SECONDS BEFORE THE END OF THE CURRENT ONE
+            // NEED TO CHANGE THIS SO THAT IT ONLY ADDS THE NEXT TRACK 30 SECONDS BEFORE THE END OF THE CURRENT ONE??
             if (isLastTrack && this._radioMode) {
                 log.info("Radio Mode: Auto-queueing random track.");
                 const nextTrack = this.random;
                 if (nextTrack) {
                     this.addToQueue(nextTrack, false);
                     this.next();
+                    if (finishedEp) this._emit('ended', finishedEp);
                     return; // Skip standard session clearing
                 }
             }
@@ -633,6 +635,10 @@ class PodCubeEngine {
             } else {
                 // Moving to next track - preserve session
                 this._saveSession();
+            }
+
+            if (finishedEp){
+                this._emit('ended',finishedEp);
             }
 
             this.next();

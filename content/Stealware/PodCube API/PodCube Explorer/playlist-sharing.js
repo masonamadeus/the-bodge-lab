@@ -10,9 +10,9 @@ const PlaylistSharing = {
         // FIX: Use absolute positioning at 0,0 with deep negative z-index
         // This prevents viewport clipping issues common with 'fixed' off-screen elements
         card.style.position = 'absolute';
-        card.style.left = '-9999'; 
-        card.style.top = '-9999';
-        card.style.zIndex = '-9999'; 
+        card.style.left = '-9999px'; 
+        card.style.top = '-9999px';
+        card.style.zIndex = '-9999px'; 
         
         // Force width to match CSS
         card.style.width = '400px'; 
@@ -236,6 +236,9 @@ const PlaylistSharing = {
                 });
 
                 await navigator.clipboard.write([item]);
+
+                // Track punchcard export for achievements
+                if (window.PodUser) window.PodUser.logPunchcardExport();
                 
                 if (typeof logCommand !== 'undefined') logCommand(`// EXPORT SUCCESS: PUNCHCARD ADDED TO CLIPBOARD.`);
                 
@@ -298,6 +301,9 @@ const PlaylistSharing = {
             link.download = `PodCube_Card_${playlistName.replace(/\s+/g, '_')}.png`;
             link.href = finalCanvas.toDataURL("image/png");
             link.click();
+
+            // Track punchcard export for achievements
+            if (window.PodUser) PodUser.logPunchcardExport();
         } catch (e) {
             console.error("Download failed", e);
         } finally {

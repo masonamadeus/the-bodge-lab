@@ -820,13 +820,26 @@ window.Interactive = (() => {
                 if (_activeId) {
                     const k = `pc_hi_${_activeId}`;
                     const best = parseInt(localStorage.getItem(k) || '0');
-                    if (s > best) localStorage.setItem(k, s);
+                    if (s > best) {
+                        localStorage.setItem(k, s);
+                        if (window.PodUser) {
+                            window.PodUser.logGameScore(_activeId, s);
+                        }
+                    }
                 }
             },
 
             getHighScore() {
                 if (!_activeId) return 0;
-                return parseInt(localStorage.getItem(`pc_hi_${_activeId}`) || '0');
+                let best = parseInt(localStorage.getItem(`pc_hi_${_activeId}`) || '0');
+                
+                // Cross-reference with PodUser in case memory was imported from a backup code
+                if (window.PodUser && window.PodUser.data.games[_activeId] > best) {
+                    best = window.PodUser.data.games[_activeId];
+                    localStorage.setItem(`pc_hi_${_activeId}`, best);
+                }
+                
+                return best;
             },
 
             saveData(key, val) { localStorage.setItem(`pc_data_${_activeId}_${key}`, JSON.stringify(val)); },
@@ -925,8 +938,16 @@ window.Interactive = (() => {
 
             const meta = Class.meta;
 
-            // FIX: Use meta.id, not 'id'
-            const best = localStorage.getItem(`pc_hi_${meta.id}`) || '—';
+            // Check localStorage
+            let best = parseInt(localStorage.getItem(`pc_hi_${meta.id}`) || '0');
+            
+            // FIX: Check PodUser first in case a new memory card was imported!
+            if (window.PodUser && window.PodUser.data.games[meta.id] > best) {
+                best = window.PodUser.data.games[meta.id];
+                localStorage.setItem(`pc_hi_${meta.id}`, best);
+            }
+            
+            const displayScore = best > 0 ? best : '—';
 
             const card = document.createElement('div');
             card.className = 'game-card';
@@ -937,7 +958,7 @@ window.Interactive = (() => {
         <div class="game-card-meta">MODULE: ${meta.id.toUpperCase()}</div>
         <div class="game-card-title">${meta.title}</div>
         <div style="font-family:'Fustat'; font-size:11px; color:#666; margin-top:4px; line-height:1.4;">${meta.desc || "No description."}</div>
-        <div class="game-card-score">RECORD: ${best}</div>
+        <div class="game-card-score">RECORD: ${displayScore}</div>
     `;
             slot.appendChild(card);
         }

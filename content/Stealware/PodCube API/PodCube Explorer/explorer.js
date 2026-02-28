@@ -26,6 +26,14 @@ window.addEventListener('PodCube:Ready', async () => {
     try {
         // 1. Initialize Engine (Must be first)
         await PodCube.init();
+        await PodUser.init();
+
+        PodUser.onUpdate((data) => {
+            renderUserUI(data)
+            syncArchiveUI();
+        });
+        renderUserUI(PodUser.data);
+
         updateStatusIndicator(`Connected to ${PodCube.FEED_TYPE.toUpperCase()} Feed`);
 
         // 2. REGISTER LISTENERS (Must be before restoring session!)
@@ -55,6 +63,12 @@ window.addEventListener('PodCube:Ready', async () => {
                 updatePunchcardPreview();
                 syncArchiveUI();
             });
+        });
+
+        PodCube.on('ended', (episode) => {
+            if (episode && window.PodUser) {
+                PodUser.logListen(episode.id);
+            }
         });
 
         // 3. Restore Session & Sync State
@@ -278,7 +292,6 @@ function renderDistributionGrid(containerId, columns, customClass = 'distributio
     }
 }
 
-// --- SPECIFIC VIEWS ---
 function showDistribution() {
     const dist = PodCube.getDistribution();
     
@@ -487,7 +500,7 @@ function renderArchiveResults(results) {
     results.forEach(ep => {
         const idx = PodCube.getEpisodeIndex(ep);
         const intVal = ep.integrityValue;
-        const intColor = intVal < 50 ? 'var(--danger)' : (intVal < 90 ? 'var(--warning)' : 'var(--success)');
+        const intColor = intVal < 20 ? 'var(--danger)' : (intVal < 90 ? 'var(--warning)' : 'var(--success)');
         const isInQueue = PodCube.queueItems.some(qEp => qEp.id === ep.id);
 
         const clone = document.importNode(tCard.content, true);
@@ -495,7 +508,10 @@ function renderArchiveResults(results) {
         const queueBtn = card.querySelector('.btn-queue');
         card.dataset.epId = ep.id;
 
-        clone.querySelector('.ep-title').textContent = ep.title;
+        const titleEl = clone.querySelector('.et-text');
+        if (titleEl) {titleEl.textContent = ep.title;}
+        else {clone.querySelector('.ep-title').textContent = ep.title;}
+
         clone.querySelector('.ep-date').textContent = ep.date?.toString() || 'No Date';
         clone.querySelector('.ep-type').textContent = ep.episodeType || 'unknown';
         clone.querySelector('.ep-model').textContent = ep.model || 'Unknown Model';
@@ -542,30 +558,36 @@ function renderArchiveResults(results) {
  * Prevents 'weirdDuration' churn and layout thrashing.
  */
 function syncArchiveUI() {
-    // 1. Create a Lookup Set (O(1) access speed)
     const queueIds = new Set(PodCube.queueItems.map(ep => ep.id));
     const playingId = PodCube.nowPlaying?.id;
+    const historyIds = window.PodUser ? new Set(window.PodUser.data.history) : new Set();
 
-    // 2. Update existing nodes only
-    const cards = document.querySelectorAll('#archiveList .ep-card');
+    const cards = document.querySelectorAll('#archiveList .ep-card, #inspectorRelated .related-ep-card');
     
     cards.forEach(card => {
-        const queueBtn = card.querySelector('.btn-queue');
         const id = card.dataset.epId;
         if (!id) return;
 
-        // Toggle "In Queue" styling
-        if (queueIds.has(id)) {
-            queueBtn.classList.add('selected');
-        } else {
-            queueBtn.classList.remove('selected');
+        const queueBtn = card.querySelector('.btn-queue');
+
+        if (queueBtn) {
+            if (queueIds.has(id)) {
+                queueBtn.classList.add('selected');
+            } else {
+                queueBtn.classList.remove('selected');
+            }
         }
 
-        // Toggle "Now Playing" styling
         if (id === playingId) {
             card.classList.add('selected');
         } else {
             card.classList.remove('selected');
+        }
+
+        if (historyIds.has(id)) {
+            card.classList.add('is-played');
+        } else {
+            card.classList.remove('is-played');
         }
     });
 }
@@ -870,13 +892,20 @@ function loadRelatedEpisodes(ep) {
     
     related.forEach(relEp => {
         const clone = document.importNode(template.content, true);
-        clone.querySelector('.related-ep-title').textContent = relEp.title;
+        const card = clone.querySelector('.related-ep-card');
+        card.dataset.epId = relEp.id; // Sets ID to hook into syncArchiveUI
+
+        const titleEl = clone.querySelector('.et-text');
+        if (titleEl) {titleEl.textContent = relEp.title;}
+        else {clone.querySelector('.related-ep-title').textContent = relEp.title;}
         clone.querySelector('.related-ep-meta').textContent = `${relEp.model || 'Unknown'} • ${relEp.origin || 'Unknown'}`;
         clone.querySelector('.related-ep-card').addEventListener('click', () => {
             loadEpisodeInspector(relEp);
         });
         container.appendChild(clone);
     });
+
+    syncArchiveUI();
     
     logCommand(`PodCube.findRelated(PodCube.all[${PodCube.getEpisodeIndex(ep)}], 5) // ${related.length} found`);
 }
@@ -940,7 +969,8 @@ function updatePlayerSpeed(value) {
 function seekPlayer(e) {
     const scrub = document.getElementById('playerScrubber');
     const rect = scrub.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const pct = (clientX - rect.left) / rect.width;
     const time = pct * PodCube.status.duration;
     run(`PodCube.seek(${time.toFixed(1)})`);
 }
@@ -949,7 +979,8 @@ function seekPlayer(e) {
 function seek(e) {
     const scrub = document.getElementById('scrubber');
     const rect = scrub.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const pct = (clientX - rect.left) / rect.width;
     const time = pct * PodCube.status.duration;
     run(`PodCube.seek(${time.toFixed(1)})`);
 }
@@ -962,40 +993,48 @@ function enableScrubbing(elementId) {
 
     let isDragging = false;
 
-    const seekToMouse = (e) => {
+    // Extract clientX from either a MouseEvent or a TouchEvent
+    const getClientX = (e) => e.touches ? e.touches[0].clientX : e.clientX;
+
+    const seekToPoint = (e) => {
         const rect = el.getBoundingClientRect();
-        const relativeX = e.clientX - rect.left;
-        let percent = relativeX / rect.width;
-        
-        // Clamp percentage between 0 and 1
-        percent = Math.max(0, Math.min(1, percent));
-        
-        // Only seek if we have a valid duration
+        const relativeX = getClientX(e) - rect.left;
+        const percent = Math.max(0, Math.min(1, relativeX / rect.width));
+
         if (PodCube.status.duration) {
             const time = percent * PodCube.status.duration;
-            // Use run() with 'true' (silent) to avoid flooding the console log
             run(`PodCube.seek(${time.toFixed(2)})`, true);
         }
     };
 
-    // Start dragging on mousedown
+    // ── Mouse ────────────────────────────────────────────
     el.addEventListener('mousedown', (e) => {
         isDragging = true;
-        seekToMouse(e); // Seek immediately where clicked
+        seekToPoint(e);
     });
-
-    // Update position while dragging (listen on document in case cursor slips off)
     document.addEventListener('mousemove', (e) => {
         if (isDragging) {
-            e.preventDefault(); // Prevent text selection
-            seekToMouse(e);
+            e.preventDefault();
+            seekToPoint(e);
         }
     });
+    document.addEventListener('mouseup', () => { isDragging = false; });
 
-    // Stop dragging on mouseup
-    document.addEventListener('mouseup', () => {
-        isDragging = false;
-    });
+    // ── Touch ────────────────────────────────────────────
+    el.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        seekToPoint(e);
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        // cancelable guard required — passive listeners can't preventDefault
+        if (e.cancelable) e.preventDefault();
+        seekToPoint(e);
+    }, { passive: false });
+
+    document.addEventListener('touchend', () => { isDragging = false; });
+    document.addEventListener('touchcancel', () => { isDragging = false; });
 }
 
 function updatePunchcardPreview() {
@@ -1312,14 +1351,25 @@ function refreshSessionInspector() {
 }
 
 /**
- * Completely resets the engine, clears the queue, and deletes the local session.
+ * Completely resets the engine, clears the queue, deletes the local session,
+ * and purges all PodUser personnel data (achievements, history, scores).
  */
-function clearUserSession() {
-    if (confirm("Are you sure? This will clear your queue, saved session, and all cached audio files.")) {
-        // PodCube.clearQueue() handles cache clearing and session removal
+async function clearUserSession() {
+    if (confirm("Are you sure? This will permanently delete your queue, saved session, ALL personnel data (achievements, history), and cached audio files.")) {
+        
+        // 1. Clear Engine Queue & Session
         run('PodCube.clearQueue()');
+        
+        // 2. Wipe Personnel Data
+        if (window.PodUser && typeof window.PodUser.wipeData === 'function') {
+            await window.PodUser.wipeData();
+        }
+        
         refreshSessionInspector();
-        updateStatusIndicator("Session Purged");
+        updateStatusIndicator("System & Personnel Data Purged");
+        
+        // Optional: Kick them back to the Overview tab so they can see the reset
+        switchTab('overview', true);
     }
 }
 
@@ -1405,6 +1455,8 @@ function saveQueueAsPlaylist() {
     logCommand(`PodCube.savePlaylist("${finalName}", ...)`);
     
     if (input) input.value = '';
+
+    if (window.PodUser) window.PodUser.logPunchcardPrinted();
     animatePunchcardIssue(playlist);
 }
 
@@ -1813,6 +1865,7 @@ async function deletePlaylist(name, cardElement) {
     logCommand(`PodCube.deletePlaylist("${escapeForJs(name)}")`);
     
 }
+
 
 
 // --- OPTIMIZED RENDER SYSTEM ---

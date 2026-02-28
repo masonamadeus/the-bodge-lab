@@ -356,6 +356,18 @@ h1 {
     margin-bottom: 4px;
 }
 
+.ep-played-icon {
+    display: none;
+    color: var(--success);
+    font-size: 14px;
+    margin-right: 6px;
+    vertical-align: baseline;
+}
+.ep-card.is-played .ep-played-icon,
+.related-ep-card.is-played .ep-played-icon {
+    display: inline-block;
+}
+
 /* Integrity Bar */
 .integrity-wrapper {
     display: flex;
@@ -806,6 +818,8 @@ h1 {
     padding: 15px 12px 12px 12px;
     margin-top: 10px;
     position:relative;
+    width:100%;
+    max-width:100%;
     
 }
 
@@ -1462,6 +1476,7 @@ h1 {
     position: relative;
     overflow: visible;
     border: 1px solid var(--primary-dim);
+    touch-action: none;
 }
 
 .playback-scrubber-fill {
@@ -2201,8 +2216,8 @@ label {
     background: #e0e0e0; 
     cursor: pointer; 
     position: relative; 
-    
     overflow: hidden;
+    touch-action: none;
 }
 
 .scrubber-fill { 
@@ -3662,23 +3677,83 @@ label {
 }
 
 @keyframes gravityDrop {
-    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-    100% { transform: translateY(120vh) rotate(10deg); opacity: 1; }
-}
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
 
+    100% {
+        transform: translateY(120vh) rotate(10deg);
+        opacity: 1;
+    }
+}
+    
 /* --- SHRED ANIMATION --- */
 @keyframes ripTop {
-        0% { transform: translateY(0) rotate(0); opacity: 1; }
-        100% { transform: translateY(-40px) rotate(-5deg); opacity: 0; }
+    0% {
+        transform: translateY(0) rotate(0);
+        opacity: 1;
     }
-    @keyframes ripBottom {
-        0% { transform: translateY(0) rotate(0); opacity: 1; }
-        100% { transform: translateY(100px) rotate(5deg); opacity: 0; }
+
+    100% {
+        transform: translateY(-40px) rotate(-5deg);
+        opacity: 0;
     }
-    .rip-piece {
-        position: fixed; /* Lock to screen, ignore container flow */
-        z-index: 9999;
-        pointer-events: none;
-        width: 350px!important;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+@keyframes ripBottom {
+    0% {
+        transform: translateY(0) rotate(0);
+        opacity: 1;
     }
+
+    100% {
+        transform: translateY(100px) rotate(5deg);
+        opacity: 0;
+    }
+}
+
+.rip-piece {
+    position: fixed;
+    /* Lock to screen, ignore container flow */
+    z-index: 9999;
+    pointer-events: none;
+    width: 350px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* --- USER PROFILE STYLES --- */
+.user-badge {
+    cursor: pointer;
+    background: var(--primary-dim);
+    padding: 4px 8px;
+    border: 1px solid var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+@media (hover: hover){
+    .user-badge:hover { background: #fff; transform: translateY(-1px); }
+}
+
+.notif-dot {
+    background: var(--danger);
+    color: #fff;
+    font-family: "Fustat";
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+.notification-card {
+    background: #fff;
+    border-left: 3px solid var(--primary);
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.notification-card.unread {
+    background: var(--primary-dim);
+    border-left-color: var(--orange);
+}
