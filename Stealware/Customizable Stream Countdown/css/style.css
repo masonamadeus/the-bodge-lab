@@ -1,0 +1,1073 @@
+/* =========================================
+   OBS ENVIRONMENT OVERRIDES
+   ========================================= */
+
+/* Only apply transparency in OBS
+*/
+html.obs-environment.transparency-requested {
+    --main-bg-color: transparent !important;
+}
+
+/* Hide settings cog in OBS
+*/
+html.obs-environment #settings-trigger {
+    opacity: 0;
+}
+
+html.obs-environment #settings-trigger:hover {
+    opacity: 1;
+}
+
+/* =========================================
+   1. THEME VARIABLES
+   ========================================= */
+:root {
+    /* --- Main Identity Colors --- */
+    --accent-color: #1768da; 
+    --accent-color-dim: rgba(23, 104, 218, 0.15); /* ~15% opacity */
+    --brand-text-color: #ffffff;
+
+    /* --- Shadows --- */
+    --shadow-color: #000000;
+    --shadow-x: 0.2vmin;
+    --shadow-y: 0.2vmin;
+    --shadow-blur: 0.4vmin;
+
+    /* --- Status Colors --- */
+    --danger-color: #d32f2f;
+    --danger-hover: #b71c1c;
+
+    /* --- UI Structure --- */
+    --main-bg-color: #000000;
+    --main-text-color: #ffffff;
+    
+    /* --- Modal & Settings --- */
+    --modal-overlay: rgba(0, 0, 0, 0.85);
+    --modal-bg: #222222;
+    --modal-border: #444444;
+    --modal-shadow: rgba(0, 0, 0, 0.5);
+    --modified-color: #ff9800;
+    
+    /* --- Forms & Inputs --- */
+    --input-bg: #333333;
+    --input-border: #555555;
+    --input-text: #ffffff;
+    --label-text: #cccccc;
+    --subtext-color: #d0d0d0;
+
+    /* --- Buttons --- */
+    --btn-secondary-bg: #444444;
+    --btn-secondary-hover: #555555;
+    
+    /* --- Glassmorphism (Start Button) --- */
+    --glass-bg: rgba(255, 255, 255, 0.2);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-hover: rgba(0, 0, 0, 0.2);
+}
+
+/* =========================================
+   2. GLOBAL RESET & BASE LAYOUT
+   ========================================= */
+body, html {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+    overflow: hidden; 
+    background-color: var(--main-bg-color); 
+    color: var(--main-text-color); 
+    transition: background-color 0.3s, color 0.3s;
+    
+    /* Default centering layout */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+button {border-radius:0; font-family: "SN Pro", sans-serif;}
+
+#app-container {
+    width: 100%;
+    height: 100vh; /* Full height for absolute anchors */
+    position: relative; 
+    text-align: center;
+    padding: 0 4vmin; 
+    box-sizing: border-box;
+    
+    /* Flexbox for default centering */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; 
+    filter: url(#global-drop-shadow);
+    --shadow-scale: 1;
+}
+
+.accent-bg {
+    color: var(--brand-text-color)!important;
+    background-color: var(--accent-color)!important;
+}
+
+.secondary-bg {
+    background-color: var(--btn-secondary-bg)!important;
+}
+
+
+/* =========================================
+   3. TYPOGRAPHY & EDITABLES
+   ========================================= */
+#stream-title {
+    font-size: 8vmin; 
+    margin: 0 0 2vh 0;
+    line-height: 1.1;
+    white-space: pre; 
+}
+
+#confirm-modal, #prompt-modal {
+    font-family: "SN Pro", sans-serif;
+}
+
+/* Editable Field Styling */
+[contenteditable="true"] {
+    outline: none;
+    border-bottom: 0.3vmin solid transparent;
+    cursor: text;
+    transition: border-color 0.2s;
+}
+[contenteditable="true"]:hover {
+    border-bottom: 0.3vmin solid var(--glass-border);
+}
+[contenteditable="true"]:focus {
+    border-bottom: 0.3vmin solid var(--accent-color);
+}
+
+/* =========================================
+   4. COMPONENT: TIMER
+   ========================================= */
+#timer-container {
+    font-size: 25vmin; 
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#timer-container.running {
+    pointer-events: none; /* Prevents clicking while running */
+    user-select: none;
+}
+
+.colon {
+    margin: 0 1vmin;
+    padding-bottom: 2vmin; 
+}
+
+@keyframes blinkAnimation {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; } /* Drops to 20% opacity instead of fully disappearing */
+}
+
+.blink {
+    animation: blinkAnimation 0.7s step-end infinite;
+}
+
+/* =========================================
+   5. COMPONENT: START BUTTON
+   ========================================= */
+/* The physical button placement */
+#main-start-btn {
+    position: absolute;
+    bottom: 10vh; 
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50; 
+    margin-top: 0; 
+}
+
+/* Visual Styling */
+.start-btn {
+    padding: 1.5vmin 4vmin;
+    font-size: 2.5vmin;
+    background: transparent;
+    border: 0.2vmin solid currentColor;
+    color: currentColor;
+    border-radius: 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(5px);
+}
+.start-btn:hover {
+    background: var(--glass-hover);
+    transform: scale(1.05);
+}
+
+/* =========================================
+   6. COMPONENT: NOW PLAYING
+   ========================================= */
+#now-playing {
+    margin-top: 6vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 50vw; 
+    animation: fadeIn 1s forwards; 
+}
+
+/* Neutralize flexbox and width constraints for the Now Playing element when dragging */
+#now-playing.draggable-item {
+    display: block !important;   /* Kill flex layout on the container itself */
+    margin: 0 !important;        /* Remove the 6vh margin-top fighting the drag */
+    width: 50vw !important;      /* Allow it to shrink to its content so 80vw doesn't push it off-center */
+    min-width: 400px;            /* Give it a base width so it doesn't collapse too small */
+}
+
+#now-playing.draggable-item .brand-row {
+    justify-content: center;
+}
+
+.brand-row {
+    display: flex;
+    align-items: center;
+    gap: 3vmin; 
+    width: 100%;
+    justify-content: center;
+}
+
+/* Logos */
+.podcube-logo {
+    width: 12vmin;
+    height: 12vmin;
+    flex-shrink: 0;
+}
+.podcube-logo svg {
+    width: 100%;
+    height: 100%;
+    opacity: 0.5;
+}
+.podcube-logo img {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    object-fit: cover;
+}
+
+/* Track Metadata */
+.meta-container { 
+    text-align: left; 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.brand-label {
+    font-size: 1.8vmin; 
+    text-transform: uppercase;
+    letter-spacing: 0.2vmin;
+    margin-bottom: 0.5vmin;
+    font-weight: 600;
+    cursor: default;
+}
+#track-name {
+    font-size: 3.5vmin; 
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+/* Progress Bar */
+#progress-container {
+    width: 100%;
+    height: 0.8vmin; 
+    border-radius: 0;
+    overflow: hidden;
+    margin-top: 2vmin;
+    background: transparent;
+    border: 1px solid currentColor;
+}
+#progress-bar {
+    height: 100%;
+    width: 0%; 
+    background: currentColor;
+    transition: width 0.2s linear; 
+}
+
+/* =========================================
+   7. SVG FILTERS
+   ========================================= */
+.svg-filter-hidden {
+    width: 0;
+    height: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+/* =========================================
+   8. MODALS (Confirm & Prompt)
+   ========================================= */
+
+#confirm-modal, #prompt-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    transition: opacity 0.2s ease;
+}
+
+#confirm-modal.hidden, #prompt-modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.confirm-dialog {
+    background: var(--modal-bg);
+    border: 1px solid var(--modal-border);
+    padding: 2rem;
+    max-width: 90%;
+    width: 400px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#confirm-title, #prompt-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.3rem;
+    color: var(--main-text-color);
+}
+
+#confirm-message {
+    margin: 0 0 1.5rem 0;
+    color: var(--label-text);
+    line-height: 1.5;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.btn-secondary, .btn-danger {
+    padding: 0.7rem 1.5rem;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+}
+
+.btn-secondary {
+    background: var(--btn-secondary-bg);
+    color: var(--main-text-color);
+}
+
+.btn-secondary:hover {
+    background: var(--btn-secondary-hover);
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: var(--danger-hover);
+}
+
+.modal-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* =========================================
+   9. SETTINGS MODAL
+   ========================================= */
+
+#settings-trigger {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 4rem;
+    height: 4rem;
+    opacity: 0.2; 
+    cursor: pointer;
+    z-index: 10;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#settings-trigger svg {
+    width: 100%;
+    height: 100%;
+    stroke: currentColor;
+    color: var(--main-text-color);
+}
+
+#settings-trigger.preset-modified svg {
+    color: var(--modified-color);
+    filter: drop-shadow(0 0 3px rgba(0,0,0,0.3));
+}
+
+#settings-trigger.preset-modified{
+    opacity:1;
+}
+
+#settings-trigger:hover {
+    opacity: 1;
+    transform: rotate(30deg);
+}
+
+/* --- Settings Window --- */
+#settings-modal {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    height: 75%;
+    z-index: 1000;
+    display: flex;
+    justify-content: flex-end; /* Drawer style on desktop */
+    font-family: "SN Pro", sans-serif;
+    color: rgba(190, 190, 190, 255);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+#settings-modal a {
+    color: white;
+}
+
+#settings-modal:not(.hidden) {
+    opacity: 1;
+    pointer-events: none;
+}
+
+/* Content Drawer */
+.settings-content {
+    background: #1a1a1a;
+    width: 420px;
+    max-width: 100vw;
+    height: 100%;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    border-left: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    resize: vertical;
+    overflow: hidden;
+    border-radius: 0 !important;
+    user-select: none;
+}
+
+/* --- MOBILE --- */
+@media (max-width: 600px) {
+    #settings-modal {
+        align-items: flex-end; /* Bottom sheet on mobile */
+    }
+    .settings-content {
+        width: 100%;
+        height: 85vh; /* Partial height */
+        border-left: none;
+        resize: none;
+        overflow: auto;
+        border-top: 1px solid #333;
+    }
+}
+
+/* --- Header --- */
+.settings-header {
+    padding: 20px;
+    background: #222;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.settings-header h2 { 
+    margin: 0; 
+    font-size: 1.2rem; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    color: #fff; 
+}
+
+/* --- Scrollable Content --- */
+.settings-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* =========================================
+   9. SETTINGS UI COMPONENTS
+   ========================================= */
+
+/* --- Sections --- */
+.config-section {
+    margin-bottom: 30px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 20px;
+}
+.config-section:last-child { border-bottom: none; }
+.config-section h3 {
+    font-size: 0.9rem;
+    color: #888;
+    text-transform: uppercase;
+    margin: 0 0 15px 0;
+    letter-spacing: 1px;
+}
+
+/* --- Special Hero Card (PodCube) --- */
+.config-card {
+    background: var(--accent-color-dim);
+    border: 1px solid var(--accent-color);
+    padding: 20px;
+    margin-bottom: 30px;
+}
+.card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* Card divider for the WIDK commercials section */
+.card-divider {
+    margin-top: 15px;
+    border-top: 1px solid var(--modal-border);
+    padding-top: 15px;
+}
+
+.settings-logo {
+    width: 60px !important;
+    height: 60px !important;
+    margin-right: 15px; /* Spacing between logo and text */
+}
+
+/* Ensure the image inside fills the square */
+.settings-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.row-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* --- Toggles --- */
+.toggle-wrapper { display: flex; align-items: center; gap: 10px; }
+.toggle-label { font-weight: bold; color: #fff; }
+.toggle-switch {
+    width: 40px; height: 20px; 
+    accent-color: var(--accent-color);
+    cursor: pointer;
+}
+.toggle-switch-small {
+    width: 30px; height: 16px;
+    accent-color: var(--accent-color);
+}
+.section-header-toggle {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+}
+.section-header-toggle h3 { margin: 0; }
+
+/* Specific label styling */
+.widk-label {
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+/* The Layout Toggle Button */
+#btn-toggle-layout {
+    min-width: 80px;
+    min-height: 80px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+/* Active State (When "Done" is showing) */
+#btn-toggle-layout.active-state {
+    background-color: var(--accent-color); /* Bright Blue */
+    color: white;
+    border-color: var(--accent-color);
+}
+
+/* Hover state for active button */
+#btn-toggle-layout.active-state:hover {
+    filter: brightness(1.1);
+}
+
+/* --- Helper Text --- */
+.helper-text { 
+    font-size: 0.85rem; 
+    color: #aaa; 
+    margin: 5px 0 5px 0; 
+    line-height: 1.4; 
+}
+.helper-text a { color: #fff; text-decoration: underline; }
+
+/* --- Grid Layouts --- */
+.input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+.grid-item.full-width { grid-column: span 2; }
+.grid-item label { 
+    display: block; 
+    font-size: 0.8rem; 
+    color: #ccc; 
+    margin-bottom: 5px; 
+}
+
+/* --- Inputs --- */
+input[type="text"] {
+    width: 100%;
+    background: #333;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 10px;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+input[type="text"]:focus { border-color: var(--accent-color); outline: none; }
+
+input[type="range"] {
+    color: var(--accent-color);
+    accent-color: var(--accent-color);
+}
+
+/* --- Color Swatches --- */
+.color-swatch-wrapper {
+    width: 100%;
+    height: 40px;
+    background: var(--input-bg);
+    border: 1px solid var(--modal-border);
+    position: relative;
+    cursor: pointer;
+}
+
+.color-swatch-wrapper input[type="color"] {
+    width: 100%; 
+    height: 100%; 
+    opacity: 0; /* Invisible, so we see the wrapper background */
+    cursor: pointer;
+    position: absolute; 
+    top: 0; 
+    left: 0;
+    padding: 0; margin: 0; border: none;
+}
+/* We can use JS to update the wrapper bg, OR just let the native picker handle it. 
+   Native pickers are tricky to style perfectly "square". 
+   Let's stick to a clean standardized look: */
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: none; }
+
+/* --- Sliders --- */
+.control-row { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+.control-row input{ width: 100%;}
+.slider-stack { display: flex; flex-direction: column; gap: 8px; }
+.slider-row-compact { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: #aaa; }
+.slider-row-compact input { flex: 1; }
+
+.mini-color { 
+    width: 30px; 
+    height: 30px; 
+    padding: 0; 
+    border: 1px solid #555; 
+    background: none; 
+}
+.vanish { display: none !important; }
+
+/* =========================================
+   10. PROMPT MODAL SPECIFIC STYLES
+   ========================================= */
+.prompt-message {
+    margin-bottom: 1rem;
+    color: var(--label-text);
+    font-size: 0.9rem;
+}
+
+.prompt-input {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    padding: 10px;
+    background: #333;
+    border: 1px solid #444;
+    color: #fff;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+.prompt-save-btn {
+    padding: 0.7rem 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+}
+
+/* =========================================
+   10. PRESET SECTION SPECIFIC STYLES
+   ========================================= */
+.preset-help-text {
+    margin-bottom: 10px;
+}
+
+.preset-select-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.preset-select {
+    flex: 1;
+    background: #333;
+    color: white;
+    border: 1px solid #444;
+    padding: 5px;
+    font-family: inherit;
+}
+
+.preset-action-row {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.preset-action-btn {
+    flex: 1;
+    font-size: 0.8rem;
+}
+
+.preset-delete-btn {
+    padding: 0.5vmin;
+}
+
+.preset-reset-row {
+    text-align: center;
+}
+
+/* Preset Status Styles */
+.select-wrapper-with-status {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#preset-modified-status {
+    font-size: 0.7rem;
+    color: var(--modified-color); /* Orange to indicate unsaved changes */
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Ensure the Update button stands out when visible */
+#btn-preset-update {
+    background-color: #2e7d32; /* Green for "Update/Save" */
+    border: 1px var(--brand-text-color) solid;
+}
+
+/* =========================================
+   11. FOOTER ACTIONS
+   ========================================= */
+.settings-actions {
+    background: var(--modal-bg);
+    padding: 20px;
+    border-top: 1px solid var(--input-bg);
+}
+.autoplay-row {
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 0.9rem; 
+    color: #ccc;
+}
+
+.autoplay-select-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.autoplay-label {
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+}
+
+.autoplay-select {
+    width: 100%;
+    background: #333;
+    color: white;
+    border: 1px solid #555;
+    padding: 5px;
+}
+
+.block-btn {
+    display: block; 
+    width: 100%; 
+    padding: 15px;
+    font-weight: bold; 
+    text-transform: uppercase; 
+    letter-spacing: 1px;
+    border: none; 
+    cursor: pointer;
+}
+
+/* =========================================
+   12. BUTTON STYLES
+   ========================================= */
+.primary-btn { 
+    background: var(--accent-color); 
+    color: #fff; 
+}
+
+.primary-btn:hover { filter: brightness(1.1); }
+
+.secondary-btn {
+    font-size: 1em;
+    font-weight: bold;
+    padding: 0.5vmin 1.5vmin;
+    background: var(--btn-secondary-bg);
+    border: 0.2vmin solid currentColor;
+    color: currentColor;
+    border-radius: 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.secondary-btn:hover { background: var(--btn-secondary-hover); }
+
+.danger-btn { 
+    background: #333; 
+    color: var(--danger-color); 
+    border: 1px solid var(--danger-color); 
+}
+.danger-btn:hover { 
+    background: var(--danger-color); 
+    color: #fff; 
+}
+
+.danger-text {
+    color: var(--danger-color);
+}
+
+.reset-btn {
+    background: var(--danger-color); 
+    border: none; 
+    color: #fff;
+    font-size: 0.8rem; 
+    cursor: pointer; 
+    margin-top: 5px; 
+    padding: auto;
+    width: 100%;
+}
+.reset-btn:hover { color: #aaa; }
+
+.text-btn { 
+    padding-left: 0; 
+    background: none; 
+    border: none; 
+    color: var(--accent-color); 
+    text-decoration: underline; 
+    cursor: pointer; 
+}
+
+.btn-small {
+    font-size: 0.8rem;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 10px;
+}
+.icon-btn:hover {
+    color: #fff;
+}
+
+/* --- Spacer --- */
+.spacer { height: 20px; }
+
+/* =========================================
+   13. CUSTOM LAYOUT / FREE POSITIONING
+   ========================================= */
+/* Container Override */
+#app-container.custom-layout {
+    display: block; /* Disables flex centering */
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Draggable Items */
+.draggable-item {
+    position: absolute; 
+    transform: translate(-50%, -50%);
+    left: 50%;
+    top: 50%;
+    z-index: 100;
+    transition: color 0.3s, background 0.3s;
+    white-space: nowrap;
+    will-change: transform;
+    touch-action: none;
+}
+
+
+body.layout-editing .draggable-item * {
+    cursor: inherit;
+}
+
+/* Edit Mode Visual Cues */
+body.layout-editing .draggable-item {
+    outline: 2px dashed rgba(255, 255, 255, 0.3);
+    cursor: grab!important; 
+    background: rgba(0, 0, 0, 0.5);
+    user-select: none; 
+    z-index: 100;
+}
+body.layout-editing .draggable-item:active {
+    cursor: grabbing!important;
+    outline: 2px dashed var(--accent-color);
+    background: rgba(0, 0, 0, 0.7);
+}
+
+/* Force inherit cursor so text fields grab too */
+body.layout-editing [contenteditable="true"] {
+    cursor: inherit;
+}
+
+/* =========================================
+   14. ON-ELEMENT HANDLES (Scale & Rotate)
+   ========================================= */
+
+/* The handles are injected into the draggable items */
+.edit-handle {
+    position: absolute;
+    /* Bumped size slightly to fit the icons */
+    width: 24px; 
+    height: 24px;
+    background-color: var(--accent-color); /* Changed from 'background' to 'background-color' */
+    border: 2px solid white;
+    border-radius: 50%;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none; /* Ignore clicks when locked */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    transition: opacity 0.2s, transform 0.1s;
+    display: none;
+    /* Shared SVG background properties */
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 60%; 
+
+    transform-origin: center center;
+}
+
+/* Show handles only in Edit Mode */
+body.layout-editing .edit-handle {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Hover effects for handles */
+body.layout-editing .edit-handle:hover {
+    transform: scale(1.2);
+}
+
+/* Scale Handle (Bottom Right) */
+.handle-scale {
+    bottom: -12px;
+    right: -12px;
+    cursor: nwse-resize!important;
+    /* Diagonal arrow SVG */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v6h-6M21 21l-7-7M3 9V3h6M3 3l7 7'/%3E%3C/svg%3E");
+}
+
+/* Rotate Handle (Top Right) */
+.handle-rotate {
+    top: -20px;
+    right: 45%;
+    cursor: crosshair!important;
+    background-color: var(--modified-color); 
+    /* NEW: Circular arrow SVG */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/%3E%3Cpath d='M3 3v5h5'/%3E%3C/svg%3E");
+}
+
+body.layout-editing .handle-rotate:active {
+    cursor: grabbing;
+}
+
+/* =========================================
+   15. KNOB CONTROL
+   ========================================= */
+.knob-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+}
+.knob {
+    width: 50px;
+    height: 50px;
+    background: var(--input-bg);
+    border: 2px solid var(--accent-color);
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+}
+.knob-pointer {
+    position: absolute;
+    width: 2px;
+    height: 20px;
+    background: var(--accent-color);
+    top: 5px;
+    left: 24px;
+    transform-origin: bottom center;
+}
+
+
+/* =========================================
+   16. UTILITIES
+   ========================================= */
+.hidden { display: none !important; }
+
+@keyframes fadeIn { 
+    to { opacity: 1; } 
+}

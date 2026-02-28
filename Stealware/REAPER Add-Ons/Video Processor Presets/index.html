@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>Video Processor Catalog</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="I&#39;ve made a mission out of trying to do all my video editing in REAPER now. It&#39;s genuinely impressive to me just how much is possible! However, the video p...">
+        <link
+        rel="canonical" href="https://bodgelab.com/Stealware/REAPER%20Add-Ons/Video%20Processor%20Presets/"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/Stealware/REAPER%20Add-Ons/Video%20Processor%20Presets/">
+        <meta property="og:title" content="Video Processor Catalog">
+        <meta
+        property="og:description" content="I&#39;ve made a mission out of trying to do all my video editing in REAPER now. It&#39;s genuinely impressive to me just how much is possible! However, the video p..."> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/" class="breadcrumb">Stealware</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/REAPER Add-Ons/" class="breadcrumb">REAPER Add-Ons</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/" class="breadcrumb">Video Processor Presets</a>
+                                    
+                                
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Stealware/REAPER Add-Ons/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: December 15, 2025</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+                        <h1>Video Editing In REAPER</h1>
+<p>I've made a mission out of trying to do all my video editing in REAPER now. It's genuinely impressive to me just how much is possible! However, the video processor is such a <button class="bodge-trigger notilt" 
+                    style="animation-delay: -9.57s;" 
+                    data-trigger-id="restricted-limited-environment" 
+                    title="Reveal Note">restricted, limited environment</button> that it's hard to call it a 'fully fledged' video editing suite. It's also just a little bit bonkers in general.</p>
+<p>As far as I know, there's no way for you to download and import these, so to use them you must do the following:</p>
+<ol>
+<li>Add the &quot;Video Processor&quot; FX to any track or item.</li>
+<li>Copy the code from this website using the convenient COPY button.</li>
+<li>Paste that code into the Video Processor's big black void.</li>
+<li>Press &quot;Ctrl + S&quot; to save it.</li>
+<li>Voila! Profitissimo!</li>
+</ol>
+<p>I'm also working on a nicer presentation for this part of the website. Right now it's pretty barebones. Check the folder below for the stuff.</p>
+
+                    
+                    
+                        <div class="page-meta">
+                            
+                            
+                                
+                                
+                            
+                            
+                            <hr>
+                                <p class="download-btn-container"> <a class="page-share-btn" href="/s/reaper-video-proc/" title="Get permanent link">
+                                    SHARE⇗
+                                </a>
+                                <a class="page-download-btn nowrap" href="data:application/octet-stream;charset=utf-8,%0D%0A%23%20Video%20Editing%20In%20REAPER%0D%0A%0D%0AI've%20made%20a%20mission%20out%20of%20trying%20to%20do%20all%20my%20video%20editing%20in%20REAPER%20now.%20It's%20genuinely%20impressive%20to%20me%20just%20how%20much%20is%20possible!%20However%2C%20the%20video%20processor%20is%20such%20a%20%7B%25%20trigger%20%22restricted%2C%20limited%20environment%22%20%25%7D%20that%20it's%20hard%20to%20call%20it%20a%20'fully%20fledged'%20video%20editing%20suite.%20It's%20also%20just%20a%20little%20bit%20bonkers%20in%20general.%0D%0A%0D%0AAs%20far%20as%20I%20know%2C%20there's%20no%20way%20for%20you%20to%20download%20and%20import%20these%2C%20so%20to%20use%20them%20you%20must%20do%20the%20following%3A%0D%0A%0D%0A1.%20Add%20the%20%22Video%20Processor%22%20FX%20to%20any%20track%20or%20item.%0D%0A2.%20Copy%20the%20code%20from%20this%20website%20using%20the%20convenient%20COPY%20button.%0D%0A3.%20Paste%20that%20code%20into%20the%20Video%20Processor's%20big%20black%20void.%0D%0A4.%20Press%20%22Ctrl%20%2B%20S%22%20to%20save%20it.%0D%0A5.%20Voila!%20Profitissimo!%0D%0A%0D%0AI'm%20also%20working%20on%20a%20nicer%20presentation%20for%20this%20part%20of%20the%20website.%20Right%20now%20it's%20pretty%20barebones.%20Check%20the%20folder%20below%20for%20the%20stuff.%0D%0A" download="Video Processor Catalog.md" title='Download "Video Processor Catalog.md"'>
+                                    DOWNLOAD POST ⤓
+                                </a>
+                            </p>
+                        </div>
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/Stealware/REAPER Add-Ons/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                Video Processor Catalog
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+                                    <li class="directory-index-in-list">
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/homeicon.svg');"></span>
+                                        
+                                            <strong>Video Processor Catalog</strong>
+                                        
+                                    </li>
+                                
+
+
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/images/">images\</a>
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/Windows 2000 (ME) Style Popup/">Windows 2000 (ME) Style Popup</a>
+                                        
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/Video Processor Presets/MWV_AutoFeeder 2025.txt.html">MWV_AutoFeeder 2025.txt</a>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/MWV_AutoFeeder 2025.txt" download class="dir-download-icon" title="Download MWV_AutoFeeder 2025.txt"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/Video Processor Presets/MWV_AutoSwitcher Fullscreen.txt.html">MWV_AutoSwitcher Fullscreen.txt</a>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/MWV_AutoSwitcher Fullscreen.txt" download class="dir-download-icon" title="Download MWV_AutoSwitcher Fullscreen.txt"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/Video Processor Presets/Win2kPopup.txt.html">Win2kPopup.txt</a>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/Win2kPopup.txt" download class="dir-download-icon" title="Download Win2kPopup.txt"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+                <script>/*
+                // REPLACE URL IN BAR WITH SHARELINK
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/s/reaper-video-proc/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+                // */</script>
+        
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

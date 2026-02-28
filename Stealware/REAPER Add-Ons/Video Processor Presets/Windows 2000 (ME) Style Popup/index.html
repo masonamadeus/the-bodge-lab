@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>Windows 2000 Style Popup Textbox</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="Fully programmatically created Win2k style popups, in fucking REAPER. I&#39;m in love. Titlebar, gradient, button glyphs - colorable fill &amp;&amp; text, and SO accur...">
+        <link
+        rel="canonical" href="https://bodgelab.com/Stealware/REAPER%20Add-Ons/Video%20Processor%20Presets/Windows%202000%20(ME)%20Style%20Popup/"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/Stealware/REAPER%20Add-Ons/Video%20Processor%20Presets/Windows%202000%20(ME)%20Style%20Popup/">
+        <meta property="og:title" content="Windows 2000 Style Popup Textbox">
+        <meta
+        property="og:description" content="Fully programmatically created Win2k style popups, in fucking REAPER. I&#39;m in love. Titlebar, gradient, button glyphs - colorable fill &amp;&amp; text, and SO accur..."> 
+        <meta property="og:image" content="https://bodgelab.com/images/win2kpopupprev.webp">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/images/win2kpopupprev.webp">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/" class="breadcrumb">Stealware</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/REAPER Add-Ons/" class="breadcrumb">REAPER Add-Ons</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/" class="breadcrumb">Video Processor Presets</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/Windows 2000 (ME) Style Popup/" class="breadcrumb">Windows 2000 (ME) Style Popup</a>
+                                    
+                                
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: December 15, 2025</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+                        <h1>Windows 2000 Style Popup Textbox</h1>
+<div class="media-embed-wrapper">
+  <div class="image-container">
+    <img src="/Stealware/REAPER Add-Ons/Video Processor Presets/images/win2kpopupprev.webp" alt="">
+  </div>
+  <p class="download-btn-container"><a href="/Stealware/REAPER Add-Ons/Video Processor Presets/images/win2kpopupprev.webp" class="page-download-btn" download>DOWNLOAD "win2kpopupprev.webp" ⤓</a></p></div>
+<p>Fully programmatically created Win2k style popups, in fucking REAPER.</p>
+<p>I'm in love.</p>
+<p>Titlebar, gradient, button glyphs - colorable fill &amp;&amp; text, and SO accurate it's hard to tell from the pic that it ain't real</p>
+<p>Plus, it auto-fits the text, which comes from the item name making it EASY TO USE!</p>
+<pre class="language-eel2"><code class="language-eel2">// WIN2K FRAME + TITLE + FILL + OPTIONAL ITEM TEXT
+// Author: Mason Amadeus (with help from REAPERBLOG)
+// License: Ur only allowed to make cool shit with it
+
+//@param1:px 'Position X' 0 0 2560 1280 1
+//@param2:py 'Position Y' 0 0 1440 720 1
+//@param3:ht 'Height' 500 0 2560 1280 1
+//@param4:wi 'Width' 600 0 2560 1280 1
+
+//@param6:contentSize 'Text Size' 50 0 120 50 1
+//@param7:autoSize 'Auto-Size Frame' 1 0 1 0.5 1
+//@param8:autoMaxWidth 'Auto-Size Width' 400 100 2560 1200 1
+
+//@param10:fillH 'Fill Hue' 0 0 1 0.5 0.01
+//@param11:fillS 'Fill Saturation' 0 0 1 0.5 0.01
+//@param12:fillV 'Fill Value' 1 0 1 0.5 0.01
+
+//@param14:textH 'Text Hue' 0 0 1 0.5 0.01
+//@param15:textS 'Text Saturation' 0 0 1 0.5 0.01
+//@param16:textV 'Text Value' 0 0 1 0.5 0.01
+
+//@param18:A 'Frame Opacity' 1 0 1 0.5 0.01
+//@param19:fillA 'Fill Opacity' 1 0 1 0.5 0.01
+//@param20:textA 'Text Opacity' 1 0 1 0.5 0.01
+
+//@param22:showHint 'Show Hints' 0 0 1 0 1
+
+// --------- USER CONFIGURABLE STUFF ------------ //
+
+// Titlebar Text
+#title = "Wicked Interesting";
+
+// Main content text - ONLY OVERRIDE IF YOU HAVE TO.
+// If left blank, it will use the item's active take name.
+#content = "";
+
+// Make sure you type the name correctly && the font must be installed on your computer.
+#font_titlebar = "Segoe UI Bold";
+#font_content = "Segoe UI";
+
+
+
+// --------- NO TOUCHY UNLESS UR SURE ------------- //
+
+//LET BELOW VIDEOS SHOW THRU (NEED FURTHER TESTING)
+colorspace='RGBA';
+(bg_img=input_ismaster() ? -2 : input_track(0));
+  // Ensure gfx_mode is clean for the background blit.
+  gfx_mode = 0;
+  gfx_a2 = 0;
+  gfx_blit(bg_img, 1);
+// TRANSPARENCY HACK END
+
+// this sets the content text to the item's active take name.
+strcmp(#content,"")==0 ? input_get_name(-1,#content);
+
+// This should allow the popup to show atop other videos.
+input = 0;
+gfx_blit(input,1);
+
+// --- HSV to RGB Conversion Logic
+// Input vars: h_in, s_in, v_in
+// Output vars: r_out, g_out, b_out
+
+// --- Convert Fill Color
+h_in = fillH; s_in = fillS; v_in = fillV;
+s_in == 0 ? (
+    fill_r = fill_g = fill_b = v_in;
+) : (
+    h_scaled = h_in * 360;
+    h_sector = floor(h_scaled / 60);
+    f = h_scaled/60 - h_sector;
+    p = v_in * (1 - s_in);
+    q = v_in * (1 - s_in * f);
+    t = v_in * (1 - s_in * (1 - f));
+    h_sector == 0 ? ( fill_r = v_in; fill_g = t; fill_b = p; );
+    h_sector == 1 ? ( fill_r = q; fill_g = v_in; fill_b = p; );
+    h_sector == 2 ? ( fill_r = p; fill_g = v_in; fill_b = t; );
+    h_sector == 3 ? ( fill_r = p; fill_g = q; fill_b = v_in; );
+    h_sector == 4 ? ( fill_r = t; fill_g = p; fill_b = v_in; );
+    h_sector == 5 ? ( fill_r = v_in; fill_g = p; fill_b = q; );
+);
+
+// --- Convert Text Color
+h_in = textH; s_in = textS; v_in = textV;
+s_in == 0 ? (
+    text_r = text_g = text_b = v_in;
+) : (
+    h_scaled = h_in * 360;
+    h_sector = floor(h_scaled / 60);
+    f = h_scaled/60 - h_sector;
+    p = v_in * (1 - s_in);
+    q = v_in * (1 - s_in * f);
+    t = v_in * (1 - s_in * (1 - f));
+    h_sector == 0 ? ( text_r = v_in; text_g = t; text_b = p; );
+    h_sector == 1 ? ( text_r = q; text_g = v_in; text_b = p; );
+    h_sector == 2 ? ( text_r = p; text_g = v_in; text_b = t; );
+    h_sector == 3 ? ( text_r = p; text_g = q; text_b = v_in; );
+    h_sector == 4 ? ( text_r = t; text_g = p; text_b = v_in; );
+    h_sector == 5 ? ( text_r = v_in; text_g = p; text_b = q; );
+);
+
+
+// -------------------- AUTO-SIZING CALCULATION
+autoSize > 0 && strlen(#content) > 0 ? (
+  gfx_setfont(contentSize, #font_content, 0);
+  
+  #calc_line = "";
+  #calc_word = "";
+  #calc_char = " ";
+  num_lines = 1;
+  max_line_w = 0;
+  line_h = 0;
+  
+  i = 0;
+  loop(strlen(#content) + 1,
+    is_end_of_string = i == strlen(#content);
+    ch = is_end_of_string ? 32 : str_getchar(#content, i);
+    
+    ch == 32 && strlen(#calc_word) > 0 ? (
+      gfx_str_measure(#calc_line, current_line_w, current_h);
+      gfx_str_measure(#calc_word, word_w, word_h);
+      line_h = max(line_h, word_h);
+
+      (strlen(#calc_line) > 0 && current_line_w + word_w > autoMaxWidth) ? (
+        max_line_w = max(max_line_w, current_line_w);
+        num_lines += 1;
+        #calc_line = #calc_word;
+      ) : (
+        strlen(#calc_line) > 0 ? #calc_line += " ";
+        #calc_line += #calc_word;
+      );
+      #calc_word = "";
+    );
+    
+    ch != 32 ? (
+      str_setchar(#calc_char, 0, ch);
+      #calc_word += #calc_char;
+    );
+    i += 1;
+  );
+
+  gfx_str_measure(#calc_line, last_line_w, last_h);
+  max_line_w = max(max_line_w, last_line_w);
+  line_h = max(line_h, last_h);
+  
+  final_line_h = line_h > 0 ? line_h : contentSize;
+
+  final_content_w = max_line_w + 24;
+  final_content_h = num_lines * final_line_h + 8;
+  
+  wi = final_content_w + 10;
+  ht = final_content_h + 20;
+);
+
+
+// integer geometry
+px2 = floor(px);
+py2 = floor(py);
+wi2 = floor(wi);
+ht2 = floor(ht);
+
+// -------------------- BORDER BEVELS GALORE --- //
+gfx_set(223/255,223/255,223/255,A,0);
+gfx_fillrect(px2, py2, wi2, 1);
+gfx_fillrect(px2, py2+1, 1, ht2-1);
+gfx_set(0,0,0,A,0);
+gfx_fillrect(px2, py2+ht2-1, wi2, 1);
+gfx_fillrect(px2+wi2-1, py2+1, 1, ht2-2);
+
+gfx_set(1,1,1,A,0);
+gfx_fillrect(px2+1, py2+1, wi2-2, 1);
+gfx_fillrect(px2+1, py2+2, 1, ht2-3);
+gfx_set(128/255,128/255,128/255,A,0);
+gfx_fillrect(px2+1, py2+ht2-2, wi2-2, 1);
+gfx_fillrect(px2+wi2-2, py2+2, 1, ht2-4);
+
+gfx_set(192/255,192/255,192/255,A,0);
+gfx_fillrect(px2+2, py2+2, wi2-4, 2);
+gfx_fillrect(px2+2, py2+ht2-4, wi2-4, 2);
+gfx_fillrect(px2+2, py2+4, 2, ht2-8);
+gfx_fillrect(px2+wi2-4, py2+4, 2, ht2-8);
+
+gfx_set(128/255,128/255,128/255,A,0);
+gfx_fillrect(px2+4, py2+4, wi2-8, 1);
+gfx_fillrect(px2+4, py2+5, 1, ht2-10);
+gfx_set(1,1,1,A,0);
+gfx_fillrect(px2+4, py2+ht2-5, wi2-8, 1);
+gfx_fillrect(px2+wi2-5, py2+5, 1, ht2-10);
+
+gfx_set(192/255,192/255,192/255,A,0);
+gfx_fillrect(px2+5, py2+5, wi2-10, 1);
+gfx_fillrect(px2+5, py2+6, 1, ht2-11);
+gfx_set(223/255,223/255,223/255,A,0);
+gfx_fillrect(px2+5, py2+ht2-6, wi2-10, 1);
+gfx_fillrect(px2+wi2-6, py2+6, 1, ht2-12);
+
+
+// --------------------- TITLE BAR ----- //
+titlebar_h = 20;
+tb_x = px2+4;
+tb_y = py2+4;
+tb_w = wi2-8;
+tb_h = titlebar_h;
+
+// Crazy gradient logic
+steps = tb_w > 0 ? tb_w : 1;
+i = 0;
+loop(steps,
+  t = i/(steps-1 + (steps==1));
+  r = (0*(1-t) + 16*t)/255;
+  g = (0*(1-t) + 132*t)/255;
+  b = (128*(1-t) + 208*t)/255;
+  gfx_set(r,g,b,A,0);
+  gfx_fillrect(tb_x+i, tb_y, 1, tb_h);
+  i += 1;
+);
+
+// Title text
+gfx_setfont(20,#font_titlebar,0);
+gfx_set(1,1,1,A,0);
+gfx_str_measure(#title,titleW,titleH);
+gfx_str_draw(#title,tb_x+4,tb_y + (tb_h - titleH)/2);
+
+// -------------------- MAIN CONTENT FILL -- //
+content_x = px2 + 5;
+content_y = py2 + 24;
+content_w = wi2 - 10;
+content_h = ht2 - 28;
+
+// Draw customizable fill using HSV-derived colors
+gfx_set(fill_r, fill_g, fill_b, fillA, 0);
+gfx_fillrect(content_x, content_y, content_w, content_h);
+
+// Content Area Bevel
+gfx_set(128/255,128/255,128/255,A,0);
+gfx_fillrect(content_x, content_y, content_w, 1);
+gfx_fillrect(content_x, content_y+1, 1, content_h-2);
+gfx_set(1,1,1,A,0);
+gfx_fillrect(content_x, content_y+content_h-1, content_w, 1);
+gfx_fillrect(content_x+content_w-1, content_y+1, 1, content_h-2);
+
+
+// -------------------- CONTENT TEXT ---- //
+  contentSize > 0 && strlen(#content) > 0 ? (
+  gfx_setfont(contentSize,#font_content,0);
+  
+  // Use customizable, HSV-derived text color
+  gfx_set(text_r, text_g, text_b, textA, 0); 
+  
+  max_w = content_w - 16;
+  ypos = content_y - 10;
+  #line = "";
+  #word = "";
+  #char = " ";
+  i = 0;
+  
+  loop(strlen(#content) + 1,
+      is_end_of_string = i == strlen(#content);
+      ch = is_end_of_string ? 32 : str_getchar(#content, i);
+      
+      ch == 32 && strlen(#word) > 0 ? (
+          gfx_str_measure(#line, line_w, line_h);
+          gfx_str_measure(#word, word_w, word_h);
+          
+          (strlen(#line) > 0 && line_w + word_w > max_w) ? (
+              gfx_str_draw(#line, content_x + 8, ypos);
+              ypos += line_h > 0 ? line_h : contentSize;
+              #line = #word;
+          ) : (
+              strlen(#line) > 0 ? #line += " ";
+              #line += #word;
+          );
+          #word = "";
+      );
+      
+      ch != 32 ? (
+          str_setchar(#char, 0, ch);
+          #word += #char;
+      );
+      i += 1;
+  );
+  
+  strlen(#line) > 0 ? gfx_str_draw(#line, content_x + 8, ypos);
+);
+
+
+// --------------------- BUTTONS
+btn_size = tb_h-5;
+close_x = tb_x + tb_w - btn_size-2;
+max_x   = close_x - btn_size-2;
+min_x   = max_x - btn_size;
+btn_y   = tb_y+3;
+
+button_x = min_x;
+loop(3,
+  gfx_set(192/255,192/255,192/255,A,0);
+  gfx_fillrect(button_x,btn_y,btn_size,btn_size);
+
+  gfx_set(1,1,1,A,0);
+  gfx_fillrect(button_x, btn_y, btn_size, 1);
+  gfx_fillrect(button_x, btn_y, 1, btn_size);
+  gfx_set(0,0,0,A,0);
+  gfx_fillrect(button_x, btn_y+btn_size-1, btn_size, 1);
+  gfx_fillrect(button_x+btn_size-1, btn_y, 1, btn_size);
+
+  gfx_set(223/255,223/255,223/255,A,0);
+  gfx_fillrect(button_x+1, btn_y+1, btn_size-2, 1);
+  gfx_fillrect(button_x+1, btn_y+1, 1, btn_size-2);
+  gfx_set(128/255,128/255,128/255,A,0);
+  gfx_fillrect(button_x+1, btn_y+btn_size-2, btn_size-2, 1);
+  gfx_fillrect(button_x+btn_size-2, btn_y+1, 1, btn_size-2);
+  
+  button_x == min_x ? button_x = max_x : button_x = close_x;
+);
+
+
+// ---------------------- GLYPHS
+gfx_set(0,0,0,A,0);
+
+// MINIMIZE
+glyph_w = btn_size/2.5;
+glyph_h = 2;
+glyph_x = min_x + (btn_size - glyph_w)/2;
+glyph_y = btn_y + btn_size - 6;
+gfx_fillrect(glyph_x,glyph_y,glyph_w,glyph_h);
+
+// MAXIMIZE
+glyph_w = btn_size/1.5;
+glyph_h = glyph_w;
+glyph_x = max_x + (btn_size - glyph_w)/2+1;
+glyph_y = btn_y + (btn_size - glyph_h)/2 +1;
+gfx_fillrect(glyph_x,glyph_y,glyph_w-1,1);
+gfx_fillrect(glyph_x,glyph_y+1,glyph_w-1,1);
+gfx_fillrect(glyph_x,glyph_y+glyph_h-2,glyph_w-1,1);
+gfx_fillrect(glyph_x,glyph_y,1,glyph_h-1);
+gfx_fillrect(glyph_x+glyph_w-2,glyph_y,1,glyph_h-1);
+
+// CLOSE
+glyph_inset = 3;
+glyph_start_x = close_x + glyph_inset;
+glyph_start_y = btn_y + glyph_inset;
+glyph_size = btn_size - (glyph_inset * 2);
+
+i=0;
+loop(glyph_size-1,
+  gfx_fillrect(glyph_start_x + i, glyph_start_y + i, 2, 1);
+  gfx_fillrect(glyph_start_x + (glyph_size-2) - i, glyph_start_y + i, 2, 1);
+  i+=1;
+);
+
+
+// --------------------- HINTS AND DEBUG
+showHint ==1 ? (
+  gfx_setfont(30,#font_content, 0);
+  gfx_set(1,1,1,1,0); // Hint text remains fully opaque
+  sprintf(#text1,"Win2K Frame %.f×%.f @ %.f,%.f",wi,ht,px,py);
+  gfx_str_measure(#text1,sizeX,sizeY);
+  gfx_str_draw(#text1,px,py-sizeY);
+);</code></pre>
+<p>Copy/Paste that into your Video Processor Preset and hit save.</p>
+
+                    
+                    
+                        <div class="page-meta">
+                            
+                            
+                                
+                                
+                            
+                            
+                            <hr>
+                                <p class="download-btn-container"> <a class="page-share-btn" href="/s/879656e3/" title="Get permanent link">
+                                    SHARE⇗
+                                </a>
+                                <a class="page-download-btn nowrap" href="data:application/octet-stream;charset=utf-8,%0D%0A%23%20Windows%202000%20Style%20Popup%20Textbox%0D%0A%0D%0A%7B%25image%20%22images%2Fwin2kpopupprev.webp%22%25%7D%0D%0A%0D%0AFully%20programmatically%20created%20Win2k%20style%20popups%2C%20in%20fucking%20REAPER.%0D%0A%0D%0AI'm%20in%20love.%0D%0A%0D%0ATitlebar%2C%20gradient%2C%20button%20glyphs%20-%20colorable%20fill%20%26%26%20text%2C%20and%20SO%20accurate%20it's%20hard%20to%20tell%20from%20the%20pic%20that%20it%20ain't%20real%0D%0A%0D%0APlus%2C%20it%20auto-fits%20the%20text%2C%20which%20comes%20from%20the%20item%20name%20making%20it%20EASY%20TO%20USE!%0D%0A%0D%0A%60%60%60eel2%0D%0A%2F%2F%20WIN2K%20FRAME%20%2B%20TITLE%20%2B%20FILL%20%2B%20OPTIONAL%20ITEM%20TEXT%0D%0A%2F%2F%20Author%3A%20Mason%20Amadeus%20(with%20help%20from%20REAPERBLOG)%0D%0A%2F%2F%20License%3A%20Ur%20only%20allowed%20to%20make%20cool%20shit%20with%20it%0D%0A%0D%0A%2F%2F%40param1%3Apx%20'Position%20X'%200%200%202560%201280%201%0D%0A%2F%2F%40param2%3Apy%20'Position%20Y'%200%200%201440%20720%201%0D%0A%2F%2F%40param3%3Aht%20'Height'%20500%200%202560%201280%201%0D%0A%2F%2F%40param4%3Awi%20'Width'%20600%200%202560%201280%201%0D%0A%0D%0A%2F%2F%40param6%3AcontentSize%20'Text%20Size'%2050%200%20120%2050%201%0D%0A%2F%2F%40param7%3AautoSize%20'Auto-Size%20Frame'%201%200%201%200.5%201%0D%0A%2F%2F%40param8%3AautoMaxWidth%20'Auto-Size%20Width'%20400%20100%202560%201200%201%0D%0A%0D%0A%2F%2F%40param10%3AfillH%20'Fill%20Hue'%200%200%201%200.5%200.01%0D%0A%2F%2F%40param11%3AfillS%20'Fill%20Saturation'%200%200%201%200.5%200.01%0D%0A%2F%2F%40param12%3AfillV%20'Fill%20Value'%201%200%201%200.5%200.01%0D%0A%0D%0A%2F%2F%40param14%3AtextH%20'Text%20Hue'%200%200%201%200.5%200.01%0D%0A%2F%2F%40param15%3AtextS%20'Text%20Saturation'%200%200%201%200.5%200.01%0D%0A%2F%2F%40param16%3AtextV%20'Text%20Value'%200%200%201%200.5%200.01%0D%0A%0D%0A%2F%2F%40param18%3AA%20'Frame%20Opacity'%201%200%201%200.5%200.01%0D%0A%2F%2F%40param19%3AfillA%20'Fill%20Opacity'%201%200%201%200.5%200.01%0D%0A%2F%2F%40param20%3AtextA%20'Text%20Opacity'%201%200%201%200.5%200.01%0D%0A%0D%0A%2F%2F%40param22%3AshowHint%20'Show%20Hints'%200%200%201%200%201%0D%0A%0D%0A%2F%2F%20---------%20USER%20CONFIGURABLE%20STUFF%20------------%20%2F%2F%0D%0A%0D%0A%2F%2F%20Titlebar%20Text%0D%0A%23title%20%3D%20%22Wicked%20Interesting%22%3B%0D%0A%0D%0A%2F%2F%20Main%20content%20text%20-%20ONLY%20OVERRIDE%20IF%20YOU%20HAVE%20TO.%0D%0A%2F%2F%20If%20left%20blank%2C%20it%20will%20use%20the%20item's%20active%20take%20name.%0D%0A%23content%20%3D%20%22%22%3B%0D%0A%0D%0A%2F%2F%20Make%20sure%20you%20type%20the%20name%20correctly%20%26%26%20the%20font%20must%20be%20installed%20on%20your%20computer.%0D%0A%23font_titlebar%20%3D%20%22Segoe%20UI%20Bold%22%3B%0D%0A%23font_content%20%3D%20%22Segoe%20UI%22%3B%0D%0A%0D%0A%0D%0A%0D%0A%2F%2F%20---------%20NO%20TOUCHY%20UNLESS%20UR%20SURE%20-------------%20%2F%2F%0D%0A%0D%0A%2F%2FLET%20BELOW%20VIDEOS%20SHOW%20THRU%20(NEED%20FURTHER%20TESTING)%0D%0Acolorspace%3D'RGBA'%3B%0D%0A(bg_img%3Dinput_ismaster()%20%3F%20-2%20%3A%20input_track(0))%3B%0D%0A%20%20%2F%2F%20Ensure%20gfx_mode%20is%20clean%20for%20the%20background%20blit.%0D%0A%20%20gfx_mode%20%3D%200%3B%0D%0A%20%20gfx_a2%20%3D%200%3B%0D%0A%20%20gfx_blit(bg_img%2C%201)%3B%0D%0A%2F%2F%20TRANSPARENCY%20HACK%20END%0D%0A%0D%0A%2F%2F%20this%20sets%20the%20content%20text%20to%20the%20item's%20active%20take%20name.%0D%0Astrcmp(%23content%2C%22%22)%3D%3D0%20%3F%20input_get_name(-1%2C%23content)%3B%0D%0A%0D%0A%2F%2F%20This%20should%20allow%20the%20popup%20to%20show%20atop%20other%20videos.%0D%0Ainput%20%3D%200%3B%0D%0Agfx_blit(input%2C1)%3B%0D%0A%0D%0A%2F%2F%20---%20HSV%20to%20RGB%20Conversion%20Logic%0D%0A%2F%2F%20Input%20vars%3A%20h_in%2C%20s_in%2C%20v_in%0D%0A%2F%2F%20Output%20vars%3A%20r_out%2C%20g_out%2C%20b_out%0D%0A%0D%0A%2F%2F%20---%20Convert%20Fill%20Color%0D%0Ah_in%20%3D%20fillH%3B%20s_in%20%3D%20fillS%3B%20v_in%20%3D%20fillV%3B%0D%0As_in%20%3D%3D%200%20%3F%20(%0D%0A%20%20%20%20fill_r%20%3D%20fill_g%20%3D%20fill_b%20%3D%20v_in%3B%0D%0A)%20%3A%20(%0D%0A%20%20%20%20h_scaled%20%3D%20h_in%20*%20360%3B%0D%0A%20%20%20%20h_sector%20%3D%20floor(h_scaled%20%2F%2060)%3B%0D%0A%20%20%20%20f%20%3D%20h_scaled%2F60%20-%20h_sector%3B%0D%0A%20%20%20%20p%20%3D%20v_in%20*%20(1%20-%20s_in)%3B%0D%0A%20%20%20%20q%20%3D%20v_in%20*%20(1%20-%20s_in%20*%20f)%3B%0D%0A%20%20%20%20t%20%3D%20v_in%20*%20(1%20-%20s_in%20*%20(1%20-%20f))%3B%0D%0A%20%20%20%20h_sector%20%3D%3D%200%20%3F%20(%20fill_r%20%3D%20v_in%3B%20fill_g%20%3D%20t%3B%20fill_b%20%3D%20p%3B%20)%3B%0D%0A%20%20%20%20h_sector%20%3D%3D%201%20%3F%20(%20fill_r%20%3D%20q%3B%20fill_g%20%3D%20v_in%3B%20fill_b%20%3D%20p%3B%20)%3B%0D%0A%20%20%20%20h_sector%20%3D%3D%202%20%3F%20(%20fill_r%20%3D%20p%3B%20fill_g%20%3D%20v_in%3B%20fill_b%20%3D%20t%3B%20)%3B%0D%0A%20%20%20%20h_sector%20%3D%3D%203%20%3F%20(%20fill_r%20%3D%20p%3B%20fill_g%20%3D%20q%3B%20fill_b%20%3D%20v_in%3B%20)%3B%0D%0A%20%20%20%20h_sector%20%3D%3D%204%20%3F%20(%20fill_r%20%3D%20t%3B%20fill_g%20%3D%20p%3B%20fill_b%20%3D%20v_in%3B%20)%3B%0D%0A%20%20%20%20h_sector%20%3D%3D%205%20%3F%20(%20fill_r%20%3D%20v_in%3B%20fill_g%20%3D%20p%3B%20fill_b%20%3D%20q%3B%20)%3B%0D%0A)%3B%0D%0A%0D%0A%2F%2F%20---%20Convert%20Text%20Color%0D%0Ah_in%20%3D%20textH%3B%20s_in%20%3D%20textS%3B%20v_in%20%3D%20textV%3B%0D%0As_in%20%3D%3D%200%20%3F%20(%0D%0A%20%20%20%20text_r%20%3D%20text_g%20%3D%20text_b%20%3D%20v_in%3B%0D%0A)%20%3A%20(%0D%0A%20%20%20%20h_scaled%20%3D%20h_in%20*%20360%3B%0D%0A%20%20%20%20h_sector%20%3D%20floor(h_scaled%20%2F%2060)%3B%0D%0A%20%20%20%20f%20%3D%20h_scaled%2F60%20-%20h_sector%3B%0D%0A%20%20%20%20p%20%3D%20v_in%20*%20(1%20-%20s_in)%3B%0D%0A%20%20%20%20q%20%3D%20v_in%20*%20(1%20-%20s_in%20*%20f)%3B%0D%0A%20%20%20%20t%20%3D%20v_in%20*%20(1%20-%20s_in%20*%20(1%20-%20f))%3B%0D%0A%20%20%20%20h_sector%20%3D%3D%200%20%3F%20(%20text_r%20%3D%20v_in%3B%20text_g%20%3D%20t%3B%20text_b%20%3D%20p%3B%20)%3B%0D%0A%20%20%20%20h_sector%20%3D%3D%201%20%3F%20(%20text_r%20%3D%20q%3B%20text_g%20%3D%20v_in%3B%20text_b%20%3D%20p%3B%20)%3B%0D%0A%20%20%20%20h_sector%20%3D%3D%202%20%3F%20(%20text_r%20%3D%20p%3B%20text_g%20%3D%20v_in%3B%20text_b%20%3D%20t%3B%20)%3B%0D%0A%20%20%20%20h_sector%20%3D%3D%203%20%3F%20(%20text_r%20%3D%20p%3B%20text_g%20%3D%20q%3B%20text_b%20%3D%20v_in%3B%20)%3B%0D%0A%20%20%20%20h_sector%20%3D%3D%204%20%3F%20(%20text_r%20%3D%20t%3B%20text_g%20%3D%20p%3B%20text_b%20%3D%20v_in%3B%20)%3B%0D%0A%20%20%20%20h_sector%20%3D%3D%205%20%3F%20(%20text_r%20%3D%20v_in%3B%20text_g%20%3D%20p%3B%20text_b%20%3D%20q%3B%20)%3B%0D%0A)%3B%0D%0A%0D%0A%0D%0A%2F%2F%20--------------------%20AUTO-SIZING%20CALCULATION%0D%0AautoSize%20%3E%200%20%26%26%20strlen(%23content)%20%3E%200%20%3F%20(%0D%0A%20%20gfx_setfont(contentSize%2C%20%23font_content%2C%200)%3B%0D%0A%20%20%0D%0A%20%20%23calc_line%20%3D%20%22%22%3B%0D%0A%20%20%23calc_word%20%3D%20%22%22%3B%0D%0A%20%20%23calc_char%20%3D%20%22%20%22%3B%0D%0A%20%20num_lines%20%3D%201%3B%0D%0A%20%20max_line_w%20%3D%200%3B%0D%0A%20%20line_h%20%3D%200%3B%0D%0A%20%20%0D%0A%20%20i%20%3D%200%3B%0D%0A%20%20loop(strlen(%23content)%20%2B%201%2C%0D%0A%20%20%20%20is_end_of_string%20%3D%20i%20%3D%3D%20strlen(%23content)%3B%0D%0A%20%20%20%20ch%20%3D%20is_end_of_string%20%3F%2032%20%3A%20str_getchar(%23content%2C%20i)%3B%0D%0A%20%20%20%20%0D%0A%20%20%20%20ch%20%3D%3D%2032%20%26%26%20strlen(%23calc_word)%20%3E%200%20%3F%20(%0D%0A%20%20%20%20%20%20gfx_str_measure(%23calc_line%2C%20current_line_w%2C%20current_h)%3B%0D%0A%20%20%20%20%20%20gfx_str_measure(%23calc_word%2C%20word_w%2C%20word_h)%3B%0D%0A%20%20%20%20%20%20line_h%20%3D%20max(line_h%2C%20word_h)%3B%0D%0A%0D%0A%20%20%20%20%20%20(strlen(%23calc_line)%20%3E%200%20%26%26%20current_line_w%20%2B%20word_w%20%3E%20autoMaxWidth)%20%3F%20(%0D%0A%20%20%20%20%20%20%20%20max_line_w%20%3D%20max(max_line_w%2C%20current_line_w)%3B%0D%0A%20%20%20%20%20%20%20%20num_lines%20%2B%3D%201%3B%0D%0A%20%20%20%20%20%20%20%20%23calc_line%20%3D%20%23calc_word%3B%0D%0A%20%20%20%20%20%20)%20%3A%20(%0D%0A%20%20%20%20%20%20%20%20strlen(%23calc_line)%20%3E%200%20%3F%20%23calc_line%20%2B%3D%20%22%20%22%3B%0D%0A%20%20%20%20%20%20%20%20%23calc_line%20%2B%3D%20%23calc_word%3B%0D%0A%20%20%20%20%20%20)%3B%0D%0A%20%20%20%20%20%20%23calc_word%20%3D%20%22%22%3B%0D%0A%20%20%20%20)%3B%0D%0A%20%20%20%20%0D%0A%20%20%20%20ch%20!%3D%2032%20%3F%20(%0D%0A%20%20%20%20%20%20str_setchar(%23calc_char%2C%200%2C%20ch)%3B%0D%0A%20%20%20%20%20%20%23calc_word%20%2B%3D%20%23calc_char%3B%0D%0A%20%20%20%20)%3B%0D%0A%20%20%20%20i%20%2B%3D%201%3B%0D%0A%20%20)%3B%0D%0A%0D%0A%20%20gfx_str_measure(%23calc_line%2C%20last_line_w%2C%20last_h)%3B%0D%0A%20%20max_line_w%20%3D%20max(max_line_w%2C%20last_line_w)%3B%0D%0A%20%20line_h%20%3D%20max(line_h%2C%20last_h)%3B%0D%0A%20%20%0D%0A%20%20final_line_h%20%3D%20line_h%20%3E%200%20%3F%20line_h%20%3A%20contentSize%3B%0D%0A%0D%0A%20%20final_content_w%20%3D%20max_line_w%20%2B%2024%3B%0D%0A%20%20final_content_h%20%3D%20num_lines%20*%20final_line_h%20%2B%208%3B%0D%0A%20%20%0D%0A%20%20wi%20%3D%20final_content_w%20%2B%2010%3B%0D%0A%20%20ht%20%3D%20final_content_h%20%2B%2020%3B%0D%0A)%3B%0D%0A%0D%0A%0D%0A%2F%2F%20integer%20geometry%0D%0Apx2%20%3D%20floor(px)%3B%0D%0Apy2%20%3D%20floor(py)%3B%0D%0Awi2%20%3D%20floor(wi)%3B%0D%0Aht2%20%3D%20floor(ht)%3B%0D%0A%0D%0A%2F%2F%20--------------------%20BORDER%20BEVELS%20GALORE%20---%20%2F%2F%0D%0Agfx_set(223%2F255%2C223%2F255%2C223%2F255%2CA%2C0)%3B%0D%0Agfx_fillrect(px2%2C%20py2%2C%20wi2%2C%201)%3B%0D%0Agfx_fillrect(px2%2C%20py2%2B1%2C%201%2C%20ht2-1)%3B%0D%0Agfx_set(0%2C0%2C0%2CA%2C0)%3B%0D%0Agfx_fillrect(px2%2C%20py2%2Bht2-1%2C%20wi2%2C%201)%3B%0D%0Agfx_fillrect(px2%2Bwi2-1%2C%20py2%2B1%2C%201%2C%20ht2-2)%3B%0D%0A%0D%0Agfx_set(1%2C1%2C1%2CA%2C0)%3B%0D%0Agfx_fillrect(px2%2B1%2C%20py2%2B1%2C%20wi2-2%2C%201)%3B%0D%0Agfx_fillrect(px2%2B1%2C%20py2%2B2%2C%201%2C%20ht2-3)%3B%0D%0Agfx_set(128%2F255%2C128%2F255%2C128%2F255%2CA%2C0)%3B%0D%0Agfx_fillrect(px2%2B1%2C%20py2%2Bht2-2%2C%20wi2-2%2C%201)%3B%0D%0Agfx_fillrect(px2%2Bwi2-2%2C%20py2%2B2%2C%201%2C%20ht2-4)%3B%0D%0A%0D%0Agfx_set(192%2F255%2C192%2F255%2C192%2F255%2CA%2C0)%3B%0D%0Agfx_fillrect(px2%2B2%2C%20py2%2B2%2C%20wi2-4%2C%202)%3B%0D%0Agfx_fillrect(px2%2B2%2C%20py2%2Bht2-4%2C%20wi2-4%2C%202)%3B%0D%0Agfx_fillrect(px2%2B2%2C%20py2%2B4%2C%202%2C%20ht2-8)%3B%0D%0Agfx_fillrect(px2%2Bwi2-4%2C%20py2%2B4%2C%202%2C%20ht2-8)%3B%0D%0A%0D%0Agfx_set(128%2F255%2C128%2F255%2C128%2F255%2CA%2C0)%3B%0D%0Agfx_fillrect(px2%2B4%2C%20py2%2B4%2C%20wi2-8%2C%201)%3B%0D%0Agfx_fillrect(px2%2B4%2C%20py2%2B5%2C%201%2C%20ht2-10)%3B%0D%0Agfx_set(1%2C1%2C1%2CA%2C0)%3B%0D%0Agfx_fillrect(px2%2B4%2C%20py2%2Bht2-5%2C%20wi2-8%2C%201)%3B%0D%0Agfx_fillrect(px2%2Bwi2-5%2C%20py2%2B5%2C%201%2C%20ht2-10)%3B%0D%0A%0D%0Agfx_set(192%2F255%2C192%2F255%2C192%2F255%2CA%2C0)%3B%0D%0Agfx_fillrect(px2%2B5%2C%20py2%2B5%2C%20wi2-10%2C%201)%3B%0D%0Agfx_fillrect(px2%2B5%2C%20py2%2B6%2C%201%2C%20ht2-11)%3B%0D%0Agfx_set(223%2F255%2C223%2F255%2C223%2F255%2CA%2C0)%3B%0D%0Agfx_fillrect(px2%2B5%2C%20py2%2Bht2-6%2C%20wi2-10%2C%201)%3B%0D%0Agfx_fillrect(px2%2Bwi2-6%2C%20py2%2B6%2C%201%2C%20ht2-12)%3B%0D%0A%0D%0A%0D%0A%2F%2F%20---------------------%20TITLE%20BAR%20-----%20%2F%2F%0D%0Atitlebar_h%20%3D%2020%3B%0D%0Atb_x%20%3D%20px2%2B4%3B%0D%0Atb_y%20%3D%20py2%2B4%3B%0D%0Atb_w%20%3D%20wi2-8%3B%0D%0Atb_h%20%3D%20titlebar_h%3B%0D%0A%0D%0A%2F%2F%20Crazy%20gradient%20logic%0D%0Asteps%20%3D%20tb_w%20%3E%200%20%3F%20tb_w%20%3A%201%3B%0D%0Ai%20%3D%200%3B%0D%0Aloop(steps%2C%0D%0A%20%20t%20%3D%20i%2F(steps-1%20%2B%20(steps%3D%3D1))%3B%0D%0A%20%20r%20%3D%20(0*(1-t)%20%2B%2016*t)%2F255%3B%0D%0A%20%20g%20%3D%20(0*(1-t)%20%2B%20132*t)%2F255%3B%0D%0A%20%20b%20%3D%20(128*(1-t)%20%2B%20208*t)%2F255%3B%0D%0A%20%20gfx_set(r%2Cg%2Cb%2CA%2C0)%3B%0D%0A%20%20gfx_fillrect(tb_x%2Bi%2C%20tb_y%2C%201%2C%20tb_h)%3B%0D%0A%20%20i%20%2B%3D%201%3B%0D%0A)%3B%0D%0A%0D%0A%2F%2F%20Title%20text%0D%0Agfx_setfont(20%2C%23font_titlebar%2C0)%3B%0D%0Agfx_set(1%2C1%2C1%2CA%2C0)%3B%0D%0Agfx_str_measure(%23title%2CtitleW%2CtitleH)%3B%0D%0Agfx_str_draw(%23title%2Ctb_x%2B4%2Ctb_y%20%2B%20(tb_h%20-%20titleH)%2F2)%3B%0D%0A%0D%0A%2F%2F%20--------------------%20MAIN%20CONTENT%20FILL%20--%20%2F%2F%0D%0Acontent_x%20%3D%20px2%20%2B%205%3B%0D%0Acontent_y%20%3D%20py2%20%2B%2024%3B%0D%0Acontent_w%20%3D%20wi2%20-%2010%3B%0D%0Acontent_h%20%3D%20ht2%20-%2028%3B%0D%0A%0D%0A%2F%2F%20Draw%20customizable%20fill%20using%20HSV-derived%20colors%0D%0Agfx_set(fill_r%2C%20fill_g%2C%20fill_b%2C%20fillA%2C%200)%3B%0D%0Agfx_fillrect(content_x%2C%20content_y%2C%20content_w%2C%20content_h)%3B%0D%0A%0D%0A%2F%2F%20Content%20Area%20Bevel%0D%0Agfx_set(128%2F255%2C128%2F255%2C128%2F255%2CA%2C0)%3B%0D%0Agfx_fillrect(content_x%2C%20content_y%2C%20content_w%2C%201)%3B%0D%0Agfx_fillrect(content_x%2C%20content_y%2B1%2C%201%2C%20content_h-2)%3B%0D%0Agfx_set(1%2C1%2C1%2CA%2C0)%3B%0D%0Agfx_fillrect(content_x%2C%20content_y%2Bcontent_h-1%2C%20content_w%2C%201)%3B%0D%0Agfx_fillrect(content_x%2Bcontent_w-1%2C%20content_y%2B1%2C%201%2C%20content_h-2)%3B%0D%0A%0D%0A%0D%0A%2F%2F%20--------------------%20CONTENT%20TEXT%20----%20%2F%2F%0D%0A%20%20contentSize%20%3E%200%20%26%26%20strlen(%23content)%20%3E%200%20%3F%20(%0D%0A%20%20gfx_setfont(contentSize%2C%23font_content%2C0)%3B%0D%0A%20%20%0D%0A%20%20%2F%2F%20Use%20customizable%2C%20HSV-derived%20text%20color%0D%0A%20%20gfx_set(text_r%2C%20text_g%2C%20text_b%2C%20textA%2C%200)%3B%20%0D%0A%20%20%0D%0A%20%20max_w%20%3D%20content_w%20-%2016%3B%0D%0A%20%20ypos%20%3D%20content_y%20-%2010%3B%0D%0A%20%20%23line%20%3D%20%22%22%3B%0D%0A%20%20%23word%20%3D%20%22%22%3B%0D%0A%20%20%23char%20%3D%20%22%20%22%3B%0D%0A%20%20i%20%3D%200%3B%0D%0A%20%20%0D%0A%20%20loop(strlen(%23content)%20%2B%201%2C%0D%0A%20%20%20%20%20%20is_end_of_string%20%3D%20i%20%3D%3D%20strlen(%23content)%3B%0D%0A%20%20%20%20%20%20ch%20%3D%20is_end_of_string%20%3F%2032%20%3A%20str_getchar(%23content%2C%20i)%3B%0D%0A%20%20%20%20%20%20%0D%0A%20%20%20%20%20%20ch%20%3D%3D%2032%20%26%26%20strlen(%23word)%20%3E%200%20%3F%20(%0D%0A%20%20%20%20%20%20%20%20%20%20gfx_str_measure(%23line%2C%20line_w%2C%20line_h)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20gfx_str_measure(%23word%2C%20word_w%2C%20word_h)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%0D%0A%20%20%20%20%20%20%20%20%20%20(strlen(%23line)%20%3E%200%20%26%26%20line_w%20%2B%20word_w%20%3E%20max_w)%20%3F%20(%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20gfx_str_draw(%23line%2C%20content_x%20%2B%208%2C%20ypos)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20ypos%20%2B%3D%20line_h%20%3E%200%20%3F%20line_h%20%3A%20contentSize%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%23line%20%3D%20%23word%3B%0D%0A%20%20%20%20%20%20%20%20%20%20)%20%3A%20(%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20strlen(%23line)%20%3E%200%20%3F%20%23line%20%2B%3D%20%22%20%22%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%23line%20%2B%3D%20%23word%3B%0D%0A%20%20%20%20%20%20%20%20%20%20)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%23word%20%3D%20%22%22%3B%0D%0A%20%20%20%20%20%20)%3B%0D%0A%20%20%20%20%20%20%0D%0A%20%20%20%20%20%20ch%20!%3D%2032%20%3F%20(%0D%0A%20%20%20%20%20%20%20%20%20%20str_setchar(%23char%2C%200%2C%20ch)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%23word%20%2B%3D%20%23char%3B%0D%0A%20%20%20%20%20%20)%3B%0D%0A%20%20%20%20%20%20i%20%2B%3D%201%3B%0D%0A%20%20)%3B%0D%0A%20%20%0D%0A%20%20strlen(%23line)%20%3E%200%20%3F%20gfx_str_draw(%23line%2C%20content_x%20%2B%208%2C%20ypos)%3B%0D%0A)%3B%0D%0A%0D%0A%0D%0A%2F%2F%20---------------------%20BUTTONS%0D%0Abtn_size%20%3D%20tb_h-5%3B%0D%0Aclose_x%20%3D%20tb_x%20%2B%20tb_w%20-%20btn_size-2%3B%0D%0Amax_x%20%20%20%3D%20close_x%20-%20btn_size-2%3B%0D%0Amin_x%20%20%20%3D%20max_x%20-%20btn_size%3B%0D%0Abtn_y%20%20%20%3D%20tb_y%2B3%3B%0D%0A%0D%0Abutton_x%20%3D%20min_x%3B%0D%0Aloop(3%2C%0D%0A%20%20gfx_set(192%2F255%2C192%2F255%2C192%2F255%2CA%2C0)%3B%0D%0A%20%20gfx_fillrect(button_x%2Cbtn_y%2Cbtn_size%2Cbtn_size)%3B%0D%0A%0D%0A%20%20gfx_set(1%2C1%2C1%2CA%2C0)%3B%0D%0A%20%20gfx_fillrect(button_x%2C%20btn_y%2C%20btn_size%2C%201)%3B%0D%0A%20%20gfx_fillrect(button_x%2C%20btn_y%2C%201%2C%20btn_size)%3B%0D%0A%20%20gfx_set(0%2C0%2C0%2CA%2C0)%3B%0D%0A%20%20gfx_fillrect(button_x%2C%20btn_y%2Bbtn_size-1%2C%20btn_size%2C%201)%3B%0D%0A%20%20gfx_fillrect(button_x%2Bbtn_size-1%2C%20btn_y%2C%201%2C%20btn_size)%3B%0D%0A%0D%0A%20%20gfx_set(223%2F255%2C223%2F255%2C223%2F255%2CA%2C0)%3B%0D%0A%20%20gfx_fillrect(button_x%2B1%2C%20btn_y%2B1%2C%20btn_size-2%2C%201)%3B%0D%0A%20%20gfx_fillrect(button_x%2B1%2C%20btn_y%2B1%2C%201%2C%20btn_size-2)%3B%0D%0A%20%20gfx_set(128%2F255%2C128%2F255%2C128%2F255%2CA%2C0)%3B%0D%0A%20%20gfx_fillrect(button_x%2B1%2C%20btn_y%2Bbtn_size-2%2C%20btn_size-2%2C%201)%3B%0D%0A%20%20gfx_fillrect(button_x%2Bbtn_size-2%2C%20btn_y%2B1%2C%201%2C%20btn_size-2)%3B%0D%0A%20%20%0D%0A%20%20button_x%20%3D%3D%20min_x%20%3F%20button_x%20%3D%20max_x%20%3A%20button_x%20%3D%20close_x%3B%0D%0A)%3B%0D%0A%0D%0A%0D%0A%2F%2F%20----------------------%20GLYPHS%0D%0Agfx_set(0%2C0%2C0%2CA%2C0)%3B%0D%0A%0D%0A%2F%2F%20MINIMIZE%0D%0Aglyph_w%20%3D%20btn_size%2F2.5%3B%0D%0Aglyph_h%20%3D%202%3B%0D%0Aglyph_x%20%3D%20min_x%20%2B%20(btn_size%20-%20glyph_w)%2F2%3B%0D%0Aglyph_y%20%3D%20btn_y%20%2B%20btn_size%20-%206%3B%0D%0Agfx_fillrect(glyph_x%2Cglyph_y%2Cglyph_w%2Cglyph_h)%3B%0D%0A%0D%0A%2F%2F%20MAXIMIZE%0D%0Aglyph_w%20%3D%20btn_size%2F1.5%3B%0D%0Aglyph_h%20%3D%20glyph_w%3B%0D%0Aglyph_x%20%3D%20max_x%20%2B%20(btn_size%20-%20glyph_w)%2F2%2B1%3B%0D%0Aglyph_y%20%3D%20btn_y%20%2B%20(btn_size%20-%20glyph_h)%2F2%20%2B1%3B%0D%0Agfx_fillrect(glyph_x%2Cglyph_y%2Cglyph_w-1%2C1)%3B%0D%0Agfx_fillrect(glyph_x%2Cglyph_y%2B1%2Cglyph_w-1%2C1)%3B%0D%0Agfx_fillrect(glyph_x%2Cglyph_y%2Bglyph_h-2%2Cglyph_w-1%2C1)%3B%0D%0Agfx_fillrect(glyph_x%2Cglyph_y%2C1%2Cglyph_h-1)%3B%0D%0Agfx_fillrect(glyph_x%2Bglyph_w-2%2Cglyph_y%2C1%2Cglyph_h-1)%3B%0D%0A%0D%0A%2F%2F%20CLOSE%0D%0Aglyph_inset%20%3D%203%3B%0D%0Aglyph_start_x%20%3D%20close_x%20%2B%20glyph_inset%3B%0D%0Aglyph_start_y%20%3D%20btn_y%20%2B%20glyph_inset%3B%0D%0Aglyph_size%20%3D%20btn_size%20-%20(glyph_inset%20*%202)%3B%0D%0A%0D%0Ai%3D0%3B%0D%0Aloop(glyph_size-1%2C%0D%0A%20%20gfx_fillrect(glyph_start_x%20%2B%20i%2C%20glyph_start_y%20%2B%20i%2C%202%2C%201)%3B%0D%0A%20%20gfx_fillrect(glyph_start_x%20%2B%20(glyph_size-2)%20-%20i%2C%20glyph_start_y%20%2B%20i%2C%202%2C%201)%3B%0D%0A%20%20i%2B%3D1%3B%0D%0A)%3B%0D%0A%0D%0A%0D%0A%2F%2F%20---------------------%20HINTS%20AND%20DEBUG%0D%0AshowHint%20%3D%3D1%20%3F%20(%0D%0A%20%20gfx_setfont(30%2C%23font_content%2C%200)%3B%0D%0A%20%20gfx_set(1%2C1%2C1%2C1%2C0)%3B%20%2F%2F%20Hint%20text%20remains%20fully%20opaque%0D%0A%20%20sprintf(%23text1%2C%22Win2K%20Frame%20%25.f%C3%97%25.f%20%40%20%25.f%2C%25.f%22%2Cwi%2Cht%2Cpx%2Cpy)%3B%0D%0A%20%20gfx_str_measure(%23text1%2CsizeX%2CsizeY)%3B%0D%0A%20%20gfx_str_draw(%23text1%2Cpx%2Cpy-sizeY)%3B%0D%0A)%3B%0D%0A%60%60%60%0D%0A%0D%0A%0D%0A%0D%0ACopy%2FPaste%20that%20into%20your%20Video%20Processor%20Preset%20and%20hit%20save.%0D%0A%0D%0A" download="Windows 2000 Style Popup Textbox.md" title='Download "Windows 2000 Style Popup Textbox.md"'>
+                                    DOWNLOAD POST ⤓
+                                </a>
+                            </p>
+                        </div>
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/Stealware/REAPER Add-Ons/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                Video Processor Catalog
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+                                    <li class="directory-index-in-list">
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/homeicon.svg');"></span>
+                                        
+                                            <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/">Video Processor Catalog</a>
+                                        
+                                    </li>
+                                
+
+
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/images/">images\</a>
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <strong>Windows 2000 (ME) Style Popup</strong>
+                                        
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/Video Processor Presets/MWV_AutoFeeder 2025.txt.html">MWV_AutoFeeder 2025.txt</a>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/MWV_AutoFeeder 2025.txt" download class="dir-download-icon" title="Download MWV_AutoFeeder 2025.txt"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/Video Processor Presets/MWV_AutoSwitcher Fullscreen.txt.html">MWV_AutoSwitcher Fullscreen.txt</a>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/MWV_AutoSwitcher Fullscreen.txt" download class="dir-download-icon" title="Download MWV_AutoSwitcher Fullscreen.txt"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/Video Processor Presets/Win2kPopup.txt.html">Win2kPopup.txt</a>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/Win2kPopup.txt" download class="dir-download-icon" title="Download Win2kPopup.txt"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+                <script>/*
+                // REPLACE URL IN BAR WITH SHARELINK
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/s/879656e3/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+                // */</script>
+        
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

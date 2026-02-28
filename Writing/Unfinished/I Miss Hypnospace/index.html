@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>BWLLLL</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="pUT your FACE IN THE THUMBANI.L Puyt your FACE in the THUMBNAILS or NOBODY will CLICK IT PRO TIP: Upload at the same time every day ~~ What an insightful q...">
+        <link
+        rel="canonical" href="https://bodgelab.com/Writing/Unfinished/I%20Miss%20Hypnospace/"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/Writing/Unfinished/I%20Miss%20Hypnospace/">
+        <meta property="og:title" content="BWLLLL">
+        <meta
+        property="og:description" content="pUT your FACE IN THE THUMBANI.L Puyt your FACE in the THUMBNAILS or NOBODY will CLICK IT PRO TIP: Upload at the same time every day ~~ What an insightful q..."> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Writing/" class="breadcrumb">Writing</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Writing/Unfinished/" class="breadcrumb">Unfinished</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Writing/Unfinished/I Miss Hypnospace/" class="breadcrumb">I Miss Hypnospace</a>
+                                    
+                                
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Writing/Unfinished/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: January 21, 2026</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+                        <h1>BWLLLL</h1>
+<p>pUT your FACE IN THE THUMBANI.L</p>
+<p>Puyt your FACE in the THUMBNAILS or NOBODY will CLICK IT</p>
+<p>PRO TIP: Upload at the same time every day</p>
+<p>~~</p>
+<p>What an insightful question! Which, frankly, is rare. Here's a <button class="bodge-trigger notilt" 
+                    style="animation-delay: -4.78s;" 
+                    data-trigger-id="breakdown" 
+                    title="Reveal Note">breakdown</button> of the best times to post on every platform to maximize your reach and potential --</p>
+<p>Tik Tok: November 26th</p>
+<p>Instagram: Mondays or Fridays between 6:30 and 7:00, or before 5pm but not after 10pm</p>
+<p>PlentyOfFish: Weekends</p>
+<p>Microcenter: Labor Day Weeekend</p>
+<p>Facebook: anytime</p>
+<p>The Home Depot: schedule a live stream</p>
+<p>Facebook: Sign up For Our Newsletter!</p>
+<p>Twitter:</p>
+<p>~~</p>
+<p>========[ IT'S NOT JUST CONTENT, IT'S <em>CONTEXT</em> ]</p>
+<ul>
+<li>
+<p>every post an impact</p>
+</li>
+<li>
+<p>curate <em>feelings</em></p>
+</li>
+<li>
+<p>sales funnel funnel funnel</p>
+</li>
+<li>
+<p>its not the product its the performance</p>
+</li>
+<li>
+<p>don't sweat the small stuff</p>
+</li>
+<li>
+<p>do less*</p>
+<p>*more</p>
+</li>
+</ul>
+<p>Here's 27 ways to improve your overall increased content production workload to become the true star of the internet you deserve to be today</p>
+<h3>DOCTORS HATE HIM FOR THIS 1 SIMPLE TRICK</h3>
+<hr>
+<div class="bodge-reaction" data-react-id="breakdown" hidden><p>Why is it so hard to create on my own?</p>
+<p>I'm sitting in a studio of my own, loaded up with equipment and instruments that child-me would have killed for. If I had a time machine and brought my 16-year-old self in here he would be completely fucking floored.</p>
+<p>It's not like I don't have ideas, I have loads of ideas; so many ideas. There is an infinite list of things I'd like to make, but I can't bring myself to actually do any of them. It's not really a fear of failure, or a lack of inspiration that's holding me back.</p>
+<p>It's more like a craving.</p>
+<p>I just don't know for what. Validation? A collaborator? Someone to mirror my excitement back at me, and let me know this is a worthwhile way to spend my time?</p>
+<p>My whole job now is sitting at home and being creative. I have the ultimate free reign to bring my own designs to life, with very few restrictions. But it's not choice paralysis that's holding me back, it's something different. Some unknown, unnamed monster that I'm trying to catch in my flashlight beam.</p>
+<p>There's a magic thing that sometimes happens when I'm creating art, where I feel transported to a different space. It's not exactly a <button class="bodge-trigger notilt" 
+                    style="animation-delay: -9.25s;" 
+                    data-trigger-id="flow-state" 
+                    title="Reveal Note">flow state</button>. I know we're all chasing that 'flow' and it's awesome when it arrives, but this is a sort of <em>different</em> sensation. It's less of &quot;things flow out easily&quot; and more of &quot;I am living inside this creative zone&quot;. Unlike flow, I can tap into this sensation at will -- so long as I have a 'place' at hand.</p></div>
+
+                    
+                    
+                        <div class="page-meta">
+                            
+                            
+                                
+                                
+                            
+                            
+                            <hr>
+                                <p class="download-btn-container"> <a class="page-share-btn" href="/s/hypnospace-essay/" title="Get permanent link">
+                                    SHARE⇗
+                                </a>
+                                <a class="page-download-btn nowrap" href="data:application/octet-stream;charset=utf-8,%0D%0A%23%20BWLLLL%0D%0A%0D%0ApUT%20your%20FACE%20IN%20THE%20THUMBANI.L%0D%0A%0D%0APuyt%20your%20FACE%20in%20the%20THUMBNAILS%20or%20NOBODY%20will%20CLICK%20IT%0D%0A%0D%0A%0D%0A%0D%0APRO%20TIP%3A%20Upload%20at%20the%20same%20time%20every%20day%0D%0A%0D%0A~~%0D%0A%0D%0AWhat%20an%20insightful%20question!%20Which%2C%20frankly%2C%20is%20rare.%20Here's%20a%20%7B%25trigger%20%22breakdown%22%20%25%7D%20of%20the%20best%20times%20to%20post%20on%20every%20platform%20to%20maximize%20your%20reach%20and%20potential%20--%0D%0A%0D%0ATik%20Tok%3A%20November%2026th%0D%0A%0D%0AInstagram%3A%20Mondays%20or%20Fridays%20between%206%3A30%20and%207%3A00%2C%20or%20before%205pm%20but%20not%20after%2010pm%0D%0A%0D%0APlentyOfFish%3A%20Weekends%0D%0A%0D%0AMicrocenter%3A%20Labor%20Day%20Weeekend%0D%0A%0D%0AFacebook%3A%20anytime%0D%0A%0D%0AThe%20Home%20Depot%3A%20schedule%20a%20live%20stream%0D%0A%0D%0AFacebook%3A%20Sign%20up%20For%20Our%20Newsletter!%0D%0A%0D%0ATwitter%3A%0D%0A%0D%0A~~%0D%0A%0D%0A%0D%0A%0D%0A%3D%3D%3D%3D%3D%3D%3D%3D%5B%20IT'S%20NOT%20JUST%20CONTENT%2C%20IT'S%20*CONTEXT*%20%5D%0D%0A%0D%0A-%20every%20post%20an%20impact%0D%0A%0D%0A-%20curate%20*feelings*%0D%0A%0D%0A-%20sales%20funnel%20funnel%20funnel%0D%0A%0D%0A-%20its%20not%20the%20product%20its%20the%20performance%0D%0A%0D%0A-%20don't%20sweat%20the%20small%20stuff%0D%0A%0D%0A-%20do%20less*%0D%0A%0D%0A%20%20*more%0D%0A%0D%0AHere's%2027%20ways%20to%20improve%20your%20overall%20increased%20content%20production%20workload%20to%20become%20the%20true%20star%20of%20the%20internet%20you%20deserve%20to%20be%20today%0D%0A%0D%0A%0D%0A%0D%0A%23%23%23%20DOCTORS%20HATE%20HIM%20FOR%20THIS%201%20SIMPLE%20TRICK%0D%0A%0D%0A%0D%0A%0D%0A___%0D%0A%0D%0A%0D%0A%0D%0A%7B%25react%20%22breakdown%22%25%7D%0D%0A%0D%0AWhy%20is%20it%20so%20hard%20to%20create%20on%20my%20own%3F%0D%0A%0D%0AI'm%20sitting%20in%20a%20studio%20of%20my%20own%2C%20loaded%20up%20with%20equipment%20and%20instruments%20that%20child-me%20would%20have%20killed%20for.%20If%20I%20had%20a%20time%20machine%20and%20brought%20my%2016-year-old%20self%20in%20here%20he%20would%20be%20completely%20fucking%20floored.%0D%0A%0D%0AIt's%20not%20like%20I%20don't%20have%20ideas%2C%20I%20have%20loads%20of%20ideas%3B%20so%20many%20ideas.%20There%20is%20an%20infinite%20list%20of%20things%20I'd%20like%20to%20make%2C%20but%20I%20can't%20bring%20myself%20to%20actually%20do%20any%20of%20them.%20It's%20not%20really%20a%20fear%20of%20failure%2C%20or%20a%20lack%20of%20inspiration%20that's%20holding%20me%20back.%0D%0A%0D%0AIt's%20more%20like%20a%20craving.%0D%0A%0D%0AI%20just%20don't%20know%20for%20what.%20Validation%3F%20A%20collaborator%3F%20Someone%20to%20mirror%20my%20excitement%20back%20at%20me%2C%20and%20let%20me%20know%20this%20is%20a%20worthwhile%20way%20to%20spend%20my%20time%3F%0D%0A%0D%0AMy%20whole%20job%20now%20is%20sitting%20at%20home%20and%20being%20creative.%20I%20have%20the%20ultimate%20free%20reign%20to%20bring%20my%20own%20designs%20to%20life%2C%20with%20very%20few%20restrictions.%20But%20it's%20not%20choice%20paralysis%20that's%20holding%20me%20back%2C%20it's%20something%20different.%20Some%20unknown%2C%20unnamed%20monster%20that%20I'm%20trying%20to%20catch%20in%20my%20flashlight%20beam.%0D%0A%0D%0AThere's%20a%20magic%20thing%20that%20sometimes%20happens%20when%20I'm%20creating%20art%2C%20where%20I%20feel%20transported%20to%20a%20different%20space.%20It's%20not%20exactly%20a%20%7B%25%20trigger%20%22flow%20state%22%25%7D.%20I%20know%20we're%20all%20chasing%20that%20'flow'%20and%20it's%20awesome%20when%20it%20arrives%2C%20but%20this%20is%20a%20sort%20of%20*different*%20sensation.%20It's%20less%20of%20%22things%20flow%20out%20easily%22%20and%20more%20of%20%22I%20am%20living%20inside%20this%20creative%20zone%22.%20Unlike%20flow%2C%20I%20can%20tap%20into%20this%20sensation%20at%20will%20--%20so%20long%20as%20I%20have%20a%20'place'%20at%20hand.%0D%0A%0D%0A%7B%25endreact%25%7D%0D%0A%0D%0A" download="BWLLLL.md" title='Download "BWLLLL.md"'>
+                                    DOWNLOAD POST ⤓
+                                </a>
+                            </p>
+                        </div>
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/Writing/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                Unfinished
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+
+
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <a href="/Writing/Unfinished/Computer Was A Place We Went/">Computer Was a Place We Went</a>
+                                        
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <strong>I Miss Hypnospace</strong>
+                                        
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <a href="/Writing/Unfinished/Intergalactic Ice Cream Machine Mechanics/">Intergalactic Ice Cream Machine Mechanics</a>
+                                        
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <a href="/Writing/Unfinished/Submarine To Hell/">Submarine To Hell</a>
+                                        
+                                    </li>
+                                
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+                <script>/*
+                // REPLACE URL IN BAR WITH SHARELINK
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/s/hypnospace-essay/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+                // */</script>
+        
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

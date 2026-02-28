@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>MW_Breakout Audio Tracks from Video.lua</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="A curious folder on the internet. Home of Mason Amadeus">
+        <link
+        rel="canonical" href="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html">
+        <meta property="og:title" content="MW_Breakout Audio Tracks from Video.lua">
+        <meta
+        property="og:description" content="A curious folder on the internet. Home of Mason Amadeus"> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/" class="breadcrumb">Stealware</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/REAPER Add-Ons/" class="breadcrumb">REAPER Add-Ons</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <span class="current">MW_Breakout Audio Tracks from Video.lua</span>
+                                    
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Stealware/REAPER Add-Ons/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: February 28, 2026</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+  <h2>MW_Breakout Audio Tracks from Video.lua</h2>
+  
+  
+  
+    <div class="media-embed-wrapper text-embed">
+                      <pre class="language-lua"><code class="language-lua">--[[--
+			  !!!!IMPORTANT!!!!
+
+--&gt; FOR THIS TO WORK YOU MUST HAVE FFMPEG.EXE INSIDE YOUR REAPER\USERPLUGINS FOLDER &lt;--
+
+YOU CAN DOWNLOAD FFMPEG.EXE HERE: https://www.ffmpeg.org/download.html
+
+--]]--
+
+-- @description Extract Multi-Channel Audio Streams (FFPMEG.EXE MUST BE IN USERPLUGINS FOLDER)
+
+function log(m) reaper.ShowConsoleMsg(tostring(m) .. &quot;\n&quot;) end
+
+-- Clear console
+reaper.ShowConsoleMsg(&quot;&quot;)
+log(&quot;=== Starting Extraction Script v2.4 ===&quot;)
+
+local platform = reaper.GetOS()
+local is_windows = string.match(platform, &quot;Win&quot;)
+
+-- MAPPING: FFmpeg Codec Name -&gt; Target Extension
+local codec_map = {
+    pcm_s16le = &quot;wav&quot;, pcm_s24le = &quot;wav&quot;, pcm_s32le = &quot;wav&quot;, pcm_f32le = &quot;wav&quot;,
+    aac = &quot;m4a&quot;, mp3 = &quot;mp3&quot;, ac3 = &quot;ac3&quot;, eac3 = &quot;ec3&quot;, flac = &quot;flac&quot;,
+    opus = &quot;ogg&quot;, vorbis = &quot;ogg&quot;
+}
+
+function EscapePath(path)
+    if is_windows then return &#039;&quot;&#039; .. path .. &#039;&quot;&#039; else return &quot;&#039;&quot; .. path:gsub(&quot;&#039;&quot;, &quot;&#039;\\&#039;&#039;&quot;) .. &quot;&#039;&quot; end
+end
+
+function GetBinaryPath(binary_name)
+    local sep = is_windows and &quot;\\&quot; or &quot;/&quot;
+    local ext = is_windows and &quot;.exe&quot; or &quot;&quot;
+    local paths = {
+        reaper.GetExePath() .. sep .. binary_name .. ext,
+        reaper.GetExePath() .. sep .. &quot;UserPlugins&quot; .. sep .. binary_name .. ext,
+        reaper.GetResourcePath() .. sep .. &quot;UserPlugins&quot; .. sep .. binary_name .. ext
+    }
+    for _, path in ipairs(paths) do
+        if reaper.file_exists(path) then return EscapePath(path) end
+    end
+    return binary_name
+end
+
+function GetFileSize(path)
+    local f = io.open(path, &quot;rb&quot;)
+    if not f then return 0 end
+    local size = f:seek(&quot;end&quot;)
+    f:close()
+    return size
+end
+
+function Main()
+    local item = reaper.GetSelectedMediaItem(0, 0)
+    if not item then reaper.ShowMessageBox(&quot;Select a video item.&quot;, &quot;Error&quot;, 0) return end
+
+    local take = reaper.GetActiveTake(item)
+    local source = reaper.GetMediaItemTake_Source(take)
+    local filepath = reaper.GetMediaSourceFileName(source, &quot;&quot;)
+    
+    if filepath == &quot;&quot; then reaper.ShowMessageBox(&quot;File is offline/invalid.&quot;, &quot;Error&quot;, 0) return end
+
+    local ffmpeg = GetBinaryPath(&quot;ffmpeg&quot;)
+    local ffprobe = GetBinaryPath(&quot;ffprobe&quot;)
+    
+    -- Generate a short timestamp ID to prevent &quot;Permission Denied&quot; on re-runs
+    local unique_id = tostring(os.time()):sub(-4)
+
+    -- 1. PROBE
+    local probe_cmd = ffprobe .. &#039; -v error -select_streams a -show_entries stream=index,codec_name -of csv=p=0 &#039; .. EscapePath(filepath)
+    local probe_out = reaper.ExecProcess(probe_cmd, 0)
+    
+    if not probe_out then reaper.ShowMessageBox(&quot;FFprobe failed to run.&quot;, &quot;Error&quot;, 0) return end
+
+    local streams = {}
+    for line in probe_out:gmatch(&quot;[^\r\n]+&quot;) do
+        local idx, codec = line:match(&quot;^(%d+),(.*)$&quot;)
+        if idx then table.insert(streams, {index = idx, codec = codec}) end
+    end
+
+    if #streams == 0 then
+        reaper.ShowMessageBox(&quot;No audio streams found.&quot;, &quot;Info&quot;, 0)
+        return
+    end
+
+    -- 2. BUILD COMMAND
+    local dir, filename, original_ext = filepath:match(&quot;^(.*)[\\/](.*)%.(.*)$&quot;)
+    if is_windows then dir = dir .. &quot;\\&quot; else dir = dir .. &quot;/&quot; end
+    
+    local cmd_args = &#039; -i &#039; .. EscapePath(filepath)
+    local output_files = {}
+    
+    log(&quot;Extracting &quot; .. #streams .. &quot; streams...&quot;)
+
+    for i, stream in ipairs(streams) do
+        local ext = codec_map[stream.codec] or original_ext
+        -- Added unique_id to filename to bypass file locks
+        local out_name = filename .. &quot;_Track_&quot; .. i .. &quot;_&quot; .. stream.codec .. &quot;_&quot; .. unique_id .. &quot;.&quot; .. ext
+        local full_path = dir .. out_name
+        
+        table.insert(output_files, full_path)
+        
+        cmd_args = cmd_args .. &#039; -map 0:a:&#039; .. (i-1) .. &#039; -c copy -vn -sn -y &#039; .. EscapePath(full_path)
+    end
+
+    -- 3. EXECUTE
+    reaper.PreventUIRefresh(1)
+    reaper.Undo_BeginBlock()
+    
+    local final_cmd = ffmpeg .. cmd_args
+    local extract_out = reaper.ExecProcess(final_cmd, 0)
+    
+    -- 4. IMPORT
+    local track = reaper.GetMediaItem_Track(item)
+    local track_idx = reaper.GetMediaTrackInfo_Value(track, &quot;IP_TRACKNUMBER&quot;)
+    local item_pos = reaper.GetMediaItemInfo_Value(item, &quot;D_POSITION&quot;)
+    local item_len = reaper.GetMediaItemInfo_Value(item, &quot;D_LENGTH&quot;) -- Store original length
+
+    local imported_count = 0
+
+    for i, file in ipairs(output_files) do
+        -- Check size to ensure we don&#039;t import 0-byte errors
+        local size = GetFileSize(file)
+        
+        if size &gt; 1000 then -- Arbitrary small bytes check to ensure valid header
+            reaper.InsertTrackAtIndex(track_idx + i - 1, true)
+            local new_track = reaper.GetTrack(0, track_idx + i - 1)
+            local codec_name = streams[i].codec:upper()
+            
+            reaper.GetSetMediaTrackInfo_String(new_track, &quot;P_NAME&quot;, filename .. &quot; &quot; .. i .. &quot; (&quot; .. codec_name .. &quot;)&quot;, true)
+            
+            local new_item = reaper.AddMediaItemToTrack(new_track)
+            local new_take = reaper.AddTakeToMediaItem(new_item)
+            
+            local src_ok = false
+            if reaper.BR_SetTakeSourceFromFile then
+                src_ok = reaper.BR_SetTakeSourceFromFile(new_take, file, false)
+            end
+            
+            if not src_ok then
+                local src = reaper.PCM_Source_CreateFromFile(file)
+                if src then
+                    reaper.SetMediaItemTake_Source(new_take, src)
+                    src_ok = true
+                end
+            end
+
+            -- Corrected: API requires 3 arguments
+            reaper.SetMediaItemPosition(new_item, item_pos, false)
+            
+            -- Corrected: Force the new item to match the original video length
+            reaper.SetMediaItemInfo_Value(new_item, &quot;D_LENGTH&quot;, item_len)
+            
+            imported_count = imported_count + 1
+        else
+            log(&quot;Error: File &quot; .. i .. &quot; was not created correctly (0 bytes or missing).\n&quot; .. file)
+        end
+    end
+
+    reaper.UpdateArrange()
+    reaper.Undo_EndBlock(&quot;Extract Audio Streams&quot;, -1)
+    reaper.PreventUIRefresh(-1)
+    
+    if imported_count == 0 then
+        reaper.ShowMessageBox(&quot;Extraction failed. Check console for details.\n\nFFmpeg output:\n&quot; .. (extract_out or &quot;&quot;), &quot;Error&quot;, 0)
+    else
+        log(&quot;Successfully extracted &quot; .. imported_count .. &quot; tracks.&quot;)
+        reaper.Main_OnCommand(40047, 0) -- Build any missing peaks
+    end
+end
+
+Main()</code></pre>
+                      <p class="download-btn-container">
+                        <a href="/Stealware/REAPER%20Add-Ons/MW_Breakout%20Audio%20Tracks%20from%20Video.lua" class="page-download-btn" download>DOWNLOAD "MW_Breakout Audio Tracks from Video.lua" ⤓</a>
+                      </p>
+                    </div>
+  
+  
+
+
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/Stealware/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                Actions Catalog
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+                                    <li class="directory-index-in-list">
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/homeicon.svg');"></span>
+                                        
+                                            <a href="/Stealware/REAPER Add-Ons/">Actions Catalog</a>
+                                        
+                                    </li>
+                                
+
+
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Stealware/REAPER Add-Ons/images/">images\</a>
+                                    </li>
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/">Video Processor Presets\</a>
+                                    </li>
+                                
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Breakout Audio Tracks from Video.lua.html">MW_Breakout Audio Tracks from Video.lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Breakout Audio Tracks from Video.lua" download class="dir-download-icon" title="Download MW_Breakout Audio Tracks from Video.lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Coffee Cup (Automatic VX Prep).lua.html">MW_Coffee Cup (Automatic VX Prep).lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Coffee Cup (Automatic VX Prep).lua" download class="dir-download-icon" title="Download MW_Coffee Cup (Automatic VX Prep).lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Duck Breath.lua.html">MW_Duck Breath.lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Duck Breath.lua" download class="dir-download-icon" title="Download MW_Duck Breath.lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Easy TTS (Amazon Polly CLI REQUIRED).lua.html">MW_Easy TTS (Amazon Polly CLI REQUIRED).lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Easy TTS (Amazon Polly CLI REQUIRED).lua" download class="dir-download-icon" title="Download MW_Easy TTS (Amazon Polly CLI REQUIRED).lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Halve Gaps Between Items (Zeno&#39;s Scruncher).lua.html">MW_Halve Gaps Between Items (Zeno&#39;s Scruncher).lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Halve Gaps Between Items (Zeno&#39;s Scruncher).lua" download class="dir-download-icon" title="Download MW_Halve Gaps Between Items (Zeno&#39;s Scruncher).lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Hide Non-Selected Tracks (togglable).lua.html">MW_Hide Non-Selected Tracks (togglable).lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Hide Non-Selected Tracks (togglable).lua" download class="dir-download-icon" title="Download MW_Hide Non-Selected Tracks (togglable).lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Place Keeper.lua.html">MW_Place Keeper.lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Place Keeper.lua" download class="dir-download-icon" title="Download MW_Place Keeper.lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Toggle Faster Playback.lua.html">MW_Toggle Faster Playback.lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Toggle Faster Playback.lua" download class="dir-download-icon" title="Download MW_Toggle Faster Playback.lua"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

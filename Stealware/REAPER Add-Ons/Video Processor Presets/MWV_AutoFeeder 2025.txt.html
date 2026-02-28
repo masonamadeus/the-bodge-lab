@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>MWV_AutoFeeder 2025.txt</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="A curious folder on the internet. Home of Mason Amadeus">
+        <link
+        rel="canonical" href="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html">
+        <meta property="og:title" content="MWV_AutoFeeder 2025.txt">
+        <meta
+        property="og:description" content="A curious folder on the internet. Home of Mason Amadeus"> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/" class="breadcrumb">Stealware</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/REAPER Add-Ons/" class="breadcrumb">REAPER Add-Ons</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/" class="breadcrumb">Video Processor Presets</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <span class="current">MWV_AutoFeeder 2025.txt</span>
+                                    
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: February 28, 2026</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+  <h2>MWV_AutoFeeder 2025.txt</h2>
+  
+  
+  
+    <div class="media-embed-wrapper text-embed">
+                      <pre class="language-txt"><code class="language-txt">//MW: Auto-Feeder 2025
+//USAGE: Place this on video tracks that you want to feed into the auto-switcher.
+//       It has some simple zoom/pan controls for QoL. I&#039;ll flesh these out more eventually.
+//@param1:zoom &#039;Zoom&#039; 0 0 10 5 0.1
+//@param2:xoffs &#039;Horizontal&#039; 0 -1 1 0
+//@param3:yoffs &#039;Vertical&#039; 0 -1 1 0
+
+//@gmem=activeSpeaker
+total_tracks = gmem[10];
+tr_count = input_track_count();
+tr = total_tracks - tr_count + 1;
+
+z = 10^(zoom/10);
+    
+    
+//auto-crop
+input_info(lastFrame,preW,preH);
+aspectP = project_w/project_h;
+aspectS = preW/preH;
+    
+aspectP &lt; aspectS ?
+    ( //crop from width
+      vW = (preH*aspectP);
+      vH = preH;
+      vX = (preW-vW)/2;
+      vY = 0;
+    )
+    :
+    ( //crop from height
+      vW = preW;
+      vH = (preW*(project_h/project_w));
+      vX = 0;
+      vY = (preH - vH)/2;
+    );
+    
+    dW = (vW*z)&amp;-2;
+    dH = (vH*z)&amp;-2;
+    dX = vX+(vW*xoffs);
+    dY = vY+(vH*yoffs);
+  
+
+input_next_item(-1) &gt;= (input = input_track(0)) ? (
+    
+    gmem[1] == tr ? (gmem[1] = 0;);
+    gfx_blit(lastFrame,0,0,0,project_w,project_h,dX,dY,dW,dH);
+  )
+  :
+  (
+    gmem[1] == 0 ? ( gmem[1] = tr );
+    gfx_img_free(lastFrame);
+    gfx_blit(0,0,0,0,project_w,project_h,dX,dY,dW,dH);
+    lastFrame = gfx_img_hold(0);
+  );</code></pre>
+                      <p class="download-btn-container">
+                        <a href="/Stealware/REAPER%20Add-Ons/Video%20Processor%20Presets/MWV_AutoFeeder%202025.txt" class="page-download-btn" download>DOWNLOAD "MWV_AutoFeeder 2025.txt" ⤓</a>
+                      </p>
+                    </div>
+  
+  
+
+
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/Stealware/REAPER Add-Ons/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                Video Processor Catalog
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+                                    <li class="directory-index-in-list">
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/homeicon.svg');"></span>
+                                        
+                                            <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/">Video Processor Catalog</a>
+                                        
+                                    </li>
+                                
+
+
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/images/">images\</a>
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/Windows 2000 (ME) Style Popup/">Windows 2000 (ME) Style Popup</a>
+                                        
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/Video Processor Presets/MWV_AutoFeeder 2025.txt.html">MWV_AutoFeeder 2025.txt</a>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/MWV_AutoFeeder 2025.txt" download class="dir-download-icon" title="Download MWV_AutoFeeder 2025.txt"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/Video Processor Presets/MWV_AutoSwitcher Fullscreen.txt.html">MWV_AutoSwitcher Fullscreen.txt</a>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/MWV_AutoSwitcher Fullscreen.txt" download class="dir-download-icon" title="Download MWV_AutoSwitcher Fullscreen.txt"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/Video Processor Presets/Win2kPopup.txt.html">Win2kPopup.txt</a>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/Win2kPopup.txt" download class="dir-download-icon" title="Download Win2kPopup.txt"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

@@ -1,0 +1,19 @@
+{
+
+  "name": "PodCube PocketPal",
+
+  "short_name": "PodCube",
+
+  "start_url": "./index.html",
+
+  "display": "standalone",
+
+  "background_color": "#f5f3eb",
+
+  "theme_color": "#f5f3eb",
+
+  "icons": [
+    {}
+  ]
+
+}

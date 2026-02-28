@@ -1,0 +1,77 @@
+html,
+body {
+	margin: 0;
+	padding: 0;
+	min-height: 100vh;
+	box-sizing: border-box;
+	position: relative;
+
+	overflow: hidden;
+	-webkit-touch-callout: none;
+	/* iOS Safari */
+	-webkit-user-select: none;
+	/* Safari */
+	-khtml-user-select: none;
+	/* Konqueror HTML */
+	-moz-user-select: none;
+	/* Old Firefox */
+	-ms-user-select: none;
+	/* IE/Edge */
+	user-select: none;
+	/* Standard */
+
+	touch-action: manipulation;
+	/* Prevents long-press zoom & gestures */
+
+}
+
+body::before {
+	content: '';
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	box-shadow:
+		inset 0 0 0 5px rgba(0, 0, 0, 0),
+		inset 0 0 15px 0px rgba(0, 0, 0, 1);
+	pointer-events: none;
+	z-index: 9999;
+
+}
+
+body {
+	background-color: rgba(245, 243, 235, 1.00);
+}
+
+#animation_container {
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+	position: relative;
+	box-sizing: border-box;
+}
+
+/* Padding for landscape mode (left/right) */
+#animation_container.landscape-padding {
+	padding-left: 20px;
+	padding-right: 20px;
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+/* Padding for portrait mode (top/bottom) */
+#animation_container.portrait-padding {
+	padding-top: 20px;
+	padding-bottom: 20px;
+	padding-left: 0;
+	padding-right: 0;
+}
+
+#canvas {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	display: block;
+}

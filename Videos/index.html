@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>Video Index</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="I&#39;ve got videos scattered all across the internet. I have more google accounts than sense, and have been phenomenally incautious about where I put things....">
+        <link
+        rel="canonical" href="https://bodgelab.com/Videos/"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/Videos/">
+        <meta property="og:title" content="Video Index">
+        <meta
+        property="og:description" content="I&#39;ve got videos scattered all across the internet. I have more google accounts than sense, and have been phenomenally incautious about where I put things...."> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Videos/" class="breadcrumb">Videos</a>
+                                    
+                                
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: January 21, 2026</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+                        <h1>My Videos</h1>
+<p>I've got videos scattered all across the internet. I have more google accounts than sense, and have been phenomenally incautious about where I put things.</p>
+<p><strong>Dig through the files and folders at the bottom of this page! I think you'll find some fun things to watch. Some of the videos are unlisted, and the Bodge Lab is the only place to find them (easily).</strong></p>
+<p>If you want to know what I'm up to <em>currently</em>, then check out these:</p>
+<h2>Main Channels:</h2>
+<div class="layout-row"><div class="layout-col layout-col-one-eighth"><p><span class="media-embed-wrapper" style="display: block;">
+    <span class="image-container" style="display: block;">
+      <img src="/Videos/Wicked%20Interesting/.files/Circle%20Logo%20Pixelated.png" alt="WickedInteresting logo">
+    </span>
+    <span class="download-btn-container" style="display: flex;">
+      <a href="/Videos/Wicked%20Interesting/.files/Circle%20Logo%20Pixelated.png" class="page-download-btn" download>DOWNLOAD "Circle Logo Pixelated.png" ⤓</a>
+    </span>
+  </span></p>
+</div><div class="layout-col layout-col-seven-eighths"><h3><a href="Wicked%20Interesting">Wicked Interesting</a> - my chaotic science channel. This has been a lifelong goal of mine to make, and I think you'll love it.</h3>
+</div></div><div class="layout-row"><div class="layout-col layout-col-one-eighth"><p><span class="media-embed-wrapper" style="display: block;">
+    <span class="image-container" style="display: block;">
+      <img src="/Videos/files/masonprof.webp" alt="masonprof">
+    </span>
+    <span class="download-btn-container" style="display: flex;">
+      <a href="/Videos/files/masonprof.webp" class="page-download-btn" download>DOWNLOAD "masonprof.webp" ⤓</a>
+    </span>
+  </span></p>
+</div><div class="layout-col layout-col-seven-eighths"><h3><a href="https://youtube.com/@masonamadeus" target="_blank" rel="noopener noreferrer">Mason Amadeus</a> - my personal YouTube channel, which is a messy 'second channel' for various things that either don't fit anywhere else, or just aren't up to the same standard as what I'd consider my &quot;work&quot;</h3>
+</div></div><div class="layout-row"><div class="layout-col layout-col-one-eighth"><p><span class="media-embed-wrapper" style="display: block;">
+    <span class="image-container" style="display: block;">
+      <img src="/Videos/files/TheFAIKFilesLOGO_TINY%20FLOATER.webp" alt="TheFAIKFilesLOGO_TINY FLOATER">
+    </span>
+    <span class="download-btn-container" style="display: flex;">
+      <a href="/Videos/files/TheFAIKFilesLOGO_TINY%20FLOATER.webp" class="page-download-btn" download>DOWNLOAD "TheFAIKFilesLOGO_TINY FLOATER.webp" ⤓</a>
+    </span>
+  </span></p>
+</div><div class="layout-col layout-col-five-eighths"><h3><a href="https://youtube.com/@theFAIKfiles" target="_blank" rel="noopener noreferrer">The FAIK Files</a> - The video podcast about AI for sane people. Perry Carpenter &amp; I attempt to look objectively at AI news/developments.</h3>
+</div></div>
+<h1>Otherwise, feel free to poke around all the stuff below! 🔽🔽</h1>
+
+                    
+                    
+                        <div class="page-meta">
+                            
+                            
+                                
+                                
+                            
+                            
+                            <hr>
+                                <p class="download-btn-container"> <a class="page-share-btn" href="/s/videos/" title="Get permanent link">
+                                    SHARE⇗
+                                </a>
+                                <a class="page-download-btn nowrap" href="data:application/octet-stream;charset=utf-8,%0D%0A%23%20My%20Videos%0D%0A%0D%0AI've%20got%20videos%20scattered%20all%20across%20the%20internet.%20I%20have%20more%20google%20accounts%20than%20sense%2C%20and%20have%20been%20phenomenally%20incautious%20about%20where%20I%20put%20things.%0D%0A%0D%0A**Dig%20through%20the%20files%20and%20folders%20at%20the%20bottom%20of%20this%20page!%20I%20think%20you'll%20find%20some%20fun%20things%20to%20watch.%20Some%20of%20the%20videos%20are%20unlisted%2C%20and%20the%20Bodge%20Lab%20is%20the%20only%20place%20to%20find%20them%20(easily).**%0D%0A%0D%0AIf%20you%20want%20to%20know%20what%20I'm%20up%20to%20*currently*%2C%20then%20check%20out%20these%3A%0D%0A%0D%0A%23%23%20Main%20Channels%3A%0D%0A%0D%0A%7B%25grid%20%22one-eighth%2C%20seven-eighths%22%25%7D%0D%0A%0D%0A!%5BWickedInteresting%20logo%5D(Wicked%2520Interesting%2F.files%2FCircle%2520Logo%2520Pixelated.png)%0D%0A%0D%0A%60%60%0D%0A%0D%0A%23%23%23%20%5BWicked%20Interesting%5D(%3CWicked%20Interesting%3E)%20-%20my%20chaotic%20science%20channel.%20This%20has%20been%20a%20lifelong%20goal%20of%20mine%20to%20make%2C%20and%20I%20think%20you'll%20love%20it.%0D%0A%0D%0A%7B%25endgrid%25%7D%7B%25grid%20%22one-eighth%2Cseven-eighths%22%25%7D%0D%0A%0D%0A!%5Bmasonprof%5D(files%2Fmasonprof.webp)%0D%0A%0D%0A%60%60%0D%0A%0D%0A%23%23%23%20%5BMason%20Amadeus%5D(https%3A%2F%2Fyoutube.com%2F%40masonamadeus)%20-%20my%20personal%20YouTube%20channel%2C%20which%20is%20a%20messy%20'second%20channel'%20for%20various%20things%20that%20either%20don't%20fit%20anywhere%20else%2C%20or%20just%20aren't%20up%20to%20the%20same%20standard%20as%20what%20I'd%20consider%20my%20%22work%22%0D%0A%0D%0A%7B%25endgrid%25%7D%7B%25grid%20%22one-eighth%2Cfive-eighths%22%25%7D%0D%0A%0D%0A!%5BTheFAIKFilesLOGO_TINY%20FLOATER%5D(files%2FTheFAIKFilesLOGO_TINY%2520FLOATER.webp)%0D%0A%0D%0A%60%60%0D%0A%0D%0A%23%23%23%20%5BThe%20FAIK%20Files%5D(https%3A%2F%2Fyoutube.com%2F%40theFAIKfiles)%20-%20The%20video%20podcast%20about%20AI%20for%20sane%20people.%20Perry%20Carpenter%20%26%20I%20attempt%20to%20look%20objectively%20at%20AI%20news%2Fdevelopments.%0D%0A%0D%0A%7B%25endgrid%25%7D%0D%0A%0D%0A%23%20Otherwise%2C%20feel%20free%20to%20poke%20around%20all%20the%20stuff%20below!%20%F0%9F%94%BD%F0%9F%94%BD%0D%0A" download="Video Index.md" title='Download "Video Index.md"'>
+                                    DOWNLOAD POST ⤓
+                                </a>
+                            </p>
+                        </div>
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                Video Index
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+                                    <li class="directory-index-in-list">
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/homeicon.svg');"></span>
+                                        
+                                            <strong>Video Index</strong>
+                                        
+                                    </li>
+                                
+
+
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Videos/Animations/">Animations\</a>
+                                    </li>
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Videos/files/">files\</a>
+                                    </li>
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Videos/One-Offs/">One-Offs\</a>
+                                    </li>
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Videos/Wicked Interesting/">Wicked Interesting\</a>
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <a href="/Videos/Everything Reel/">Everything Reel</a>
+                                        
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <a href="/Videos/Livestreams/">Livestreams</a>
+                                        
+                                    </li>
+                                
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+                <script>/*
+                // REPLACE URL IN BAR WITH SHARELINK
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/s/videos/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+                // */</script>
+        
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

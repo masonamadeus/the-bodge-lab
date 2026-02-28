@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>ADMISSION: I Love Making Advertisements</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="There&#39;s a nasty little goblin deep inside of me that loves advertising. Not being advertised *to*, but advertising as a **medium**. I&#39;m not gonna write a w...">
+        <link
+        rel="canonical" href="https://bodgelab.com/About%20Me/Award-Winning%20Commercials/"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="music.song">
+        <meta property="og:url" content="https://bodgelab.com/About%20Me/Award-Winning%20Commercials/">
+        <meta property="og:title" content="ADMISSION: I Love Making Advertisements">
+        <meta
+        property="og:description" content="There&#39;s a nasty little goblin deep inside of me that loves advertising. Not being advertised *to*, but advertising as a **medium**. I&#39;m not gonna write a w..."> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+                
+                <meta property="og:audio" content="https://bodgelab.com/KarlRoberts_GraniteMike2017.mp3">
+                <meta property="og:audio:secure_url" content="https://bodgelab.com/KarlRoberts_GraniteMike2017.mp3">
+                <meta property="og:audio:type" content="audio/mpeg">
+                <meta name="twitter:card" content="summary_large_image">
+            
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/About Me/" class="breadcrumb">About Me</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/About Me/Award-Winning Commercials/" class="breadcrumb">Award-Winning Commercials</a>
+                                    
+                                
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/About Me/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: December 11, 2025</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+                        <h1>ADMISSION: I Love Making Advertisements</h1>
+<p>There's a nasty little goblin deep inside of me that loves advertising.</p>
+<p>Not being advertised <em>to</em>, but advertising as a <strong>medium</strong>.</p>
+<p>I'm not gonna write a whole screed (here, at least) about my thoughts on the marketing industry, and how good advertising doesn't need to be intrusive or terrible, and how it can actually be 'pretty cool' even.</p>
+<h3>But this is a page featuring a handful of award-winning advertisements I've created!</h3>
+<hr>
+<h1>New Hampshire Association of Broadcasters' &quot;Best Individual Radio Commercial&quot;</h1>
+<p>Every year, the New Hampshire Association of Broadcasters holds a 'meeting' that's a bit more like a big party full of all the broadcast industry folks in New Hampshire.</p>
+<p>A lot of stuff goes on at those meetings, but the part everyone cares about is the awards ceremony. There are various categories across radio and television. If memory serves, I took home FIRST PLACE in 3 of the 5 years I submitted.</p>
+<p>Also a general shoutout to my home-station, if anyone from MBG is reading this - y'all rock. Miss you &lt;3</p>
+<p>Here are commercials I created that won! I'll put them in order according to my personal favoritism.</p>
+<div class="layout-row"><div class="layout-col layout-col-half"><p><span class="media-embed-wrapper" style="display: block;">
+    <span class="image-container" style="display: block;">
+      <img src="/About%20Me/Award-Winning%20Commercials/NHABkarlroberts.jpg" alt="img">
+    </span>
+    <span class="download-btn-container" style="display: flex;">
+      <a href="/About%20Me/Award-Winning%20Commercials/NHABkarlroberts.jpg" class="page-download-btn" download>DOWNLOAD "NHABkarlroberts.jpg" ⤓</a>
+    </span>
+  </span></p>
+</div><div class="layout-col layout-col-half"><h2>Karl Roberts Cuts for Men - Back to School 2017</h2>
+<div class="bodge-rss-player single-track" data-src="/About Me/Award-Winning Commercials/KarlRoberts_GraniteMike2017.mp3" data-title="KarlRoberts_GraniteMike2017.mp3">
+        <div class="rss-loading">
+             <img src="/.config/loading.svg" alt="Loading..." style="width: 50px; height: 50px;">
+             <p>Loading Audio...</p>
+        </div>
+    </div><script src="/js/bodge-player.js" defer></script>
+<p>I wrote and produced this entire spot for Karl Roberts. This is my favorite one, I thought the concept was pretty funny and relatable.</p>
+<p>Also, everyone loves a good <strong>button</strong>. This is something I've tried to incorporate across all of my productions, actually. If you stick a little callback or tag at the end of something, it makes it subtly more satisfying, complete, and memorable.</p>
+<p>At least, I think so. 🤷‍♂️</p>
+</div></div>
+<div class="layout-row"><div class="layout-col layout-col-half"><h2>Salsa Sisters - General 2020</h2>
+<div class="bodge-rss-player single-track" data-src="/About Me/Award-Winning Commercials/SalsaSisters_GraniteMike2020.mp3" data-title="SalsaSisters_GraniteMike2020.mp3">
+        <div class="rss-loading">
+             <img src="/.config/loading.svg" alt="Loading..." style="width: 50px; height: 50px;">
+             <p>Loading Audio...</p>
+        </div>
+    </div><script src="/js/bodge-player.js" defer></script>
+<p>I wrote and produced this spot for the Salsa Sisters. If my fuzzy memory is correct, they won a contest for a free advertising package and my colleague asked me to come up with something special.</p>
+<p>I ran around the office with a portable recorder, and got a variety of on-air hosts and salespeople to attempt a tongue twister.</p>
+<p>It was a blast, they loved it, and it won &quot;Best Individual Commercial&quot; in the NHAB awards (which were digital in 2020. IDK if we ever got the shiny plaque.)</p>
+</div><div class="layout-col layout-col-half"><p><span class="media-embed-wrapper" style="display: block;">
+    <span class="image-container" style="display: block;">
+      <img src="/About%20Me/Award-Winning%20Commercials/IMG_8899.webp" alt="IMG_8899">
+    </span>
+    <span class="download-btn-container" style="display: flex;">
+      <a href="/About%20Me/Award-Winning%20Commercials/IMG_8899.webp" class="page-download-btn" download>DOWNLOAD "IMG_8899.webp" ⤓</a>
+    </span>
+  </span></p>
+</div></div>
+<div class="layout-row"><div class="layout-col layout-col-half"><p><span class="media-embed-wrapper" style="display: block;">
+    <span class="image-container" style="display: block;">
+      <img src="/About%20Me/Award-Winning%20Commercials/NHABfrans.jpg" alt="img">
+    </span>
+    <span class="download-btn-container" style="display: flex;">
+      <a href="/About%20Me/Award-Winning%20Commercials/NHABfrans.jpg" class="page-download-btn" download>DOWNLOAD "NHABfrans.jpg" ⤓</a>
+    </span>
+  </span></p>
+</div><div class="layout-col layout-col-half"><h2>Fran's Auto Body - Accident Rap 2016</h2>
+<div class="bodge-rss-player single-track" data-src="/About Me/Award-Winning Commercials/FransRap_GraniteMike2016.mp3" data-title="FransRap_GraniteMike2016.mp3">
+        <div class="rss-loading">
+             <img src="/.config/loading.svg" alt="Loading..." style="width: 50px; height: 50px;">
+             <p>Loading Audio...</p>
+        </div>
+    </div><script src="/js/bodge-player.js" defer></script>
+<p>This was my first one! Not my first commercial ever, but the first time we submitted one of my works to the NHAB - and it won!</p>
+<p>This one was written by Cherie Metivier (the sales rep for Frans at the time), and then performed and produced by me and my best friend Tucker.</p>
+<p>We laid down a fairly rudimentary beat, and just had some fun messing around with the vibe. This is the result.</p>
+<p>I apologize for making a radio commercial that includes tire squealing and a crash sound. I didn't know better at the time.</p>
+</div></div>
+<hr>
+<h1>National Cybersecurity Alliance</h1>
+<p>In 2025, I helped the National Cybersecurity Alliance with their &quot;AI Fools&quot; campaign designed to raise awareness about AI-powered voice scams.</p>
+<p>I produced the radio ads, and also sound designed and voiced the video campaign. The NCA's phenomenal creative director Arturo Morales handled the rest! There were billboards and online interactables involved, it was cool.</p>
+<div class="layout-row"><div class="layout-col layout-col-half"><div class="bodge-rss-player single-track" data-src="/About Me/Award-Winning Commercials/NCA_SAFEWORD PSA_BUSINESS TRANSFER_30_CHILL.mp3" data-title="NCA_SAFEWORD PSA_BUSINESS TRANSFER_30_CHILL.mp3">
+        <div class="rss-loading">
+             <img src="/.config/loading.svg" alt="Loading..." style="width: 50px; height: 50px;">
+             <p>Loading Audio...</p>
+        </div>
+    </div><script src="/js/bodge-player.js" defer></script>
+</div><div class="layout-col layout-col-half"><div class="bodge-rss-player single-track" data-src="/About Me/Award-Winning Commercials/NCA_SAFEWORD PSA_INTIMATE PHOTOS_30_CHILL.mp3" data-title="NCA_SAFEWORD PSA_INTIMATE PHOTOS_30_CHILL.mp3">
+        <div class="rss-loading">
+             <img src="/.config/loading.svg" alt="Loading..." style="width: 50px; height: 50px;">
+             <p>Loading Audio...</p>
+        </div>
+    </div><script src="/js/bodge-player.js" defer></script>
+</div></div>
+<h3>The campaign ended up winning a <a href="https://www.staysafeonline.org/press/national-cybersecurity-alliance-receives-2025-cso-award-from-foundry-s-cso" target="_blank" rel="noopener noreferrer">CSO Award</a>!  You can <a href="https://www.staysafeonline.org/campaigns/safeword" target="_blank" rel="noopener noreferrer">check it out here</a>.</h3>
+<p><span class="media-embed-wrapper" style="display: block;">
+    <span class="image-container" style="display: block;">
+      <img src="https://framerusercontent.com/images/gESKU0Y7HxcF5wvAefEXULXum6k.jpg?scale-down-to=1024&width=1920&height=1170" alt="img">
+    </span>
+    <span class="download-btn-container" style="display: flex;">
+      <a href="https://framerusercontent.com/images/gESKU0Y7HxcF5wvAefEXULXum6k.jpg?scale-down-to=1024&width=1920&height=1170" class="page-download-btn" download>DOWNLOAD "gESKU0Y7HxcF5wvAefEXULXum6k.jpg?scale-down-to=1024&width=1920&height=1170" ⤓</a>
+    </span>
+  </span></p>
+
+                    
+                    
+                        <div class="page-meta">
+                            
+                            
+                                
+                                
+                            
+                            
+                            <hr>
+                                <p class="download-btn-container"> <a class="page-share-btn" href="/s/granite-mikes/" title="Get permanent link">
+                                    SHARE⇗
+                                </a>
+                                <a class="page-download-btn nowrap" href="data:application/octet-stream;charset=utf-8,%0D%0A%23%20ADMISSION%3A%20I%20Love%20Making%20Advertisements%0D%0A%0D%0AThere's%20a%20nasty%20little%20goblin%20deep%20inside%20of%20me%20that%20loves%20advertising.%0D%0A%0D%0ANot%20being%20advertised%20*to*%2C%20but%20advertising%20as%20a%20**medium**.%0D%0A%0D%0AI'm%20not%20gonna%20write%20a%20whole%20screed%20(here%2C%20at%20least)%20about%20my%20thoughts%20on%20the%20marketing%20industry%2C%20and%20how%20good%20advertising%20doesn't%20need%20to%20be%20intrusive%20or%20terrible%2C%20and%20how%20it%20can%20actually%20be%20'pretty%20cool'%20even.%0D%0A%0D%0A%23%23%23%20But%20this%20is%20a%20page%20featuring%20a%20handful%20of%20award-winning%20advertisements%20I've%20created!%0D%0A%0D%0A___%0D%0A%0D%0A%23%20New%20Hampshire%20Association%20of%20Broadcasters'%20%22Best%20Individual%20Radio%20Commercial%22%0D%0A%0D%0AEvery%20year%2C%20the%20New%20Hampshire%20Association%20of%20Broadcasters%20holds%20a%20'meeting'%20that's%20a%20bit%20more%20like%20a%20big%20party%20full%20of%20all%20the%20broadcast%20industry%20folks%20in%20New%20Hampshire.%0D%0A%0D%0AA%20lot%20of%20stuff%20goes%20on%20at%20those%20meetings%2C%20but%20the%20part%20everyone%20cares%20about%20is%20the%20awards%20ceremony.%20There%20are%20various%20categories%20across%20radio%20and%20television.%20If%20memory%20serves%2C%20I%20took%20home%20FIRST%20PLACE%20in%203%20of%20the%205%20years%20I%20submitted.%0D%0A%0D%0AAlso%20a%20general%20shoutout%20to%20my%20home-station%2C%20if%20anyone%20from%20MBG%20is%20reading%20this%20-%20y'all%20rock.%20Miss%20you%20%3C3%0D%0A%0D%0AHere%20are%20commercials%20I%20created%20that%20won!%20I'll%20put%20them%20in%20order%20according%20to%20my%20personal%20favoritism.%0D%0A%0D%0A%7B%25grid%25%7D%0D%0A%0D%0A!%5Bimg%5D(NHABkarlroberts.jpg)%0D%0A%0D%0A%60%60%0D%0A%0D%0A%23%23%20Karl%20Roberts%20Cuts%20for%20Men%20-%20Back%20to%20School%202017%0D%0A%0D%0A%7B%25%20audio%20%22KarlRoberts_GraniteMike2017.mp3%22%20%25%7D%0D%0A%0D%0AI%20wrote%20and%20produced%20this%20entire%20spot%20for%20Karl%20Roberts.%20This%20is%20my%20favorite%20one%2C%20I%20thought%20the%20concept%20was%20pretty%20funny%20and%20relatable.%0D%0A%0D%0AAlso%2C%20everyone%20loves%20a%20good%20**button**.%20This%20is%20something%20I've%20tried%20to%20incorporate%20across%20all%20of%20my%20productions%2C%20actually.%20If%20you%20stick%20a%20little%20callback%20or%20tag%20at%20the%20end%20of%20something%2C%20it%20makes%20it%20subtly%20more%20satisfying%2C%20complete%2C%20and%20memorable.%0D%0A%0D%0AAt%20least%2C%20I%20think%20so.%20%F0%9F%A4%B7%E2%80%8D%E2%99%82%EF%B8%8F%0D%0A%0D%0A%7B%25endgrid%25%7D%0D%0A%0D%0A%7B%25grid%20%25%7D%0D%0A%0D%0A%23%23%20Salsa%20Sisters%20-%20General%202020%0D%0A%0D%0A%7B%25audio%20%22SalsaSisters_GraniteMike2020.mp3%22%25%7D%0D%0A%0D%0AI%20wrote%20and%20produced%20this%20spot%20for%20the%20Salsa%20Sisters.%20If%20my%20fuzzy%20memory%20is%20correct%2C%20they%20won%20a%20contest%20for%20a%20free%20advertising%20package%20and%20my%20colleague%20asked%20me%20to%20come%20up%20with%20something%20special.%0D%0A%0D%0AI%20ran%20around%20the%20office%20with%20a%20portable%20recorder%2C%20and%20got%20a%20variety%20of%20on-air%20hosts%20and%20salespeople%20to%20attempt%20a%20tongue%20twister.%0D%0A%0D%0AIt%20was%20a%20blast%2C%20they%20loved%20it%2C%20and%20it%20won%20%22Best%20Individual%20Commercial%22%20in%20the%20NHAB%20awards%20(which%20were%20digital%20in%202020.%20IDK%20if%20we%20ever%20got%20the%20shiny%20plaque.)%0D%0A%0D%0A%60%60%0D%0A%0D%0A!%5BIMG_8899%5D(IMG_8899.webp)%0D%0A%0D%0A%7B%25endgrid%25%7D%0D%0A%0D%0A%7B%25grid%25%7D%0D%0A%0D%0A!%5Bimg%5D(NHABfrans.jpg)%0D%0A%0D%0A%60%60%0D%0A%0D%0A%23%23%20Fran's%20Auto%20Body%20-%20Accident%20Rap%202016%0D%0A%0D%0A%7B%25audio%20%22FransRap_GraniteMike2016.mp3%22%25%7D%0D%0A%0D%0AThis%20was%20my%20first%20one!%20Not%20my%20first%20commercial%20ever%2C%20but%20the%20first%20time%20we%20submitted%20one%20of%20my%20works%20to%20the%20NHAB%20-%20and%20it%20won!%0D%0A%0D%0AThis%20one%20was%20written%20by%20Cherie%20Metivier%20(the%20sales%20rep%20for%20Frans%20at%20the%20time)%2C%20and%20then%20performed%20and%20produced%20by%20me%20and%20my%20best%20friend%20Tucker.%0D%0A%0D%0AWe%20laid%20down%20a%20fairly%20rudimentary%20beat%2C%20and%20just%20had%20some%20fun%20messing%20around%20with%20the%20vibe.%20This%20is%20the%20result.%0D%0A%0D%0AI%20apologize%20for%20making%20a%20radio%20commercial%20that%20includes%20tire%20squealing%20and%20a%20crash%20sound.%20I%20didn't%20know%20better%20at%20the%20time.%0D%0A%0D%0A%7B%25endgrid%25%7D%0D%0A%0D%0A___%0D%0A%0D%0A%23%20National%20Cybersecurity%20Alliance%0D%0A%0D%0AIn%202025%2C%20I%20helped%20the%20National%20Cybersecurity%20Alliance%20with%20their%20%22AI%20Fools%22%20campaign%20designed%20to%20raise%20awareness%20about%20AI-powered%20voice%20scams.%0D%0A%0D%0AI%20produced%20the%20radio%20ads%2C%20and%20also%20sound%20designed%20and%20voiced%20the%20video%20campaign.%20The%20NCA's%20phenomenal%20creative%20director%20Arturo%20Morales%20handled%20the%20rest!%20There%20were%20billboards%20and%20online%20interactables%20involved%2C%20it%20was%20cool.%0D%0A%0D%0A%7B%25grid%25%7D%0D%0A%0D%0A%7B%25%20audio%20%22NCA_SAFEWORD%20PSA_BUSINESS%20TRANSFER_30_CHILL.mp3%22%25%7D%0D%0A%0D%0A%60%60%0D%0A%0D%0A%7B%25%20audio%20%22NCA_SAFEWORD%20PSA_INTIMATE%20PHOTOS_30_CHILL.mp3%22%25%7D%0D%0A%0D%0A%7B%25endgrid%25%7D%0D%0A%0D%0A%23%23%23%20The%20campaign%20ended%20up%20winning%20a%20%5BCSO%20Award%5D(https%3A%2F%2Fwww.staysafeonline.org%2Fpress%2Fnational-cybersecurity-alliance-receives-2025-cso-award-from-foundry-s-cso)!%20%20You%20can%20%5Bcheck%20it%20out%20here%5D(https%3A%2F%2Fwww.staysafeonline.org%2Fcampaigns%2Fsafeword).%0D%0A%0D%0A!%5Bimg%5D(https%3A%2F%2Fframerusercontent.com%2Fimages%2FgESKU0Y7HxcF5wvAefEXULXum6k.jpg%3Fscale-down-to%3D1024%26width%3D1920%26height%3D1170)%0D%0A%0D%0A" download="ADMISSION: I Love Making Advertisements.md" title='Download "ADMISSION: I Love Making Advertisements.md"'>
+                                    DOWNLOAD POST ⤓
+                                </a>
+                            </p>
+                        </div>
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/About Me/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                Award-Winning Commercials
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+                                    <li class="directory-index-in-list">
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/homeicon.svg');"></span>
+                                        
+                                            <strong>index</strong>
+                                        
+                                    </li>
+                                
+
+
+                                
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/About Me/Award-Winning Commercials/FransRap_GraniteMike2016.mp3.html">FransRap_GraniteMike2016.mp3</a>
+                                        <a href="/About Me/Award-Winning Commercials/FransRap_GraniteMike2016.mp3" download class="dir-download-icon" title="Download FransRap_GraniteMike2016.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/About Me/Award-Winning Commercials/IMG_8899.webp.html">IMG_8899.webp</a>
+                                        <a href="/About Me/Award-Winning Commercials/IMG_8899.webp" download class="dir-download-icon" title="Download IMG_8899.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/About Me/Award-Winning Commercials/KarlRoberts_GraniteMike2017.mp3.html">KarlRoberts_GraniteMike2017.mp3</a>
+                                        <a href="/About Me/Award-Winning Commercials/KarlRoberts_GraniteMike2017.mp3" download class="dir-download-icon" title="Download KarlRoberts_GraniteMike2017.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/About Me/Award-Winning Commercials/NCA_SAFEWORD PSA_BUSINESS TRANSFER_30_CHILL.mp3.html">NCA_SAFEWORD PSA_BUSINESS TRANSFER_30_CHILL.mp3</a>
+                                        <a href="/About Me/Award-Winning Commercials/NCA_SAFEWORD PSA_BUSINESS TRANSFER_30_CHILL.mp3" download class="dir-download-icon" title="Download NCA_SAFEWORD PSA_BUSINESS TRANSFER_30_CHILL.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/About Me/Award-Winning Commercials/NCA_SAFEWORD PSA_INTIMATE PHOTOS_30_CHILL.mp3.html">NCA_SAFEWORD PSA_INTIMATE PHOTOS_30_CHILL.mp3</a>
+                                        <a href="/About Me/Award-Winning Commercials/NCA_SAFEWORD PSA_INTIMATE PHOTOS_30_CHILL.mp3" download class="dir-download-icon" title="Download NCA_SAFEWORD PSA_INTIMATE PHOTOS_30_CHILL.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/About Me/Award-Winning Commercials/NHABfrans.jpg.html">NHABfrans.jpg</a>
+                                        <a href="/About Me/Award-Winning Commercials/NHABfrans.jpg" download class="dir-download-icon" title="Download NHABfrans.jpg"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/About Me/Award-Winning Commercials/NHABkarlroberts.jpg.html">NHABkarlroberts.jpg</a>
+                                        <a href="/About Me/Award-Winning Commercials/NHABkarlroberts.jpg" download class="dir-download-icon" title="Download NHABkarlroberts.jpg"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/About Me/Award-Winning Commercials/NHABsalsa.png.html">NHABsalsa.png</a>
+                                        <a href="/About Me/Award-Winning Commercials/NHABsalsa.png" download class="dir-download-icon" title="Download NHABsalsa.png"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/About Me/Award-Winning Commercials/SalsaSisters_GraniteMike2020.mp3.html">SalsaSisters_GraniteMike2020.mp3</a>
+                                        <a href="/About Me/Award-Winning Commercials/SalsaSisters_GraniteMike2020.mp3" download class="dir-download-icon" title="Download SalsaSisters_GraniteMike2020.mp3"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+                <script>/*
+                // REPLACE URL IN BAR WITH SHARELINK
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/s/granite-mikes/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+                // */</script>
+        
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

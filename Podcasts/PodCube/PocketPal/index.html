@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<!--
+	NOTES:
+	1. All tokens are represented by '$' sign in the template.
+	2. You can write your code only wherever mentioned.
+	3. All occurrences of existing tokens will be replaced by their appropriate values.
+	4. Blank lines will be removed automatically.
+	5. Remove unnecessary comments before creating your template.
+-->
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="authoring-tool" content="Adobe_Animate_CC">
+	<link rel="stylesheet" href="PodCube_Style.css">
+	<title>PodCube™ Pocket Pal</title>
+	<!-- write your code here -->
+	<script src="./scripts/libraries/js-joda.min.js"></script>
+	<script src="createjs.min.js"></script>
+	<script src="PodCube2025.js"></script>
+	<script>
+		var canvas, stage, exportRoot, anim_container, dom_overlay_container, fnStartAnimation;
+		function init() {
+			canvas = document.getElementById("canvas");
+			anim_container = document.getElementById("animation_container");
+			dom_overlay_container = document.getElementById("dom_overlay_container");
+			var comp = AdobeAn.getComposition("F6615815F9884A46B3D7FC8DF2784958");
+			var lib = comp.getLibrary();
+			/*var loader = new createjs.LoadQueue(false);
+			loader.setMaxConnections(6);
+			loader.addEventListener("fileload", function(evt){handleFileLoad(evt,comp)});
+			loader.addEventListener("complete", function(evt){handleComplete(evt,comp)});
+			var lib=comp.getLibrary();
+			loader.loadManifest(lib.properties.manifest);
+		}
+		function handleFileLoad(evt, comp) {
+			var images=comp.getImages();	
+			if (evt && (evt.item.type == "image")) { images[evt.item.id] = evt.result; }	
+			*/
+			handleComplete({}, comp)
+		}
+		function handleComplete(evt, comp) {
+			//This function is always called, irrespective of the content. You can use the variable "stage" after it is created in token create_stage.
+			var lib = comp.getLibrary();
+			var ss = comp.getSpriteSheet();
+			/*var queue = evt.target;
+			var ssMetadata = lib.ssMetadata;
+			for(i=0; i<ssMetadata.length; i++) {
+				ss[ssMetadata[i].name] = new createjs.SpriteSheet( {"images": [queue.getResult(ssMetadata[i].name)], "frames": ssMetadata[i].frames} )
+			}*/
+			exportRoot = new lib.PocketPal();
+			stage = new lib.Stage(canvas);
+			stage.enableMouseOver();
+			//Registers the "tick" event listener.
+			fnStartAnimation = function () {
+				stage.addChild(exportRoot);
+				createjs.Ticker.framerate = lib.properties.fps;
+				createjs.Ticker.addEventListener("tick", stage);
+			}
+			initResponsiveLayout();
+			AdobeAn.compositionLoaded(lib.properties.id);
+			fnStartAnimation();
+		}
+		function initResponsiveLayout() {
+			var canvas = document.getElementById("canvas");
+			var animContainer = document.getElementById("animation_container");
+			var root = exportRoot;
+			var movieClip1 = root.region_1;
+			var movieClip2 = root.region_2;
+			var movieClip3 = root.region_3; // Get reference to region_3
+			if (!movieClip1 || !movieClip2 || !movieClip3) { // Check for region_3 as well
+				console.error("MovieClip instances not found...");
+				return;
+			}
+			// Dynamically get movie clip sizes - you might adjust these based on your Animate setup
+			var movieClip1Width = movieClip1.nominalBounds.width;
+			var movieClip1Height = movieClip1.nominalBounds.height;
+			var movieClip2Width = movieClip2.nominalBounds.width;
+			var movieClip2Height = movieClip2.nominalBounds.height;
+			var movieClip3Width = movieClip3.nominalBounds.width;
+			var movieClip3Height = movieClip3.nominalBounds.height;
+
+			// Assuming movieClip1 is the base size (900x900 originally), and 2 & 3 are half width
+			var movieClipSize = 900; // Base size (width of region_1 in portrait)
+			var movieClipHalfWidth = movieClipSize / 2; // Half width for region_2 and region_3
+			function resizeCanvas() {
+				var windowAspectRatio = window.innerWidth / window.innerHeight;
+				let targetCanvasWidth, targetCanvasHeight;
+				let scaleX, scaleY, scaleFactor;
+
+				if (windowAspectRatio > 1) { // Landscape
+					targetCanvasWidth = movieClipHalfWidth + movieClipSize + movieClipHalfWidth;
+					targetCanvasHeight = movieClipSize;
+					animContainer.classList.add("landscape-padding");
+					animContainer.classList.remove("portrait-padding");
+				} else { // Portrait
+					targetCanvasWidth = movieClipSize;
+					targetCanvasHeight = movieClipSize + movieClipHalfWidth + movieClipHalfWidth;
+					animContainer.classList.add("portrait-padding");
+					animContainer.classList.remove("landscape-padding");
+				}
+
+				scaleX = window.innerWidth / targetCanvasWidth;
+				scaleY = window.innerHeight / targetCanvasHeight;
+				scaleFactor = Math.min(scaleX, scaleY);
+
+				canvas.width = targetCanvasWidth;
+				canvas.height = targetCanvasHeight;
+				canvas.style.width = (targetCanvasWidth * scaleFactor) + "px";
+				canvas.style.height = (targetCanvasHeight * scaleFactor) + "px";
+
+				// UPDATE: Keep dom_overlay_container matching canvas internal dimensions
+				const domOverlay = document.getElementById("dom_overlay_container");
+				if (domOverlay) {
+					domOverlay.style.width = canvas.width + "px";
+					domOverlay.style.height = canvas.height + "px";
+					// DON'T scale the container - let CSS handle the canvas scaling
+				}
+
+				// Rest of your positioning logic...
+				if (windowAspectRatio > 1) {
+					movieClip2.x = 0;
+					movieClip2.y = 0;
+					movieClip1.x = movieClipHalfWidth;
+					movieClip1.y = 0;
+					movieClip3.x = movieClipHalfWidth + movieClipSize;
+					movieClip3.y = 0;
+				} else {
+					movieClip1.x = 0;
+					movieClip1.y = 0;
+					movieClip2.x = 0;
+					movieClip2.y = movieClipSize;
+					movieClip3.x = movieClipHalfWidth;
+					movieClip3.y = movieClipSize;
+				}
+
+				stage.update();
+			}
+			resizeCanvas();
+			window.addEventListener('resize', resizeCanvas);
+		}
+	</script>
+
+	<!-- write your code here -->
+	<script type="module" src="./scripts/PodCube_Manager.js"></script>
+	<meta name="theme-color" content="#f5f3eb">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+	<!--<link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="images/PodCube2025_atlas_1.png">
+    <script>
+    // Register service worker for PWA installability
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('service-worker.js');
+      });
+    }
+    </script> -->
+
+    <meta name="bodge-og-injected" content="true">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bodgelab.com/Podcasts/PodCube/PocketPal/">
+    <meta property="og:title" content="PodCube™ Pocket Pal (Beta)">
+    <meta property="og:description" content="Standalone App">
+    <meta property="og:image" content="https://bodgelab.com/Podcasts/PodCube/PocketPal/pocketpalogimg.jpg">
+    <meta name="twitter:image" content="https://bodgelab.com/Podcasts/PodCube/PocketPal/pocketpalogimg.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body onload="init();" style="margin:0px;">
+	<div id="animation_container" style="background-color:rgba(245, 243, 235, 0.00);">
+		<div id="screen-region">
+		<canvas id="canvas" style="background-color:rgba(245, 243, 235, 0.00);"></canvas>
+		<div id="dom_overlay_container"
+			style="pointer-events:none; overflow:hidden; width:1800px; height:900px; position: absolute; left: 0px; top: 0px; display: block;">
+		</div>
+		</div>
+	</div>
+</body>
+
+</html>

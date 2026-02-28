@@ -1,0 +1,16 @@
+{
+  "name": "PodCube™ Explorer",
+  "short_name": "PodCube™",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fdfdfc",
+  "theme_color": "#1768da",
+  "icons": [
+    {
+      "src": "./CLEAN-LOGO.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

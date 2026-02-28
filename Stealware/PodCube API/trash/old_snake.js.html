@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>old_snake.js</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="A curious folder on the internet. Home of Mason Amadeus">
+        <link
+        rel="canonical" href="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html">
+        <meta property="og:title" content="old_snake.js">
+        <meta
+        property="og:description" content="A curious folder on the internet. Home of Mason Amadeus"> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/" class="breadcrumb">Stealware</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/PodCube API/" class="breadcrumb">PodCube API</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/PodCube API/trash/" class="breadcrumb">trash</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <span class="current">old_snake.js</span>
+                                    
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Stealware/PodCube API/trash/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: February 28, 2026</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+  <h2>old_snake.js</h2>
+  
+  
+  
+    <div class="media-embed-wrapper text-embed">
+                      <pre class="language-js"><code class="language-js">// --- SNAKE GAME LOGIC ---
+let snakeState = {
+    running: false,
+    ctx: null,
+    grid: 20,
+    snake: [],
+    food: {x: 0, y: 0},
+    dx: 20, // moving right
+    dy: 0,
+    score: 0,
+    loop: null,
+    speed: 100
+};
+
+function initSnakeGame() {
+    window.removeEventListener(&#039;keydown&#039;, handleGameRestart);
+
+    const canvas = document.getElementById(&#039;snakeCanvas&#039;);
+    if (!canvas) return;
+    
+    initTouchControls();
+
+    // UPDATE HIGH SCORE UI
+    const savedScore = localStorage.getItem(&#039;podcube_snake_highscore&#039;);
+    snakeState.highScore = savedScore ? parseInt(savedScore) : 0;
+    const highScoreEl = document.getElementById(&#039;snakeHighScore&#039;);
+    if(highScoreEl) highScoreEl.textContent = snakeState.highScore;
+
+    // Setup
+    snakeState.ctx = canvas.getContext(&#039;2d&#039;);
+    snakeState.snake = [{x: 160, y: 160}, {x: 140, y: 160}, {x: 120, y: 160}];
+    snakeState.score = 0;
+    snakeState.dx = snakeState.grid;
+    snakeState.dy = 0;
+    snakeState.running = true;
+    
+    // Reset UI
+    document.getElementById(&#039;snakeOverlay&#039;).classList.add(&#039;hidden&#039;);
+    document.getElementById(&#039;snakeScore&#039;).textContent = &quot;0&quot;;
+
+    placeFood();
+    
+    if (snakeState.loop) clearInterval(snakeState.loop);
+    snakeState.loop = setInterval(gameLoop, snakeState.speed);
+    
+    // Log &quot;official&quot; activity
+    logCommand(&#039;// Subsystem: Spatial_Coordination_Test initiated&#039;);
+}
+
+function gameLoop() {
+    if (!snakeState.running) return;
+
+    // Move Head
+    const head = { 
+        x: snakeState.snake[0].x + snakeState.dx, 
+        y: snakeState.snake[0].y + snakeState.dy 
+    };
+
+    const canvas = document.getElementById(&#039;snakeCanvas&#039;);
+    
+    // Wall Collision (Game Over)
+    if (head.x &lt; 0 || head.x &gt;= canvas.width || head.y &lt; 0 || head.y &gt;= canvas.height) {
+        endGame(&quot;ASSESSMENT COMPLETE&quot;);
+        return;
+    }
+
+    // Self Collision (Game Over)
+    for (let i = 0; i &lt; snakeState.snake.length; i++) {
+        if (head.x === snakeState.snake[i].x &amp;&amp; head.y === snakeState.snake[i].y) {
+            endGame(&quot;RECURSIVE ERROR&quot;);
+            return;
+        }
+    }
+
+    snakeState.snake.unshift(head);
+
+    // Eat Food
+    if (head.x === snakeState.food.x &amp;&amp; head.y === snakeState.food.y) {
+        snakeState.score += 10;
+        document.getElementById(&#039;snakeScore&#039;).textContent = snakeState.score;
+        placeFood();
+        // Slight speed up?
+    } else {
+        snakeState.snake.pop(); // Remove tail
+    }
+
+    drawSnake();
+}
+
+function drawSnake() {
+    const ctx = snakeState.ctx;
+    const canvas = document.getElementById(&#039;snakeCanvas&#039;);
+
+    // Clear
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw Food (Data Packet)
+    ctx.fillStyle = &#039;#f18701&#039;; // var(--orange)
+    ctx.fillRect(snakeState.food.x, snakeState.food.y, snakeState.grid - 2, snakeState.grid - 2);
+
+    // Draw Snake
+    ctx.fillStyle = &#039;#1768da&#039;; // var(--primary)
+    snakeState.snake.forEach((part, index) =&gt; {
+        // Head is slightly darker
+        ctx.fillStyle = index === 0 ? &#039;#0d4da1&#039; : &#039;#1768da&#039;;
+        ctx.fillRect(part.x, part.y, snakeState.grid - 2, snakeState.grid - 2);
+    });
+}
+
+function placeFood() {
+    const canvas = document.getElementById(&#039;snakeCanvas&#039;);
+    const cols = canvas.width / snakeState.grid;
+    const rows = canvas.height / snakeState.grid;
+    
+    snakeState.food = {
+        x: Math.floor(Math.random() * cols) * snakeState.grid,
+        y: Math.floor(Math.random() * rows) * snakeState.grid
+    };
+    
+    // Don&#039;t place food on snake
+    snakeState.snake.forEach(part =&gt; {
+        if (part.x === snakeState.food.x &amp;&amp; part.y === snakeState.food.y) placeFood();
+    });
+}
+
+function endGame(reason) {
+    snakeState.running = false;
+    clearInterval(snakeState.loop);
+
+    if (snakeState.score &gt; snakeState.highScore) {
+        snakeState.highScore = snakeState.score;
+        localStorage.setItem(&#039;podcube_snake_highscore&#039;, snakeState.highScore);
+        
+        // Update UI
+        const highScoreEl = document.getElementById(&#039;snakeHighScore&#039;);
+        if(highScoreEl) highScoreEl.textContent = snakeState.highScore;
+        
+        // Notify the user of new record in the overlay
+        reason += `&lt;br&gt;&lt;span style=&quot;color:var(--orange); font-size:18px;&quot;&gt;★ NEW PEAK EFFICIENCY ★&lt;/span&gt;`;
+    }
+    
+    const overlay = document.getElementById(&#039;snakeOverlay&#039;);
+    const msg = document.getElementById(&#039;snakeMsg&#039;);
+    
+    // Show the Game Over screen
+    overlay.classList.remove(&#039;hidden&#039;);
+    msg.innerHTML = `${reason}&lt;br&gt;&lt;span style=&quot;font-size:14px; color:#555&quot;&gt;FINAL EFFICIENCY: ${snakeState.score}&lt;/span&gt;`;
+    
+    // 1. FOCUS THE BUTTON (Simple Method)
+    // This allows Spacebar or Enter to work immediately if focus isn&#039;t lost
+    const restartBtn = overlay.querySelector(&#039;button&#039;);
+    if(restartBtn) restartBtn.focus();
+
+    // 2. ADD RESTART LISTENER (Robust Method)
+    // This ensures &quot;Enter&quot; works even if the user clicked away
+    window.addEventListener(&#039;keydown&#039;, handleGameRestart);
+
+    logCommand(`// Test Failed: ${reason} (Score: ${snakeState.score})`);
+}
+
+function handleGameRestart(e) {
+    // Only restart if the &quot;Interactive&quot; tab is actually open
+    const interactiveTab = document.getElementById(&#039;interactive&#039;);
+    if (!interactiveTab || !interactiveTab.classList.contains(&#039;active&#039;)) return;
+
+    if (e.key === &#039;Enter&#039;) {
+        e.preventDefault();
+        initSnakeGame();
+    }
+}
+
+// KEYBOARD CONTROLS
+document.addEventListener(&#039;keydown&#039;, (e) =&gt; {
+    const interactiveTab = document.getElementById(&#039;interactive&#039;);
+    
+    // 1. Safety Check: Is the game actually running and visible?
+    if (!snakeState.running || !interactiveTab || !interactiveTab.classList.contains(&#039;active&#039;)) return;
+
+    // 2. Prevent Scrolling: If it&#039;s a game key, stop the browser from scrolling
+    const gameKeys = [&#039;ArrowUp&#039;, &#039;ArrowDown&#039;, &#039;ArrowLeft&#039;, &#039;ArrowRight&#039;, &#039;w&#039;, &#039;a&#039;, &#039;s&#039;, &#039;d&#039;];
+    if (gameKeys.includes(e.key)) {
+        e.preventDefault();
+    }
+
+    // 3. Game Logic
+    if (e.key === &#039;ArrowLeft&#039; || e.key === &#039;a&#039;) changeDirection(&#039;LEFT&#039;);
+    if (e.key === &#039;ArrowUp&#039; || e.key === &#039;w&#039;) changeDirection(&#039;UP&#039;);
+    if (e.key === &#039;ArrowRight&#039; || e.key === &#039;d&#039;) changeDirection(&#039;RIGHT&#039;);
+    if (e.key === &#039;ArrowDown&#039; || e.key === &#039;s&#039;) changeDirection(&#039;DOWN&#039;);
+});
+
+// --- TOUCH CONTROLS (SWIPE) ---
+let touchStart = { x: 0, y: 0 };
+
+function initTouchControls() {
+    const canvas = document.getElementById(&#039;snakeCanvas&#039;);
+    
+    // 1. Touch Start: Record where the finger landed
+    canvas.addEventListener(&#039;touchstart&#039;, function(e) {
+        // Stop the browser from firing &quot;click&quot; or scrolling
+        if(snakeState.running) e.preventDefault(); 
+        
+        // Stop the &quot;explorer.js&quot; tab swiper from seeing this event
+        e.stopPropagation();
+
+        touchStart.x = e.changedTouches[0].screenX;
+        touchStart.y = e.changedTouches[0].screenY;
+    }, { passive: false });
+
+    // 2. Touch Move: VITAL for preventing &quot;pull to refresh&quot; or scroll behaviors
+    canvas.addEventListener(&#039;touchmove&#039;, function(e) {
+        if(snakeState.running) {
+            e.preventDefault(); 
+            e.stopPropagation();
+        }
+    }, { passive: false });
+
+    // 3. Touch End: Calculate the swipe direction
+    canvas.addEventListener(&#039;touchend&#039;, function(e) {
+        if(!snakeState.running) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+
+        const touchEndX = e.changedTouches[0].screenX;
+        const touchEndY = e.changedTouches[0].screenY;
+        
+        handleSwipeInput(touchStart.x, touchStart.y, touchEndX, touchEndY);
+    }, { passive: false });
+}
+
+function handleSwipeInput(startX, startY, endX, endY) {
+    const diffX = endX - startX;
+    const diffY = endY - startY;
+    
+    // Minimum distance to count as a swipe (prevents accidental taps)
+    if (Math.abs(diffX) &lt; 30 &amp;&amp; Math.abs(diffY) &lt; 30) return;
+
+    // Determine which axis had the bigger movement
+    if (Math.abs(diffX) &gt; Math.abs(diffY)) {
+        // Horizontal Swipe
+        if (diffX &gt; 0) changeDirection(&#039;RIGHT&#039;);
+        else changeDirection(&#039;LEFT&#039;);
+    } else {
+        // Vertical Swipe
+        if (diffY &gt; 0) changeDirection(&#039;DOWN&#039;);
+        else changeDirection(&#039;UP&#039;);
+    }
+}
+
+// Helper to reuse logic between Keyboard and Touch
+function changeDirection(dir) {
+    const goingUp = snakeState.dy === -snakeState.grid;
+    const goingDown = snakeState.dy === snakeState.grid;
+    const goingRight = snakeState.dx === snakeState.grid;
+    const goingLeft = snakeState.dx === -snakeState.grid;
+
+    if (dir === &#039;LEFT&#039; &amp;&amp; !goingRight) {
+        snakeState.dx = -snakeState.grid;
+        snakeState.dy = 0;
+    }
+    if (dir === &#039;UP&#039; &amp;&amp; !goingDown) {
+        snakeState.dx = 0;
+        snakeState.dy = -snakeState.grid;
+    }
+    if (dir === &#039;RIGHT&#039; &amp;&amp; !goingLeft) {
+        snakeState.dx = snakeState.grid;
+        snakeState.dy = 0;
+    }
+    if (dir === &#039;DOWN&#039; &amp;&amp; !goingUp) {
+        snakeState.dx = 0;
+        snakeState.dy = snakeState.grid;
+    }
+}
+
+// LOAD HIGH SCORE ON PAGE LOAD, RUN AUTOMATICALLY
+function loadHighScore() {
+    try {
+        const saved = localStorage.getItem(&#039;podcube_snake_highscore&#039;);
+        const display = document.getElementById(&#039;snakeHighScore&#039;);
+        if (display) {
+            display.textContent = saved ? saved : &#039;0&#039;;
+        }
+    } catch (e) {
+        console.warn(&quot;Could not load high score:&quot;, e);
+    }
+};
+
+window.addEventListener(&#039;DOMContentLoaded&#039;, () =&gt; {
+    try {
+        loadHighScore();
+    } catch (e) {
+        console.warn(&quot;Could not load high score:&quot;, e);
+    }
+});</code></pre>
+                      <p class="download-btn-container">
+                        <a href="/Stealware/PodCube%20API/trash/old_snake.js" class="page-download-btn" download>DOWNLOAD "old_snake.js" ⤓</a>
+                      </p>
+                    </div>
+  
+  
+
+
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/Stealware/PodCube API/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                trash
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+
+
+                                
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/datastream.js.html">datastream.js</a>
+                                        <a href="/Stealware/PodCube API/trash/datastream.js" download class="dir-download-icon" title="Download datastream.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/interactive_gem.js.html">interactive_gem.js</a>
+                                        <a href="/Stealware/PodCube API/trash/interactive_gem.js" download class="dir-download-icon" title="Download interactive_gem.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/interactive_old.js.html">interactive_old.js</a>
+                                        <a href="/Stealware/PodCube API/trash/interactive_old.js" download class="dir-download-icon" title="Download interactive_old.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/lemmings.js.html">lemmings.js</a>
+                                        <a href="/Stealware/PodCube API/trash/lemmings.js" download class="dir-download-icon" title="Download lemmings.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/old_snake.js.html">old_snake.js</a>
+                                        <a href="/Stealware/PodCube API/trash/old_snake.js" download class="dir-download-icon" title="Download old_snake.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/quiz_old.js.html">quiz_old.js</a>
+                                        <a href="/Stealware/PodCube API/trash/quiz_old.js" download class="dir-download-icon" title="Download quiz_old.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/snake_old.js.html">snake_old.js</a>
+                                        <a href="/Stealware/PodCube API/trash/snake_old.js" download class="dir-download-icon" title="Download snake_old.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/systemrestore.js.html">systemrestore.js</a>
+                                        <a href="/Stealware/PodCube API/trash/systemrestore.js" download class="dir-download-icon" title="Download systemrestore.js"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

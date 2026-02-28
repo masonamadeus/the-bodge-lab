@@ -1,0 +1,14 @@
+- fake banner ad showing a random page
+- featured post on homepage
+- absolute URL system even if I rearrange files/folders (partially done via share?)
+
+-- download links for index.md pages should reflect the documents title from the filetree.
+
+- figure out organizational hierarchy
+- is build time gonna be a problem as this grows?? optimize?? maybe build local, push _site?
+
+- optimize font pop-in a little bit more
+- add custom commit message via control panel
+- double check env shit && r2
+
+- make 404 page invisible (or artistic) redirect, pass to mock-404 for search page if not found

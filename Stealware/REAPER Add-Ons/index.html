@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>Actions Catalog</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="These are various utilities I have made over the years. Some simple, some . There are a few caveats you should know before you dig in: I am on WINDOWS, and...">
+        <link
+        rel="canonical" href="https://bodgelab.com/Stealware/REAPER%20Add-Ons/"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/Stealware/REAPER%20Add-Ons/">
+        <meta property="og:title" content="Actions Catalog">
+        <meta
+        property="og:description" content="These are various utilities I have made over the years. Some simple, some . There are a few caveats you should know before you dig in: I am on WINDOWS, and..."> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/" class="breadcrumb">Stealware</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/REAPER Add-Ons/" class="breadcrumb">REAPER Add-Ons</a>
+                                    
+                                
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Stealware/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: December 15, 2025</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+                        <h1>Mason's Workshop Scripts for REAPER</h1>
+<p>These are various utilities I have made over the years. Some simple, some <button class="bodge-trigger notilt" 
+                    style="animation-delay: -2.72s;" 
+                    data-trigger-id="more-complex" 
+                    title="Reveal Note">more complex</button>. There are a few caveats you should know before you dig in:</p>
+<ol>
+<li>I am on WINDOWS, and I have only ever used Mac under duress. Therefore, I <button class="bodge-trigger notilt" 
+                 style="animation-delay: -8.74s;" 
+                 data-trigger-id="cannot-guarantee" 
+                 title="Reveal Note">cannot guarantee</button> these will all work on Mac<span class="bodge-reaction notilt" data-react-id="cannot-guarantee" hidden>, particularly the more oddball ones involving text-to-speech, FFMPEG, transcription, etc</span>. However, MOST of these should work just fine!</li>
+<li>You <strong>must</strong> have the <a href="https://www.sws-extension.org" target="_blank" rel="noopener noreferrer">SWS/S&amp;M Extension for REAPER</a> installed. Not just for my scripts, but because it offers SO much functionality!</li>
+</ol>
+<details class="bodge-accordion"><summary>How to Add Scripts to REAPER</summary><div class="bodge-accordion-content"><div class="layout-row"><div class="layout-col layout-col-half"><ul>
+<li>Download the .lua file you want to have and save it somewhere memorable.</li>
+<li>Launch REAPER, and open the Actions menu. (Hotkey: &quot;Shift + ?&quot;)</li>
+<li>Select &quot;New action...&quot; and then &quot;Load ReaScript...&quot;</li>
+<li>Use the file browser to select the .lua file you downloaded earlier!</li>
+<li>Profit.</li>
+</ul>
+</div><div class="layout-col layout-col-half"><p><span class="media-embed-wrapper" style="display: block;">
+    <span class="image-container" style="display: block;">
+      <img src="/Stealware/REAPER%20Add-Ons/images/image-20251215144653264.png" alt="screenshot of REAPER">
+    </span>
+    <span class="download-btn-container" style="display: flex;">
+      <a href="/Stealware/REAPER%20Add-Ons/images/image-20251215144653264.png" class="page-download-btn" download>DOWNLOAD "image-20251215144653264.png" ⤓</a>
+    </span>
+  </span></p>
+</div></div>
+</div></details>
+<hr>
+<h1>CATALOG</h1>
+<div style=background-color:var(--bg-muted) class="font-mono note"><h1>UNDER CONSTRUCTION</h1>
+<p>I'm planning on making a <button class="bodge-trigger notilt" 
+                    style="animation-delay: -6.80s;" 
+                    data-trigger-id="nice-browsable" 
+                    title="Reveal Note">nice browsable</button> write-up for each plugin/script with clear descriptions on their purposes and usage. <span class="bodge-reaction notilt" data-react-id="nice-browsable" hidden>Like a cool, magazine-style browsing experience. Y'know, something nice.</span></p>
+<p><strong>I'm still in the process of extracting and uploading these to the Bodge Lab so check back often.</strong></p></div>
+<h2>For now, look through the folder listing below and read the top of each script for details.</h2>
+
+                    
+                    
+                        <div class="page-meta">
+                            
+                            
+                                
+                                
+                            
+                            
+                            <hr>
+                                <p class="download-btn-container"> <a class="page-share-btn" href="/s/reaper-actions/" title="Get permanent link">
+                                    SHARE⇗
+                                </a>
+                                <a class="page-download-btn nowrap" href="data:application/octet-stream;charset=utf-8,%0D%0A%23%20Mason's%20Workshop%20Scripts%20for%20REAPER%0D%0A%0D%0AThese%20are%20various%20utilities%20I%20have%20made%20over%20the%20years.%20Some%20simple%2C%20some%20%7B%25trigger%20%22more%20complex%22%25%7D.%20There%20are%20a%20few%20caveats%20you%20should%20know%20before%20you%20dig%20in%3A%0D%0A%0D%0A1.%20I%20am%20on%20WINDOWS%2C%20and%20I%20have%20only%20ever%20used%20Mac%20under%20duress.%20Therefore%2C%20I%20%7B%25trigger%20%22cannot%20guarantee%22%25%7D%20these%20will%20all%20work%20on%20Mac%7B%25%20react%20%22cannot%20guarantee%22%25%7D%20%2C%20particularly%20the%20more%20oddball%20ones%20involving%20text-to-speech%2C%20FFMPEG%2C%20transcription%2C%20etc%7B%25endreact%25%7D.%20However%2C%20MOST%20of%20these%20should%20work%20just%20fine!%0D%0A2.%20You%20**must**%20have%20the%20%5BSWS%2FS%26M%20Extension%20for%20REAPER%5D(https%3A%2F%2Fwww.sws-extension.org)%20installed.%20Not%20just%20for%20my%20scripts%2C%20but%20because%20it%20offers%20SO%20much%20functionality!%0D%0A%0D%0A%20%0D%0A%0D%0A%7B%25%20toggle%20%22How%20to%20Add%20Scripts%20to%20REAPER%22%20%25%7D%0D%0A%0D%0A%7B%25grid%25%7D%0D%0A%0D%0A-%20Download%20the%20.lua%20file%20you%20want%20to%20have%20and%20save%20it%20somewhere%20memorable.%0D%0A-%20Launch%20REAPER%2C%20and%20open%20the%20Actions%20menu.%20(Hotkey%3A%20%22Shift%20%2B%20%3F%22)%0D%0A-%20Select%20%22New%20action...%22%20and%20then%20%22Load%20ReaScript...%22%0D%0A-%20Use%20the%20file%20browser%20to%20select%20the%20.lua%20file%20you%20downloaded%20earlier!%0D%0A-%20Profit.%0D%0A%0D%0A%60%60%0D%0A%0D%0A!%5Bscreenshot%20of%20REAPER%5D(images%2Fimage-20251215144653264.png)%0D%0A%0D%0A%7B%25endgrid%25%7D%0D%0A%0D%0A%7B%25endtoggle%25%7D%0D%0A%0D%0A___%0D%0A%0D%0A%23%20CATALOG%0D%0A%0D%0A%7B%25note%20%22bg-muted%22%25%7D%0D%0A%0D%0A%23%20UNDER%20CONSTRUCTION%0D%0A%0D%0AI'm%20planning%20on%20making%20a%20%7B%25trigger%20%22nice%20browsable%22%25%7D%20write-up%20for%20each%20plugin%2Fscript%20with%20clear%20descriptions%20on%20their%20purposes%20and%20usage.%20%7B%25react%20%22nice%20browsable%22%25%7D%20Like%20a%20cool%2C%20magazine-style%20browsing%20experience.%20Y'know%2C%20something%20nice.%20%7B%25endreact%25%7D%0D%0A%0D%0A**I'm%20still%20in%20the%20process%20of%20extracting%20and%20uploading%20these%20to%20the%20Bodge%20Lab%20so%20check%20back%20often.**%0D%0A%0D%0A%7B%25endnote%25%7D%0D%0A%0D%0A%23%23%20For%20now%2C%20look%20through%20the%20folder%20listing%20below%20and%20read%20the%20top%20of%20each%20script%20for%20details.%0D%0A%0D%0A" download="Actions Catalog.md" title='Download "Actions Catalog.md"'>
+                                    DOWNLOAD POST ⤓
+                                </a>
+                            </p>
+                        </div>
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/Stealware/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                Actions Catalog
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+                                    <li class="directory-index-in-list">
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/homeicon.svg');"></span>
+                                        
+                                            <strong>Actions Catalog</strong>
+                                        
+                                    </li>
+                                
+
+
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Stealware/REAPER Add-Ons/images/">images\</a>
+                                    </li>
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Stealware/REAPER Add-Ons/Video Processor Presets/">Video Processor Presets\</a>
+                                    </li>
+                                
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Breakout Audio Tracks from Video.lua.html">MW_Breakout Audio Tracks from Video.lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Breakout Audio Tracks from Video.lua" download class="dir-download-icon" title="Download MW_Breakout Audio Tracks from Video.lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Coffee Cup (Automatic VX Prep).lua.html">MW_Coffee Cup (Automatic VX Prep).lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Coffee Cup (Automatic VX Prep).lua" download class="dir-download-icon" title="Download MW_Coffee Cup (Automatic VX Prep).lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Duck Breath.lua.html">MW_Duck Breath.lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Duck Breath.lua" download class="dir-download-icon" title="Download MW_Duck Breath.lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Easy TTS (Amazon Polly CLI REQUIRED).lua.html">MW_Easy TTS (Amazon Polly CLI REQUIRED).lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Easy TTS (Amazon Polly CLI REQUIRED).lua" download class="dir-download-icon" title="Download MW_Easy TTS (Amazon Polly CLI REQUIRED).lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Halve Gaps Between Items (Zeno&#39;s Scruncher).lua.html">MW_Halve Gaps Between Items (Zeno&#39;s Scruncher).lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Halve Gaps Between Items (Zeno&#39;s Scruncher).lua" download class="dir-download-icon" title="Download MW_Halve Gaps Between Items (Zeno&#39;s Scruncher).lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Hide Non-Selected Tracks (togglable).lua.html">MW_Hide Non-Selected Tracks (togglable).lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Hide Non-Selected Tracks (togglable).lua" download class="dir-download-icon" title="Download MW_Hide Non-Selected Tracks (togglable).lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Place Keeper.lua.html">MW_Place Keeper.lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Place Keeper.lua" download class="dir-download-icon" title="Download MW_Place Keeper.lua"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/REAPER Add-Ons/MW_Toggle Faster Playback.lua.html">MW_Toggle Faster Playback.lua</a>
+                                        <a href="/Stealware/REAPER Add-Ons/MW_Toggle Faster Playback.lua" download class="dir-download-icon" title="Download MW_Toggle Faster Playback.lua"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+                <script>/*
+                // REPLACE URL IN BAR WITH SHARELINK
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/s/reaper-actions/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+                // */</script>
+        
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

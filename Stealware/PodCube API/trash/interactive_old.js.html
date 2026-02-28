@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>interactive_old.js</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="A curious folder on the internet. Home of Mason Amadeus">
+        <link
+        rel="canonical" href="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html">
+        <meta property="og:title" content="interactive_old.js">
+        <meta
+        property="og:description" content="A curious folder on the internet. Home of Mason Amadeus"> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/" class="breadcrumb">Stealware</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/PodCube API/" class="breadcrumb">PodCube API</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/PodCube API/trash/" class="breadcrumb">trash</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <span class="current">interactive_old.js</span>
+                                    
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Stealware/PodCube API/trash/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: February 28, 2026</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+  <h2>interactive_old.js</h2>
+  
+  
+  
+    <div class="media-embed-wrapper text-embed">
+                      <pre class="language-js"><code class="language-js">// =============================================================================
+// Interactive Engine v2.1  —  PodCube Minigame System
+//
+// QUICK REFERENCE
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// 1. CREATE A GAME FILE  →  ./interactive/games/mygame.js
+//    Then add &#039;mygame&#039; to the CARTRIDGES list at the bottom of this file.
+//
+// 2. WRITE YOUR GAME using one of two patterns:
+//
+//    ┌─ PATTERN A: Flat (simple games) ──────────────────────────────────┐
+//    │                                                                   │
+//    │  Interactive.register(&#039;mygame&#039;, (() =&gt; {                          │
+//    │    // Declare state vars here in the closure.                     │
+//    │    let x = 200, y = 150, vel = 0;                                 │
+//    │                                                                   │
+//    │    return {                                                        │
+//    │      meta: {                                                       │
+//    │        title:        &quot;My Game&quot;,                                   │
+//    │        desc:         &quot;Short description for the menu card.&quot;,       │
+//    │        instructions: &quot;Shown on the start overlay.&quot;,               │
+//    │        controls:     &quot;ARROWS to move  •  SPACE to jump&quot;           │
+//    │      },                                                            │
+//    │                                                                   │
+//    │      onInit(api)               { x = 200; y = 150; vel = 0; },   │
+//    │      onUpdate(dt, input, api)  { /* game logic */ },              │
+//    │      onDraw(gfx, api)          { /* canvas drawing */ }           │
+//    │    };                                                              │
+//    │  })());                                                            │
+//    │                                                                   │
+//    └───────────────────────────────────────────────────────────────────┘
+//
+//    ┌─ PATTERN B: Scenes (quizzes, multi-screen games) ─────────────────┐
+//    │                                                                   │
+//    │  Interactive.register(&#039;mygame&#039;, (() =&gt; {                          │
+//    │    let score = 0; // shared across all scenes via closure         │
+//    │                                                                   │
+//    │    return {                                                        │
+//    │      meta: { ... },                                               │
+//    │      startScene: &#039;play&#039;,                                          │
+//    │      scenes: {                                                    │
+//    │        play: {                                                    │
+//    │          enter(api)             { score = 0; },                   │
+//    │          update(dt, input, api) { ... },                          │
+//    │          draw(gfx, api)         { ... },                          │
+//    │          exit(api)              { }  // optional                  │
+//    │        },                                                         │
+//    │        results: {                                                 │
+//    │          enter(api)             { /* show score */ },             │
+//    │          update(dt, input, api) { },                              │
+//    │          draw(gfx, api)         { gfx.clear(); },                 │
+//    │        }                                                          │
+//    │      }                                                            │
+//    │    };                                                              │
+//    │  })());                                                            │
+//    │                                                                   │
+//    │  // Switch scenes from any lifecycle method: api.scene(&#039;results&#039;) │
+//    └───────────────────────────────────────────────────────────────────┘
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// INPUT  — second argument to update()
+// ═══════════════════════════════════════════════════════════════════════════
+//
+//   input.pressed.UP / DOWN / LEFT / RIGHT / ACTION / CANCEL
+//     → true only on the very first frame a key is pressed down.
+//       Use for: jumping, menu selection, turning in snake.
+//
+//   input.held.UP / DOWN / LEFT / RIGHT / ACTION / CANCEL
+//     → true every frame while the key is held.
+//       Use for: smooth movement, charging, holding a button.
+//
+//   input.mouse.x / .y      Cursor position in logical canvas coords (0–400, 0–300)
+//   input.mouse.down        true while any mouse button is held
+//   input.mouse.clicked     true only on the frame the button is released
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// GFX  — first argument to draw()
+// ═══════════════════════════════════════════════════════════════════════════
+//
+//   gfx.W / gfx.H                                     Canvas size (400 × 300)
+//   gfx.clear(color?)                                 Fill entire canvas
+//   gfx.rect(x, y, w, h,  fill?, stroke?, sw?)
+//   gfx.roundRect(x, y, w, h, radius,  fill?, stroke?, sw?)
+//   gfx.circle(x, y, r,  fill?, stroke?, sw?)
+//   gfx.line(x1, y1, x2, y2,  color, width?)
+//   gfx.text(str, x, y,  { size, color, align, baseline, bold, font }?)
+//   gfx.measureText(str, size?, bold?)                Returns pixel width
+//   gfx.image(assetKey, x, y, w?, h?)                Draw a preloaded image
+//   gfx.sprite(assetKey, sx, sy, sw, sh, dx, dy, dw, dh)   Spritesheet slice
+//   gfx.alpha(opacity, fn)                            Draw fn() at given opacity
+//   gfx.transform(x, y, rotation, scaleX, scaleY, fn)  Transformed draw
+//   gfx.save() / gfx.restore()
+//   gfx.ctx()                                         Raw canvas 2D context escape hatch
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// API  — last argument to all lifecycle methods
+// ═══════════════════════════════════════════════════════════════════════════
+//
+//   api.W / api.H           Logical canvas size (same as gfx.W / gfx.H)
+//   api.setScore(n)         Update score HUD  +  auto-save high score to localStorage
+//   api.setStatus(str)      Update left status label in HUD  (e.g. &#039;RUNNING&#039;)
+//   api.setLabel(str)       Update right secondary HUD  (level, lives, timer, etc.)
+//   api.getHighScore()      Read saved high score for this game
+//   api.scene(&#039;name&#039;)       Switch to a named scene  [Pattern B only]
+//   api.gameOver(msg, sub?) Stop loop, show RETRY overlay
+//   api.win(msg, sub?)      Stop loop, show PLAY AGAIN overlay
+//   api.pause()             Pause loop, show RESUME overlay
+//   api.assets              Object of preloaded images  { key: HTMLImageElement }
+//   api.ui                  DOM UI builder  (see below)
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// API.UI  — DOM component builder for non-canvas / hybrid games
+// ═══════════════════════════════════════════════════════════════════════════
+//
+//   api.ui.build([ ...components ])   Render a column of components into the game board.
+//                                     Replaces any existing DOM UI.
+//   api.ui.clear()                    Remove all DOM UI elements
+//   api.ui.get(&#039;id&#039;)                  Retrieve a rendered element by id
+//   api.ui.append(el)                 Append a raw HTMLElement to the DOM layer
+//
+//   Component types:
+//     { type: &#039;title&#039;,      text, id?, style? }
+//     { type: &#039;text&#039;,       text, id?, style? }
+//     { type: &#039;button&#039;,     text, onClick,  primary?, id?, style? }
+//     { type: &#039;button-row&#039;, buttons: [ ...button defs ] }
+//     { type: &#039;grid&#039;,       cols, children: [...], gap?, width?, id?, style? }
+//     { type: &#039;input&#039;,      id?, label?, placeholder?, inputType?, onEnter?, onChange? }
+//     { type: &#039;progress&#039;,   id?, value (0–1) }
+//     { type: &#039;divider&#039; }
+//     { type: &#039;spacer&#039;,     size? }
+//     { type: &#039;html&#039;,       html, id?, style? }
+//     { type: &#039;custom&#039;,     el: HTMLElement }
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// PC  — global utility belt  (window.PC, available in all game files)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+//   PC.lerp(a, b, t)              Linear interpolation
+//   PC.clamp(v, lo, hi)           Clamp value between lo and hi
+//   PC.rand(lo, hi)               Random float in [lo, hi)
+//   PC.randInt(lo, hi)            Random integer in [lo, hi] inclusive
+//   PC.dist(a, b)                 Euclidean distance between {x,y} points
+//   PC.norm(v, lo, hi)            Normalize v to 0–1 within [lo, hi]
+//   PC.hitRect(a, b)              AABB collision test  —  both: { x, y, w, h }
+//   PC.hitCircle(a, b)            Circle collision test  —  both: { x, y, r }
+//   PC.pointInRect(px, py, rect)  Point-in-rect test  —  rect: { x, y, w, h }
+//   PC.makeTimer(interval)        Repeating tick timer (good for snake speed, NOT countdowns)
+//                                   returns { tick(dt)→bool, reset(), progress()→0..1 }
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// ASSET PRELOADING
+// ═══════════════════════════════════════════════════════════════════════════
+//
+//   Add an `assets` object to your cartridge. All images load before onInit fires.
+//
+//   assets: {
+//     ship:  &#039;./interactive/images/ship.png&#039;,
+//     tiles: &#039;./interactive/images/tiles.png&#039;,
+//   }
+//
+//   Access via: api.assets.ship  (an HTMLImageElement)
+//
+// =============================================================================
+
+&#039;use strict&#039;;
+
+// =============================================================================
+//  PC — Global utility belt
+// =============================================================================
+window.PC = {
+  lerp:        (a, b, t)   =&gt; a + (b - a) * t,
+  clamp:       (v, lo, hi) =&gt; Math.max(lo, Math.min(hi, v)),
+  rand:        (lo, hi)    =&gt; Math.random() * (hi - lo) + lo,
+  randInt:     (lo, hi)    =&gt; Math.floor(Math.random() * (hi - lo + 1)) + lo,
+  dist:        (a, b)      =&gt; Math.hypot(b.x - a.x, b.y - a.y),
+  norm:        (v, lo, hi) =&gt; (v - lo) / (hi - lo),
+  hitRect:     (a, b)      =&gt; a.x &lt; b.x+b.w &amp;&amp; a.x+a.w &gt; b.x &amp;&amp; a.y &lt; b.y+b.h &amp;&amp; a.y+a.h &gt; b.y,
+  hitCircle:   (a, b)      =&gt; PC.dist(a, b) &lt; (a.r||0) + (b.r||0),
+  pointInRect: (px, py, r) =&gt; px &gt;= r.x &amp;&amp; px &lt;= r.x+r.w &amp;&amp; py &gt;= r.y &amp;&amp; py &lt;= r.y+r.h,
+
+  // Repeating interval timer. tick(dt) returns true once per `interval` seconds.
+  // Great for: snake step speed, enemy spawn rate, animation frames.
+  // NOT ideal for countdowns — just use  timeLeft -= dt  for that.
+  makeTimer: (interval) =&gt; ({
+    max: interval, t: 0,
+    tick(dt)   { this.t += dt; if (this.t &gt;= this.max) { this.t %= this.max; return true; } return false; },
+    reset()    { this.t = 0; },
+    progress() { return PC.clamp(this.t / this.max, 0, 1); },
+  }),
+};
+
+// =============================================================================
+//  Interactive Engine — Core
+// =============================================================================
+window.Interactive = (() =&gt; {
+
+  // The canvas always renders at this logical size.
+  // CSS scales it to fit the screen; pixel positions are always in these coords.
+  const W = 400;
+  const H = 300;
+
+  // ── Private engine state ──────────────────────────────────────────────────
+  let _cart        = null;   // active cartridge object
+  let _cartId      = null;   // active cartridge id string
+  let _scene       = null;   // active scene object
+  let _loopId      = null;   // rAF handle
+  let _lastTime    = 0;
+  let _canvas, _ctx, _domLayer;
+
+  // ── Input ─────────────────────────────────────────────────────────────────
+  const _keyMap = {
+    &#039;ArrowUp&#039;:&#039;UP&#039;,     &#039;w&#039;:&#039;UP&#039;,     &#039;W&#039;:&#039;UP&#039;,
+    &#039;ArrowDown&#039;:&#039;DOWN&#039;, &#039;s&#039;:&#039;DOWN&#039;,   &#039;S&#039;:&#039;DOWN&#039;,
+    &#039;ArrowLeft&#039;:&#039;LEFT&#039;, &#039;a&#039;:&#039;LEFT&#039;,   &#039;A&#039;:&#039;LEFT&#039;,
+    &#039;ArrowRight&#039;:&#039;RIGHT&#039;,&#039;d&#039;:&#039;RIGHT&#039;, &#039;D&#039;:&#039;RIGHT&#039;,
+    &#039; &#039;:&#039;ACTION&#039;, &#039;Enter&#039;:&#039;ACTION&#039;,
+    &#039;Escape&#039;:&#039;CANCEL&#039;, &#039;p&#039;:&#039;PAUSE&#039;, &#039;P&#039;:&#039;PAUSE&#039;,
+  };
+
+  const input = {
+    pressed: {}, // cleared each frame — good for &quot;just pressed&quot; detection
+    held:    {}, // persists while key is down — good for continuous movement
+    mouse:   { x: 0, y: 0, down: false, clicked: false },
+  };
+
+  // ── Asset loader ──────────────────────────────────────────────────────────
+  const _assets = {};
+
+  function _loadAssets(defs, done) {
+    const entries = Object.entries(defs || {});
+    if (!entries.length) { done(); return; }
+    let n = entries.length;
+    for (const [key, src] of entries) {
+      if (_assets[key]) { if (!--n) done(); continue; }
+      const img = new Image();
+      img.onload  = () =&gt; { _assets[key] = img; if (!--n) done(); };
+      img.onerror = () =&gt; { console.warn(`[Interactive] Asset load failed: ${key}`); if (!--n) done(); };
+      img.src = src;
+    }
+  }
+
+  // ── GFX — Canvas drawing API ──────────────────────────────────────────────
+  // Every method is a thin wrapper around the 2D context.
+  // fill/stroke params accept any CSS color string.
+  const GFX = {
+    get W() { return W; },
+    get H() { return H; },
+
+    clear(color = &#039;#fdfdfc&#039;) {
+      _ctx.fillStyle = color;
+      _ctx.fillRect(0, 0, W, H);
+    },
+
+    rect(x, y, w, h, fill, stroke, sw = 1) {
+      if (fill)   { _ctx.fillStyle   = fill;   _ctx.fillRect(x, y, w, h); }
+      if (stroke) { _ctx.strokeStyle = stroke; _ctx.lineWidth = sw; _ctx.strokeRect(x, y, w, h); }
+    },
+
+    roundRect(x, y, w, h, r, fill, stroke, sw = 1) {
+      _ctx.beginPath(); _ctx.roundRect(x, y, w, h, r);
+      if (fill)   { _ctx.fillStyle   = fill;   _ctx.fill(); }
+      if (stroke) { _ctx.strokeStyle = stroke; _ctx.lineWidth = sw; _ctx.stroke(); }
+    },
+
+    circle(x, y, r, fill, stroke, sw = 1) {
+      _ctx.beginPath(); _ctx.arc(x, y, r, 0, Math.PI * 2);
+      if (fill)   { _ctx.fillStyle   = fill;   _ctx.fill(); }
+      if (stroke) { _ctx.strokeStyle = stroke; _ctx.lineWidth = sw; _ctx.stroke(); }
+    },
+
+    line(x1, y1, x2, y2, color, width = 1) {
+      _ctx.beginPath(); _ctx.moveTo(x1, y1); _ctx.lineTo(x2, y2);
+      _ctx.strokeStyle = color; _ctx.lineWidth = width; _ctx.stroke();
+    },
+
+    // opts: { size=14, color=&#039;#333&#039;, align=&#039;left&#039;, baseline=&#039;top&#039;, bold=true, font=&#039;Fustat&#039; }
+    text(str, x, y, opts = {}) {
+      const { size=14, color=&#039;#333&#039;, align=&#039;left&#039;, baseline=&#039;top&#039;, bold=true, font=&#039;Fustat&#039; } = opts;
+      _ctx.font = `${bold ? &#039;bold &#039; : &#039;&#039;}${size}px &#039;${font}&#039;`;
+      _ctx.fillStyle = color; _ctx.textAlign = align; _ctx.textBaseline = baseline;
+      _ctx.fillText(str, x, y);
+    },
+
+    measureText(str, size = 14, bold = true) {
+      _ctx.font = `${bold ? &#039;bold &#039; : &#039;&#039;}${size}px &#039;Fustat&#039;`;
+      return _ctx.measureText(str).width;
+    },
+
+    image(key, x, y, w, h) {
+      const img = _assets[key];
+      if (img) _ctx.drawImage(img, x, y, w ?? img.naturalWidth, h ?? img.naturalHeight);
+      else console.warn(`[Interactive] Unknown asset key: &#039;${key}&#039;`);
+    },
+
+    sprite(key, sx, sy, sw, sh, dx, dy, dw, dh) {
+      const img = _assets[key];
+      if (img) _ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+    },
+
+    alpha(a, fn) {
+      const prev = _ctx.globalAlpha; _ctx.globalAlpha = a; fn(); _ctx.globalAlpha = prev;
+    },
+
+    transform(x, y, rot, sx = 1, sy = 1, fn) {
+      _ctx.save(); _ctx.translate(x, y); _ctx.rotate(rot); _ctx.scale(sx, sy);
+      fn(); _ctx.restore();
+    },
+
+    save()    { _ctx.save(); },
+    restore() { _ctx.restore(); },
+    ctx()     { return _ctx; }, // escape hatch — do anything the 2D API supports
+  };
+
+  // ── UI — Declarative DOM component builder ────────────────────────────────
+  // For quiz-style or menu-driven games that don&#039;t need a canvas at all,
+  // just call gfx.clear() in draw() and build your interface with api.ui.
+  const UI = {
+
+    // Build a scrollable centered column of components into the game board.
+    // Clears any existing DOM UI first.
+    build(components) {
+      UI.clear();
+      const col = document.createElement(&#039;div&#039;);
+      // Scrollable flex column — content will never be clipped by the board height
+      col.style.cssText = [
+        &#039;position:absolute; inset:0;&#039;,
+        &#039;display:flex; flex-direction:column; align-items:center;&#039;,
+        &#039;justify-content:flex-start; overflow-y:auto;&#039;,  // scrollable if content is tall
+        &#039;gap:8px; padding:16px; box-sizing:border-box;&#039;,
+        &#039;pointer-events:auto;&#039;,
+      ].join(&#039;&#039;);
+      for (const def of components) {
+        const el = UI._make(def);
+        if (el) col.appendChild(el);
+      }
+      _domLayer.appendChild(col);
+      return col;
+    },
+
+    clear() { _domLayer.innerHTML = &#039;&#039;; },
+
+    // Retrieve any element built with an id
+    get: (id) =&gt; document.getElementById(id),
+
+    // Append a raw element to the DOM layer directly
+    append(el) {
+      el.style.pointerEvents = el.style.pointerEvents || &#039;auto&#039;;
+      _domLayer.appendChild(el);
+      return el;
+    },
+
+    _make(def) {
+      switch (def.type) {
+
+        case &#039;title&#039;: {
+          const el = document.createElement(&#039;div&#039;);
+          el.className = &#039;pc-text-title&#039;; el.textContent = def.text;
+          if (def.id) el.id = def.id;
+          if (def.style) Object.assign(el.style, def.style);
+          return el;
+        }
+
+        case &#039;text&#039;:
+        case &#039;body&#039;: {
+          const el = document.createElement(&#039;p&#039;);
+          el.className = &#039;pc-text-body&#039;; el.textContent = def.text; el.style.margin = &#039;0&#039;;
+          if (def.id) el.id = def.id;
+          if (def.style) Object.assign(el.style, def.style);
+          return el;
+        }
+
+        case &#039;button&#039;: {
+          const el = document.createElement(&#039;button&#039;);
+          el.className = `pc-btn${def.primary ? &#039; primary&#039; : &#039;&#039;}`;
+          el.textContent = def.text;
+          if (def.id)      el.id = def.id;
+          if (def.onClick) el.onclick = def.onClick;
+          if (def.style)   Object.assign(el.style, def.style);
+          return el;
+        }
+
+        case &#039;button-row&#039;: {
+          const row = document.createElement(&#039;div&#039;);
+          row.style.cssText = &#039;display:flex; gap:8px; flex-wrap:wrap; justify-content:center; width:100%;&#039;;
+          for (const btn of (def.buttons || [])) {
+            const el = UI._make({ type: &#039;button&#039;, ...btn }); if (el) row.appendChild(el);
+          }
+          return row;
+        }
+
+        case &#039;grid&#039;: {
+          const grid = document.createElement(&#039;div&#039;);
+          grid.style.cssText = `display:grid; grid-template-columns:repeat(${def.cols||2},1fr); gap:${def.gap??8}px; width:${def.width||&#039;100%&#039;};`;
+          if (def.id) grid.id = def.id;
+          if (def.style) Object.assign(grid.style, def.style);
+          for (const child of (def.children||[])) {
+            const el = UI._make(child); if (el) grid.appendChild(el);
+          }
+          return grid;
+        }
+
+        case &#039;input&#039;: {
+          const wrap = document.createElement(&#039;div&#039;);
+          wrap.style.cssText = &#039;display:flex; flex-direction:column; gap:4px; width:100%;&#039;;
+          if (def.label) {
+            const lbl = document.createElement(&#039;label&#039;);
+            lbl.className = &#039;pc-hud-label&#039;; lbl.textContent = def.label;
+            wrap.appendChild(lbl);
+          }
+          const inp = document.createElement(&#039;input&#039;);
+          inp.type = def.inputType || &#039;text&#039;;
+          inp.id = def.id || &#039;pc-input&#039;;
+          inp.placeholder = def.placeholder || &#039;&#039;;
+          inp.style.cssText = &#039;border:1px solid var(--primary-dim); padding:8px; font-family:Fustat; font-size:13px; outline:none; background:#fff; color:#333; width:100%; box-sizing:border-box;&#039;;
+          inp.onfocus = () =&gt; { inp.style.borderColor = &#039;var(--primary)&#039;; };
+          inp.onblur  = () =&gt; { inp.style.borderColor = &#039;var(--primary-dim)&#039;; };
+          if (def.onEnter)  inp.addEventListener(&#039;keydown&#039;, e =&gt; { if (e.key === &#039;Enter&#039;) def.onEnter(inp.value); });
+          if (def.onChange) inp.addEventListener(&#039;input&#039;,   () =&gt; def.onChange(inp.value));
+          wrap.appendChild(inp);
+          return wrap;
+        }
+
+        case &#039;progress&#039;: {
+          const wrap = document.createElement(&#039;div&#039;);
+          wrap.style.cssText = &#039;width:100%; background:#eee; height:6px; border:1px solid var(--primary-dim);&#039;;
+          const bar = document.createElement(&#039;div&#039;);
+          bar.id = def.id || &#039;pc-progress-bar&#039;;
+          bar.style.cssText = `height:100%; background:var(--primary); width:${(def.value??1)*100}%; transition:width 0.1s linear;`;
+          wrap.appendChild(bar);
+          return wrap;
+        }
+
+        case &#039;divider&#039;: {
+          const el = document.createElement(&#039;hr&#039;);
+          el.style.cssText = &#039;width:100%; border:none; border-top:1px dashed var(--primary-dim); margin:4px 0;&#039;;
+          return el;
+        }
+
+        case &#039;spacer&#039;: {
+          const el = document.createElement(&#039;div&#039;);
+          el.style.height = `${def.size ?? 8}px`;
+          return el;
+        }
+
+        case &#039;html&#039;: {
+          const el = document.createElement(&#039;div&#039;);
+          el.style.width = &#039;100%&#039;;
+          el.innerHTML = def.html;
+          if (def.id) el.id = def.id;
+          if (def.style) Object.assign(el.style, def.style);
+          return el;
+        }
+
+        case &#039;custom&#039;:
+          return def.el || null;
+
+        default:
+          console.warn(`[Interactive] Unknown UI component type: &#039;${def.type}&#039;`);
+          return null;
+      }
+    },
+  };
+
+  // ── Overlay helpers ───────────────────────────────────────────────────────
+  function _showOverlay(title, desc, btnText, onBtn) {
+    document.getElementById(&#039;pc-overlay-msg&#039;).textContent  = title;
+    document.getElementById(&#039;pc-overlay-desc&#039;).textContent = desc;
+    const btn = document.getElementById(&#039;pc-overlay-btn&#039;);
+    btn.textContent = btnText;
+    btn.onclick = onBtn;
+    document.getElementById(&#039;pc-overlay&#039;).classList.remove(&#039;hidden&#039;);
+  }
+
+  function _hideOverlay() {
+    document.getElementById(&#039;pc-overlay&#039;).classList.add(&#039;hidden&#039;);
+  }
+
+  // ── Game loop ─────────────────────────────────────────────────────────────
+  function _startLoop() {
+    _lastTime = performance.now();
+    _loopId   = requestAnimationFrame(_tick);
+  }
+
+  function _stopLoop() {
+    if (_loopId) { cancelAnimationFrame(_loopId); _loopId = null; }
+  }
+
+  function _tick(now) {
+    if (!_scene) return;
+    // dt is capped at 100ms to prevent physics explosions after tab switching
+    const dt = Math.min((now - _lastTime) / 1000, 0.1);
+    _lastTime = now;
+
+    if (_scene.update) _scene.update(dt, input, _api);
+    if (_scene.draw)   _scene.draw(GFX, _api);
+
+    // Flush single-frame input flags
+    input.pressed       = {};
+    input.mouse.clicked = false;
+
+    _loopId = requestAnimationFrame(_tick);
+  }
+
+  // ── Scene management ──────────────────────────────────────────────────────
+  function _goScene(name) {
+    if (!_cart.scenes?.[name]) {
+      console.error(`[Interactive] Scene &#039;${name}&#039; not found in &#039;${_cartId}&#039;.`);
+      return;
+    }
+    if (_scene?.exit) _scene.exit(_api);
+    UI.clear();
+    _scene = _cart.scenes[name];
+    if (_scene.enter) _scene.enter(_api);
+  }
+
+  // ── API object passed to all lifecycle methods ────────────────────────────
+  const _api = {
+    W, H,
+    ui: UI,
+    get assets() { return _assets; },
+
+    scene(name) { _goScene(name); },
+
+    setScore(val) {
+      document.getElementById(&#039;pc-hud-score&#039;).textContent = val;
+      const key = `pc_save_${_cartId}`;
+      const hi  = parseInt(localStorage.getItem(key) || &#039;0&#039;);
+      if (typeof val === &#039;number&#039; &amp;&amp; val &gt; hi) localStorage.setItem(key, val);
+    },
+
+    setStatus(txt) {
+      const el = document.getElementById(&#039;pc-hud-status&#039;);
+      if (el) el.textContent = txt;
+    },
+
+    // Secondary HUD — good for level number, lives remaining, time left, etc.
+    setLabel(txt) {
+      const el = document.getElementById(&#039;pc-hud-label2&#039;);
+      if (!el) return;
+      el.textContent    = txt;
+      el.style.display  = txt ? &#039;block&#039; : &#039;none&#039;;
+    },
+
+    getHighScore() {
+      return parseInt(localStorage.getItem(`pc_save_${_cartId}`) || &#039;0&#039;);
+    },
+
+    gameOver(msg = &#039;GAME OVER&#039;, sub = &#039;&#039;) {
+      _stopLoop();
+      document.getElementById(&#039;pc-hud-status&#039;).textContent = &#039;HALTED&#039;;
+      _showOverlay(msg, sub || &#039;Process terminated.&#039;, &#039;RETRY&#039;, _boot);
+    },
+
+    win(msg = &#039;COMPLETE&#039;, sub = &#039;&#039;) {
+      _stopLoop();
+      document.getElementById(&#039;pc-hud-status&#039;).textContent = &#039;COMPLETE&#039;;
+      _showOverlay(msg, sub, &#039;PLAY AGAIN&#039;, _boot);
+    },
+
+    pause() {
+      _stopLoop();
+      document.getElementById(&#039;pc-hud-status&#039;).textContent = &#039;PAUSED&#039;;
+      _showOverlay(&#039;PAUSED&#039;, &#039;&#039;, &#039;RESUME&#039;, () =&gt; {
+        _hideOverlay();
+        document.getElementById(&#039;pc-hud-status&#039;).textContent = &#039;RUNNING&#039;;
+        _startLoop();
+      });
+    },
+  };
+
+  // ── Boot / restart a game ─────────────────────────────────────────────────
+  function _boot() {
+    _hideOverlay();
+    _api.setScore(0);
+    _api.setLabel(&#039;&#039;);
+    _api.setStatus(&#039;RUNNING&#039;);
+    input.pressed = {};
+    input.held    = {};
+    UI.clear();
+
+    // Pattern A: flat game — wrap onInit/onUpdate/onDraw into an implicit scene
+    if (!_cart.scenes) {
+      _cart.scenes     = { _: {
+        enter:  _cart.onInit   ? api            =&gt; _cart.onInit(api)           : null,
+        update: _cart.onUpdate ? (dt, inp, api) =&gt; _cart.onUpdate(dt, inp, api) : null,
+        draw:   _cart.onDraw   ? (gfx, api)     =&gt; _cart.onDraw(gfx, api)     : null,
+      }};
+      _cart.startScene = &#039;_&#039;;
+    }
+
+    _goScene(_cart.startScene || Object.keys(_cart.scenes)[0]);
+    _startLoop();
+  }
+
+  // ── Input setup (runs once at engine init) ────────────────────────────────
+  function _bindInput() {
+    document.addEventListener(&#039;keydown&#039;, e =&gt; {
+      if (!_cart) return;
+      const k = _keyMap[e.key];
+      if (!k) return;
+      e.preventDefault();
+      if (!input.held[k]) input.pressed[k] = true; // only first-frame
+      input.held[k] = true;
+      if (k === &#039;PAUSE&#039;) _api.pause();
+    });
+
+    document.addEventListener(&#039;keyup&#039;, e =&gt; {
+      const k = _keyMap[e.key];
+      if (k) input.held[k] = false;
+    });
+
+    // Mouse: track cursor in logical canvas coordinates
+    _canvas.addEventListener(&#039;mousemove&#039;, e =&gt; {
+      const r = _canvas.getBoundingClientRect();
+      input.mouse.x = (e.clientX - r.left) * (W / r.width);
+      input.mouse.y = (e.clientY - r.top)  * (H / r.height);
+    });
+    _canvas.addEventListener(&#039;mousedown&#039;, () =&gt; { input.mouse.down = true; });
+    _canvas.addEventListener(&#039;mouseup&#039;,   () =&gt; { input.mouse.down = false; input.mouse.clicked = true; });
+
+    // Touch: swipe → direction key, tap → ACTION
+    const board = document.querySelector(&#039;.pc-game-board&#039;);
+    if (!board) return;
+    let tx = 0, ty = 0;
+    board.addEventListener(&#039;touchstart&#039;, e =&gt; { if (!_cart) return; tx = e.changedTouches[0].screenX; ty = e.changedTouches[0].screenY; }, { passive: false });
+    board.addEventListener(&#039;touchend&#039;,   e =&gt; {
+      if (!_cart) return;
+      const dx = e.changedTouches[0].screenX - tx;
+      const dy = e.changedTouches[0].screenY - ty;
+      const ax = Math.abs(dx), ay = Math.abs(dy);
+      if (ax &gt; 30 || ay &gt; 30) {
+        input.pressed[ax &gt; ay ? (dx &gt; 0 ? &#039;RIGHT&#039; : &#039;LEFT&#039;) : (dy &gt; 0 ? &#039;DOWN&#039; : &#039;UP&#039;)] = true;
+      } else {
+        input.pressed[&#039;ACTION&#039;] = true;
+      }
+    }, { passive: false });
+  }
+
+  // ── Public engine API ─────────────────────────────────────────────────────
+  return {
+
+    // Register a game and add its card to the menu grid.
+    register(id, cartridge) {
+      const slot = document.getElementById(&#039;pc-cartridge-slot&#039;);
+      if (!slot) return;
+      const hi   = localStorage.getItem(`pc_save_${id}`) || &#039;—&#039;;
+      const card = document.createElement(&#039;div&#039;);
+      card.className = &#039;game-card&#039;;
+      card.onclick   = () =&gt; Interactive.insert(id, cartridge);
+      card.innerHTML = `
+        &lt;div class=&quot;game-card-meta&quot;&gt;Module ${id.toUpperCase()}&lt;/div&gt;
+        &lt;div class=&quot;game-card-title&quot;&gt;${cartridge.meta.title}&lt;/div&gt;
+        &lt;p class=&quot;text-muted&quot; style=&quot;font-size:11px;flex:1;line-height:1.4;margin:0;&quot;&gt;${cartridge.meta.desc}&lt;/p&gt;
+        &lt;div class=&quot;game-card-score&quot;&gt;RECORD: ${hi}&lt;/div&gt;
+      `;
+      slot.appendChild(card);
+    },
+
+    // Navigate from the menu into a game.
+    insert(id, cartridge) {
+      _cart   = cartridge;
+      _cartId = id;
+
+      document.getElementById(&#039;pc-menu-view&#039;).style.display = &#039;none&#039;;
+      const stage = document.getElementById(&#039;pc-machine-view&#039;);
+      stage.style.display = &#039;block&#039;;
+      requestAnimationFrame(() =&gt; stage.classList.add(&#039;active&#039;));
+
+      GFX.clear(); UI.clear();
+      document.getElementById(&#039;pc-game-title&#039;).textContent    = cartridge.meta.title;
+      document.getElementById(&#039;pc-controls-help&#039;).textContent = cartridge.meta.controls || &#039;ARROWS · SPACE&#039;;
+
+      _showOverlay(
+        cartridge.meta.title,
+        cartridge.meta.instructions || &#039;Ready to initialize.&#039;,
+        &#039;INITIALIZE&#039;,
+        () =&gt; _loadAssets(cartridge.assets || {}, _boot)
+      );
+    },
+
+    // Return to the game menu.
+    eject() {
+      _stopLoop();
+      if (_cart?.onCleanup) _cart.onCleanup();
+      _cart = null; _cartId = null; _scene = null;
+      UI.clear();
+      const stage = document.getElementById(&#039;pc-machine-view&#039;);
+      stage.style.display = &#039;none&#039;;
+      stage.classList.remove(&#039;active&#039;);
+      document.getElementById(&#039;pc-menu-view&#039;).style.display = &#039;block&#039;;
+    },
+
+    // Called once on DOMContentLoaded — wires up hardware and loads games.
+    init() {
+      const slot = document.getElementById(&#039;pc-cartridge-slot&#039;);
+      if (!slot) return;
+
+      _canvas   = document.getElementById(&#039;pc-canvas&#039;);
+      _ctx      = _canvas.getContext(&#039;2d&#039;);
+      _domLayer = document.getElementById(&#039;pc-dom-layer&#039;);
+
+      // Inject secondary HUD label element (level, lives, etc.) — saved to DOM once
+      const scoreCell = document.getElementById(&#039;pc-hud-score&#039;)?.parentElement;
+      if (scoreCell &amp;&amp; !document.getElementById(&#039;pc-hud-label2&#039;)) {
+        const el = document.createElement(&#039;span&#039;);
+        el.id = &#039;pc-hud-label2&#039;; el.className = &#039;pc-hud-sub&#039;; el.style.display = &#039;none&#039;;
+        scoreCell.appendChild(el);
+      }
+
+      _bindInput();
+
+      // Load each game file listed in the manifest
+      CARTRIDGES.forEach(id =&gt; {
+        const s = document.createElement(&#039;script&#039;);
+        s.src     = `./interactive/games/${id}.js`;
+        s.onerror = () =&gt; console.warn(`[Interactive] Failed to load cartridge: ${id}`);
+        document.body.appendChild(s);
+      });
+
+      setTimeout(() =&gt; {
+        const loader = document.getElementById(&#039;pc-loading&#039;);
+        if (loader) loader.style.display = &#039;none&#039;;
+      }, 600);
+    },
+  };
+
+})();
+
+// =============================================================================
+//  CARTRIDGE MANIFEST  —  add game IDs here, one file per game
+//  Each id maps to:  ./interactive/games/{id}.js
+// =============================================================================
+const CARTRIDGES = [
+  &#039;snake&#039;,
+  &#039;quiz&#039;,
+  // &#039;breakout&#039;,
+  // &#039;flappy&#039;,
+];
+
+// Backward-compat alias — the HTML calls PodCubeConsole.eject()
+window.PodCubeConsole = Interactive;
+
+document.addEventListener(&#039;DOMContentLoaded&#039;, Interactive.init);</code></pre>
+                      <p class="download-btn-container">
+                        <a href="/Stealware/PodCube%20API/trash/interactive_old.js" class="page-download-btn" download>DOWNLOAD "interactive_old.js" ⤓</a>
+                      </p>
+                    </div>
+  
+  
+
+
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/Stealware/PodCube API/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                trash
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+
+
+                                
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/datastream.js.html">datastream.js</a>
+                                        <a href="/Stealware/PodCube API/trash/datastream.js" download class="dir-download-icon" title="Download datastream.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/interactive_gem.js.html">interactive_gem.js</a>
+                                        <a href="/Stealware/PodCube API/trash/interactive_gem.js" download class="dir-download-icon" title="Download interactive_gem.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/interactive_old.js.html">interactive_old.js</a>
+                                        <a href="/Stealware/PodCube API/trash/interactive_old.js" download class="dir-download-icon" title="Download interactive_old.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/lemmings.js.html">lemmings.js</a>
+                                        <a href="/Stealware/PodCube API/trash/lemmings.js" download class="dir-download-icon" title="Download lemmings.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/old_snake.js.html">old_snake.js</a>
+                                        <a href="/Stealware/PodCube API/trash/old_snake.js" download class="dir-download-icon" title="Download old_snake.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/quiz_old.js.html">quiz_old.js</a>
+                                        <a href="/Stealware/PodCube API/trash/quiz_old.js" download class="dir-download-icon" title="Download quiz_old.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/snake_old.js.html">snake_old.js</a>
+                                        <a href="/Stealware/PodCube API/trash/snake_old.js" download class="dir-download-icon" title="Download snake_old.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/systemrestore.js.html">systemrestore.js</a>
+                                        <a href="/Stealware/PodCube API/trash/systemrestore.js" download class="dir-download-icon" title="Download systemrestore.js"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>polarizer_single.webp</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="A curious folder on the internet. Home of Mason Amadeus">
+        <link
+        rel="canonical" href="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html">
+        <meta property="og:title" content="polarizer_single.webp">
+        <meta
+        property="og:description" content="A curious folder on the internet. Home of Mason Amadeus"> 
+        <meta property="og:image" content="https://bodgelab.com/Videos/Wicked%20Interesting/.files/polarizer_single.webp">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/Videos/Wicked%20Interesting/.files/polarizer_single.webp">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Videos/" class="breadcrumb">Videos</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Videos/Wicked Interesting/" class="breadcrumb">Wicked Interesting</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Videos/Wicked Interesting/.files/" class="breadcrumb">.files</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <span class="current">polarizer_single.webp</span>
+                                    
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Videos/Wicked Interesting/.files/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: February 28, 2026</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+  <h2>polarizer_single.webp</h2>
+  
+  
+    
+    <div class="media-embed-wrapper">
+  <div class="image-container">
+    <img src="/Videos/Wicked%20Interesting/.files/polarizer_single.webp" alt="polarizer_single.webp">
+  </div>
+  <p class="download-btn-container"><a href="/Videos/Wicked%20Interesting/.files/polarizer_single.webp" class="page-download-btn" download>DOWNLOAD "polarizer_single.webp" ⤓</a></p></div>
+  
+  
+
+
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/Videos/Wicked Interesting/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                .files
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+
+
+                                
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/07.29.2025_liquidcrystaldrink.webp.html">07.29.2025_liquidcrystaldrink.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/07.29.2025_liquidcrystaldrink.webp" download class="dir-download-icon" title="Download 07.29.2025_liquidcrystaldrink.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/2560px-Cholesteryl_benzoate.svg.png.html">2560px-Cholesteryl_benzoate.svg.png</a>
+                                        <a href="/Videos/Wicked Interesting/.files/2560px-Cholesteryl_benzoate.svg.png" download class="dir-download-icon" title="Download 2560px-Cholesteryl_benzoate.svg.png"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/960px-Polarizacio.jpg.html">960px-Polarizacio.jpg</a>
+                                        <a href="/Videos/Wicked Interesting/.files/960px-Polarizacio.jpg" download class="dir-download-icon" title="Download 960px-Polarizacio.jpg"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/Circle Logo Pixelated.png.html">Circle Logo Pixelated.png</a>
+                                        <a href="/Videos/Wicked Interesting/.files/Circle Logo Pixelated.png" download class="dir-download-icon" title="Download Circle Logo Pixelated.png"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/deadpixel.webp.html">deadpixel.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/deadpixel.webp" download class="dir-download-icon" title="Download deadpixel.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/flickpixel.png.html">flickpixel.png</a>
+                                        <a href="/Videos/Wicked Interesting/.files/flickpixel.png" download class="dir-download-icon" title="Download flickpixel.png"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/image-20260120192721167.png.html">image-20260120192721167.png</a>
+                                        <a href="/Videos/Wicked Interesting/.files/image-20260120192721167.png" download class="dir-download-icon" title="Download image-20260120192721167.png"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/image-20260120192804711.png.html">image-20260120192804711.png</a>
+                                        <a href="/Videos/Wicked Interesting/.files/image-20260120192804711.png" download class="dir-download-icon" title="Download image-20260120192804711.png"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/image-20260121141631338.png.html">image-20260121141631338.png</a>
+                                        <a href="/Videos/Wicked Interesting/.files/image-20260121141631338.png" download class="dir-download-icon" title="Download image-20260121141631338.png"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/pixel_crystals_on.webp.html">pixel_crystals_on.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/pixel_crystals_on.webp" download class="dir-download-icon" title="Download pixel_crystals_on.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/pixel_crystals_side_off.webp.html">pixel_crystals_side_off.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/pixel_crystals_side_off.webp" download class="dir-download-icon" title="Download pixel_crystals_side_off.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/pixel_crystaltops_off.png.html">pixel_crystaltops_off.png</a>
+                                        <a href="/Videos/Wicked Interesting/.files/pixel_crystaltops_off.png" download class="dir-download-icon" title="Download pixel_crystaltops_off.png"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/pixel_crystaltops_on.png.html">pixel_crystaltops_on.png</a>
+                                        <a href="/Videos/Wicked Interesting/.files/pixel_crystaltops_on.png" download class="dir-download-icon" title="Download pixel_crystaltops_on.png"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/pixel_noguts_sideview.webp.html">pixel_noguts_sideview.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/pixel_noguts_sideview.webp" download class="dir-download-icon" title="Download pixel_noguts_sideview.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/pixel_polarizers.webp.html">pixel_polarizers.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/pixel_polarizers.webp" download class="dir-download-icon" title="Download pixel_polarizers.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/pixel_spiral_sideview.webp.html">pixel_spiral_sideview.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/pixel_spiral_sideview.webp" download class="dir-download-icon" title="Download pixel_spiral_sideview.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/pixel_thumbnail_test1.webp.html">pixel_thumbnail_test1.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/pixel_thumbnail_test1.webp" download class="dir-download-icon" title="Download pixel_thumbnail_test1.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/pixelswitharrow.webp.html">pixelswitharrow.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/pixelswitharrow.webp" download class="dir-download-icon" title="Download pixelswitharrow.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/Polarization0001.gif.html">Polarization0001.gif</a>
+                                        <a href="/Videos/Wicked Interesting/.files/Polarization0001.gif" download class="dir-download-icon" title="Download Polarization0001.gif"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/polarizationoverview.webp.html">polarizationoverview.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/polarizationoverview.webp" download class="dir-download-icon" title="Download polarizationoverview.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/polarizer_doublelabeled.webp.html">polarizer_doublelabeled.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/polarizer_doublelabeled.webp" download class="dir-download-icon" title="Download polarizer_doublelabeled.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/polarizer_doublesame.jpg.html">polarizer_doublesame.jpg</a>
+                                        <a href="/Videos/Wicked Interesting/.files/polarizer_doublesame.jpg" download class="dir-download-icon" title="Download polarizer_doublesame.jpg"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/polarizer_doublesame2.webp.html">polarizer_doublesame2.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/polarizer_doublesame2.webp" download class="dir-download-icon" title="Download polarizer_doublesame2.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/polarizer_single.webp.html">polarizer_single.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/polarizer_single.webp" download class="dir-download-icon" title="Download polarizer_single.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/polarizer_strands.webp.html">polarizer_strands.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/polarizer_strands.webp" download class="dir-download-icon" title="Download polarizer_strands.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/polarizer_triple.webp.html">polarizer_triple.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/polarizer_triple.webp" download class="dir-download-icon" title="Download polarizer_triple.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/singlepixel.png.html">singlepixel.png</a>
+                                        <a href="/Videos/Wicked Interesting/.files/singlepixel.png" download class="dir-download-icon" title="Download singlepixel.png"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/udpixel.webp.html">udpixel.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/udpixel.webp" download class="dir-download-icon" title="Download udpixel.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/usbmicroscopepixel.png.html">usbmicroscopepixel.png</a>
+                                        <a href="/Videos/Wicked Interesting/.files/usbmicroscopepixel.png" download class="dir-download-icon" title="Download usbmicroscopepixel.png"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/usbmicroscopepixel.webp.html">usbmicroscopepixel.webp</a>
+                                        <a href="/Videos/Wicked Interesting/.files/usbmicroscopepixel.webp" download class="dir-download-icon" title="Download usbmicroscopepixel.webp"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/WI_AVCart Intro (2).webm.html">WI_AVCart Intro (2).webm</a>
+                                        <a href="/Videos/Wicked Interesting/.files/WI_AVCart Intro (2).webm" download class="dir-download-icon" title="Download WI_AVCart Intro (2).webm"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/WI_AVCart Intro.webm.html">WI_AVCart Intro.webm</a>
+                                        <a href="/Videos/Wicked Interesting/.files/WI_AVCart Intro.webm" download class="dir-download-icon" title="Download WI_AVCart Intro.webm"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Videos/Wicked Interesting/.files/WI_AVCartIntro.gif.html">WI_AVCartIntro.gif</a>
+                                        <a href="/Videos/Wicked Interesting/.files/WI_AVCartIntro.gif" download class="dir-download-icon" title="Download WI_AVCartIntro.gif"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

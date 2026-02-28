@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>CASH N CLEAN.mp3</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="A curious folder on the internet. Home of Mason Amadeus">
+        <link
+        rel="canonical" href="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="music.song">
+        <meta property="og:url" content="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html">
+        <meta property="og:title" content="CASH N CLEAN.mp3">
+        <meta
+        property="og:description" content="A curious folder on the internet. Home of Mason Amadeus"> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+                
+                <meta property="og:audio" content="https://bodgelab.com/Stealware/Fake%20Commercials/CASH%20N%20CLEAN.mp3">
+                <meta property="og:audio:secure_url" content="https://bodgelab.com/Stealware/Fake%20Commercials/CASH%20N%20CLEAN.mp3">
+                <meta property="og:audio:type" content="audio/mpeg">
+                <meta name="twitter:card" content="summary_large_image">
+            
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/" class="breadcrumb">Stealware</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/Fake Commercials/" class="breadcrumb">Fake Commercials</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <span class="current">CASH N CLEAN.mp3</span>
+                                    
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Stealware/Fake Commercials/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: February 28, 2026</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+  <h2>CASH N CLEAN.mp3</h2>
+  
+  
+  
+    <div class="bodge-rss-player single-track" data-src="/Stealware/Fake%20Commercials/CASH%20N%20CLEAN.mp3" data-title="CASH N CLEAN.mp3">
+        <div class="rss-loading">
+             <img src="/.config/loading.svg" alt="Loading..." style="width: 50px; height: 50px;">
+             <p>Loading Audio...</p>
+        </div>
+    </div><script src="/js/bodge-player.js" defer></script>
+  
+  
+
+
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/Stealware/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                WIDK Commercials
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+                                    <li class="directory-index-in-list">
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/homeicon.svg');"></span>
+                                        
+                                            <a href="/Stealware/Fake Commercials/">WIDK Commercials</a>
+                                        
+                                    </li>
+                                
+
+
+                                
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/ADOLESCENT ASSASSINS.mp3.html">ADOLESCENT ASSASSINS.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/ADOLESCENT ASSASSINS.mp3" download class="dir-download-icon" title="Download ADOLESCENT ASSASSINS.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/ADVERTISING.mp3.html">ADVERTISING.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/ADVERTISING.mp3" download class="dir-download-icon" title="Download ADVERTISING.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/ARTESINAL CRACK.mp3.html">ARTESINAL CRACK.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/ARTESINAL CRACK.mp3" download class="dir-download-icon" title="Download ARTESINAL CRACK.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/ASSHAUL.mp3.html">ASSHAUL.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/ASSHAUL.mp3" download class="dir-download-icon" title="Download ASSHAUL.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/BIGFOOT.mp3.html">BIGFOOT.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/BIGFOOT.mp3" download class="dir-download-icon" title="Download BIGFOOT.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/BOOK MARK.mp3.html">BOOK MARK.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/BOOK MARK.mp3" download class="dir-download-icon" title="Download BOOK MARK.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/BOOTLEG DRANKS.mp3.html">BOOTLEG DRANKS.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/BOOTLEG DRANKS.mp3" download class="dir-download-icon" title="Download BOOTLEG DRANKS.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/BOYBLADES-1.mp3.html">BOYBLADES-1.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/BOYBLADES-1.mp3" download class="dir-download-icon" title="Download BOYBLADES-1.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/BUFF SHRIMP.mp3.html">BUFF SHRIMP.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/BUFF SHRIMP.mp3" download class="dir-download-icon" title="Download BUFF SHRIMP.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/BUY A WISH.mp3.html">BUY A WISH.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/BUY A WISH.mp3" download class="dir-download-icon" title="Download BUY A WISH.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/CADAVER DRONES.mp3.html">CADAVER DRONES.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/CADAVER DRONES.mp3" download class="dir-download-icon" title="Download CADAVER DRONES.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/CASH N CLEAN.mp3.html">CASH N CLEAN.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/CASH N CLEAN.mp3" download class="dir-download-icon" title="Download CASH N CLEAN.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/CHEAP BUMPERS_final.mp3.html">CHEAP BUMPERS_final.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/CHEAP BUMPERS_final.mp3" download class="dir-download-icon" title="Download CHEAP BUMPERS_final.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/CHURCH CHING EBT GOD.mp3.html">CHURCH CHING EBT GOD.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/CHURCH CHING EBT GOD.mp3" download class="dir-download-icon" title="Download CHURCH CHING EBT GOD.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/CORNHUB.mp3.html">CORNHUB.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/CORNHUB.mp3" download class="dir-download-icon" title="Download CORNHUB.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/DAB PSA.mp3.html">DAB PSA.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/DAB PSA.mp3" download class="dir-download-icon" title="Download DAB PSA.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/DANCEPANTS.mp3.html">DANCEPANTS.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/DANCEPANTS.mp3" download class="dir-download-icon" title="Download DANCEPANTS.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/DERMATOLOGY.mp3.html">DERMATOLOGY.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/DERMATOLOGY.mp3" download class="dir-download-icon" title="Download DERMATOLOGY.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/DREAD DRIVE.mp3.html">DREAD DRIVE.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/DREAD DRIVE.mp3" download class="dir-download-icon" title="Download DREAD DRIVE.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/EXISTENTIAL CRISIS.mp3.html">EXISTENTIAL CRISIS.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/EXISTENTIAL CRISIS.mp3" download class="dir-download-icon" title="Download EXISTENTIAL CRISIS.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/EXOTIC STEAKS FINAL.mp3.html">EXOTIC STEAKS FINAL.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/EXOTIC STEAKS FINAL.mp3" download class="dir-download-icon" title="Download EXOTIC STEAKS FINAL.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/FRIEND HIRE.mp3.html">FRIEND HIRE.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/FRIEND HIRE.mp3" download class="dir-download-icon" title="Download FRIEND HIRE.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/FUNKY FRANKS.mp3.html">FUNKY FRANKS.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/FUNKY FRANKS.mp3" download class="dir-download-icon" title="Download FUNKY FRANKS.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/GASOLINE SPRAY.mp3.html">GASOLINE SPRAY.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/GASOLINE SPRAY.mp3" download class="dir-download-icon" title="Download GASOLINE SPRAY.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/GET IT PIZZA.mp3.html">GET IT PIZZA.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/GET IT PIZZA.mp3" download class="dir-download-icon" title="Download GET IT PIZZA.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/GUT BE GONE FINAL.mp3.html">GUT BE GONE FINAL.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/GUT BE GONE FINAL.mp3" download class="dir-download-icon" title="Download GUT BE GONE FINAL.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/HAND_UNSANITIZER.mp3.html">HAND_UNSANITIZER.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/HAND_UNSANITIZER.mp3" download class="dir-download-icon" title="Download HAND_UNSANITIZER.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/HEAVY PETTING ZOO.mp3.html">HEAVY PETTING ZOO.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/HEAVY PETTING ZOO.mp3" download class="dir-download-icon" title="Download HEAVY PETTING ZOO.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/HINEY PACK.mp3.html">HINEY PACK.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/HINEY PACK.mp3" download class="dir-download-icon" title="Download HINEY PACK.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/HORSE MILK FINAL.mp3.html">HORSE MILK FINAL.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/HORSE MILK FINAL.mp3" download class="dir-download-icon" title="Download HORSE MILK FINAL.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/INAUDIBLE.mp3.html">INAUDIBLE.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/INAUDIBLE.mp3" download class="dir-download-icon" title="Download INAUDIBLE.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/index.json.11ty.js.html">index.json.11ty.js</a>
+                                        <a href="/Stealware/Fake Commercials/index.json.11ty.js" download class="dir-download-icon" title="Download index.json.11ty.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/INSURANCE.mp3.html">INSURANCE.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/INSURANCE.mp3" download class="dir-download-icon" title="Download INSURANCE.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/ISP.mp3.html">ISP.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/ISP.mp3" download class="dir-download-icon" title="Download ISP.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/KILLEM AND DEAD.mp3.html">KILLEM AND DEAD.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/KILLEM AND DEAD.mp3" download class="dir-download-icon" title="Download KILLEM AND DEAD.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/LANDSCAPE LINGERIE.mp3.html">LANDSCAPE LINGERIE.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/LANDSCAPE LINGERIE.mp3" download class="dir-download-icon" title="Download LANDSCAPE LINGERIE.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/LAWYER.mp3.html">LAWYER.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/LAWYER.mp3" download class="dir-download-icon" title="Download LAWYER.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/MEDITATION.mp3.html">MEDITATION.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/MEDITATION.mp3" download class="dir-download-icon" title="Download MEDITATION.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/MOTHBOX.mp3.html">MOTHBOX.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/MOTHBOX.mp3" download class="dir-download-icon" title="Download MOTHBOX.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/NECRONOMIKAMASUTRA.mp3.html">NECRONOMIKAMASUTRA.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/NECRONOMIKAMASUTRA.mp3" download class="dir-download-icon" title="Download NECRONOMIKAMASUTRA.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/NEW SHOW.mp3.html">NEW SHOW.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/NEW SHOW.mp3" download class="dir-download-icon" title="Download NEW SHOW.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/NOSE FUNNEL.mp3.html">NOSE FUNNEL.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/NOSE FUNNEL.mp3" download class="dir-download-icon" title="Download NOSE FUNNEL.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/ONEPILL_finalmix.mp3.html">ONEPILL_finalmix.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/ONEPILL_finalmix.mp3" download class="dir-download-icon" title="Download ONEPILL_finalmix.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/Planet&#39;s Palace.mp3.html">Planet&#39;s Palace.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/Planet&#39;s Palace.mp3" download class="dir-download-icon" title="Download Planet&#39;s Palace.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/POSSUM SAUCE.mp3.html">POSSUM SAUCE.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/POSSUM SAUCE.mp3" download class="dir-download-icon" title="Download POSSUM SAUCE.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/PROP 34.mp3.html">PROP 34.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/PROP 34.mp3" download class="dir-download-icon" title="Download PROP 34.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/Radio Blabble - Short Version.mp3.html">Radio Blabble - Short Version.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/Radio Blabble - Short Version.mp3" download class="dir-download-icon" title="Download Radio Blabble - Short Version.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/RENT A DAD.mp3.html">RENT A DAD.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/RENT A DAD.mp3" download class="dir-download-icon" title="Download RENT A DAD.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/Reverse-Exorcism.mp3.html">Reverse-Exorcism.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/Reverse-Exorcism.mp3" download class="dir-download-icon" title="Download Reverse-Exorcism.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/RIPPED CONDOM REPAIR KIT.mp3.html">RIPPED CONDOM REPAIR KIT.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/RIPPED CONDOM REPAIR KIT.mp3" download class="dir-download-icon" title="Download RIPPED CONDOM REPAIR KIT.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/SAVIOR DATE DONE.mp3.html">SAVIOR DATE DONE.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/SAVIOR DATE DONE.mp3" download class="dir-download-icon" title="Download SAVIOR DATE DONE.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/SEVENTH CHANCE CONSIGNMENT.mp3.html">SEVENTH CHANCE CONSIGNMENT.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/SEVENTH CHANCE CONSIGNMENT.mp3" download class="dir-download-icon" title="Download SEVENTH CHANCE CONSIGNMENT.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/SIN ATRA.mp3.html">SIN ATRA.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/SIN ATRA.mp3" download class="dir-download-icon" title="Download SIN ATRA.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/SQUATIBLE.mp3.html">SQUATIBLE.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/SQUATIBLE.mp3" download class="dir-download-icon" title="Download SQUATIBLE.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/STANDYRANDYfinal.mp3.html">STANDYRANDYfinal.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/STANDYRANDYfinal.mp3" download class="dir-download-icon" title="Download STANDYRANDYfinal.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/SWEATSOCKS.mp3.html">SWEATSOCKS.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/SWEATSOCKS.mp3" download class="dir-download-icon" title="Download SWEATSOCKS.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/TOILET TERMITES - PODSAFE.mp3.html">TOILET TERMITES - PODSAFE.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/TOILET TERMITES - PODSAFE.mp3" download class="dir-download-icon" title="Download TOILET TERMITES - PODSAFE.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/WARONXMAS.mp3.html">WARONXMAS.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/WARONXMAS.mp3" download class="dir-download-icon" title="Download WARONXMAS.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/WEED.mp3.html">WEED.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/WEED.mp3" download class="dir-download-icon" title="Download WEED.mp3"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/Fake Commercials/WHITE HOUSE HIRING.mp3.html">WHITE HOUSE HIRING.mp3</a>
+                                        <a href="/Stealware/Fake Commercials/WHITE HOUSE HIRING.mp3" download class="dir-download-icon" title="Download WHITE HOUSE HIRING.mp3"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

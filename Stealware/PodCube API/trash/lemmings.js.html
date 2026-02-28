@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>lemmings.js</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="A curious folder on the internet. Home of Mason Amadeus">
+        <link
+        rel="canonical" href="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/%7B%7B%20media.url%20|%20safe%20%7D%7D.html">
+        <meta property="og:title" content="lemmings.js">
+        <meta
+        property="og:description" content="A curious folder on the internet. Home of Mason Amadeus"> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/" class="breadcrumb">Stealware</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/PodCube API/" class="breadcrumb">PodCube API</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Stealware/PodCube API/trash/" class="breadcrumb">trash</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <span class="current">lemmings.js</span>
+                                    
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Stealware/PodCube API/trash/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: February 28, 2026</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+  <h2>lemmings.js</h2>
+  
+  
+  
+    <div class="media-embed-wrapper text-embed">
+                      <pre class="language-js"><code class="language-js">// =============================================================================
+// POD-LEMMINGS
+// =============================================================================
+
+const TILE = 8;
+const UI_HEIGHT = 40;
+const T_AIR = 0;
+const T_DIRT = 1;
+const T_METAL = 2;
+const T_RAMP_R = 3;
+const T_RAMP_L = 4;
+const T_LAVA = 5;
+const T_GOLD = 6;
+
+const MAX_FALL_HEIGHT = 65;
+const DIG_SPEED = 0.15;
+
+class Splat extends Entity {
+    constructor(x, y) {
+        super(x, y + 2);
+        this.w = 6; this.h = 2;
+        this.color = &#039;#c0392b&#039;;
+        this.timer = 10.0;
+        this.z = -10;
+    }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer &lt;= 0) this.destroy();
+    }
+    draw(gfx) {
+        gfx.rect(this.x, this.y, this.w, this.h, this.color);
+        gfx.rect(this.x - 2, this.y - 1, 1, 1, this.color);
+        gfx.rect(this.x + 4, this.y, 1, 1, this.color);
+        gfx.rect(this.x + 8, this.y - 1, 1, 1, this.color);
+    }
+}
+
+class Lemming extends Physics.Actor {
+    constructor(x, y) {
+        super(x, y, TILE - 2, TILE - 1);
+        this.color = &#039;#00ff00&#039;;
+        this.dir = 1;
+        this.speed = 20;
+        this.role = &#039;WALKER&#039;;
+
+        this.timer = 0;
+        this.actionCount = 0;
+        this.nuke = false;
+
+        this.fallStartY = y;
+        this.wasGrounded = false;
+        this.z = 0;
+    }
+
+    setRole(role) {
+        // Toggle direction if clicking an existing walker
+        if (role === &#039;WALKER&#039; &amp;&amp; this.role === &#039;WALKER&#039;) {
+            this.dir *= -1;
+            this.vx = this.dir * this.speed;
+            return;
+        }
+
+        if (this.role === role) return;
+        this.role = role;
+        this.timer = 0;
+        this.actionCount = 0;
+
+        // Role Constraints
+        if (role === &#039;BUILDER&#039;) this.actionCount = 5;
+        if (role === &#039;BASHER&#039;) this.actionCount = 10;
+        if (role === &#039;MINER&#039;) this.actionCount = 10;
+        if (role === &#039;BOMBER&#039;) this.timer = 3.0;
+
+        // 1. Z-Index Management (Trigger sort in Game loop if needed)
+        this.z = (role !== &#039;WALKER&#039;) ? 10 : 0;
+
+        // 2. Physics Reset for Stationary Roles
+        if ([&#039;BLOCKER&#039;, &#039;BUILDER&#039;, &#039;BOMBER&#039;, &#039;MINER&#039;].includes(role)) {
+            this.vx = 0;
+            this.remainderX = 0; // Clear sub-pixel accumulator to prevent drift
+        }
+    }
+
+    update(dt, input, game) {
+        const world = game.world;
+
+        // --- 1. Environmental Hazards ---
+        // Check center-bottom point for lava/gold
+        const cx = this.x + this.w / 2;
+        const bottomY = this.y + this.h + 1; 
+        const gx = world.toGrid(cx);
+        const gy = world.toGrid(bottomY);
+        const t = world.get(gx, gy);
+
+        if (t === T_LAVA) {
+            this.die(game, false);
+            return;
+        } else if (t === T_GOLD) {
+            world.set(gx, gy, T_AIR);
+            game.collectBonus();
+        }
+
+        // --- 2. Entity Collision (Blockers) ---
+        const others = game.collideAll(this, Lemming);
+        for (const other of others) {
+            if (other.role === &#039;BLOCKER&#039;) {
+                // Only turn around if we are moving TOWARDS the blocker
+                if (this.x &lt; other.x &amp;&amp; this.dir &gt; 0) {
+                    this.dir = -1;
+                    this.vx = this.dir * this.speed; // Apply immediately
+                } else if (this.x &gt; other.x &amp;&amp; this.dir &lt; 0) {
+                    this.dir = 1;
+                    this.vx = this.dir * this.speed; // Apply immediately
+                }
+            }
+        }
+
+        // --- 3. Nuke Logic ---
+        if (this.nuke &amp;&amp; this.role !== &#039;BOMBER&#039;) {
+            this.setRole(&#039;BOMBER&#039;);
+            this.timer = Math.random(); 
+        }
+
+        // --- 4. Role Logic ---
+        if (this.role === &#039;WALKER&#039; || this.role === &#039;FLOATER&#039;) {
+            this.vx = this.dir * this.speed;
+        }
+        else if (this.role === &#039;BASHER&#039;) {
+            this.vx = this.dir * (this.speed * 0.5);
+            
+            const wallX = world.toGrid(this.x + this.w/2 + (this.dir * (TILE/2)));
+            const headY = world.toGrid(this.y + 4);
+            const tFront = world.get(wallX, headY);
+            
+            if (tFront === T_DIRT || tFront === T_GOLD) {
+                 world.set(wallX, headY, T_AIR);
+                 // Only decrement on valid dig
+                 this.actionCount -= (dt * 2); 
+            } else if (tFront === T_METAL) {
+                 this.dir *= -1; 
+                 this.setRole(&#039;WALKER&#039;);
+            }
+            if (this.actionCount &lt;= 0) this.setRole(&#039;WALKER&#039;);
+        }
+        else if (this.role === &#039;MINER&#039;) {
+            this.vx = 0; // STOP moving horizontally
+            this.remainderX = 0;
+
+            this.timer += dt;
+            if (this.timer &gt; DIG_SPEED) {
+                this.timer = 0;
+                const res = this.performMine(world);
+
+                if (res === &#039;DIG&#039;) {
+                    this.actionCount--;
+                    // Optional: Increase actionCount in setRole if you want them to dig deeper/forever
+                    if (this.actionCount &lt;= 0) this.setRole(&#039;WALKER&#039;);
+                } else if (res === &#039;FLOOR&#039;) {
+                    // Hit steel or lava
+                    this.setRole(&#039;WALKER&#039;);
+                }
+            }
+        }
+        else if (this.role === &#039;BUILDER&#039;) {
+            this.vx = 0;
+            this.timer -= dt;
+            if (this.timer &lt;= 0) {
+                if (this.actionCount &gt; 0) {
+                    const res = this.performBuild(world);
+                    if (res === &#039;BUILT&#039;) {
+                        this.actionCount--;
+                        this.timer = 0.6;
+                    } else if (res === &#039;BLOCKED&#039;) {
+                        this.dir *= -1;
+                        this.setRole(&#039;WALKER&#039;);
+                    }
+                } else {
+                    this.setRole(&#039;WALKER&#039;);
+                }
+            }
+        }
+        else if (this.role === &#039;BOMBER&#039;) {
+            this.vx = 0;
+            this.timer -= dt;
+            if (this.timer &lt;= 0) {
+                this.explode(world);
+                this.destroy();
+                return;
+            }
+        }
+        else if (this.role === &#039;BLOCKER&#039;) {
+            this.vx = 0; // Force stop every frame to fight gravity drift
+        }
+
+        // --- 5. Physics Integration ---
+        this.wasGrounded = this.grounded;
+        
+        // Floater Cap
+        if (this.role === &#039;FLOATER&#039; &amp;&amp; this.vy &gt; 30) {
+            this.vy = 30;
+            this.fallStartY = this.y; 
+        }
+        
+        this.updatePhysics(dt, world, 600);
+
+        // Fall Damage
+        if (!this.wasGrounded &amp;&amp; this.grounded) {
+            const fallDist = this.y - this.fallStartY;
+            if (fallDist &gt; MAX_FALL_HEIGHT &amp;&amp; this.role !== &#039;FLOATER&#039;) {
+                this.die(game, true); return;
+            }
+        }
+        if (this.grounded) this.fallStartY = this.y;
+
+        // Auto-Climb (Walker/Floater)
+        if (Math.abs(this.vx) &gt; 1 &amp;&amp; this.grounded) {
+            if (this.canStepUp(world)) {
+                this.y -= TILE;
+                this.x += this.dir * 2;
+            } else if (this.vx === 0) { 
+                // We hit a wall (vx became 0 in updatePhysics)
+                this.dir *= -1; 
+            }
+        }
+    }
+
+    die(game, splat) {
+        if (splat) game.add(new Splat(this.x, this.y));
+        this.destroy();
+    }
+
+    canStepUp(world) {
+        const gx = world.toGrid(this.x + this.w / 2);
+        const gy = world.toGrid(this.y + this.h - 1);
+        const frontX = gx + this.dir;
+        // Check if the tile in front is solid, but the one above it is empty
+        return world.get(frontX, gy) &gt; 0 &amp;&amp; world.get(frontX, gy - 1) === T_AIR &amp;&amp; world.get(gx, gy - 1) === T_AIR;
+    }
+
+    performMine(world) {
+        const cx = this.x + this.w / 2;
+        const cy = this.y + this.h + 2; // Probe point just below feet
+        const gx = world.toGrid(cx);
+        const gy = world.toGrid(cy);
+
+        // Check the tile directly below
+        const tDig = world.get(gx, gy);
+
+        // Hit metal or lava? Stop.
+        if (tDig === T_METAL || tDig === T_LAVA) return &#039;FLOOR&#039;;
+
+        // Dig the hole
+        world.set(gx, gy, T_AIR);
+
+        // (Optional) Dig the tile above it too if you want to ensure they don&#039;t get stuck on pixel edges
+        // world.set(gx, gy - 1, T_AIR); 
+
+        return &#039;DIG&#039;;
+    }
+
+    performBuild(world) {
+        const gx = world.toGrid(this.x + this.w / 2);
+        const gy = world.toGrid(this.y + this.h - 0.1);
+        const targetX = gx + this.dir;
+        const headY = gy - 1; 
+        const aboveY = gy - 2;
+
+        if (world.get(targetX, gy) === T_METAL || 
+            world.get(targetX, headY) === T_METAL || 
+            world.get(targetX, aboveY) === T_METAL) return &#039;BLOCKED&#039;;
+
+        if (world.get(targetX, headY) === T_LAVA) return &#039;BLOCKED&#039;;
+
+        // Clear space
+        if (world.get(targetX, headY) === T_DIRT) world.set(targetX, headY, T_AIR);
+        if (world.get(gx, headY) === T_DIRT) world.set(gx, headY, T_AIR); 
+        if (world.get(targetX, aboveY) === T_DIRT) world.set(targetX, aboveY, T_AIR); 
+
+        const type = this.dir &gt; 0 ? T_RAMP_R : T_RAMP_L;
+        
+        if (world.get(targetX, gy) !== T_METAL) {
+             world.set(targetX, gy, type);
+        }
+
+        // Snap to new ramp
+        this.x = (targetX * TILE) + (this.dir &gt; 0 ? 0 : 2);
+        this.y = (gy * TILE) - this.h - 0.01;
+        
+        // CRITICAL FIX: Reset physics accumulators to prevent teleportation
+        this.vx = 0; 
+        this.vy = 0; 
+        this.remainderX = 0; 
+        this.remainderY = 0;
+        
+        return &#039;BUILT&#039;;
+    }
+
+    explode(world) {
+        const cx = world.toGrid(this.x + this.w / 2);
+        const cy = world.toGrid(this.y + this.h / 2);
+        const r = 2; 
+        for (let y = cy - r; y &lt;= cy + r; y++) {
+            for (let x = cx - r; x &lt;= cx + r; x++) {
+                if (x &lt;= 0 || x &gt;= world.cols - 1 || y &lt;= 0 || y &gt;= world.rows - 1) continue;
+                world.set(x, y, T_AIR);
+            }
+        }
+    }
+
+    draw(gfx) {
+        const colors = {
+            &#039;WALKER&#039;: &#039;#2ecc71&#039;, &#039;FLOATER&#039;: &#039;#3498db&#039;, &#039;BLOCKER&#039;: &#039;#fbff00ff&#039;,
+            &#039;BUILDER&#039;: &#039;#ecf0f1&#039;, &#039;BASHER&#039;: &#039;#e67e22&#039;, &#039;MINER&#039;: &#039;#9b59b6&#039;
+        };
+        let c = colors[this.role] || &#039;#fff&#039;;
+        if (this.role === &#039;BOMBER&#039;) c = (this.timer * 5) % 2 &gt; 1 ? &#039;#222&#039; : &#039;#e74c3c&#039;;
+
+        gfx.rect(this.x, this.y, this.w, this.h, c);
+        const eyeX = this.dir &gt; 0 ? this.x + this.w - 2 : this.x;
+        gfx.rect(eyeX, this.y + 1, 2, 2, &#039;#000&#039;);
+
+        if (this.role === &#039;FLOATER&#039;) {
+            gfx.rect(this.x - 2, this.y - 2, this.w + 4, 2, &#039;#fff&#039;);
+            gfx.rect(this.x + 2, this.y - 2, 1, 4, &#039;#fff&#039;);
+        }
+        if (this.role === &#039;MINER&#039;) {
+            // Draw pickaxe below them instead of in front
+            gfx.rect(this.x + this.w / 2 - 1, this.y + this.h, 2, 3, &#039;#999&#039;);
+        }
+    }
+}
+
+class Goal extends Entity {
+    constructor(x, y) {
+        super(x, y);
+        this.w = 20;
+        this.h = 20;
+    }
+
+    update(dt, input, game) {
+        const arrivals = game.collideAll(this, Lemming);
+        arrivals.forEach(lemming =&gt; {
+            lemming.destroy();
+            game.score++;
+            game.api.setScore(game.score);
+        });
+    }
+
+    draw(gfx) {
+        gfx.rect(this.x, this.y, this.w, this.h, &#039;rgba(0, 255, 255, 0.3)&#039;);
+        gfx.rect(this.x + 5, this.y + 5, this.w - 10, this.h - 10, &#039;#0ff&#039;);
+    }
+}
+
+
+class LemmingsGame extends Game {
+
+    static meta = {
+        id: &quot;lemmings&quot;,
+        title: &quot;Delegation Assessment&quot;,
+        desc: &quot;Program the q-bits to tunnel through spacetime. Collect stray data. Avoid firewalls.&quot;,
+        instructions: &quot;Roles are limited. Plan your route.\nTap WALKER to flip direction.\nGrab golden user-data bytes.\nToggle Fast Forward with &gt;&gt;.&quot;
+    };
+
+    static ICONS = {
+        WALKER: &#039;&lt;path d=&quot;M13 5l7 7-7 7M5 5l7 7-7 7&quot;/&gt;&#039;,
+        BASHER: &#039;&lt;path d=&quot;M10 12h11M10 12l4-4m-4 4l4 4M3 6v12&quot;/&gt;&#039;,
+        MINER: &#039;&lt;path d=&quot;M19 5L5 19m0 0h9m-9 0v-9&quot;/&gt;&#039;,
+        BUILDER: &#039;&lt;path d=&quot;M2 20h4v-4h4v-4h4v-4h4v-4h4v-4h4v-4h4v-4h4v-4h4&quot;/&gt;&#039;,
+        FLOATER: &#039;&lt;path d=&quot;M12 22V10m0 0l-5 5m5-5l5 5M4 8h16c0-4-4-6-8-6S4 4 4 8z&quot;/&gt;&#039;,
+        BLOCKER: &#039;&lt;rect x=&quot;4&quot; y=&quot;4&quot; width=&quot;16&quot; height=&quot;16&quot; rx=&quot;2&quot;/&gt;&lt;path d=&quot;M8 12h8&quot;/&gt;&#039;,
+        BOMBER: &#039;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;3&quot;/&gt;&lt;path d=&quot;M12 2v3m0 14v3M2 12h3m14 0h3m-3-7l-2 2m-10 10l-2 2m0-14l2 2m10 10l2 2&quot;/&gt;&#039;,
+        NUKE: &#039;&lt;path d=&quot;M21 4H3m2 0l1 16a2 2 0 002 2h10a2 2 0 002-2l1-16M9 9v8m6-8v8M9 4V2h6v2&quot;/&gt;&#039;,
+        FF: &#039;&lt;path d=&quot;M2 18L10 12L2 6V18ZM11 18L19 12L11 6V18ZM22 6V18&quot;/&gt;&#039;
+    };
+
+    static getIconUrl(name, color = &#039;white&#039;) {
+        const content = LemmingsGame.ICONS[name] || &#039;&#039;;
+        const svg = `&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;${color}&quot; stroke-width=&quot;2.5&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;${content}&lt;/svg&gt;`;
+        return `url(&quot;data:image/svg+xml;utf8,${encodeURIComponent(svg)}&quot;)`;
+    }
+
+    onInit() {
+        this.score = 0; 
+        this.bonusLemmings = 0; 
+        this.selectedTool = &#039;WALKER&#039;;
+        this.isFastForward = false;
+
+        const savedLvl = this.api.getData(&#039;level&#039;);
+        const savedCount = this.api.getData(&#039;count&#039;);
+
+        this.level = savedLvl || 1;
+        this.totalPool = (savedCount !== null) ? savedCount : 20; 
+        
+        const gridH = this.api.H - UI_HEIGHT;
+        const cols = Math.ceil(this.api.W / TILE);
+        const rows = Math.ceil(gridH / TILE);
+        this.world = new Physics.World(cols, rows, TILE);
+
+        this.inventory = {
+            &#039;WALKER&#039;: Infinity, &#039;FLOATER&#039;: 10, &#039;BLOCKER&#039;: 10,
+            &#039;BASHER&#039;: 10, &#039;MINER&#039;: 10, &#039;BUILDER&#039;: 10, &#039;BOMBER&#039;: 5
+        };
+
+        this.generateHiveLevel(cols, rows);
+        this.buildUI(); // Build once at start
+
+        this.spawnTimer = 0;
+        this.lemmingsCount = this.totalPool;
+
+        this.api.setStatus(`LEVEL ${this.level}`);
+        this.api.setLabel(`UNITS: ${this.lemmingsCount}`);
+    }
+
+    collectBonus() {
+        this.bonusLemmings += 5;
+    }
+
+    generateHiveLevel(cols, rows) {
+        this.spawnX = PC.randInt(10, cols - 10) * TILE;
+        this.spawnY = 15;
+        const spawnCol = Math.floor(this.spawnX / TILE);
+        
+        let goalCol = PC.randInt(5, cols - 10);
+        if (Math.abs(goalCol * TILE - this.spawnX) &lt; 100) goalCol = (goalCol + Math.floor(cols / 2)) % (cols - 10);
+        const goalRow = rows - 7;
+        const goalX = goalCol * TILE;
+        const goalY = goalRow * TILE;
+        this.add(new Goal(goalX, goalY));
+
+        const density = 0.52 + (Math.random() * 0.13);
+        for (let i = 0; i &lt; this.world.data.length; i++) this.world.data[i] = Math.random() &lt; density ? T_AIR : T_DIRT;
+
+        for (let iter = 0; iter &lt; 4; iter++) {
+            const nextData = new Uint8Array(this.world.data);
+            for (let y = 1; y &lt; rows - 1; y++) {
+                for (let x = 1; x &lt; cols - 1; x++) {
+                    let neighbors = 0;
+                    for (let dy = -1; dy &lt;= 1; dy++)
+                        for (let dx = -1; dx &lt;= 1; dx++)
+                            if (this.world.get(x + dx, y + dy) !== T_AIR) neighbors++;
+                    if (neighbors &gt; 4) nextData[y * cols + x] = T_DIRT;
+                    else if (neighbors &lt; 4) nextData[y * cols + x] = T_AIR;
+                }
+            }
+            this.world.data = nextData;
+        }
+
+        const numScraps = 5 + PC.randInt(0, 10);
+        for (let i = 0; i &lt; numScraps; i++) {
+            if (Math.random() &gt; 0.5) {
+                const w = PC.randInt(4, 12); const x = PC.randInt(2, cols - w - 2); const y = PC.randInt(5, rows - 5);
+                for (let k = 0; k &lt; w; k++) this.world.set(x + k, y, T_METAL);
+            } else {
+                const h = PC.randInt(4, 12); const x = PC.randInt(5, cols - 5); const y = PC.randInt(5, rows - h - 5);
+                for (let k = 0; k &lt; h; k++) this.world.set(x, y + k, T_METAL);
+            }
+        }
+
+        const numFirewalls = PC.randInt(3, 7);
+        for (let i = 0; i &lt; numFirewalls; i++) {
+            const h = PC.randInt(5, 12); const x = PC.randInt(10, cols - 10); const y = PC.randInt(10, rows - h - 10);
+            if (Math.abs(x - spawnCol) &lt; 6 || Math.abs(x - goalCol) &lt; 6) continue;
+            for (let k = 0; k &lt; h; k++) if (this.world.get(x, y + k) !== T_METAL) this.world.set(x, y + k, T_LAVA);
+        }
+
+        const numGold = PC.randInt(1, 3);
+        for (let i = 0; i &lt; numGold; i++) {
+            let placed = false;
+            while (!placed) {
+                const x = PC.randInt(5, cols - 5); const y = PC.randInt(5, rows - 5);
+                const t = this.world.get(x, y);
+                if (t !== T_METAL &amp;&amp; t !== T_LAVA) { this.world.set(x, y, T_GOLD); placed = true; }
+            }
+        }
+
+        for (let y = Math.floor(rows / 2); y &lt; rows - 2; y++) {
+            for (let x = 2; x &lt; cols - 2; x++) {
+                if (Math.random() &gt; 0.1) continue;
+                if (Math.abs(x - spawnCol) &lt; 3 || Math.abs(x - goalCol) &lt; 3) continue;
+                if (this.world.get(x, y) === T_AIR &amp;&amp; this.world.get(x, y + 1) !== T_AIR) {
+                    const width = PC.randInt(1, 3);
+                    let safe = true;
+                    for (let k = 0; k &lt; width; k++) if (this.world.get(x + k, y + 1) === T_AIR || this.world.get(x + k, y) !== T_AIR) safe = false;
+                    if (safe) for (let k = 0; k &lt; width; k++) this.world.set(x + k, y, T_LAVA);
+                }
+            }
+        }
+
+        for (let y = 0; y &lt; rows; y++) { this.world.set(0, y, T_METAL); this.world.set(cols - 1, y, T_METAL); }
+        for (let x = 0; x &lt; cols; x++) { this.world.set(x, 0, T_METAL); }
+        for (let x = 1; x &lt; cols - 1; x++) this.world.set(x, rows - 1, T_LAVA);
+
+        this.forcePlatform(this.spawnX, this.spawnY + 30, 6, T_METAL);
+        this.forceClear(this.spawnX, this.spawnY, 4, 4);
+        this.forcePlatform(goalX, goalY + 20, 6, T_METAL);
+        this.forceClear(goalX, goalY, 4, 4);
+    }
+
+    forcePlatform(px, py, wTiles, type) {
+        const gx = this.world.toGrid(px); const gy = this.world.toGrid(py); const startX = gx - Math.floor(wTiles / 2);
+        for (let x = 0; x &lt; wTiles; x++) if (startX + x &gt; 0 &amp;&amp; startX + x &lt; this.world.cols - 1) this.world.set(startX + x, gy, type);
+    }
+    forceClear(px, py, w, h) {
+        const gx = this.world.toGrid(px); const gy = this.world.toGrid(py);
+        for (let y = 0; y &lt; h; y++) for (let x = 0; x &lt; w; x++) this.world.set(gx + x, gy + y, T_AIR);
+    }
+
+    buildUI() {
+        const tools = [
+            { id: &#039;WALKER&#039;,  lbl: &#039;PING&#039;, col: &#039;#2ecc71&#039; },
+            { id: &#039;BASHER&#039;,  lbl: &#039;HACK&#039;, col: &#039;#e67e22&#039; },
+            { id: &#039;MINER&#039;,   lbl: &#039;MINE&#039;, col: &#039;#9b59b6&#039; },
+            { id: &#039;BUILDER&#039;, lbl: &#039;UPLINK&#039;, col: &#039;#7f8c8d&#039; },
+            { id: &#039;FLOATER&#039;, lbl: &#039;BUFFER&#039;, col: &#039;#3498db&#039; },
+            { id: &#039;BLOCKER&#039;, lbl: &#039;HALT&#039;, col: &#039;#aca900ff&#039; },
+            { id: &#039;BOMBER&#039;,  lbl: &#039;CRASH&#039;, col: &#039;#ff0101ff&#039; },
+            { id: &#039;NUKE&#039;,    lbl: &#039;\nABORT&#039;, col: &#039;#c0392b&#039; },
+            { id: &#039;FF&#039;,      lbl: &#039;&gt;&gt;&#039;,  col: &#039;#000&#039; }
+        ];
+
+        this.api.UI.build([
+            { type: &#039;spacer&#039;, size: this.api.H - UI_HEIGHT + 2 },
+            {
+                type: &#039;grid&#039;, cols: 9, gap: 1, 
+                children: tools.map(t =&gt; {
+                    const count = Infinity;// this.inventory[t.id]; // temporarily bypassed 
+                    let label = t.lbl;
+                    if (count !== undefined &amp;&amp; count !== Infinity) label = `${count}\n${label}`;
+                    else if (count === Infinity) label = `∞\n${label}`;
+
+                    // Set initial look, but logic moves to updateUI
+                    return {
+                        type: &#039;button&#039;, 
+                        id: `btn-${t.id}`, // NEW: ID for DOM access
+                        text: label,
+                        style: {
+                            fontSize: &#039;6px&#039;, paddingTop: &#039;16px&#039;, paddingLeft: &#039;0px&#039;, paddingRight: &#039;0px&#039;,
+                            height: &#039;32px&#039;, backgroundColor: t.col, color: &#039;#fff&#039;,
+                            border: &#039;1px solid #222&#039;,
+                            whiteSpace: &#039;pre&#039;, textAlign: &#039;center&#039;, lineHeight: &#039;6px&#039;, cursor: &#039;pointer&#039;,
+                            backgroundImage: LemmingsGame.getIconUrl(t.id, &#039;rgba(255,255,255,0.5)&#039;), 
+                            backgroundRepeat: &#039;no-repeat&#039;, backgroundPosition: &#039;center 4px&#039;, backgroundSize: &#039;10px 10px&#039;
+                        },
+                        onClick: () =&gt; {
+                            if (t.id === &#039;NUKE&#039;) this.nukeAll();
+                            else if (t.id === &#039;FF&#039;) { this.isFastForward = !this.isFastForward; this.updateUI(); }
+                            else { this.selectedTool = t.id; this.updateUI(); }
+                        }
+                    };
+                })
+            }
+        ]);
+        
+        // Apply initial selection state
+        this.updateUI();
+    }
+    
+    // NEW: Efficiently updates buttons without destroying the DOM
+    updateUI() {
+        const toolDefs = [
+            { id: &#039;WALKER&#039;,  lbl: &#039;PING&#039; },
+            { id: &#039;BASHER&#039;,  lbl: &#039;HACK&#039; },
+            { id: &#039;MINER&#039;,   lbl: &#039;MINE&#039; },
+            { id: &#039;BUILDER&#039;, lbl: &#039;UPLINK&#039; },
+            { id: &#039;FLOATER&#039;, lbl: &#039;BUFFER&#039; },
+            { id: &#039;BLOCKER&#039;, lbl: &#039;HALT&#039; },
+            { id: &#039;BOMBER&#039;,  lbl: &#039;CRASH&#039; },
+            { id: &#039;NUKE&#039;,    lbl: &#039;\nABORT&#039; },
+            { id: &#039;FF&#039;,      lbl: &#039;&gt;&gt;&#039; }
+        ];
+        
+        toolDefs.forEach(t =&gt; {
+            const btn = this.api.UI.get(`btn-${t.id}`);
+            if (!btn) return;
+            
+            // 1. Update Text
+            const count = Infinity; // this.inventory[t.id]; temporarily bypassed
+            let label = t.lbl;
+            if (count !== undefined &amp;&amp; count !== Infinity) label = `${count}\n${label}`;
+            else if (count === Infinity) label = `∞\n${label}`;
+            btn.textContent = label;
+            
+            // 2. Update Selection State
+            const isSelected = this.selectedTool === t.id;
+            const isFF = t.id === &#039;FF&#039; &amp;&amp; this.isFastForward;
+            const active = isSelected || isFF;
+            
+            btn.style.borderColor = active ? &#039;#fff&#039; : &#039;#222&#039;;
+            btn.style.color = (t.id === &#039;FF&#039; &amp;&amp; active) ? &#039;#0f0&#039; : &#039;#fff&#039;;
+            
+            const iconColor = active ? &#039;#fff&#039; : &#039;rgba(255,255,255,0.5)&#039;;
+            btn.style.backgroundImage = LemmingsGame.getIconUrl(t.id, iconColor);
+        });
+    }
+
+    nukeAll() {
+        this.lemmingsCount = 0;
+        this.spawnTimer = Infinity;
+        this.entities.forEach(e =&gt; { if (e instanceof Lemming) e.nuke = true; });
+    }
+
+    update(dt, input) {
+        const steps = this.isFastForward ? 3 : 1;
+
+        for (let s = 0; s &lt; steps; s++) {
+            if (this.lemmingsCount &gt; 0) {
+                this.spawnTimer -= dt;
+                if (this.spawnTimer &lt;= 0) {
+                    this.add(new Lemming(this.spawnX + 10, this.spawnY + 10));
+                    this.lemmingsCount--;
+                    this.spawnTimer = 2.0;
+                }
+            }
+
+            // Performance: Removed entity sort from inner loop
+            super.update(dt, input);
+        }
+        
+        // Sort once per frame (outside the FF loop)
+        this.entities.sort((a, b) =&gt; a.z - b.z);
+
+        let aliveCount = 0;
+        let activeCount = 0;
+        for (let i = this.entities.length - 1; i &gt;= 0; i--) {
+            const e = this.entities[i];
+            if (e instanceof Lemming) {
+                aliveCount++;
+                if (!e.dead) activeCount++;
+            }
+        }
+
+        let label = `UNITS: ${this.lemmingsCount + activeCount}`;
+        if (this.bonusLemmings &gt; 0) label += ` (+${this.bonusLemmings})`;
+        this.api.setLabel(label);
+
+        // --- INPUT ---
+        if (input.mouse.clicked) {
+            if (input.mouse.y &lt; this.api.H - UI_HEIGHT) {
+                const hit = this.entities.slice().reverse().find(e =&gt;
+                    e instanceof Lemming &amp;&amp;
+                    this.api.pointInEntity(input.mouse.x, input.mouse.y, e, 6)
+                );
+
+                if (hit) {
+                    if (hit.role === this.selectedTool) {
+                        hit.dir *= -1;
+                        if ([&#039;WALKER&#039;, &#039;BASHER&#039;, &#039;MINER&#039;, &#039;FLOATER&#039;].includes(hit.role)) {
+                            hit.vx = hit.dir * (hit.role === &#039;WALKER&#039; ? hit.speed : hit.speed * 0.5);
+                        }
+                    } else if (this.inventory[this.selectedTool] &gt; 0) {
+                        hit.setRole(this.selectedTool);
+                        if (this.inventory[this.selectedTool] !== Infinity) {
+                            this.inventory[this.selectedTool]--;
+                            this.updateUI(); // Efficient update
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- GAME END LOGIC ---
+        if (this.lemmingsCount === 0 &amp;&amp; activeCount === 0) {
+            if (this.score &gt; 0) {
+                const nextTotal = this.score + this.bonusLemmings;
+                this.api.saveData(&#039;level&#039;, this.level + 1);
+                this.api.saveData(&#039;count&#039;, nextTotal);
+
+                let msg = `SURVIVORS: ${this.score}`;
+                if (this.bonusLemmings &gt; 0) msg += `\nRECOVERED: +${this.bonusLemmings}`;
+                msg += `\n\nUNITS FOR NEXT LEVEL: ${nextTotal}`;
+
+                this.api.newStage( `LEVEL ${this.level} COMPLETE`, msg, &quot;PROCEED&quot;, () =&gt; { this.onInit(); });
+            } else {
+                this.api.saveData(&#039;level&#039;, 1);
+                this.api.saveData(&#039;count&#039;, 20);
+                this.api.gameOver(&quot;COLONY LOST&quot;);
+            }
+        }
+    }
+
+    draw(gfx) {
+        gfx.clear(&#039;#22345cff&#039;);
+        const ctx = gfx.ctx();
+
+        for (let y = 0; y &lt; this.world.rows; y++) {
+            for (let x = 0; x &lt; this.world.cols; x++) {
+                const t = this.world.get(x, y);
+                const px = x * TILE;
+                const py = y * TILE;
+
+                if (t === T_DIRT) gfx.rect(px, py, TILE, TILE, (x + y) % 2 === 0 ? &#039;#2b658bff&#039; : &#039;#418397ff&#039;);
+                else if (t === T_METAL) gfx.rect(px, py, TILE, TILE, &#039;#b8b8b8ff&#039;);
+                else if (t === T_GOLD) gfx.rect(px, py, TILE, TILE, &#039;#f1c40f&#039;);
+                else if (t === T_LAVA) {
+                    const c = (Date.now() / 300) % 2 &gt; 1 ? &#039;#c0392b&#039; : &#039;#e74c3c&#039;;
+                    gfx.rect(px, py, TILE, TILE, c);
+                }
+                else if (t === T_RAMP_R) {
+                    ctx.fillStyle = &#039;#bdc3c7&#039;; ctx.beginPath();
+                    ctx.moveTo(px, py + TILE); ctx.lineTo(px + TILE, py + TILE); ctx.lineTo(px + TILE, py);
+                    ctx.fill();
+                }
+                else if (t === T_RAMP_L) {
+                    ctx.fillStyle = &#039;#bdc3c7&#039;; ctx.beginPath();
+                    ctx.moveTo(px, py); ctx.lineTo(px, py + TILE); ctx.lineTo(px + TILE, py + TILE);
+                    ctx.fill();
+                }
+            }
+        }
+
+        gfx.rect(0, this.api.H - UI_HEIGHT, this.api.W, UI_HEIGHT, &#039;#222&#039;);
+        gfx.line(0, this.api.H - UI_HEIGHT, this.api.W, this.api.H - UI_HEIGHT, &#039;#1768da&#039;, 2);
+        gfx.rect(this.spawnX - 5, this.spawnY - 10, 10, 10, &#039;#fff&#039;);
+
+        super.draw(gfx);
+    }
+}
+
+Interactive.register(LemmingsGame);</code></pre>
+                      <p class="download-btn-container">
+                        <a href="/Stealware/PodCube%20API/trash/lemmings.js" class="page-download-btn" download>DOWNLOAD "lemmings.js" ⤓</a>
+                      </p>
+                    </div>
+  
+  
+
+
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/Stealware/PodCube API/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                trash
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+
+
+                                
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/datastream.js.html">datastream.js</a>
+                                        <a href="/Stealware/PodCube API/trash/datastream.js" download class="dir-download-icon" title="Download datastream.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/interactive_gem.js.html">interactive_gem.js</a>
+                                        <a href="/Stealware/PodCube API/trash/interactive_gem.js" download class="dir-download-icon" title="Download interactive_gem.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/interactive_old.js.html">interactive_old.js</a>
+                                        <a href="/Stealware/PodCube API/trash/interactive_old.js" download class="dir-download-icon" title="Download interactive_old.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/lemmings.js.html">lemmings.js</a>
+                                        <a href="/Stealware/PodCube API/trash/lemmings.js" download class="dir-download-icon" title="Download lemmings.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/old_snake.js.html">old_snake.js</a>
+                                        <a href="/Stealware/PodCube API/trash/old_snake.js" download class="dir-download-icon" title="Download old_snake.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/quiz_old.js.html">quiz_old.js</a>
+                                        <a href="/Stealware/PodCube API/trash/quiz_old.js" download class="dir-download-icon" title="Download quiz_old.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/snake_old.js.html">snake_old.js</a>
+                                        <a href="/Stealware/PodCube API/trash/snake_old.js" download class="dir-download-icon" title="Download snake_old.js"></a>
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/Stealware/PodCube API/trash/systemrestore.js.html">systemrestore.js</a>
+                                        <a href="/Stealware/PodCube API/trash/systemrestore.js" download class="dir-download-icon" title="Download systemrestore.js"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>
