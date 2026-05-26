@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>PHENOMENOLOGICAL ETYMOLOGY OF A DRUM KIT</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="If you want to record your own percussive drum sample kit, and you don&#39;t know what drums you need, this might help a little bit. BARE MINIMUM **KICK** (low...">
+        <link
+        rel="canonical" href="https://bodgelab.com/Writing/Phenomenological%20Etymology%20of%20a%20Drum%20Kit/"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/Writing/Phenomenological%20Etymology%20of%20a%20Drum%20Kit/">
+        <meta property="og:title" content="PHENOMENOLOGICAL ETYMOLOGY OF A DRUM KIT">
+        <meta
+        property="og:description" content="If you want to record your own percussive drum sample kit, and you don&#39;t know what drums you need, this might help a little bit. BARE MINIMUM **KICK** (low..."> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Writing/" class="breadcrumb">Writing</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Writing/Phenomenological Etymology of a Drum Kit/" class="breadcrumb">Phenomenological Etymology of a Drum Kit</a>
+                                    
+                                
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Writing/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: February 28, 2026</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+                        <h1>PHENOMENOLOGICAL ETYMOLOGY OF A DRUM KIT</h1>
+<p>If you want to record your own percussive drum sample kit, and you don't know what drums you need, this might help a little bit.</p>
+<h2>BARE MINIMUM</h2>
+<ol>
+<li><strong>KICK</strong> (low bassy, &quot;boof&quot;)</li>
+<li><strong>SNARE</strong> (mid-high, &quot;crack&quot;)</li>
+<li><strong>HI-HAT</strong> (short, bright, &quot;CHIK&quot;)</li>
+<li><strong>CRASH CYMBAL</strong> (long, loud, bright, &quot;PSCHHHH&quot;)</li>
+</ol>
+<h2>EXPECTED MINIMUM</h2>
+<ol start="5">
+<li><strong>HI-HAT OPEN</strong> (long, similar to HI-HAT in tone, &quot;tssss&quot;)</li>
+<li><strong>RIDE CYMBAL</strong> (bright, quiet, shimmery, long, &quot;dtsshh&quot;)</li>
+<li><strong>TOM 1</strong> (tonal, short, &quot;dunk&quot;)</li>
+<li>**TOM 2 **(slightly lower pitch than TOM 1, otherwise similar)</li>
+<li><strong>TOM 3</strong> (slightly lower pitch than TOM 2, otherwise similar)</li>
+<li><strong>FLOOR TOM</strong> (tonal, lowest, longer &quot;buhh&quot;)</li>
+</ol>
+<h2>NICE TO HAVE</h2>
+<ol start="11">
+<li><strong>CRASH VARIATIONS</strong> (bright, various. &quot;SCHWINK&quot;, &quot;BOSH&quot;)</li>
+<li><strong>CLICKS</strong> (short, sharp, percussive)</li>
+<li><strong>SFX/SAMPLES</strong> (anything, percussive is best tho)</li>
+</ol>
+<h1>TIPS FOR BEST RESULTS</h1>
+<ol>
+<li>Find sounds that start with a sharp, transient beginning (rather than something that slowly builds up)</li>
+<li>Trim the audio files so that they start right at that beginning transient and end as soon as it goes silent</li>
+<li>Record in a higher sample rate to allow for cleaner stretching/pitch shifting if you want.</li>
+<li>Three variations of each sample will result in a nice dynamic sounding kit IMO</li>
+<li>Anything that makes a cool short sound will probably sound cool somewhere, consider those SFX.</li>
+<li>Some big longer sounds that DO build up are also cool but they're also SFX</li>
+</ol>
+
+                    
+                    
+                        <div class="page-meta">
+                            
+                            
+                                
+                                
+                            
+                            
+                            <hr>
+                                <p class="download-btn-container"> <a class="page-share-btn" href="/s/phenomenological-etymology-of-a-drum-kit-2675f/" title="Get permanent link">
+                                    SHARE⇗
+                                </a>
+                                <a class="page-download-btn nowrap" href="data:application/octet-stream;charset=utf-8,%23%20PHENOMENOLOGICAL%20ETYMOLOGY%20OF%20A%20DRUM%20KIT%0D%0A%0D%0AIf%20you%20want%20to%20record%20your%20own%20percussive%20drum%20sample%20kit%2C%20and%20you%20don't%20know%20what%20drums%20you%20need%2C%20this%20might%20help%20a%20little%20bit.%0D%0A%0D%0A%23%23%20BARE%20MINIMUM%0D%0A%0D%0A1.%20**KICK**%20(low%20bassy%2C%20%22boof%22)%0D%0A2.%20**SNARE**%20(mid-high%2C%20%22crack%22)%0D%0A3.%20**HI-HAT**%20(short%2C%20bright%2C%20%22CHIK%22)%0D%0A4.%20**CRASH%20CYMBAL**%20(long%2C%20loud%2C%20bright%2C%20%22PSCHHHH%22)%0D%0A%0D%0A%23%23%20EXPECTED%20MINIMUM%0D%0A5.%20**HI-HAT%20OPEN**%20(long%2C%20similar%20to%20HI-HAT%20in%20tone%2C%20%22tssss%22)%0D%0A6.%20**RIDE%20CYMBAL**%20(bright%2C%20quiet%2C%20shimmery%2C%20long%2C%20%22dtsshh%22)%0D%0A7.%20**TOM%201**%20(tonal%2C%20short%2C%20%22dunk%22)%0D%0A8.%20**TOM%202%20**(slightly%20lower%20pitch%20than%20TOM%201%2C%20otherwise%20similar)%0D%0A9.%20**TOM%203**%20(slightly%20lower%20pitch%20than%20TOM%202%2C%20otherwise%20similar)%0D%0A10.%20**FLOOR%20TOM**%20(tonal%2C%20lowest%2C%20longer%20%22buhh%22)%0D%0A%0D%0A%23%23%20NICE%20TO%20HAVE%0D%0A11.%20**CRASH%20VARIATIONS**%20(bright%2C%20various.%20%22SCHWINK%22%2C%20%22BOSH%22)%0D%0A12.%20**CLICKS**%20(short%2C%20sharp%2C%20percussive)%0D%0A13.%20**SFX%2FSAMPLES**%20(anything%2C%20percussive%20is%20best%20tho)%0D%0A%0D%0A%23%20TIPS%20FOR%20BEST%20RESULTS%0D%0A%0D%0A1.%20Find%20sounds%20that%20start%20with%20a%20sharp%2C%20transient%20beginning%20(rather%20than%20something%20that%20slowly%20builds%20up)%0D%0A2.%20Trim%20the%20audio%20files%20so%20that%20they%20start%20right%20at%20that%20beginning%20transient%20and%20end%20as%20soon%20as%20it%20goes%20silent%0D%0A3.%20Record%20in%20a%20higher%20sample%20rate%20to%20allow%20for%20cleaner%20stretching%2Fpitch%20shifting%20if%20you%20want.%0D%0A4.%20Three%20variations%20of%20each%20sample%20will%20result%20in%20a%20nice%20dynamic%20sounding%20kit%20IMO%0D%0A5.%20Anything%20that%20makes%20a%20cool%20short%20sound%20will%20probably%20sound%20cool%20somewhere%2C%20consider%20those%20SFX.%0D%0A6.%20Some%20big%20longer%20sounds%20that%20DO%20build%20up%20are%20also%20cool%20but%20they're%20also%20SFX%0A" download="PHENOMENOLOGICAL ETYMOLOGY OF A DRUM KIT.md" title='Download "PHENOMENOLOGICAL ETYMOLOGY OF A DRUM KIT.md"'>
+                                    DOWNLOAD POST ⤓
+                                </a>
+                            </p>
+                        </div>
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                Writing
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+
+
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Writing/Unfinished/">Unfinished\</a>
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <strong>Phenomenological Etymology of a Drum Kit</strong>
+                                        
+                                    </li>
+                                
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+                <script>/*
+                // REPLACE URL IN BAR WITH SHARELINK
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/s/phenomenological-etymology-of-a-drum-kit-2675f/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+                // */</script>
+        
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

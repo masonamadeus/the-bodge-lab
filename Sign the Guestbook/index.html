@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>Sign the Guestbook</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="A curious folder on the internet. Home of Mason Amadeus">
+        <link
+        rel="canonical" href="https://bodgelab.com/Sign%20the%20Guestbook/"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/Sign%20the%20Guestbook/">
+        <meta property="og:title" content="Sign the Guestbook">
+        <meta
+        property="og:description" content="A curious folder on the internet. Home of Mason Amadeus"> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Sign the Guestbook/" class="breadcrumb">Sign the Guestbook</a>
+                                    
+                                
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: December 02, 2025</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+                        
+<!-- Cloudflare Turnstile Script -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<style>
+    /* Theme Variables */
+    .guestbook-form {
+        background: var(--bg-muted);
+        border: 1px dashed var(--border-color);
+        padding: 1.5em;
+        margin-bottom: 2em;
+        position: relative;
+    }
+
+    .input-group { margin-bottom: 1.2em; }
+    
+    .input-group label {
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--mono-font);
+        font-weight: bold;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 0.85em;
+        margin-bottom: 0.4em;
+    }
+
+    .char-count { font-weight: normal; font-size: 0.9em; color: var(--text-muted); }
+    .char-count.limit-reached { color: #d32f2f; font-weight: bold; }
+
+    .input-group input, .input-group textarea, .search-input {
+        width: 100%;
+        padding: 0.8em;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        font-family: var(--body-font);
+        font-size: 1em;
+        border-radius: 0; 
+    }
+
+    .input-group input:focus, .input-group textarea:focus, .search-input:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: inset 4px 0 0 var(--accent-color);
+    }
+
+    .submit-button {
+        background: var(--accent-color);
+        color: var(--bg-color-bright);
+        border: none;
+        padding: 0.8em 1.5em;
+        font-family: var(--mono-font);
+        font-weight: bold;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        width: 100%;
+    }
+    .submit-button:hover { opacity: 0.9; }
+    .submit-button:disabled { background: var(--text-muted); cursor: not-allowed; }
+
+    /* Load More Button specific style (Outline style) */
+    .load-more-btn {
+        background: transparent;
+        color: var(--text-muted);
+        border: 1px solid var(--border-color);
+        margin-top: 1em;
+    }
+    .load-more-btn:hover {
+        background: var(--bg-muted);
+        color: var(--text-color);
+    }
+
+    /* List Styles */
+    .entries-container {
+    }
+
+    .search-bar-container {
+        padding: 1em;
+        background: var(--bg-muted);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .scrollable-list {
+        max-height: 700px; 
+        overflow-y: auto;
+        padding-top: 1em;
+        scrollbar-color: var(--accent-color) var(--bg-muted);
+        scrollbar-width: thin;
+    }
+
+    .entry {
+        padding: 1em;
+        margin-bottom: 1em;
+        border-left: 4px solid var(--border-color);
+        background: var(--bg-muted);
+    }
+    
+    .status-msg {
+        margin-top: 1em;
+        font-weight: bold;
+        font-family: var(--mono-font);
+        display: none;
+        padding: 0.5em;
+    }
+    .status-msg.error { color: #d32f2f; background: #ffebee; border: 1px solid #ffcdd2; }
+    .status-msg.success { color: var(--accent-color); background: var(--bg-muted); border: 1px solid var(--border-color); }
+</style>
+
+<h1>Sign the Guestbook!</h1>
+
+<p>Leave me a message, ask me a question, or just say hi! :)</p>
+<br>
+
+<div class="guestbook-form">
+    <div class="input-group">
+        <label>Name <span id="nameCount" class="char-count">0/50</span></label>
+        <input type="text" id="name" maxlength="50" placeholder="Your name (or alias)">
+    </div>
+
+    <div class="input-group">
+        <label>Message <span id="msgCount" class="char-count">0/500</span></label>
+        <textarea id="message" maxlength="500" rows="3" placeholder="Leave a note..."></textarea>
+    </div>
+
+    <div style="margin-bottom: 1em;">
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAACEZQxTYyvkgzXXv"></div>
+    </div>
+
+    <button id="submitBtn" class="submit-button" onclick="submitEntry()">Sign Guestbook</button>
+    <div id="statusMsg" class="status-msg"></div>
+</div>
+
+<hr>
+
+<h1>Read the Guestbook!</h1>
+
+<div class="entries-container">
+    <div class="search-bar-container">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search the guestbook...">
+    </div>
+
+    <div id="entries-list" class="scrollable-list">
+        <p class="loading">Loading entries...</p>
+    </div>
+    
+    <!-- Load More Button (Hidden by default) -->
+    <div style="padding: 0 1em 1em 1em;">
+        <button id="loadMoreBtn" class="load-more-btn" style="display:none;" onclick="loadMore()">
+            Load More...
+        </button>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://guestbook-backend.bodgelab.workers.dev"; 
+    const COOLDOWN_HOURS = 8;
+    const STORAGE_KEY = 'guestbook_last_signed';
+    const LIMIT = 50;
+
+    let allEntries = [];
+    let currentOffset = 0;
+    let isLoading = false;
+
+    // --- CHARACTER COUNTERS ---
+    const nameInput = document.getElementById('name');
+    const msgInput = document.getElementById('message');
+    const nameCount = document.getElementById('nameCount');
+    const msgCount = document.getElementById('msgCount');
+
+    function updateCount(input, display, max) {
+        const len = input.value.length;
+        display.innerText = `${len}/${max}`;
+        if (len >= max) display.classList.add('limit-reached');
+        else display.classList.remove('limit-reached');
+    }
+    nameInput.addEventListener('input', () => updateCount(nameInput, nameCount, 50));
+    msgInput.addEventListener('input', () => updateCount(msgInput, msgCount, 500));
+
+    // --- SEARCH ---
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        
+        // Hide load more button while searching to avoid confusion
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        if (term.length > 0) {
+            loadMoreBtn.style.display = 'none';
+        } else {
+            // Restore button if we aren't at the end
+            loadMoreBtn.style.display = 'block'; 
+        }
+
+        const filtered = allEntries.filter(entry => 
+            entry.name.toLowerCase().includes(term) || 
+            entry.message.toLowerCase().includes(term)
+        );
+        renderEntries(filtered, true); // true = overwrite list
+    });
+
+    // --- FETCH & LOAD MORE ---
+    async function loadEntries(offset = 0) {
+        if (isLoading) return;
+        isLoading = true;
+        
+        const list = document.getElementById('entries-list');
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        
+        // Show loading state on button if it's visible
+        if (offset > 0) loadMoreBtn.innerText = "Loading...";
+
+        try {
+            const res = await fetch(`${API_URL}?offset=${offset}`);
+            const newEntries = await res.json();
+            
+            if (offset === 0) {
+                // First load
+                allEntries = newEntries;
+                renderEntries(allEntries, true);
+            } else {
+                // Append
+                allEntries = [...allEntries, ...newEntries];
+                renderEntries(newEntries, false); // false = append to list
+            }
+
+            // Hide/Show Load More Button
+            if (newEntries.length < LIMIT) {
+                loadMoreBtn.style.display = 'none'; // End of list
+            } else {
+                loadMoreBtn.style.display = 'block';
+                loadMoreBtn.innerText = "Load More...";
+            }
+            
+            currentOffset = offset;
+
+        } catch (err) {
+            if (offset === 0) list.innerHTML = "<p style='color:var(--text-muted)'>Failed to load entries.</p>";
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    function loadMore() {
+        const nextOffset = currentOffset + LIMIT;
+        loadEntries(nextOffset);
+    }
+
+    function renderEntries(entries, overwrite) {
+        const list = document.getElementById('entries-list');
+        
+        const html = entries.map(entry => {
+            const safeName = escapeHtml(entry.name);
+            const safeMsg = escapeHtml(entry.message);
+            const date = new Date(entry.created_at).toLocaleDateString();
+            return `
+                <div class="entry">
+                    <div>${safeMsg}</div>
+                    <div class="meta">signed by <strong>${safeName}</strong> on ${date}</div>
+                </div>
+            `;
+        }).join('');
+
+        if (overwrite) {
+            if (entries.length === 0) {
+                list.innerHTML = "<p style='padding:1em'>No entries found.</p>";
+            } else {
+                list.innerHTML = html;
+            }
+        } else {
+            list.insertAdjacentHTML('beforeend', html);
+        }
+    }
+
+    // --- SUBMISSION LOGIC ---
+    async function submitEntry() {
+        const btn = document.getElementById('submitBtn');
+        const name = nameInput.value;
+        const message = msgInput.value;
+
+        // Cooldown
+        const lastSigned = localStorage.getItem(STORAGE_KEY);
+        if (lastSigned) {
+            const diff = Date.now() - parseInt(lastSigned);
+            const hoursLeft = (COOLDOWN_HOURS - (diff / (1000 * 60 * 60))).toFixed(1);
+            if (diff < COOLDOWN_HOURS * 60 * 60 * 1000) {
+                showStatus(`You can sign again in ${hoursLeft} hours.`, 'error');
+                return;
+            }
+        }
+
+        if (typeof turnstile === 'undefined') {
+            showStatus("Error: Captcha not loaded. Refresh.", 'error');
+            return;
+        }
+        const token = turnstile.getResponse();
+
+        if (!name || !message || !token) {
+            showStatus("Please fill in fields and captcha.", 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Signing...";
+        
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, message, token })
+            });
+
+            if (res.ok) {
+                nameInput.value = '';
+                msgInput.value = '';
+                updateCount(nameInput, nameCount, 50);
+                updateCount(msgInput, msgCount, 500);
+                turnstile.reset(); 
+                localStorage.setItem(STORAGE_KEY, Date.now().toString());
+                showStatus("Signed successfully!", 'success');
+                
+                // Refresh list from top
+                loadEntries(0); 
+            } else {
+                const errText = await res.text();
+                throw new Error(errText);
+            }
+        } catch (err) {
+            showStatus("Error: " + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Sign Guestbook";
+        }
+    }
+
+    function showStatus(msg, type) {
+        const el = document.getElementById('statusMsg');
+        el.innerText = msg;
+        el.className = 'status-msg ' + type;
+        el.style.display = 'block';
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.innerText = text;
+        return div.innerHTML;
+    }
+
+    // Start
+    loadEntries(0);
+</script>
+                    
+                    
+                        <div class="page-meta">
+                            
+                            
+                                
+                                
+                            
+                            
+                            <hr>
+                                <p class="download-btn-container"> <a class="page-share-btn" href="/s/guestbook/" title="Get permanent link">
+                                    SHARE⇗
+                                </a>
+                                <a class="page-download-btn nowrap" href="data:application/octet-stream;charset=utf-8,%0D%0A%3C!--%20Cloudflare%20Turnstile%20Script%20--%3E%0D%0A%3Cscript%20src%3D%22https%3A%2F%2Fchallenges.cloudflare.com%2Fturnstile%2Fv0%2Fapi.js%22%20async%20defer%3E%3C%2Fscript%3E%0D%0A%0D%0A%3Cstyle%3E%0D%0A%20%20%20%20%2F*%20Theme%20Variables%20*%2F%0D%0A%20%20%20%20.guestbook-form%20%7B%0D%0A%20%20%20%20%20%20%20%20background%3A%20var(--bg-muted)%3B%0D%0A%20%20%20%20%20%20%20%20border%3A%201px%20dashed%20var(--border-color)%3B%0D%0A%20%20%20%20%20%20%20%20padding%3A%201.5em%3B%0D%0A%20%20%20%20%20%20%20%20margin-bottom%3A%202em%3B%0D%0A%20%20%20%20%20%20%20%20position%3A%20relative%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20.input-group%20%7B%20margin-bottom%3A%201.2em%3B%20%7D%0D%0A%20%20%20%20%0D%0A%20%20%20%20.input-group%20label%20%7B%0D%0A%20%20%20%20%20%20%20%20display%3A%20flex%3B%0D%0A%20%20%20%20%20%20%20%20justify-content%3A%20space-between%3B%0D%0A%20%20%20%20%20%20%20%20font-family%3A%20var(--mono-font)%3B%0D%0A%20%20%20%20%20%20%20%20font-weight%3A%20bold%3B%0D%0A%20%20%20%20%20%20%20%20color%3A%20var(--text-muted)%3B%0D%0A%20%20%20%20%20%20%20%20text-transform%3A%20uppercase%3B%0D%0A%20%20%20%20%20%20%20%20font-size%3A%200.85em%3B%0D%0A%20%20%20%20%20%20%20%20margin-bottom%3A%200.4em%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20.char-count%20%7B%20font-weight%3A%20normal%3B%20font-size%3A%200.9em%3B%20color%3A%20var(--text-muted)%3B%20%7D%0D%0A%20%20%20%20.char-count.limit-reached%20%7B%20color%3A%20%23d32f2f%3B%20font-weight%3A%20bold%3B%20%7D%0D%0A%0D%0A%20%20%20%20.input-group%20input%2C%20.input-group%20textarea%2C%20.search-input%20%7B%0D%0A%20%20%20%20%20%20%20%20width%3A%20100%25%3B%0D%0A%20%20%20%20%20%20%20%20padding%3A%200.8em%3B%0D%0A%20%20%20%20%20%20%20%20background%3A%20var(--bg-color)%3B%0D%0A%20%20%20%20%20%20%20%20border%3A%201px%20solid%20var(--border-color)%3B%0D%0A%20%20%20%20%20%20%20%20color%3A%20var(--text-color)%3B%0D%0A%20%20%20%20%20%20%20%20font-family%3A%20var(--body-font)%3B%0D%0A%20%20%20%20%20%20%20%20font-size%3A%201em%3B%0D%0A%20%20%20%20%20%20%20%20border-radius%3A%200%3B%20%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20.input-group%20input%3Afocus%2C%20.input-group%20textarea%3Afocus%2C%20.search-input%3Afocus%20%7B%0D%0A%20%20%20%20%20%20%20%20outline%3A%20none%3B%0D%0A%20%20%20%20%20%20%20%20border-color%3A%20var(--accent-color)%3B%0D%0A%20%20%20%20%20%20%20%20box-shadow%3A%20inset%204px%200%200%20var(--accent-color)%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20.submit-button%20%7B%0D%0A%20%20%20%20%20%20%20%20background%3A%20var(--accent-color)%3B%0D%0A%20%20%20%20%20%20%20%20color%3A%20var(--bg-color-bright)%3B%0D%0A%20%20%20%20%20%20%20%20border%3A%20none%3B%0D%0A%20%20%20%20%20%20%20%20padding%3A%200.8em%201.5em%3B%0D%0A%20%20%20%20%20%20%20%20font-family%3A%20var(--mono-font)%3B%0D%0A%20%20%20%20%20%20%20%20font-weight%3A%20bold%3B%0D%0A%20%20%20%20%20%20%20%20text-transform%3A%20uppercase%3B%0D%0A%20%20%20%20%20%20%20%20cursor%3A%20pointer%3B%0D%0A%20%20%20%20%20%20%20%20transition%3A%20opacity%200.2s%3B%0D%0A%20%20%20%20%20%20%20%20width%3A%20100%25%3B%0D%0A%20%20%20%20%7D%0D%0A%20%20%20%20.submit-button%3Ahover%20%7B%20opacity%3A%200.9%3B%20%7D%0D%0A%20%20%20%20.submit-button%3Adisabled%20%7B%20background%3A%20var(--text-muted)%3B%20cursor%3A%20not-allowed%3B%20%7D%0D%0A%0D%0A%20%20%20%20%2F*%20Load%20More%20Button%20specific%20style%20(Outline%20style)%20*%2F%0D%0A%20%20%20%20.load-more-btn%20%7B%0D%0A%20%20%20%20%20%20%20%20background%3A%20transparent%3B%0D%0A%20%20%20%20%20%20%20%20color%3A%20var(--text-muted)%3B%0D%0A%20%20%20%20%20%20%20%20border%3A%201px%20solid%20var(--border-color)%3B%0D%0A%20%20%20%20%20%20%20%20margin-top%3A%201em%3B%0D%0A%20%20%20%20%7D%0D%0A%20%20%20%20.load-more-btn%3Ahover%20%7B%0D%0A%20%20%20%20%20%20%20%20background%3A%20var(--bg-muted)%3B%0D%0A%20%20%20%20%20%20%20%20color%3A%20var(--text-color)%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20%2F*%20List%20Styles%20*%2F%0D%0A%20%20%20%20.entries-container%20%7B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20.search-bar-container%20%7B%0D%0A%20%20%20%20%20%20%20%20padding%3A%201em%3B%0D%0A%20%20%20%20%20%20%20%20background%3A%20var(--bg-muted)%3B%0D%0A%20%20%20%20%20%20%20%20position%3A%20sticky%3B%0D%0A%20%20%20%20%20%20%20%20top%3A%200%3B%0D%0A%20%20%20%20%20%20%20%20z-index%3A%2010%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20.scrollable-list%20%7B%0D%0A%20%20%20%20%20%20%20%20max-height%3A%20700px%3B%20%0D%0A%20%20%20%20%20%20%20%20overflow-y%3A%20auto%3B%0D%0A%20%20%20%20%20%20%20%20padding-top%3A%201em%3B%0D%0A%20%20%20%20%20%20%20%20scrollbar-color%3A%20var(--accent-color)%20var(--bg-muted)%3B%0D%0A%20%20%20%20%20%20%20%20scrollbar-width%3A%20thin%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20.entry%20%7B%0D%0A%20%20%20%20%20%20%20%20padding%3A%201em%3B%0D%0A%20%20%20%20%20%20%20%20margin-bottom%3A%201em%3B%0D%0A%20%20%20%20%20%20%20%20border-left%3A%204px%20solid%20var(--border-color)%3B%0D%0A%20%20%20%20%20%20%20%20background%3A%20var(--bg-muted)%3B%0D%0A%20%20%20%20%7D%0D%0A%20%20%20%20%0D%0A%20%20%20%20.status-msg%20%7B%0D%0A%20%20%20%20%20%20%20%20margin-top%3A%201em%3B%0D%0A%20%20%20%20%20%20%20%20font-weight%3A%20bold%3B%0D%0A%20%20%20%20%20%20%20%20font-family%3A%20var(--mono-font)%3B%0D%0A%20%20%20%20%20%20%20%20display%3A%20none%3B%0D%0A%20%20%20%20%20%20%20%20padding%3A%200.5em%3B%0D%0A%20%20%20%20%7D%0D%0A%20%20%20%20.status-msg.error%20%7B%20color%3A%20%23d32f2f%3B%20background%3A%20%23ffebee%3B%20border%3A%201px%20solid%20%23ffcdd2%3B%20%7D%0D%0A%20%20%20%20.status-msg.success%20%7B%20color%3A%20var(--accent-color)%3B%20background%3A%20var(--bg-muted)%3B%20border%3A%201px%20solid%20var(--border-color)%3B%20%7D%0D%0A%3C%2Fstyle%3E%0D%0A%0D%0A%3Ch1%3ESign%20the%20Guestbook!%3C%2Fh1%3E%0D%0A%0D%0A%3Cp%3ELeave%20me%20a%20message%2C%20ask%20me%20a%20question%2C%20or%20just%20say%20hi!%20%3A)%3C%2Fp%3E%0D%0A%3Cbr%3E%0D%0A%0D%0A%3Cdiv%20class%3D%22guestbook-form%22%3E%0D%0A%20%20%20%20%3Cdiv%20class%3D%22input-group%22%3E%0D%0A%20%20%20%20%20%20%20%20%3Clabel%3EName%20%3Cspan%20id%3D%22nameCount%22%20class%3D%22char-count%22%3E0%2F50%3C%2Fspan%3E%3C%2Flabel%3E%0D%0A%20%20%20%20%20%20%20%20%3Cinput%20type%3D%22text%22%20id%3D%22name%22%20maxlength%3D%2250%22%20placeholder%3D%22Your%20name%20(or%20alias)%22%3E%0D%0A%20%20%20%20%3C%2Fdiv%3E%0D%0A%0D%0A%20%20%20%20%3Cdiv%20class%3D%22input-group%22%3E%0D%0A%20%20%20%20%20%20%20%20%3Clabel%3EMessage%20%3Cspan%20id%3D%22msgCount%22%20class%3D%22char-count%22%3E0%2F500%3C%2Fspan%3E%3C%2Flabel%3E%0D%0A%20%20%20%20%20%20%20%20%3Ctextarea%20id%3D%22message%22%20maxlength%3D%22500%22%20rows%3D%223%22%20placeholder%3D%22Leave%20a%20note...%22%3E%3C%2Ftextarea%3E%0D%0A%20%20%20%20%3C%2Fdiv%3E%0D%0A%0D%0A%20%20%20%20%3Cdiv%20style%3D%22margin-bottom%3A%201em%3B%22%3E%0D%0A%20%20%20%20%20%20%20%20%3Cdiv%20class%3D%22cf-turnstile%22%20data-sitekey%3D%220x4AAAAAACEZQxTYyvkgzXXv%22%3E%3C%2Fdiv%3E%0D%0A%20%20%20%20%3C%2Fdiv%3E%0D%0A%0D%0A%20%20%20%20%3Cbutton%20id%3D%22submitBtn%22%20class%3D%22submit-button%22%20onclick%3D%22submitEntry()%22%3ESign%20Guestbook%3C%2Fbutton%3E%0D%0A%20%20%20%20%3Cdiv%20id%3D%22statusMsg%22%20class%3D%22status-msg%22%3E%3C%2Fdiv%3E%0D%0A%3C%2Fdiv%3E%0D%0A%0D%0A%3Chr%3E%0D%0A%0D%0A%3Ch1%3ERead%20the%20Guestbook!%3C%2Fh1%3E%0D%0A%0D%0A%3Cdiv%20class%3D%22entries-container%22%3E%0D%0A%20%20%20%20%3Cdiv%20class%3D%22search-bar-container%22%3E%0D%0A%20%20%20%20%20%20%20%20%3Cinput%20type%3D%22text%22%20id%3D%22searchInput%22%20class%3D%22search-input%22%20placeholder%3D%22Search%20the%20guestbook...%22%3E%0D%0A%20%20%20%20%3C%2Fdiv%3E%0D%0A%0D%0A%20%20%20%20%3Cdiv%20id%3D%22entries-list%22%20class%3D%22scrollable-list%22%3E%0D%0A%20%20%20%20%20%20%20%20%3Cp%20class%3D%22loading%22%3ELoading%20entries...%3C%2Fp%3E%0D%0A%20%20%20%20%3C%2Fdiv%3E%0D%0A%20%20%20%20%0D%0A%20%20%20%20%3C!--%20Load%20More%20Button%20(Hidden%20by%20default)%20--%3E%0D%0A%20%20%20%20%3Cdiv%20style%3D%22padding%3A%200%201em%201em%201em%3B%22%3E%0D%0A%20%20%20%20%20%20%20%20%3Cbutton%20id%3D%22loadMoreBtn%22%20class%3D%22load-more-btn%22%20style%3D%22display%3Anone%3B%22%20onclick%3D%22loadMore()%22%3E%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20Load%20More...%0D%0A%20%20%20%20%20%20%20%20%3C%2Fbutton%3E%0D%0A%20%20%20%20%3C%2Fdiv%3E%0D%0A%3C%2Fdiv%3E%0D%0A%0D%0A%3Cscript%3E%0D%0A%20%20%20%20const%20API_URL%20%3D%20%22https%3A%2F%2Fguestbook-backend.bodgelab.workers.dev%22%3B%20%0D%0A%20%20%20%20const%20COOLDOWN_HOURS%20%3D%208%3B%0D%0A%20%20%20%20const%20STORAGE_KEY%20%3D%20'guestbook_last_signed'%3B%0D%0A%20%20%20%20const%20LIMIT%20%3D%2050%3B%0D%0A%0D%0A%20%20%20%20let%20allEntries%20%3D%20%5B%5D%3B%0D%0A%20%20%20%20let%20currentOffset%20%3D%200%3B%0D%0A%20%20%20%20let%20isLoading%20%3D%20false%3B%0D%0A%0D%0A%20%20%20%20%2F%2F%20---%20CHARACTER%20COUNTERS%20---%0D%0A%20%20%20%20const%20nameInput%20%3D%20document.getElementById('name')%3B%0D%0A%20%20%20%20const%20msgInput%20%3D%20document.getElementById('message')%3B%0D%0A%20%20%20%20const%20nameCount%20%3D%20document.getElementById('nameCount')%3B%0D%0A%20%20%20%20const%20msgCount%20%3D%20document.getElementById('msgCount')%3B%0D%0A%0D%0A%20%20%20%20function%20updateCount(input%2C%20display%2C%20max)%20%7B%0D%0A%20%20%20%20%20%20%20%20const%20len%20%3D%20input.value.length%3B%0D%0A%20%20%20%20%20%20%20%20display.innerText%20%3D%20%60%24%7Blen%7D%2F%24%7Bmax%7D%60%3B%0D%0A%20%20%20%20%20%20%20%20if%20(len%20%3E%3D%20max)%20display.classList.add('limit-reached')%3B%0D%0A%20%20%20%20%20%20%20%20else%20display.classList.remove('limit-reached')%3B%0D%0A%20%20%20%20%7D%0D%0A%20%20%20%20nameInput.addEventListener('input'%2C%20()%20%3D%3E%20updateCount(nameInput%2C%20nameCount%2C%2050))%3B%0D%0A%20%20%20%20msgInput.addEventListener('input'%2C%20()%20%3D%3E%20updateCount(msgInput%2C%20msgCount%2C%20500))%3B%0D%0A%0D%0A%20%20%20%20%2F%2F%20---%20SEARCH%20---%0D%0A%20%20%20%20document.getElementById('searchInput').addEventListener('input'%2C%20(e)%20%3D%3E%20%7B%0D%0A%20%20%20%20%20%20%20%20const%20term%20%3D%20e.target.value.toLowerCase()%3B%0D%0A%20%20%20%20%20%20%20%20%0D%0A%20%20%20%20%20%20%20%20%2F%2F%20Hide%20load%20more%20button%20while%20searching%20to%20avoid%20confusion%0D%0A%20%20%20%20%20%20%20%20const%20loadMoreBtn%20%3D%20document.getElementById('loadMoreBtn')%3B%0D%0A%20%20%20%20%20%20%20%20if%20(term.length%20%3E%200)%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20loadMoreBtn.style.display%20%3D%20'none'%3B%0D%0A%20%20%20%20%20%20%20%20%7D%20else%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%2F%2F%20Restore%20button%20if%20we%20aren't%20at%20the%20end%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20loadMoreBtn.style.display%20%3D%20'block'%3B%20%0D%0A%20%20%20%20%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20%20%20%20%20const%20filtered%20%3D%20allEntries.filter(entry%20%3D%3E%20%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20entry.name.toLowerCase().includes(term)%20%7C%7C%20%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20entry.message.toLowerCase().includes(term)%0D%0A%20%20%20%20%20%20%20%20)%3B%0D%0A%20%20%20%20%20%20%20%20renderEntries(filtered%2C%20true)%3B%20%2F%2F%20true%20%3D%20overwrite%20list%0D%0A%20%20%20%20%7D)%3B%0D%0A%0D%0A%20%20%20%20%2F%2F%20---%20FETCH%20%26%20LOAD%20MORE%20---%0D%0A%20%20%20%20async%20function%20loadEntries(offset%20%3D%200)%20%7B%0D%0A%20%20%20%20%20%20%20%20if%20(isLoading)%20return%3B%0D%0A%20%20%20%20%20%20%20%20isLoading%20%3D%20true%3B%0D%0A%20%20%20%20%20%20%20%20%0D%0A%20%20%20%20%20%20%20%20const%20list%20%3D%20document.getElementById('entries-list')%3B%0D%0A%20%20%20%20%20%20%20%20const%20loadMoreBtn%20%3D%20document.getElementById('loadMoreBtn')%3B%0D%0A%20%20%20%20%20%20%20%20%0D%0A%20%20%20%20%20%20%20%20%2F%2F%20Show%20loading%20state%20on%20button%20if%20it's%20visible%0D%0A%20%20%20%20%20%20%20%20if%20(offset%20%3E%200)%20loadMoreBtn.innerText%20%3D%20%22Loading...%22%3B%0D%0A%0D%0A%20%20%20%20%20%20%20%20try%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20const%20res%20%3D%20await%20fetch(%60%24%7BAPI_URL%7D%3Foffset%3D%24%7Boffset%7D%60)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20const%20newEntries%20%3D%20await%20res.json()%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20(offset%20%3D%3D%3D%200)%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%2F%2F%20First%20load%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20allEntries%20%3D%20newEntries%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20renderEntries(allEntries%2C%20true)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%20else%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%2F%2F%20Append%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20allEntries%20%3D%20%5B...allEntries%2C%20...newEntries%5D%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20renderEntries(newEntries%2C%20false)%3B%20%2F%2F%20false%20%3D%20append%20to%20list%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%2F%2F%20Hide%2FShow%20Load%20More%20Button%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20(newEntries.length%20%3C%20LIMIT)%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20loadMoreBtn.style.display%20%3D%20'none'%3B%20%2F%2F%20End%20of%20list%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%20else%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20loadMoreBtn.style.display%20%3D%20'block'%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20loadMoreBtn.innerText%20%3D%20%22Load%20More...%22%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20currentOffset%20%3D%20offset%3B%0D%0A%0D%0A%20%20%20%20%20%20%20%20%7D%20catch%20(err)%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20(offset%20%3D%3D%3D%200)%20list.innerHTML%20%3D%20%22%3Cp%20style%3D'color%3Avar(--text-muted)'%3EFailed%20to%20load%20entries.%3C%2Fp%3E%22%3B%0D%0A%20%20%20%20%20%20%20%20%7D%20finally%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20isLoading%20%3D%20false%3B%0D%0A%20%20%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20function%20loadMore()%20%7B%0D%0A%20%20%20%20%20%20%20%20const%20nextOffset%20%3D%20currentOffset%20%2B%20LIMIT%3B%0D%0A%20%20%20%20%20%20%20%20loadEntries(nextOffset)%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20function%20renderEntries(entries%2C%20overwrite)%20%7B%0D%0A%20%20%20%20%20%20%20%20const%20list%20%3D%20document.getElementById('entries-list')%3B%0D%0A%20%20%20%20%20%20%20%20%0D%0A%20%20%20%20%20%20%20%20const%20html%20%3D%20entries.map(entry%20%3D%3E%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20const%20safeName%20%3D%20escapeHtml(entry.name)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20const%20safeMsg%20%3D%20escapeHtml(entry.message)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20const%20date%20%3D%20new%20Date(entry.created_at).toLocaleDateString()%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20return%20%60%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class%3D%22entry%22%3E%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%3E%24%7BsafeMsg%7D%3C%2Fdiv%3E%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class%3D%22meta%22%3Esigned%20by%20%3Cstrong%3E%24%7BsafeName%7D%3C%2Fstrong%3E%20on%20%24%7Bdate%7D%3C%2Fdiv%3E%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3C%2Fdiv%3E%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%60%3B%0D%0A%20%20%20%20%20%20%20%20%7D).join('')%3B%0D%0A%0D%0A%20%20%20%20%20%20%20%20if%20(overwrite)%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20(entries.length%20%3D%3D%3D%200)%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20list.innerHTML%20%3D%20%22%3Cp%20style%3D'padding%3A1em'%3ENo%20entries%20found.%3C%2Fp%3E%22%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%20else%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20list.innerHTML%20%3D%20html%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%20%20%20%20%7D%20else%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20list.insertAdjacentHTML('beforeend'%2C%20html)%3B%0D%0A%20%20%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20%2F%2F%20---%20SUBMISSION%20LOGIC%20---%0D%0A%20%20%20%20async%20function%20submitEntry()%20%7B%0D%0A%20%20%20%20%20%20%20%20const%20btn%20%3D%20document.getElementById('submitBtn')%3B%0D%0A%20%20%20%20%20%20%20%20const%20name%20%3D%20nameInput.value%3B%0D%0A%20%20%20%20%20%20%20%20const%20message%20%3D%20msgInput.value%3B%0D%0A%0D%0A%20%20%20%20%20%20%20%20%2F%2F%20Cooldown%0D%0A%20%20%20%20%20%20%20%20const%20lastSigned%20%3D%20localStorage.getItem(STORAGE_KEY)%3B%0D%0A%20%20%20%20%20%20%20%20if%20(lastSigned)%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20const%20diff%20%3D%20Date.now()%20-%20parseInt(lastSigned)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20const%20hoursLeft%20%3D%20(COOLDOWN_HOURS%20-%20(diff%20%2F%20(1000%20*%2060%20*%2060))).toFixed(1)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20(diff%20%3C%20COOLDOWN_HOURS%20*%2060%20*%2060%20*%201000)%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20showStatus(%60You%20can%20sign%20again%20in%20%24%7BhoursLeft%7D%20hours.%60%2C%20'error')%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20return%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20%20%20%20%20if%20(typeof%20turnstile%20%3D%3D%3D%20'undefined')%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20showStatus(%22Error%3A%20Captcha%20not%20loaded.%20Refresh.%22%2C%20'error')%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20return%3B%0D%0A%20%20%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%20%20%20%20const%20token%20%3D%20turnstile.getResponse()%3B%0D%0A%0D%0A%20%20%20%20%20%20%20%20if%20(!name%20%7C%7C%20!message%20%7C%7C%20!token)%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20showStatus(%22Please%20fill%20in%20fields%20and%20captcha.%22%2C%20'error')%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20return%3B%0D%0A%20%20%20%20%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20%20%20%20%20btn.disabled%20%3D%20true%3B%0D%0A%20%20%20%20%20%20%20%20btn.innerText%20%3D%20%22Signing...%22%3B%0D%0A%20%20%20%20%20%20%20%20%0D%0A%20%20%20%20%20%20%20%20try%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20const%20res%20%3D%20await%20fetch(API_URL%2C%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20method%3A%20'POST'%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20headers%3A%20%7B%20'Content-Type'%3A%20'application%2Fjson'%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20body%3A%20JSON.stringify(%7B%20name%2C%20message%2C%20token%20%7D)%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D)%3B%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20(res.ok)%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20nameInput.value%20%3D%20''%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20msgInput.value%20%3D%20''%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20updateCount(nameInput%2C%20nameCount%2C%2050)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20updateCount(msgInput%2C%20msgCount%2C%20500)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20turnstile.reset()%3B%20%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20localStorage.setItem(STORAGE_KEY%2C%20Date.now().toString())%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20showStatus(%22Signed%20successfully!%22%2C%20'success')%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%2F%2F%20Refresh%20list%20from%20top%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20loadEntries(0)%3B%20%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%20else%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20const%20errText%20%3D%20await%20res.text()%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20throw%20new%20Error(errText)%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%20%20%20%20%7D%20catch%20(err)%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20showStatus(%22Error%3A%20%22%20%2B%20err.message%2C%20'error')%3B%0D%0A%20%20%20%20%20%20%20%20%7D%20finally%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20btn.disabled%20%3D%20false%3B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20btn.innerText%20%3D%20%22Sign%20Guestbook%22%3B%0D%0A%20%20%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20function%20showStatus(msg%2C%20type)%20%7B%0D%0A%20%20%20%20%20%20%20%20const%20el%20%3D%20document.getElementById('statusMsg')%3B%0D%0A%20%20%20%20%20%20%20%20el.innerText%20%3D%20msg%3B%0D%0A%20%20%20%20%20%20%20%20el.className%20%3D%20'status-msg%20'%20%2B%20type%3B%0D%0A%20%20%20%20%20%20%20%20el.style.display%20%3D%20'block'%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20function%20escapeHtml(text)%20%7B%0D%0A%20%20%20%20%20%20%20%20const%20div%20%3D%20document.createElement('div')%3B%0D%0A%20%20%20%20%20%20%20%20div.innerText%20%3D%20text%3B%0D%0A%20%20%20%20%20%20%20%20return%20div.innerHTML%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20%2F%2F%20Start%0D%0A%20%20%20%20loadEntries(0)%3B%0D%0A%3C%2Fscript%3E" download="Sign the Guestbook.njk" title='Download "Sign the Guestbook.njk"'>
+                                    DOWNLOAD POST ⤓
+                                </a>
+                            </p>
+                        </div>
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                Home
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+                                    <li class="directory-index-in-list">
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/homeicon.svg');"></span>
+                                        
+                                            <a href="/">Home</a>
+                                        
+                                    </li>
+                                
+
+
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/.config/">.config\</a>
+                                    </li>
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/About Me/">About Me\</a>
+                                    </li>
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Blender 3D/">Blender 3D\</a>
+                                    </li>
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Music/">Music\</a>
+                                    </li>
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Podcasts/">Podcasts\</a>
+                                    </li>
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Stealware/">Stealware\</a>
+                                    </li>
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Videos/">Videos\</a>
+                                    </li>
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Writing/">Writing\</a>
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <a href="/Search/">Search The Bodgelab</a>
+                                        
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <strong>Sign the Guestbook</strong>
+                                        
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/fileicon.svg'); mask-image: url('/.config/fileicon.svg');"></span>
+                                        <a class="nowrap" href="/test.txt.html">test.txt</a>
+                                        <a href="/test.txt" download class="dir-download-icon" title="Download test.txt"></a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+                <script>/*
+                // REPLACE URL IN BAR WITH SHARELINK
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/s/guestbook/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+                // */</script>
+        
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

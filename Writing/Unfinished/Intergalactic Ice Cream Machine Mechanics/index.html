@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>Intergalactic Ice Cream Machine Mechanics</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="A curious folder on the internet. Home of Mason Amadeus">
+        <link
+        rel="canonical" href="https://bodgelab.com/Writing/Unfinished/Intergalactic%20Ice%20Cream%20Machine%20Mechanics/"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/Writing/Unfinished/Intergalactic%20Ice%20Cream%20Machine%20Mechanics/">
+        <meta property="og:title" content="Intergalactic Ice Cream Machine Mechanics">
+        <meta
+        property="og:description" content="A curious folder on the internet. Home of Mason Amadeus"> 
+        <meta property="og:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/.config/ogimg.jpg">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Writing/" class="breadcrumb">Writing</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Writing/Unfinished/" class="breadcrumb">Unfinished</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Writing/Unfinished/Intergalactic Ice Cream Machine Mechanics/" class="breadcrumb">Intergalactic Ice Cream Machine Mechanics</a>
+                                    
+                                
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Writing/Unfinished/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: November 19, 2025</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+                        <h1><span class="bold">INTERGALACTIC ICE CREAM MACHINE MECHANICS</span></h1><p class="credit">Written by</p><p class="authors">Mason Amadeus</p><p class="draft-date">06-07/2021</p><p class="contact">2nd Rate Boutique</p><div class="fountain-script-container notilt"><p class="action">**INTERGALACTIC ICE CREAM MACHINE MECHANICS**</p>
+<p class="action">Mason Amadeus</p>
+<p class="action">06-07/2021</p>
+<p class="action">2nd Rate Boutique</p>
+<p class="action">**MAIN CAST:**</p>
+<p class="action">HARLOWE - Literally a dog. Hyperbolic, yet eloquent. Smart. Speaks as though it is a constant effort to not sound too excited. Someone who would unironically wear a courdoroy thrift store blazer with elbow patches. Sharpest nose in the business.</p>
+<p class="action">SEREN - Disgraced former child star, now the brand mascot/ambassador for Coldwell Ice Cream Corporation. Wealthy, but completely absent upbringing. Bad breath. Very brand-knowledgable people pleaser; writes checks that others have to cash.</p>
+<p class="action">CAMBRIDGE - Crew lead. Unreasonably frugal. Entire wardrobe consists of free swag clothing from radio station giveaways, and would give you a used coffee mug for your birthday. Knows a bit about a batch; just enough to get into trouble.</p>
+<p class="action">DAGNY - Formerly one of seven professional mascot actors for the Gorplex Grundles intergalactic skeezeball team. Won a reality TV contest and got this job. Very eager, asks a lot of questions. Read the manuals already. Phenomenally self-conscious and unconfident.</p>
+<hr class="page-break">
+<h2 class="scene-heading">INTRODUCTION</h2>
+<p class="action">Dramatic orchestral music builds up, interwoven with sci-fi whooshes. An overdramatic narrator with a (fake) deep voice.</p>
+<p class="character">NARRATOR</p>
+<div class="dialogue">Since time immemorial, life forms of all twenty-four flavors have been drawn to seek sweet, frozen delights. Eons ago, when the first organism to evolve a gustatory system stepped outside into a snowdrift, and an errant flake happened upon their taste-sensitive receptors, it is written that the universe itself stopped for a moment and said "Ooh, that's the taste". The intervening centuries have seen leaps and bounds in the innovation of new ways to combine the key elements of ice and cream; the pinnacle of which being the 'Softest Serve' created by Tyler Coldwell, founder of the Coldwell Ice Cream Corporation. The invention of this 'Softest Serve' was revolutionary in the world of chilled enjoyment, and its success catapulted the Coldwell corporation into being the universe's single largest producer of ice cream machines to date. At present, nearly every quick service establishment - in every galaxy - relies on a Coldwell Creamatic machine to sate their patrons' temperature-dependent cravings. The softness of its serve is exceeded solely by the unending, universal demand for more of it. Unfortunately, these Coldwell Creamatic machines have a fatal flaw: they break down...often. Far, far more often than one would expect is necessary. Their staggering ubiquity, coupled with the fact that Creamatics are mind-bendingly complex, scientific machines, means that the technicians who tend to their upkeep must be the most tireless, highly-trained, efficient, and brilliant minds in the ice cream engineering world. Because of this, there is only one repair team in existence. Endlessly traversing the galaxy and fulfilling warranty claims. In that vast, cold, creamy, twisted blackness of space, no one can hear you scream. Yet, I scream... You scream... We all scream... For Intergalactic Ice Cream Machine Mechanics!</div>
+<p class="action">Music swells up, more whooshes as sound transitions to the interior of a spacecraft.</p>
+<h2 class="scene-heading">INT. P.S.V. CUSTOMER RETENTION - BRIDGE</h2>
+<p class="character">HARLOWE</p>
+<div class="dialogue">That is my tennis ball.</div>
+<p class="character">SEREN</p>
+<div class="dialogue">Yeah I know, it'll be fine.</div>
+<p class="character">HARLOWE</p>
+<div class="dialogue">You are cutting a hole in my tennis ball.</div>
+<p class="character">SEREN</p>
+<div class="dialogue">It's - It'll be fine, it's not like that matters to you, you're just gonna chew on it. You can have it back after I get this.</div>
+<p class="character">HARLOWE</p>
+<div class="dialogue">Cutting my tennis ball will affect the mouthfeel. They have a particularly satisfying resistance that is almost entirely dependent on its ability to maintain internal pressure. I would very much like you to not do this.</div>
+<p class="character">SEREN</p>
+<div class="dialogue">No - I saw online a video about how you can use one of these to like, poof up the pins like you - you push the hole against the lock and twist it and whack it. And then boom. It's like magic it poofs up the pins with the air and picks the lock.</div>
+<p class="character">HARLOWE</p>
+<div class="dialogue">That is my *only* tennis ball.</div>
+<p class="character">SEREN</p>
+<div class="dialogue">I'll get you another one.</div>
+<p class="character">HARLOWE</p>
+<div class="dialogue">Cambridge has told me that we do not have time to stop at the tennis ball factory planet. I have asked him every day for as long as I can remember. I do not *want* to only have one tennis ball, but that is my burden to bear. Please do not ruin my only tennis ball.</div>
+<p class="character">SEREN</p>
+<div class="dialogue">Damnit Harlowe, are you just - what the hell is wrong with everyone on this ship - how are you not curious *at all* about what's in the glove compartment? Eight years, dog, *eight years* I've been on this gig and the glove compartment's never been open, and nobody talks about it, and nobody seems to care that we can't get into it, nobody wonders whats in it or why, and I am absolutely losing my mind. I have dreams about glove compartments now. I have seen every *inch* of this stupid tub - except... for whats in the glove compartment. At this point I'm worried that if I die without knowing whats in there I'm gonna end up haunting this place forever - that - that… is unfinished business. That's how you get ghosts. I don't want that.</div>
+<p class="character">HARLOWE</p>
+<div class="dialogue">Why can you not just blow into the keyway with your lips? Or use the turkey baster that you keep in your room.</div>
+<p class="character">SEREN</p>
+<div class="dialogue">I can't b- What? No I don't - I don't keep the turkey baster in my room, dude, why - I don't. Also, no. I can't blow in it – I have that ear thing, my eardrums would pop.</div>
+<p class="character">HARLOWE</p>
+<div class="dialogue">If you share the gravy with me I will allow this use of my tennis ball.</div>
+<p class="character">SEREN</p>
+<div class="dialogue">What?</div>
+<p class="character">HARLOWE</p>
+<div class="dialogue">You have been drinking gravy. I assume that is why you bring the turkey baster up to your room.</div>
+<p class="character">SEREN</p>
+<div class="dialogue">I don't drink gravy.</div>
+<p class="character">HARLOWE</p>
+<div class="dialogue">I can smell gravy on your breath.</div>
+<p class="character">SEREN</p>
+<div class="dialogue">We haven't stopped to refill the vending machine in months, okay?! We have no snacks on the ship it's - I need something to relax with, okay? You're not the only one suffering here, tennis ball.</div>
+<p class="character">HARLOWE</p>
+<div class="dialogue">Half rations of gravy for damaging my tennis ball. That is my price.</div>
+<p class="character">SEREN</p>
+<div class="dialogue">Fine.</div>
+<p class="action">PAUSE</p>
+<p class="character">HARLOWE</p>
+<div class="dialogue">Do you think there is another tennis ball in the glove compartment?</div>
+<p class="character">SEREN</p>
+<div class="dialogue">I'm hoping for dunkaroos.</div>
+<p class="action">SFX Transition to a different part of the spacecraft.</p>
+<h2 class="scene-heading">INT. P.S.V. CUSTOMER RETENTION - REC HALL</h2>
+<p class="character">CAMBRIDGE</p>
+<div class="dialogue">So we take the sightings from the sextant using the landmarks from the holomap as reference, you follow? Then we have our position and can plot a solid relative course.</div>
+<p class="character">DAGNY</p>
+<div class="dialogue">Right. What are - does every planet in this quadrant have rings? What are the lines on the map?</div>
+<p class="character">CAMBRIDGE</p>
+<div class="dialogue">Ah! No. Those are the gravity wells of each body. The edges of where each spot will pull ya. I call 'em 'god's cruise control'. If you're smart like me, ninety percent of flyin' around is just falling. Price of gas now, you gotta do it.</div>
+<p class="character">DAGNY</p>
+<div class="dialogue">Sorry if this is a dumb question but couldn't we just use the ship's onboard nav to plot like, the most efficient course and follow that instead of having the sextant?</div>
+<p class="character">CAMBRIDGE</p>
+<div class="dialogue">God no, listen - I'm not about to get microtransactioned to death by that miserable thing. It's sixty sheef a route now - and seventy five if you want voice assistance. Screw that. Sextant every day, you got that?</div>
+<p class="character">DAGNY</p>
+<div class="dialogue">I guess it is a more active way of navigating.</div>
+<p class="character">CAMBRIDGE</p>
+<div class="dialogue">I'd like to think I have a very active sextant life.</div>
+<p class="character">DAGNY</p>
+<div class="dialogue">What if we end up way off course?</div>
+<p class="character">CAMBRIDGE</p>
+<div class="dialogue">Doesn't matter, have sextant.</div>
+</div>
+                    
+                    
+                        <div class="page-meta">
+                            
+                            
+                                
+                                
+                            
+                            
+                            <hr>
+                                <p class="download-btn-container"> <a class="page-share-btn" href="/s/intergalactic-ice-cream-machine-mechanics-og26b/" title="Get permanent link">
+                                    SHARE⇗
+                                </a>
+                                <a class="page-download-btn nowrap" href="data:application/octet-stream;charset=utf-8,%0D%0ATitle%3A%20**INTERGALACTIC%20ICE%20CREAM%20MACHINE%20MECHANICS**%0D%0ACredit%3A%20Written%20by%0D%0AAuthor%3A%20Mason%20Amadeus%0D%0ADraft%20date%3A%2006-07%2F2021%0D%0AContact%3A%202nd%20Rate%20Boutique%0D%0A%0D%0A%3E**MAIN%20CAST%3A**%3C%0D%0A%0D%0A!HARLOWE%20-%20Literally%20a%20dog.%20Hyperbolic%2C%20yet%20eloquent.%20Smart.%20Speaks%20as%20though%20it%20is%20a%20constant%20effort%20to%20not%20sound%20too%20excited.%20Someone%20who%20would%20unironically%20wear%20a%20courdoroy%20thrift%20store%20blazer%20with%20elbow%20patches.%20Sharpest%20nose%20in%20the%20business.%0D%0A%0D%0A!SEREN%20-%20Disgraced%20former%20child%20star%2C%20now%20the%20brand%20mascot%2Fambassador%20for%20Coldwell%20Ice%20Cream%20Corporation.%20Wealthy%2C%20but%20completely%20absent%20upbringing.%20Bad%20breath.%20Very%20brand-knowledgable%20people%20pleaser%3B%20writes%20checks%20that%20others%20have%20to%20cash.%0D%0A%0D%0A!CAMBRIDGE%20-%20Crew%20lead.%20Unreasonably%20frugal.%20Entire%20wardrobe%20consists%20of%20free%20swag%20clothing%20from%20radio%20station%20giveaways%2C%20and%20would%20give%20you%20a%20used%20coffee%20mug%20for%20your%20birthday.%20Knows%20a%20bit%20about%20a%20batch%3B%20just%20enough%20to%20get%20into%20trouble.%0D%0A%0D%0A!DAGNY%20-%20Formerly%20one%20of%20seven%20professional%20mascot%20actors%20for%20the%20Gorplex%20Grundles%20intergalactic%20skeezeball%20team.%20Won%20a%20reality%20TV%20contest%20and%20got%20this%20job.%20Very%20eager%2C%20asks%20a%20lot%20of%20questions.%20Read%20the%20manuals%20already.%20Phenomenally%20self-conscious%20and%20unconfident.%0D%0A%0D%0A%3D%3D%3D%0D%0A%0D%0A.INTRODUCTION%20%230%23%0D%0A%0D%0A!Dramatic%20orchestral%20music%20builds%20up%2C%20interwoven%20with%20sci-fi%20whooshes.%20An%20overdramatic%20narrator%20with%20a%20(fake)%20deep%20voice.%0D%0A%0D%0ANARRATOR%0D%0ASince%20time%20immemorial%2C%20life%20forms%20of%20all%20twenty-four%20flavors%20have%20been%20drawn%20to%20seek%20sweet%2C%20frozen%20delights.%20Eons%20ago%2C%20when%20the%20first%20organism%20to%20evolve%20a%20gustatory%20system%20stepped%20outside%20into%20a%20snowdrift%2C%20and%20an%20errant%20flake%20happened%20upon%20their%20taste-sensitive%20receptors%2C%20it%20is%20written%20that%20the%20universe%20itself%20stopped%20for%20a%20moment%20and%20said%20%22Ooh%2C%20that's%20the%20taste%22.%20The%20intervening%20centuries%20have%20seen%20leaps%20and%20bounds%20in%20the%20innovation%20of%20new%20ways%20to%20combine%20the%20key%20elements%20of%20ice%20and%20cream%3B%20the%20pinnacle%20of%20which%20being%20the%20'Softest%20Serve'%20created%20by%20Tyler%20Coldwell%2C%20founder%20of%20the%20Coldwell%20Ice%20Cream%20Corporation.%20The%20invention%20of%20this%20'Softest%20Serve'%20was%20revolutionary%20in%20the%20world%20of%20chilled%20enjoyment%2C%20and%20its%20success%20catapulted%20the%20Coldwell%20corporation%20into%20being%20the%20universe's%20single%20largest%20producer%20of%20ice%20cream%20machines%20to%20date.%20At%20present%2C%20nearly%20every%20quick%20service%20establishment%20-%20in%20every%20galaxy%20-%20relies%20on%20a%20Coldwell%20Creamatic%20machine%20to%20sate%20their%20patrons'%20temperature-dependent%20cravings.%20The%20softness%20of%20its%20serve%20is%20exceeded%20solely%20by%20the%20unending%2C%20universal%20demand%20for%20more%20of%20it.%20Unfortunately%2C%20these%20Coldwell%20Creamatic%20machines%20have%20a%20fatal%20flaw%3A%20they%20break%20down...often.%20Far%2C%20far%20more%20often%20than%20one%20would%20expect%20is%20necessary.%20Their%20staggering%20ubiquity%2C%20coupled%20with%20the%20fact%20that%20Creamatics%20are%20mind-bendingly%20complex%2C%20scientific%20machines%2C%20means%20that%20the%20technicians%20who%20tend%20to%20their%20upkeep%20must%20be%20the%20most%20tireless%2C%20highly-trained%2C%20efficient%2C%20and%20brilliant%20minds%20in%20the%20ice%20cream%20engineering%20world.%20Because%20of%20this%2C%20there%20is%20only%20one%20repair%20team%20in%20existence.%20Endlessly%20traversing%20the%20galaxy%20and%20fulfilling%20warranty%20claims.%20In%20that%20vast%2C%20cold%2C%20creamy%2C%20twisted%20blackness%20of%20space%2C%20no%20one%20can%20hear%20you%20scream.%20Yet%2C%20I%20scream...%20You%20scream...%20We%20all%20scream...%20For%20Intergalactic%20Ice%20Cream%20Machine%20Mechanics!%0D%0A%0D%0A!Music%20swells%20up%2C%20more%20whooshes%20as%20sound%20transitions%20to%20the%20interior%20of%20a%20spacecraft.%0D%0A%0D%0AINT.%20P.S.V.%20CUSTOMER%20RETENTION%20-%20BRIDGE%20%231%23%0D%0A%0D%0AHARLOWE%0D%0AThat%20is%20my%20tennis%20ball.%0D%0A%0D%0ASEREN%0D%0AYeah%20I%20know%2C%20it'll%20be%20fine.%0D%0A%0D%0AHARLOWE%0D%0AYou%20are%20cutting%20a%20hole%20in%20my%20tennis%20ball.%0D%0A%0D%0ASEREN%0D%0AIt's%20-%20It'll%20be%20fine%2C%20it's%20not%20like%20that%20matters%20to%20you%2C%20you're%20just%20gonna%20chew%20on%20it.%20You%20can%20have%20it%20back%20after%20I%20get%20this.%0D%0A%0D%0AHARLOWE%0D%0ACutting%20my%20tennis%20ball%20will%20affect%20the%20mouthfeel.%20They%20have%20a%20particularly%20satisfying%20resistance%20that%20is%20almost%20entirely%20dependent%20on%20its%20ability%20to%20maintain%20internal%20pressure.%20I%20would%20very%20much%20like%20you%20to%20not%20do%20this.%0D%0A%0D%0ASEREN%0D%0ANo%20-%20I%20saw%20online%20a%20video%20about%20how%20you%20can%20use%20one%20of%20these%20to%20like%2C%20poof%20up%20the%20pins%20like%20you%20-%20you%20push%20the%20hole%20against%20the%20lock%20and%20twist%20it%20and%20whack%20it.%20And%20then%20boom.%20It's%20like%20magic%20it%20poofs%20up%20the%20pins%20with%20the%20air%20and%20picks%20the%20lock.%0D%0A%0D%0AHARLOWE%0D%0AThat%20is%20my%20*only*%20tennis%20ball.%0D%0A%0D%0ASEREN%0D%0AI'll%20get%20you%20another%20one.%0D%0A%0D%0AHARLOWE%0D%0ACambridge%20has%20told%20me%20that%20we%20do%20not%20have%20time%20to%20stop%20at%20the%20tennis%20ball%20factory%20planet.%20I%20have%20asked%20him%20every%20day%20for%20as%20long%20as%20I%20can%20remember.%20I%20do%20not%20*want*%20to%20only%20have%20one%20tennis%20ball%2C%20but%20that%20is%20my%20burden%20to%20bear.%20Please%20do%20not%20ruin%20my%20only%20tennis%20ball.%0D%0A%0D%0ASEREN%0D%0ADamnit%20Harlowe%2C%20are%20you%20just%20-%20what%20the%20hell%20is%20wrong%20with%20everyone%20on%20this%20ship%20-%20how%20are%20you%20not%20curious%20*at%20all*%20about%20what's%20in%20the%20glove%20compartment%3F%20Eight%20years%2C%20dog%2C%20*eight%20years*%20I've%20been%20on%20this%20gig%20and%20the%20glove%20compartment's%20never%20been%20open%2C%20and%20nobody%20talks%20about%20it%2C%20and%20nobody%20seems%20to%20care%20that%20we%20can't%20get%20into%20it%2C%20nobody%20wonders%20whats%20in%20it%20or%20why%2C%20and%20I%20am%20absolutely%20losing%20my%20mind.%20I%20have%20dreams%20about%20glove%20compartments%20now.%20I%20have%20seen%20every%20*inch*%20of%20this%20stupid%20tub%20-%20except...%20for%20whats%20in%20the%20glove%20compartment.%20At%20this%20point%20I'm%20worried%20that%20if%20I%20die%20without%20knowing%20whats%20in%20there%20I'm%20gonna%20end%20up%20haunting%20this%20place%20forever%20-%20that%20-%20that%E2%80%A6%20is%20unfinished%20business.%20That's%20how%20you%20get%20ghosts.%20I%20don't%20want%20that.%0D%0A%0D%0AHARLOWE%0D%0AWhy%20can%20you%20not%20just%20blow%20into%20the%20keyway%20with%20your%20lips%3F%20Or%20use%20the%20turkey%20baster%20that%20you%20keep%20in%20your%20room.%0D%0A%0D%0ASEREN%0D%0AI%20can't%20b-%20What%3F%20No%20I%20don't%20-%20I%20don't%20keep%20the%20turkey%20baster%20in%20my%20room%2C%20dude%2C%20why%20-%20I%20don't.%20Also%2C%20no.%20I%20can't%20blow%20in%20it%20%E2%80%93%20I%20have%20that%20ear%20thing%2C%20my%20eardrums%20would%20pop.%0D%0A%0D%0AHARLOWE%0D%0AIf%20you%20share%20the%20gravy%20with%20me%20I%20will%20allow%20this%20use%20of%20my%20tennis%20ball.%0D%0A%0D%0ASEREN%0D%0AWhat%3F%0D%0A%0D%0AHARLOWE%0D%0AYou%20have%20been%20drinking%20gravy.%20I%20assume%20that%20is%20why%20you%20bring%20the%20turkey%20baster%20up%20to%20your%20room.%0D%0A%0D%0ASEREN%0D%0AI%20don't%20drink%20gravy.%0D%0A%0D%0AHARLOWE%0D%0AI%20can%20smell%20gravy%20on%20your%20breath.%0D%0A%0D%0ASEREN%0D%0AWe%20haven't%20stopped%20to%20refill%20the%20vending%20machine%20in%20months%2C%20okay%3F!%20We%20have%20no%20snacks%20on%20the%20ship%20it's%20-%20I%20need%20something%20to%20relax%20with%2C%20okay%3F%20You're%20not%20the%20only%20one%20suffering%20here%2C%20tennis%20ball.%0D%0A%0D%0AHARLOWE%0D%0AHalf%20rations%20of%20gravy%20for%20damaging%20my%20tennis%20ball.%20That%20is%20my%20price.%0D%0A%0D%0ASEREN%0D%0AFine.%0D%0A%0D%0A!PAUSE%0D%0A%0D%0AHARLOWE%0D%0ADo%20you%20think%20there%20is%20another%20tennis%20ball%20in%20the%20glove%20compartment%3F%0D%0A%0D%0ASEREN%0D%0AI'm%20hoping%20for%20dunkaroos.%0D%0A%0D%0A!SFX%20Transition%20to%20a%20different%20part%20of%20the%20spacecraft.%0D%0A%0D%0AINT.%20P.S.V.%20CUSTOMER%20RETENTION%20-%20REC%20HALL%20%232%23%0D%0A%0D%0ACAMBRIDGE%0D%0ASo%20we%20take%20the%20sightings%20from%20the%20sextant%20using%20the%20landmarks%20from%20the%20holomap%20as%20reference%2C%20you%20follow%3F%20Then%20we%20have%20our%20position%20and%20can%20plot%20a%20solid%20relative%20course.%0D%0A%0D%0ADAGNY%0D%0ARight.%20What%20are%20-%20does%20every%20planet%20in%20this%20quadrant%20have%20rings%3F%20What%20are%20the%20lines%20on%20the%20map%3F%0D%0A%0D%0ACAMBRIDGE%0D%0AAh!%20No.%20Those%20are%20the%20gravity%20wells%20of%20each%20body.%20The%20edges%20of%20where%20each%20spot%20will%20pull%20ya.%20I%20call%20'em%20'god's%20cruise%20control'.%20If%20you're%20smart%20like%20me%2C%20ninety%20percent%20of%20flyin'%20around%20is%20just%20falling.%20Price%20of%20gas%20now%2C%20you%20gotta%20do%20it.%0D%0A%0D%0ADAGNY%0D%0ASorry%20if%20this%20is%20a%20dumb%20question%20but%20couldn't%20we%20just%20use%20the%20ship's%20onboard%20nav%20to%20plot%20like%2C%20the%20most%20efficient%20course%20and%20follow%20that%20instead%20of%20having%20the%20sextant%3F%0D%0A%0D%0ACAMBRIDGE%0D%0AGod%20no%2C%20listen%20-%20I'm%20not%20about%20to%20get%20microtransactioned%20to%20death%20by%20that%20miserable%20thing.%20It's%20sixty%20sheef%20a%20route%20now%20-%20and%20seventy%20five%20if%20you%20want%20voice%20assistance.%20Screw%20that.%20Sextant%20every%20day%2C%20you%20got%20that%3F%0D%0A%0D%0ADAGNY%0D%0AI%20guess%20it%20is%20a%20more%20active%20way%20of%20navigating.%0D%0A%0D%0ACAMBRIDGE%0D%0AI'd%20like%20to%20think%20I%20have%20a%20very%20active%20sextant%20life.%0D%0A%0D%0ADAGNY%0D%0AWhat%20if%20we%20end%20up%20way%20off%20course%3F%0D%0A%0D%0ACAMBRIDGE%0D%0ADoesn't%20matter%2C%20have%20sextant.%0D%0A" download="Intergalactic Ice Cream Machine Mechanics.fountain" title='Download "Intergalactic Ice Cream Machine Mechanics.fountain"'>
+                                    DOWNLOAD POST ⤓
+                                </a>
+                            </p>
+                        </div>
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/Writing/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                Unfinished
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+
+
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <a href="/Writing/Unfinished/Computer Was A Place We Went/">Computer Was a Place We Went</a>
+                                        
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <a href="/Writing/Unfinished/I Miss Hypnospace/">I Miss Hypnospace</a>
+                                        
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <strong>Intergalactic Ice Cream Machine Mechanics</strong>
+                                        
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <a href="/Writing/Unfinished/Submarine To Hell/">Submarine To Hell</a>
+                                        
+                                    </li>
+                                
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+                <script>/*
+                // REPLACE URL IN BAR WITH SHARELINK
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/s/intergalactic-ice-cream-machine-mechanics-og26b/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+                // */</script>
+        
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Broadcast Hot Clock Generator</title>
+    <style>
+        :root {
+            --bg: #f4f4f5;
+            --surface: #ffffff;
+            --text: #18181b;
+            --border: #d4d4d8;
+            --primary: #09090b;
+            --primary-hover: #27272a;
+            --danger: #ef4444;
+            --edit: #2563eb;
+            --clock-stroke: 4px;
+            --font-size: 13px;
+            --svg-text: #18181b;
+        }
+        
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+            max-width: 1300px;
+            width: 100%;
+            align-items: flex-start;
+        }
+
+        .sidebar {
+            width: 400px;
+            background: var(--surface);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 800px;
+        }
+        
+        .print-btn {
+            background: #40cc7f;
+            color: var(--text);
+            padding: 14px;
+            font-size: 1rem;
+            text-align: center;
+            border: 3px solid #01bb0a;
+            border-radius: 0;
+            font-weight: 700;
+            margin-top: 15px;
+        }
+        .print-btn:hover { background: #afe0af; }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: #f8fafc;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-size: 0.85rem;
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            background: var(--surface);
+        }
+
+        .panel { padding: 20px; display: none; }
+        .panel.active { display: block; }
+
+        .clock-display {
+            flex-grow: 1;
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 800px;
+        }
+
+        h3 { margin: 0 0 16px 0; font-size: 1.2rem; border-bottom: 2px solid var(--primary); padding-bottom: 8px; display: inline-block;}
+        
+        .form-row { display: flex; gap: 12px; margin-bottom: 12px; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; flex-grow: 1; margin-bottom: 12px;}
+        
+        label { font-size: 0.85rem; font-weight: 600; color: #52525b; text-transform: uppercase; letter-spacing: 0.05em;}
+
+        input[type="text"], input[type="number"], select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 1rem;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        input[type="color"] {
+            padding: 0;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            width: 100%;
+            height: 36px;
+            cursor: pointer;
+        }
+
+        input[type="range"] { width: 100%; margin-top: 8px; }
+
+        button {
+            padding: 10px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+            width: 100%;
+        }
+
+        button:hover { background: var(--primary-hover); }
+        button.secondary { background: #e4e4e7; color: var(--text); }
+        button.secondary:hover { background: #d4d4d8; }
+        button.danger-outline { background: transparent; border: 1px solid var(--danger); color: var(--danger); margin-top: 10px;}
+        button.danger-outline:hover { background: var(--danger); color: white; }
+
+        .segment-list {
+            margin-top: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .segment-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            gap: 10px;
+        }
+        .segment-item:last-child { border-bottom: none; }
+        .segment-item.editing { background: #fef9c3; border-left: 4px solid #eab308; padding-left: 6px;}
+
+        .color-swatch { width: 16px; height: 16px; border-radius: 2px; border: 1px solid rgba(0,0,0,0.3); flex-shrink: 0; }
+        .seg-info { flex-grow: 1; line-height: 1.3; }
+        .seg-name { font-weight: 700; font-size: 0.95rem; }
+        .seg-dur { color: #52525b; font-size: 0.8rem; font-family: monospace;}
+
+        .action-btn { background: transparent; color: #52525b; padding: 4px; font-size: 1rem; width: auto; border: 1px solid transparent;}
+        .action-btn:hover { background: #f4f4f5; color: var(--text); }
+        
+        .total-time { 
+            font-family: monospace; font-weight: bold; font-size: 1.2rem; text-align: center; 
+            padding: 12px; background: #f4f4f5; border-radius: 4px; border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; cursor: pointer; }
+        .checkbox-group input { width: auto; cursor: pointer; }
+
+        .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+        .status-badge {
+            font-size: 0.75rem;
+            color: #059669;
+            background: #d1fae5;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* SVG Styles */
+        svg { max-width: 100%; height: auto; }
+        .slice { stroke: var(--svg-text); stroke-width: 1.5; stroke-linejoin: round;}
+        .slice-text { font-family: system-ui, sans-serif; text-anchor: middle; dominant-baseline: middle; fill: var(--svg-text); font-weight: 700;}
+        .slice-duration { font-family: monospace; text-anchor: middle; dominant-baseline: middle; fill: rgba(0,0,0,0.7); font-weight: 600; }
+        .marker-text { font-family: monospace; text-anchor: middle; dominant-baseline: middle; fill: var(--svg-text); }
+        .clock-border { fill: none; stroke: var(--svg-text); stroke-width: var(--clock-stroke); }
+        .tick-mark { stroke: var(--svg-text); stroke-linecap: square; }
+
+        #printTitleInput { text-align: center; font-size: 2rem; font-weight: 800; border: none; outline: none; width: 100%; margin-bottom: 20px; font-family: inherit;}
+
+        /* Breakdown Styles */
+        .breakdown-container {
+            margin-top: 40px;
+            width: 100%;
+            max-width: 600px;
+            border-top: 2px solid var(--border);
+            padding-top: 20px;
+        }
+
+        .breakdown-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+            font-size: 0.95rem;
+        }
+        
+        .breakdown-item:last-child { border-bottom: none; }
+        
+        .breakdown-time {
+            font-family: monospace;
+            font-weight: 700;
+            color: var(--primary);
+            width: 60px;
+            font-size: 1.1rem;
+        }
+
+        .breakdown-name { flex-grow: 1; font-weight: 600; }
+        .breakdown-dur { color: #52525b; font-family: monospace; font-size: 0.85rem;}
+
+        /* Print Styles */
+        @media print {
+            body { background: white; padding: 0; display: block; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .sidebar { display: none; }
+            .container { display: block; }
+            .clock-display { box-shadow: none; border: none; padding: 0; margin: 0 auto; max-width: 850px; min-height: auto;}
+            .breakdown-container { margin-top: 20px; page-break-inside: avoid; }
+            @page { margin: 0.5cm; size: portrait; }
+        }
+    </style>
+
+    <meta name="bodge-og-injected" content="true">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bodgelab.com/Stealware/Broadcast%20Clock%20Builder/">
+    <meta property="og:title" content="Broadcast Hot-Clock Maker">
+    <meta property="og:description" content="A simple, customizable, browser-based tool for creating hourly broadcast format clocks.">
+    <meta property="og:image" content="https://bodgelab.com/Stealware/Broadcast%20Clock%20Builder/clockogimg.jpg">
+    <meta name="twitter:image" content="https://bodgelab.com/Stealware/Broadcast%20Clock%20Builder/clockogimg.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('build')">Build</div>
+                <div class="tab" onclick="switchTab('settings')">Settings</div>
+                <div class="tab" onclick="switchTab('save')">Save & Load</div>
+            </div>
+
+            <div id="panel-build" class="panel active">
+                
+                
+                <div class="total-time" id="totalTimeDisplay">00:00 / 60:00</div>
+                
+                <div class="form-group">
+                    <label>Segment Name</label>
+                    <input type="text" id="segName" placeholder="e.g., Intro">
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;">
+                        <label>Duration (Mins)</label>
+                        <input type="number" id="segDuration" placeholder="5" min="1" max="60">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Color</label>
+                        <input type="color" id="segColor" value="#ffffff">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <button id="submitBtn" onclick="submitForm()">Add Segment</button>
+                    <button id="cancelBtn" class="secondary" style="display: none;" onclick="cancelEdit()">Cancel</button>
+                </div>
+
+                <div class="segment-list" id="segmentList"></div>
+                <button class="danger-outline" onclick="clearAll()" style="margin-top: 0; margin-bottom: 15px;">Delete All Segments</button>
+            </div>
+
+            <div id="panel-settings" class="panel">
+                <h3>Clock Aesthetics</h3>
+                
+                <div class="form-group">
+                    <label>Clock Outline Thickness (<span id="strokeVal">4</span>px)</label>
+                    <input type="range" id="settingStroke" min="1" max="10" value="4" oninput="updateSettingsUI()">
+                </div>
+
+                <div class="form-group">
+                    <label>Base Text Size (<span id="fontVal">13</span>px)</label>
+                    <input type="range" id="settingFont" min="9" max="20" value="13" oninput="updateSettingsUI()">
+                </div>
+
+                <div class="divider"></div>
+                <h3>Visibility Options</h3>
+
+                <label class="checkbox-group">
+                    <input type="checkbox" id="settingLabels" checked onchange="updateSettingsUI()">
+                    <span style="font-weight: 600; color: var(--text);">Show Default 5-Minute Labels</span>
+                </label>
+
+                <label class="checkbox-group" style="margin-top: 16px;">
+                    <input type="checkbox" id="settingGrayscale" onchange="updateSettingsUI()">
+                    <span style="font-weight: 600; color: var(--text);">Force Grayscale (Print Mode)</span>
+                </label>
+            </div>
+
+            <div id="panel-save" class="panel">
+                <div id="autoSaveStatus" class="status-badge">Auto-Saved ✔</div>
+                
+                <h3>Save Current Clock</h3>
+                <div class="form-group">
+                    <label>Profile Name</label>
+                    <input type="text" id="saveName" placeholder="e.g., Standard Morning Hour">
+                </div>
+                <button onclick="saveCurrentProfile()">Save Profile</button>
+
+                <div class="divider"></div>
+
+                <h3>Load Saved Clock</h3>
+                <div class="form-group">
+                    <select id="savedClocksDropdown">
+                        <option value="">-- Select a Profile --</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <button onclick="loadSelectedProfile()">Load</button>
+                    <button class="danger-outline" style="margin-top:0;" onclick="deleteSelectedProfile()">Delete</button>
+                </div>
+            </div>
+
+            <button class="print-btn" onclick="window.print()">CLICK TO PRINT CLOCK</button>
+        </div>
+
+        <div class="clock-display">
+            <input type="text" id="printTitleInput" value="The Morning Telephone Show" oninput="handleTitleChange()">
+            <div id="svgContainer"></div>
+            <div id="segmentBreakdown" class="breakdown-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let segments = [];
+        let editingId = null;
+        let clockTitle = "The Morning Telephone Show";
+        let settings = { strokeWidth: 4, fontSize: 13, grayscale: false, showLabels: true };
+
+        const SVG_SIZE = 850;
+        const CENTER = SVG_SIZE / 2;
+        const RADIUS = 300;
+        const MARKER_RADIUS = 350; 
+
+        // --- Data Persistence Logic ---
+        function loadInitialData() {
+            const autoSave = localStorage.getItem('hotclock_autosave');
+            if (autoSave) {
+                try {
+                    const data = JSON.parse(autoSave);
+                    segments = data.segments || [];
+                    settings = { ...settings, ...data.settings }; 
+                    clockTitle = data.title || clockTitle;
+                } catch (e) {
+                    console.error("Failed to parse auto-save", e);
+                    loadDefaults();
+                }
+            } else {
+                loadDefaults();
+            }
+
+            document.getElementById('printTitleInput').value = clockTitle;
+            document.getElementById('settingStroke').value = settings.strokeWidth;
+            document.getElementById('settingFont').value = settings.fontSize;
+            document.getElementById('settingGrayscale').checked = settings.grayscale;
+            document.getElementById('settingLabels').checked = settings.showLabels !== false;
+            
+            setupKeyboardListeners();
+            updateSettingsUI(false); 
+            refreshSavedDropdown();
+            updateUI(false);
+        }
+
+        function loadDefaults() {
+            segments = [
+                { id: "a1", name: "Show Intro", duration: 2, color: "#bae6fd" },
+                { id: "b2", name: "News Brief", duration: 7, color: "#fef08a" },
+                { id: "c3", name: "Main Topic Interview", duration: 18, color: "#bbf7d0" },
+                { id: "d4", name: "Station ID / Weather", duration: 5, color: "#fecaca" },
+                { id: "e5", name: "Listener Calls & Q&A", duration: 23, color: "#e9d5ff" },
+                { id: "f6", name: "Outro & Credits", duration: 5, color: "#e5e5e5" }
+            ];
+            clockTitle = "The Morning Telephone Show";
+        }
+
+        function triggerAutoSave() {
+            const data = { segments, settings, title: clockTitle };
+            localStorage.setItem('hotclock_autosave', JSON.stringify(data));
+            
+            const badge = document.getElementById('autoSaveStatus');
+            badge.style.opacity = 1;
+            setTimeout(() => { badge.style.opacity = 0; }, 2000);
+        }
+
+        function saveCurrentProfile() {
+            const nameInput = document.getElementById('saveName');
+            const name = nameInput.value.trim();
+            if (!name) return alert("Please enter a profile name.");
+
+            let profiles = JSON.parse(localStorage.getItem('hotclock_profiles') || '{}');
+            profiles[name] = { segments, settings, title: clockTitle };
+            
+            localStorage.setItem('hotclock_profiles', JSON.stringify(profiles));
+            nameInput.value = '';
+            refreshSavedDropdown();
+            alert(`Profile "${name}" saved successfully!`);
+        }
+
+        function loadSelectedProfile() {
+            const select = document.getElementById('savedClocksDropdown');
+            const name = select.value;
+            if (!name) return;
+
+            let profiles = JSON.parse(localStorage.getItem('hotclock_profiles') || '{}');
+            if (profiles[name]) {
+                segments = profiles[name].segments;
+                settings = { ...settings, ...profiles[name].settings };
+                clockTitle = profiles[name].title;
+                
+                document.getElementById('printTitleInput').value = clockTitle;
+                document.getElementById('settingStroke').value = settings.strokeWidth;
+                document.getElementById('settingFont').value = settings.fontSize;
+                document.getElementById('settingGrayscale').checked = settings.grayscale;
+                document.getElementById('settingLabels').checked = settings.showLabels !== false;
+                
+                updateSettingsUI(false);
+                updateUI(true);
+                switchTab('build');
+            }
+        }
+
+        function deleteSelectedProfile() {
+            const select = document.getElementById('savedClocksDropdown');
+            const name = select.value;
+            if (!name) return;
+
+            if (confirm(`Are you sure you want to delete the profile "${name}"?`)) {
+                let profiles = JSON.parse(localStorage.getItem('hotclock_profiles') || '{}');
+                delete profiles[name];
+                localStorage.setItem('hotclock_profiles', JSON.stringify(profiles));
+                refreshSavedDropdown();
+            }
+        }
+
+        function refreshSavedDropdown() {
+            const select = document.getElementById('savedClocksDropdown');
+            let profiles = JSON.parse(localStorage.getItem('hotclock_profiles') || '{}');
+            
+            select.innerHTML = '<option value="">-- Select a Profile --</option>';
+            Object.keys(profiles).forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                select.appendChild(opt);
+            });
+        }
+
+        // --- UI Interactions ---
+
+        function setupKeyboardListeners() {
+            ['segName', 'segDuration', 'segColor'].forEach(id => {
+                document.getElementById(id).addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        submitForm();
+                    }
+                });
+            });
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`panel-${tabName}`).classList.add('active');
+        }
+
+        function generateId() { return Math.random().toString(36).substr(2, 9); }
+
+        function handleTitleChange() {
+            clockTitle = document.getElementById('printTitleInput').value;
+            triggerAutoSave();
+        }
+
+        function updateSettingsUI(shouldSave = true) {
+            settings.strokeWidth = parseInt(document.getElementById('settingStroke').value);
+            settings.fontSize = parseInt(document.getElementById('settingFont').value);
+            settings.grayscale = document.getElementById('settingGrayscale').checked;
+            settings.showLabels = document.getElementById('settingLabels').checked;
+            
+            document.getElementById('strokeVal').innerText = settings.strokeWidth;
+            document.getElementById('fontVal').innerText = settings.fontSize;
+            
+            document.documentElement.style.setProperty('--clock-stroke', `${settings.strokeWidth}px`);
+            document.documentElement.style.setProperty('--font-size', `${settings.fontSize}px`);
+            
+            renderClock();
+            if (shouldSave) triggerAutoSave();
+        }
+
+        function updateUI(shouldSave = true) {
+            renderList();
+            renderClock();
+            renderBreakdown();
+            
+            const totalMinutes = segments.reduce((acc, curr) => acc + curr.duration, 0);
+            const timeDisplay = document.getElementById('totalTimeDisplay');
+            
+            const minStr = totalMinutes.toString().padStart(2, '0');
+            timeDisplay.innerText = `${minStr}:00 / 60:00`;
+            
+            if (totalMinutes > 60) {
+                timeDisplay.style.color = 'white';
+                timeDisplay.style.backgroundColor = 'var(--danger)';
+                timeDisplay.style.borderColor = 'var(--danger)';
+            } else {
+                timeDisplay.style.color = 'var(--text)';
+                timeDisplay.style.backgroundColor = '#f4f4f5';
+                timeDisplay.style.borderColor = 'var(--border)';
+            }
+
+            if (shouldSave) triggerAutoSave();
+        }
+
+        function submitForm() {
+            const nameInput = document.getElementById('segName');
+            const durationInput = document.getElementById('segDuration');
+            const colorInput = document.getElementById('segColor');
+            
+            const name = nameInput.value.trim();
+            const duration = parseInt(durationInput.value);
+            const color = colorInput.value;
+
+            if (!name || isNaN(duration) || duration <= 0) {
+                alert("Please enter a valid name and duration.");
+                return;
+            }
+
+            if (editingId !== null) {
+                const index = segments.findIndex(s => s.id === editingId);
+                if (index > -1) segments[index] = { id: editingId, name, duration, color };
+                cancelEdit();
+            } else {
+                segments.push({ id: generateId(), name, duration, color });
+                nameInput.value = '';
+                durationInput.value = '';
+                colorInput.value = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                nameInput.focus();
+            }
+            updateUI();
+        }
+
+        function editSegment(id) {
+            const seg = segments.find(s => s.id === id);
+            if (!seg) return;
+
+            editingId = id;
+            document.getElementById('segName').value = seg.name;
+            document.getElementById('segDuration').value = seg.duration;
+            document.getElementById('segColor').value = seg.color;
+            
+            document.getElementById('submitBtn').innerText = "Update";
+            document.getElementById('cancelBtn').style.display = "block";
+            
+            if(!document.getElementById('panel-build').classList.contains('active')) {
+                switchTab('build');
+                document.querySelector('.tabs .tab:first-child').classList.add('active');
+                document.querySelectorAll('.tabs .tab').forEach(t => { if(t.textContent !== 'Build') t.classList.remove('active')});
+            }
+            updateUI(false);
+        }
+
+        function cancelEdit() {
+            editingId = null;
+            document.getElementById('segName').value = '';
+            document.getElementById('segDuration').value = '';
+            
+            document.getElementById('submitBtn').innerText = "Add Segment";
+            document.getElementById('cancelBtn').style.display = "none";
+            updateUI(false);
+        }
+
+        function removeSegment(id) {
+            segments = segments.filter(s => s.id !== id);
+            if (editingId === id) cancelEdit();
+            updateUI();
+        }
+
+        function moveSegment(index, direction) {
+            if (direction === -1 && index > 0) {
+                [segments[index], segments[index - 1]] = [segments[index - 1], segments[index]];
+            } else if (direction === 1 && index < segments.length - 1) {
+                [segments[index], segments[index + 1]] = [segments[index + 1], segments[index]];
+            }
+            updateUI();
+        }
+
+        function clearAll() {
+            if(confirm("Are you sure you want to completely clear the clock?")) {
+                segments = [];
+                cancelEdit();
+                updateUI();
+            }
+        }
+
+        function renderList() {
+            const list = document.getElementById('segmentList');
+            list.innerHTML = '';
+            
+            segments.forEach((seg, index) => {
+                const div = document.createElement('div');
+                div.className = `segment-item ${editingId === seg.id ? 'editing' : ''}`;
+                div.innerHTML = `
+                    <div class="color-swatch" style="background-color: ${seg.color};"></div>
+                    <div class="seg-info">
+                        <div class="seg-name">${seg.name}</div>
+                        <div class="seg-dur">${seg.duration} min</div>
+                    </div>
+                    <div style="display: flex;">
+                        <button class="action-btn" onclick="moveSegment(${index}, -1)" title="Up" ${index === 0 ? 'disabled style="opacity:0.2"' : ''}>▲</button>
+                        <button class="action-btn" onclick="moveSegment(${index}, 1)" title="Down" ${index === segments.length - 1 ? 'disabled style="opacity:0.2"' : ''}>▼</button>
+                        <button class="action-btn" onclick="editSegment('${seg.id}')" title="Edit" style="color:var(--edit)">✎</button>
+                        <button class="action-btn" onclick="removeSegment('${seg.id}')" title="Delete" style="color:var(--danger)">✕</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function renderBreakdown() {
+            const container = document.getElementById('segmentBreakdown');
+            container.innerHTML = '<h3 style="border-bottom:none; margin-bottom: 8px;">Run of Show</h3>';
+            
+            let currentMinute = 0;
+            segments.forEach(seg => {
+                if (currentMinute >= 60) return;
+                
+                const minStr = currentMinute.toString().padStart(2, '0');
+                const div = document.createElement('div');
+                div.className = 'breakdown-item';
+                div.innerHTML = `
+                    <div class="breakdown-time">:${minStr}</div>
+                    <div class="breakdown-name">${seg.name}</div>
+                    <div class="breakdown-dur">${seg.duration} min</div>
+                `;
+                container.appendChild(div);
+                
+                currentMinute += Math.min(seg.duration, 60 - currentMinute);
+            });
+        }
+
+        // --- SVG Math & Rendering ---
+
+        function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+            const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+            return {
+                x: centerX + (radius * Math.cos(angleInRadians)),
+                y: centerY + (radius * Math.sin(angleInRadians))
+            };
+        }
+
+        function createSVGElement(tag) { return document.createElementNS("http://www.w3.org/2000/svg", tag); }
+
+        function hexToGrayscaleLuminance(hex) {
+            hex = hex.replace('#', '');
+            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+            
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            
+            const y = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+            const printY = Math.min(255, y + 20); 
+            
+            return `rgb(${printY}, ${printY}, ${printY})`;
+        }
+
+        function renderWrappedText(svg, x, y, text, durationText, sliceArcDegrees) {
+            let maxChars = 22; 
+            let maxLines = 4;
+            
+            if (sliceArcDegrees <= 12) { maxChars = 5; maxLines = 1; } 
+            else if (sliceArcDegrees <= 25) { maxChars = 10; maxLines = 2; } 
+            else if (sliceArcDegrees <= 45) { maxChars = 14; maxLines = 3; } 
+
+            const words = text.split(' ');
+            let lines = [];
+            let currentLine = '';
+
+            words.forEach(word => {
+                if ((currentLine + word).length > maxChars && currentLine !== '') {
+                    lines.push(currentLine.trim());
+                    currentLine = word + ' ';
+                } else {
+                    currentLine += word + ' ';
+                }
+            });
+            if (currentLine) lines.push(currentLine.trim());
+
+            if (lines.length > maxLines) {
+                lines = lines.slice(0, maxLines);
+                lines[lines.length - 1] = lines[lines.length - 1].substring(0, maxChars - 2) + '..';
+            }
+
+            const baseSize = settings.fontSize;
+            const lineHeight = baseSize * 1.2;
+            const totalTextHeight = (lines.length * lineHeight) + (baseSize * 1.5); 
+            const startY = y - (totalTextHeight / 2) + (baseSize / 2); 
+
+            lines.forEach((line, i) => {
+                const textNode = createSVGElement('text');
+                textNode.setAttribute('x', x);
+                textNode.setAttribute('y', startY + (i * lineHeight));
+                textNode.setAttribute('class', 'slice-text');
+                textNode.setAttribute('font-size', `${baseSize}px`);
+                textNode.textContent = line;
+                svg.appendChild(textNode);
+            });
+
+            if (sliceArcDegrees <= 6) {
+                const durNode = createSVGElement('text');
+                durNode.setAttribute('x', x);
+                durNode.setAttribute('y', y); 
+                durNode.setAttribute('class', 'slice-duration');
+                durNode.setAttribute('font-size', `${Math.max(10, baseSize - 1)}px`);
+                durNode.setAttribute('font-weight', 'bold');
+                durNode.textContent = durationText;
+                svg.appendChild(durNode);
+            } else {
+                const durNode = createSVGElement('text');
+                durNode.setAttribute('x', x);
+                durNode.setAttribute('y', startY + (lines.length * lineHeight) + (baseSize * 0.5));
+                durNode.setAttribute('class', 'slice-duration');
+                durNode.setAttribute('font-size', `${Math.max(10, baseSize - 2)}px`);
+                durNode.textContent = durationText;
+                svg.appendChild(durNode);
+            }
+        }
+
+        function renderClock() {
+            const container = document.getElementById('svgContainer');
+            container.innerHTML = '';
+
+            const svg = createSVGElement('svg');
+            svg.setAttribute('width', SVG_SIZE);
+            svg.setAttribute('height', SVG_SIZE);
+            svg.setAttribute('viewBox', `0 0 ${SVG_SIZE} ${SVG_SIZE}`);
+
+            let startMinutes = [];
+            let tempMin = 0;
+            segments.forEach(seg => {
+                if (tempMin < 60) {
+                    startMinutes.push(tempMin);
+                    tempMin += seg.duration;
+                }
+            });
+
+            // 1. Draw Minute Ticks
+            for (let i = 0; i < 60; i++) {
+                const angle = (i / 60) * 360;
+                const isStartMin = startMinutes.includes(i);
+                const isFiveMin = i % 5 === 0;
+                
+                let tickLength = 6;
+                let tickWidth = '1.5';
+                if (isStartMin) {
+                    tickLength = 18;
+                    tickWidth = '4';
+                } else if (isFiveMin) {
+                    tickLength = 12;
+                    tickWidth = '2';
+                }
+                
+                const outerRadius = RADIUS + tickLength;
+                const start = polarToCartesian(CENTER, CENTER, RADIUS, angle);
+                const end = polarToCartesian(CENTER, CENTER, outerRadius, angle);
+                
+                const tick = createSVGElement('line');
+                tick.setAttribute('x1', start.x);
+                tick.setAttribute('y1', start.y);
+                tick.setAttribute('x2', end.x);
+                tick.setAttribute('y2', end.y);
+                tick.setAttribute('class', 'tick-mark');
+                tick.setAttribute('stroke-width', tickWidth);
+                svg.appendChild(tick);
+                
+                let shouldLabel = false;
+                if (isStartMin) {
+                    shouldLabel = true; 
+                } else if (isFiveMin && settings.showLabels) {
+                    const isCluttered = startMinutes.some(s => {
+                        const diff = Math.abs(i - s);
+                        const wrapDiff = 60 - diff;
+                        return Math.min(diff, wrapDiff) > 0 && Math.min(diff, wrapDiff) <= 2;
+                    });
+                    shouldLabel = !isCluttered; 
+                }
+
+                if (shouldLabel) {
+                    const labelPush = isStartMin ? 12 : 0; 
+                    const textPos = polarToCartesian(CENTER, CENTER, MARKER_RADIUS + labelPush, angle);
+                    
+                    const markerText = createSVGElement('text');
+                    markerText.setAttribute('x', textPos.x);
+                    markerText.setAttribute('y', textPos.y);
+                    markerText.setAttribute('class', 'marker-text');
+                    
+                    if (isStartMin) {
+                        markerText.setAttribute('font-size', '24px');
+                        markerText.setAttribute('font-weight', '900');
+                    } else {
+                        markerText.setAttribute('font-size', '16px');
+                        markerText.setAttribute('font-weight', 'bold');
+                    }
+                    
+                    markerText.textContent = `:${i.toString().padStart(2, '0')}`;
+                    svg.appendChild(markerText);
+                }
+            }
+
+            // 2. Draw outer clock face border
+            const circle = createSVGElement('circle');
+            circle.setAttribute('cx', CENTER);
+            circle.setAttribute('cy', CENTER);
+            circle.setAttribute('r', RADIUS);
+            circle.setAttribute('class', 'clock-border');
+            svg.appendChild(circle);
+
+            // 3. Draw Segments
+            let currentMinute = 0;
+
+            segments.forEach(seg => {
+                if (currentMinute >= 60) return;
+
+                const durationToDraw = Math.min(seg.duration, 60 - currentMinute);
+                const startAngle = (currentMinute / 60) * 360;
+                const endAngle = ((currentMinute + durationToDraw) / 60) * 360;
+                const sliceDegrees = endAngle - startAngle;
+                
+                const start = polarToCartesian(CENTER, CENTER, RADIUS, endAngle);
+                const end = polarToCartesian(CENTER, CENTER, RADIUS, startAngle);
+                const largeArcFlag = durationToDraw > 30 ? "1" : "0";
+
+                const pathData = [
+                    "M", CENTER, CENTER,
+                    "L", start.x, start.y,
+                    "A", RADIUS, RADIUS, 0, largeArcFlag, 0, end.x, end.y,
+                    "Z"
+                ].join(" ");
+
+                const path = createSVGElement('path');
+                path.setAttribute('d', pathData);
+                path.setAttribute('class', 'slice');
+                
+                const finalColor = settings.grayscale ? hexToGrayscaleLuminance(seg.color) : seg.color;
+                path.setAttribute('fill', finalColor);
+                svg.appendChild(path);
+
+                const startLineEnd = polarToCartesian(CENTER, CENTER, RADIUS, startAngle);
+                const startLine = createSVGElement('line');
+                startLine.setAttribute('x1', CENTER);
+                startLine.setAttribute('y1', CENTER);
+                startLine.setAttribute('x2', startLineEnd.x);
+                startLine.setAttribute('y2', startLineEnd.y);
+                startLine.setAttribute('stroke', 'var(--svg-text)');
+                startLine.setAttribute('stroke-width', '1.5');
+                svg.appendChild(startLine);
+
+                const midAngle = startAngle + (sliceDegrees / 2);
+                
+                if (sliceDegrees <= 15) { 
+                    // LEADER LINE LOGIC FOR SMALL SEGMENTS
+                    const startPt = polarToCartesian(CENTER, CENTER, RADIUS, midAngle);
+                    const elbowPt = polarToCartesian(CENTER, CENTER, RADIUS + 20, midAngle);
+                    
+                    const isRightSide = midAngle >= 0 && midAngle <= 180;
+                    const extension = isRightSide ? 30 : -30;
+                    const endPtX = elbowPt.x + extension;
+                    
+                    const poly = createSVGElement('polyline');
+                    poly.setAttribute('points', `${startPt.x},${startPt.y} ${elbowPt.x},${elbowPt.y} ${endPtX},${elbowPt.y}`);
+                    poly.setAttribute('fill', 'none');
+                    poly.setAttribute('stroke', 'var(--svg-text)');
+                    poly.setAttribute('stroke-width', '1.5');
+                    svg.appendChild(poly);
+                    
+                    const textNode = createSVGElement('text');
+                    textNode.setAttribute('x', isRightSide ? endPtX + 6 : endPtX - 6);
+                    textNode.setAttribute('y', elbowPt.y + 1); 
+                    textNode.setAttribute('class', 'slice-text');
+                    textNode.setAttribute('text-anchor', isRightSide ? 'start' : 'end');
+                    textNode.setAttribute('font-size', `${settings.fontSize}px`);
+                    textNode.textContent = `${seg.name} (${seg.duration}m)`;
+                    svg.appendChild(textNode);
+                    
+                } else {
+                    // STANDARD INTERNAL TEXT LOGIC FOR LARGE SEGMENTS
+                    let textRadiusMultiplier = 0.65;
+                    
+                    // Push text further out towards the wider edge for 5 to 7 minute segments
+                    if (sliceDegrees <= 35) { 
+                        textRadiusMultiplier = 0.82; 
+                    } else if (sliceDegrees <= 45) {
+                        textRadiusMultiplier = 0.75;
+                    }
+
+                    const textPos = polarToCartesian(CENTER, CENTER, RADIUS * textRadiusMultiplier, midAngle);
+                    renderWrappedText(svg, textPos.x, textPos.y, seg.name, `${seg.duration}m`, sliceDegrees);
+                }
+
+                currentMinute += durationToDraw;
+            });
+
+            container.appendChild(svg);
+        }
+
+        // Initialize App
+        window.onload = loadInitialData;
+    </script>
+</body>
+</html>

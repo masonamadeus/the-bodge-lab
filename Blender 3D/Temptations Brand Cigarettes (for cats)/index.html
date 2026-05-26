@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <script>
+            (function () {
+                const STORAGE_KEY = 'bodge-id-v1';
+                const SIZE = 5;
+                // 1. Try to load existing identity
+                let identity = null;
+                try {
+                    identity = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                } catch (e) {}
+                // 2. If no identity, GENESIS MODE (Random Generation)
+                if (! identity) {
+                    const hue = Math.floor(Math.random() * 360);
+                    const grid = new Array(SIZE * SIZE).fill(null);
+                    // Generate Mirrored Pattern
+                    for (let x = 0; x < Math.ceil(SIZE / 2); x++) {
+                        for (let y = 0; y < SIZE; y++) {
+                            if (Math.random() > 0.5) {
+                                const alpha = (Math.random() * 0.6 + 0.4).toFixed(2);
+                                // We store: { o: opacity, c: customColor (optional) }
+                                const pixel = {
+                                    o: alpha
+                                };
+                                // Set Left
+                                grid[y * SIZE + x] = pixel;
+                                // Set Mirror
+                                if (x < Math.floor(SIZE / 2)) {
+                                    grid[y * SIZE + (SIZE - 1 - x)] = pixel;
+                                }
+                            }
+                        }
+                    }
+                    identity = {
+                        hue,
+                        grid
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+                }
+                // 3. Render SVG Define Theme Colors based on the stored Hue
+                const cLight = `hsl(${
+                    identity.hue
+                }, 80%, 40%)`;
+                const cDark = `hsl(${
+                    identity.hue
+                }, 80%, 70%)`;
+                let rects = '';
+                identity.grid.forEach((pixel, i) => {
+                    if (!pixel) 
+                        return;
+                    
+                    const x = i % SIZE;
+                    const y = Math.floor(i / SIZE);
+                    // If pixel has a custom color, use it. Otherwise use CSS var. We use a CSS class 'themable' to let the style block
+                    // handle standard pixels
+                    const fillAttr = pixel.c
+                        ? `fill="${
+                        pixel.c
+                    }"` : `class="themable"`;
+                    rects += `<rect x="${x}" y="${y}" width="1" height="1" opacity="${
+                        pixel.o
+                    }" ${fillAttr} />`;
+                });
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+            <style>
+                .themable { fill: ${cLight}; }
+                @media (prefers-color-scheme: dark) {
+                    .themable { fill: ${cDark}; } 
+                }
+                /* Custom text color checks */
+                text { fill: black; font-weight: 900; pointer-events: none; }
+                @media (prefers-color-scheme: dark) { text { fill: white; } }
+            </style>
+            ${rects}
+            <text x="2.5" y="3.5" text-anchor="middle" font-family="monospace" font-size="3px"></text>
+            </svg>`;
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.id = 'dynamic-favicon'; // ID for easier updates later
+                link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                document.head.appendChild(link);
+                // Expose for the editor to use
+                window.BodgeIdentity = {
+                    data: identity,
+                    save: (newData) => {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                    }
+                };
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/theme.js"></script>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta charset="UTF-8">
+        <title>Temptations Brand Cat Cigarettes 3D Model</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Eleventy v3.1.2">
+        <meta name="description" content="I got the urge to play around with UV mapping and this is what happened... I took a jpeg from the Temptations website, and then whipped up a quick pack of...">
+        <link
+        rel="canonical" href="https://bodgelab.com/Blender%203D/Temptations%20Brand%20Cigarettes%20(for%20cats)/"> 
+        <meta property="og:site_name" content="The Bodge Lab">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://bodgelab.com/Blender%203D/Temptations%20Brand%20Cigarettes%20(for%20cats)/">
+        <meta property="og:title" content="Temptations Brand Cat Cigarettes 3D Model">
+        <meta
+        property="og:description" content="I got the urge to play around with UV mapping and this is what happened... I took a jpeg from the Temptations website, and then whipped up a quick pack of..."> 
+        <meta property="og:image" content="https://bodgelab.com/files/TEMPTATIONS_LQ.webp">
+        <meta
+        name="twitter:image" content="https://bodgelab.com/files/TEMPTATIONS_LQ.webp">
+        
+        
+            
+            <meta name="twitter:card" content="summary_large_image">
+        
+    </head>
+    <body>
+        <svg id="paperfilter">
+            <defs>
+                <filter id="paperlike" x="-20%" y="-20%" width="140%" height="140%" type="fractalNoise">
+                    <feTurbulence basefrequency="0.0005" numoctaves="1" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xchannelselector="R" ychannelselector="R"></filter>
+                </defs>
+            </svg>
+            <header class="sticky">
+                <nav class="nav-container">
+                    <div class="breadcrumb-nav">
+                        <div class="breadcrumb-mover">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                                <svg
+                                    viewbox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="theme-icon">
+                                    <path id="sun-icon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    <g id="moon-icon">
+                                        <path d="M12 2a7 7 0 0 0-7 7c0 2.32 1.04 4.39 2.66 5.82a2 2 0 0 1 .68 1.48V19a2 2 0 0 0 2 2h3.32a2 2 0 0 0 2-2v-2.7a2 2 0 0 1
+                                            .68-1.48C17.96 13.39 19 11.32 19 9a7 7 0 0 0-7-7Z"></path>
+                                        <path d="M9 21h6"></path>
+                                        <path d="M9 17h6"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <span class="separator">\\</span>
+                            <a href="/" class="breadcrumb" title="Home Directory">BodgeLab</a>
+                            
+                            
+                            
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Blender 3D/" class="breadcrumb">Blender 3D</a>
+                                    
+                                
+                            
+                                
+                                    
+                                    <span class="separator">\</span>
+                                    
+                                        <a href="/Blender 3D/Temptations Brand Cigarettes (for cats)/" class="breadcrumb">Temptations Brand Cigarettes (for cats)</a>
+                                    
+                                
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <div
+                        class="page-nav">
+                        
+                        
+                            <div>
+                                <a href="/Blender 3D/" class="nav-link up">⇱ Go Up</a>
+                            </div>
+                        
+                        
+                        
+                            <div class="page-meta-date">
+                                <i>
+                                    <em>Modified: November 19, 2025</em>
+                                </i>
+                            </div>
+                        
+                    </div>
+                </nav>
+            </header>
+            
+                <main class="main-content">
+                    
+                        <h1>Temptations Brand Cat Cigarettes 3D Model</h1>
+<h3>I got the urge to play around with UV mapping and this is what happened...</h3>
+<div class="media-embed-wrapper">
+  <div class="image-container">
+    <img src="/Blender 3D/files/TEMPTATIONS_LQ.webp" alt="Mason's 3D rendition of Temptations brand cat cigarettes on a small wooden table.">
+  </div>
+  <p class="download-btn-container"><a href="/Blender 3D/files/TEMPTATIONS_LQ.webp" class="page-download-btn" download>DOWNLOAD "TEMPTATIONS_LQ.webp" ⤓</a></p></div>
+<div class="layout-row"><div class="layout-col layout-col-half"><p>I took a jpeg from the Temptations website, and then whipped up a quick pack of cigarettes in Blender.</p>
+<p>The plastic wrapping was fun, I used Blender's (new at the time) cloth brush in the sculpt menu and just pushed around some vertices. The wrinkles came out pretty cool!</p>
+<p>Here's the 3D model! The textures are a little bit fucked up because I don't know how to export them without spending a bunch of time baking stuff.</p>
+<p>They call GLB the &quot;JPEG of 3D models&quot; and that's really exciting, but the complexities of materials and textures makes it tricky to support things like procedural shaders.</p>
+<p>The reason the cigarette tips are white is that I used Blender's &quot;Noise Texture&quot; node on that part, and GLB doesn't support ALL procedural textures (because it would have to support literally every node type in every 3D software). So it just shows up white. Whatever.</p>
+<p>Please don't actually let your cat smoke anything. If you catch your cat smoking, you should talk to them as soon as possible. Literally not anything can be smoked by your cat.</p>
+<p>This is the only way.</p>
+</div><div class="layout-col layout-col-half"><div class="media-embed-wrapper">
+  <model-viewer 
+    src="https://assets.bodgelab.com/3D/CATCIGS.glb" 
+    camera-controls 
+    auto-rotate 
+    poster="/.config/3dloading.svg" 
+    style="width: 100%; height: 400px; background-color: var(--bg-muted);">
+  </model-viewer>
+  <p class="download-btn-container"><a href="https://assets.bodgelab.com/3D/CATCIGS.glb" class="page-download-btn" download>DOWNLOAD "CATCIGS.glb" ⤓</a></p>
+</div>
+</div></div>
+
+                    
+                    
+                        <div class="page-meta">
+                            
+                            
+                                
+                                
+                            
+                            
+                            <hr>
+                                <p class="download-btn-container"> <a class="page-share-btn" href="/s/temptations-cat-cigarettes/" title="Get permanent link">
+                                    SHARE⇗
+                                </a>
+                                <a class="page-download-btn nowrap" href="data:application/octet-stream;charset=utf-8,%23%20Temptations%20Brand%20Cat%20Cigarettes%203D%20Model%0D%0A%0D%0A%23%23%23%20I%20got%20the%20urge%20to%20play%20around%20with%20UV%20mapping%20and%20this%20is%20what%20happened...%0D%0A%0D%0A%7B%25image%20%22files%2FTEMPTATIONS_LQ.webp%22%2C%20%22Mason's%203D%20rendition%20of%20Temptations%20brand%20cat%20cigarettes%20on%20a%20small%20wooden%20table.%22%25%7D%0D%0A%0D%0A%7B%25grid%25%7D%0D%0A%0D%0AI%20took%20a%20jpeg%20from%20the%20Temptations%20website%2C%20and%20then%20whipped%20up%20a%20quick%20pack%20of%20cigarettes%20in%20Blender.%0D%0A%0D%0AThe%20plastic%20wrapping%20was%20fun%2C%20I%20used%20Blender's%20(new%20at%20the%20time)%20cloth%20brush%20in%20the%20sculpt%20menu%20and%20just%20pushed%20around%20some%20vertices.%20The%20wrinkles%20came%20out%20pretty%20cool!%0D%0A%0D%0AHere's%20the%203D%20model!%20The%20textures%20are%20a%20little%20bit%20fucked%20up%20because%20I%20don't%20know%20how%20to%20export%20them%20without%20spending%20a%20bunch%20of%20time%20baking%20stuff.%0D%0A%0D%0AThey%20call%20GLB%20the%20%22JPEG%20of%203D%20models%22%20and%20that's%20really%20exciting%2C%20but%20the%20complexities%20of%20materials%20and%20textures%20makes%20it%20tricky%20to%20support%20things%20like%20procedural%20shaders.%0D%0A%0D%0AThe%20reason%20the%20cigarette%20tips%20are%20white%20is%20that%20I%20used%20Blender's%20%22Noise%20Texture%22%20node%20on%20that%20part%2C%20and%20GLB%20doesn't%20support%20ALL%20procedural%20textures%20(because%20it%20would%20have%20to%20support%20literally%20every%20node%20type%20in%20every%203D%20software).%20So%20it%20just%20shows%20up%20white.%20Whatever.%0D%0A%0D%0APlease%20don't%20actually%20let%20your%20cat%20smoke%20anything.%20If%20you%20catch%20your%20cat%20smoking%2C%20you%20should%20talk%20to%20them%20as%20soon%20as%20possible.%20Literally%20not%20anything%20can%20be%20smoked%20by%20your%20cat.%0D%0A%0D%0AThis%20is%20the%20only%20way.%0D%0A%60%60%0D%0A%0D%0A%7B%25%203d%20%22https%3A%2F%2Fassets.bodgelab.com%2F3D%2FCATCIGS.glb%22%20%25%7D%0D%0A%0D%0A%7B%25endgrid%25%7D%0D%0A" download="Temptations Brand Cat Cigarettes 3D Model.md" title='Download "Temptations Brand Cat Cigarettes 3D Model.md"'>
+                                    DOWNLOAD POST ⤓
+                                </a>
+                            </p>
+                        </div>
+                    
+                    
+                    
+                    <div id="dir-sentinel" style="display: block; width: 100%; visibility: hidden; pointer-events: none;"></div>
+                </main>
+            
+            
+                
+                
+                
+                
+                
+                    <section class="directory-container">
+                        <div class="directory-header">
+                            
+                                <a href="/" class="nav-link-small up">...</a><span class="nav-link-small up" style="color: var(--border-color)">\</span>
+                            
+                            
+                            
+                            <h3 class="directory-title">
+                                Blender 3D
+                            </h3>
+                        </div>
+                        
+                        
+                            <ul class="dir-listing">
+
+                                
+                                    <li class="directory-index-in-list">
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/homeicon.svg');"></span>
+                                        
+                                            <a href="/Blender 3D/">index</a>
+                                        
+                                    </li>
+                                
+
+
+                                
+                                    <li>
+                                        <span
+                                            class="icon"
+                                            style="-webkit-mask-image: url('/.config/foldericon.svg'); mask-image: url('/.config/foldericon.svg');"></span>
+                                        <a href="/Blender 3D/files/">files\</a>
+                                    </li>
+                                
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <a href="/Blender 3D/Gary Vee&#39;s Stupid Head/">Gary Vee&#39;s Stupid Head</a>
+                                        
+                                    </li>
+                                
+                                    <li>
+                                        <span class="icon" style="-webkit-mask-image: url('/.config/pageicon.svg'); mask-image: url('/.config/pageicon.svg');"></span>
+                                        
+                                            
+                                            <strong>Temptations Brand Cigarettes (for cats)</strong>
+                                        
+                                    </li>
+                                
+                                
+                            </ul>
+                        
+                    </section>
+                
+            
+            
+                <script>/*
+                // REPLACE URL IN BAR WITH SHARELINK
+                (function () { // 1. This is the "permanent" URL
+                    const permanentUrl = "/s/temptations-cat-cigarettes/";
+                    // 2. This is the URL we are currently at
+                    const currentPath = window.location.pathname;
+                    // 3. If we're not already on the permanent URL...
+                    if (currentPath !== permanentUrl) {
+                        // ...replace the history state. This changes the URL in the bar without reloading the page or breaking the back
+                        // button.
+                        history.replaceState(null, "", permanentUrl);
+                    }
+                })();
+                // */</script>
+        
+        <script src="/js/main.js"></script>
+    </body>
+</body></html>

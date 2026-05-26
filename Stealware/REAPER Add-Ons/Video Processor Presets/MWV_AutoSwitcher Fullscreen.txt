@@ -1,0 +1,42 @@
+// PODCUBE: FULLSCREEN SWITCHER
+// LICENSE: WHO GIVES A SHIT IT'S YOURS NOW
+// AUTHOR: MASON AMADEUS
+// Boss Offset is probably 2. The term "boss" was stolen from the grid plugin that
+// ships by default with reaper. I used that as a jumping off point for this.
+
+
+//@param 1:quality "Quality" 0 0 100 50 1
+//@param 2:bossOffset "Boss Offset" 0 0 10 1 1
+
+
+//@gmem=activeSpeaker
+
+// These two persist across frames
+lastFrameBoss; // what we drew from last time
+nextFrameBoss = gmem[1]; // what we want to draw from
+
+lastFrameBoss != 0? lastFrameBoss = lastFrameBoss : gmem[1];
+
+// Set up
+gmem[10] = input_track_count();
+//input_info(input_track(0), _, _); // prime
+
+// Validation/safety logic
+nextFrameBoss > input_track_count()+1 ? (nextFrameBoss = 2;);
+
+relboss = lastFrameBoss - bossOffset; // use the *last* boss for drawing
+input_info(input_track(relboss), _, _); // make sure it’s initialized
+
+// Prime all tracks
+i = 0;
+loop(input_track_count(),
+  input_info(input_track(i), _, _);
+  i += 1;
+  gfx_blit(input_track(i),0,0,0,project_w,project_h);
+);
+
+// DRAW the previous frame's boss
+gfx_blit(input_track(relboss), 0, 0, 0, project_w, project_h);
+
+// NOW update for next frame
+lastFrameBoss = nextFrameBoss;

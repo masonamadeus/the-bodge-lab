@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PodCube Achievement Builder</title>
+<style>
+:root {
+    --primary: #1768da;
+    --primary-dim: #e1e8f3;
+    --primary-dark: #0d4da1;
+    --bg: #fdfdfc;
+    --danger: #ff4444;
+    --orange: #f18701;
+    --text: #1a1a1a;
+    --muted: #888;
+    --border: 1px solid var(--primary-dim);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+    font-family: "Fustat", "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    height: 100%;
+}
+
+/* ── LAYOUT ───────────────────────────────────────── */
+.app {
+    display: grid;
+    grid-template-columns: 1fr 450px;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    min-height: 0;
+}
+
+.app-header {
+    grid-column: 1 / -1;
+    padding: 16px 24px 14px;
+    border-bottom: 3px double var(--primary);
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    background: #fff;
+    z-index: 10;
+}
+.app-header h1 {
+    font-family: "Libertinus Math", Georgia, serif;
+    font-size: 1.4em;
+    color: var(--primary);
+}
+.app-header p {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+}
+
+.left-pane {
+    overflow-y: auto;
+    padding: 20px 24px;
+    border-right: var(--border);
+    min-height: 0;
+    padding-bottom:50%;
+}
+
+.right-pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 0;
+    background: #fafafa;
+}
+
+/* ── DRAG & DROP OVERLAY ──────────────────────────── */
+body.drop-active::after {
+    content: "DROP ASSET TO AUTO-FILL REWARD PATH";
+    position: fixed; inset: 0; 
+    background: rgba(23, 104, 218, 0.85); 
+    color: white; font-family: "Fustat", sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2em; font-weight: bold; letter-spacing: 0.05em;
+    z-index: 9999; pointer-events: none;
+}
+
+/* ── FORM CHROME ──────────────────────────────────── */
+.section-head {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--primary);
+    padding-bottom: 8px;
+    border-bottom: var(--border);
+    margin-bottom: 14px;
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.section-head:first-child { margin-top: 0; }
+
+.field { margin-bottom: 12px; }
+.field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #555;
+    margin-bottom: 4px;
+}
+.field label .hint {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #aaa;
+    margin-left: 4px;
+}
+.field input, .field select, .field textarea {
+    width: 100%;
+    padding: 7px 9px;
+    border: var(--border);
+    background: #fff;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    border-radius: 0;
+    -webkit-appearance: none;
+    transition: border-color 0.1s, outline 0.1s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--primary);
+}
+.field textarea {
+    min-height: 70px;
+    resize: vertical;
+    font-family: "Courier New", monospace;
+}
+.field.inline { display: flex; gap: 8px; align-items: flex-end; }
+.field.inline > * { flex: 1; }
+.field.inline .field { margin-bottom: 0; flex: none; }
+
+.toggle-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.toggle-field input[type="checkbox"] {
+    width: 15px; height: 15px;
+    accent-color: var(--primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.toggle-field label {
+    font-size: 11px;
+    cursor: pointer;
+    color: #444;
+}
+
+/* ── REWARD & ASSET LIBRARY ───────────────────────── */
+.reward-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 14px;
+}
+.rtab {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 11px;
+    border: var(--border);
+    background: #fff;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 0;
+}
+.rtab.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+.rtab:hover:not(.active) { background: var(--primary-dim); color: var(--primary); }
+
+.reward-panel { display: none; }
+.reward-panel.active { display: block; }
+
+.asset-library {
+    display: none;
+    background: var(--primary-dim);
+    padding: 10px;
+    border: 1px solid var(--primary);
+    margin-bottom: 12px;
+}
+.asset-library.active {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.asset-btn {
+    font-size: 9px;
+    font-weight: bold;
+    padding: 6px 8px;
+    border: 1px solid var(--primary);
+    background: #fff;
+    color: var(--primary-dark);
+    cursor: pointer;
+    text-align: left;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.3;
+}
+.asset-btn:hover { background: var(--primary); color: #fff; }
+
+/* ── CONDITION BUILDER ────────────────────────────── */
+.condition-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.cond-row {
+    border: var(--border);
+    background: #fff;
+    position: relative;
+    transition: box-shadow 0.2s ease;
+}
+.cond-row:focus-within {
+    box-shadow: 0 0 0 2px var(--primary-dim);
+    border-color: var(--primary);
+}
+
+.cond-row-header {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--primary-dim);
+    padding: 0;
+}
+
+.cond-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--primary);
+    padding: 5px 10px;
+    flex-shrink: 0;
+    min-width: 32px;
+    text-align: center;
+    background: var(--primary);
+    color: #fff;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+}
+
+.cond-type-select {
+    flex: 1;
+    border: none;
+    border-left: var(--border);
+    background: var(--primary-dim);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary);
+    padding: 5px 8px;
+    outline: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    -webkit-appearance: none;
+    border-radius: 0;
+}
+
+.cond-remove {
+    border: none;
+    background: none;
+    color: #aaa;
+    cursor: pointer;
+    padding: 5px 10px;
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+}
+.cond-remove:hover { color: var(--danger); }
+
+.cond-body { padding: 10px 12px; }
+.cond-body .field { margin-bottom: 8px; }
+.cond-body .field:last-child { margin-bottom: 0; }
+.cond-body label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #777;
+    margin-bottom: 3px;
+}
+
+/* Combine expression */
+.combine-box { margin-top: 15px; padding: 10px; border: 2px solid var(--primary-dim); background: #f9fbfd;}
+.combine-box label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--primary-dark); margin-bottom: 4px; display: block;
+}
+.combine-box select, .combine-box input {
+    width: 100%; padding: 7px 9px; border: var(--border); background: #fff;
+    font-family: "Courier New", monospace; font-size: 12px; outline: none; border-radius: 0;
+}
+.combine-box input:focus, .combine-box select:focus { border-color: var(--primary); }
+.combine-box .hint { font-size: 10px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+/* ── RIGHT PANE & VIRTUAL LIBRARY ─────────────────── */
+
+.library-item {
+    padding: 10px;
+    background: #fff;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    transition: all 0.1s ease;
+}
+.library-item:hover { background: var(--primary-dim); }
+.library-item.active { border-color: var(--primary); border-left: 4px solid var(--primary); background: #f0f8ff; }
+.library-item-title { font-weight: bold; color: var(--primary-dark); margin-bottom: 2px;}
+.library-item-id { color: #888; font-family: monospace; font-size: 9px; }
+
+.btn-trash {
+    background: none; border: none; color: #ccc; cursor: pointer; font-size: 14px;
+}
+.btn-trash:hover { color: var(--danger); }
+
+.output-header {
+    padding: 12px 16px 10px;
+    border-bottom: var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    background: #fff;
+}
+.output-header h2 {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--primary);
+}
+
+.output-actions { display: flex; gap: 6px; align-items: center; }
+
+.btn {
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 6px 14px;
+    border: 1px solid var(--primary);
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    border-radius: 0;
+    transition: all 0.1s;
+}
+.btn:hover { background: var(--primary-dark); }
+.btn.ghost {
+    background: #fff;
+    color: var(--primary);
+}
+.btn.ghost:hover { background: var(--primary-dim); }
+.btn.wide { width: 100%; text-align: center; }
+
+.copy-flash {
+    font-size: 10px;
+    color: var(--primary);
+    font-weight: 700;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+.copy-flash.show { opacity: 1; }
+
+#codeOutput {
+    flex: 1;
+    width: 100%;
+    border: none;
+    border-bottom: var(--border);
+    padding: 14px 16px;
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    background: #fdfdfc;
+    color: #444;
+    resize: none;
+    outline: none;
+    min-height: 150px;
+}
+
+/* ── PREVIEW CARD ─────────────────────────────────── */
+.preview-zone {
+    padding: 14px 16px;
+    flex-shrink: 0;
+    border-top: var(--border);
+    background: #fff;
+    overflow-y: auto;
+}
+.preview-zone-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    margin-bottom: 10px;
+}
+
+.preview-card {
+    border: 1px solid var(--primary);
+    background: #fff;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.preview-badge {
+    font-family: "Fustat", sans-serif;
+    font-size: 9px; font-weight: 700;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    position: absolute; top: 10px; right: 10px;
+    letter-spacing: 0.05em;
+    background: var(--primary); 
+    color: #fff;
+}
+
+.preview-card-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-right: 60px;
+}
+.preview-icon { font-size: 1.6em; width: 32px; text-align: center; flex-shrink: 0; line-height: 1.3; color: transparent; text-shadow: 0 0 var(--primary)}
+.preview-title { font-family: "Libertinus Math", serif; font-size: 1em; font-weight: 700; color: var(--primary); margin: 0 0 4px; line-height: 1.2; }
+.preview-desc  { font-family: "Fustat", sans-serif; font-size: 10px; color: #666; text-transform: uppercase; line-height: 1.5; letter-spacing: 0.02em; }
+
+.pc-btn.wide-media {
+    width: 100%;
+    border: 1px solid var(--primary);
+    background: #fff;
+    font-family: "Fustat", sans-serif;
+    cursor: pointer;
+    text-align: left;
+}
+
+</style>
+
+<script src="https://bodgelab.com/podcube.js" type="module"></script>
+<script src="./poduser.js"></script>
+<script src="./achievements.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+    <header class="app-header">
+        <h1>Achievement Builder IDE</h1>
+        <p>Manage, Create, and Export the Virtual Library</p>
+    </header>
+
+    <main class="left-pane">
+        
+        <div class="section-head">Virtual Library</div>
+        <div style="background: var(--primary-dim); padding: 12px; border: 1px solid var(--primary); margin-bottom: 20px;">
+            <div id="virtual-library-list" style="display:flex; flex-direction:column; gap:6px; max-height: 180px; overflow-y: auto; margin-bottom: 12px;">
+                </div>
+            <button class="btn wide ghost" style="border: 1px dashed var(--primary);" onclick="createNew()">+ Create New Achievement</button>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <select id="f-archetype" onchange="loadArchetype()" style="flex:1; font-size: 11px;">
+                <option value="">-- Load Archetype Template --</option>
+                <option value="lore">Lore Hunter (Find 3 origin episodes)</option>
+                <option value="marathon">Marathon Listener (Listen to 50 total)</option>
+                <option value="completionist">Saga Completionist (Specific List)</option>
+                <option value="loyalty">Loyalty Program (5 Visits)</option>
+            </select>
+            <button class="btn ghost" onclick="createNew()">Clear Form</button>
+        </div>
+
+        <div class="section-head">Core Properties</div>
+
+        <div class="field">
+            <label>Achievement ID <span class="hint">— permanent, snake_case, never rename after launch</span></label>
+            <input type="text" id="f-id" placeholder="e.g. heard_the_pilot" oninput="generate()">
+            <div id="id-warning" style="color: var(--danger); font-size: 10px; font-weight: bold; display: none; margin-top: 6px; padding: 4px; background: #ffebeb; border: 1px solid var(--danger);">
+                ⚠️ WARNING: This ID is currently used by another achievement!
+            </div>
+        </div>
+        <div class="field">
+            <label>Title</label>
+            <input type="text" id="f-title" placeholder="e.g. Where It All Began" oninput="generate()">
+        </div>
+        <div class="field">
+            <label>Description <span class="hint">— shown to users unless hiddenGoal is on</span></label>
+            <input type="text" id="f-desc" placeholder="e.g. Listened to the very first transmission." oninput="generate()">
+        </div>
+        <div class="field inline">
+            <div class="field">
+                <label>Icon <span class="hint">— emoji</span></label>
+                <input type="text" id="f-icon" placeholder="🎙️" oninput="generate()" style="width:70px;">
+            </div>
+        </div>
+        <div class="toggle-field">
+            <input type="checkbox" id="f-hidden" onchange="generate()">
+            <label for="f-hidden"><strong>hiddenGoal</strong> — locked users see "???" instead of the criteria</label>
+        </div>
+
+         <div class="section-head">Reward <span style="font-weight:400; color:#aaa;">(optional)</span></div>
+
+        <div class="reward-tabs" id="rewardTabs">
+            <button class="rtab active" data-rt="none"  onclick="setReward('none')">None</button>
+            <button class="rtab"        data-rt="audio" onclick="setReward('audio')">Audio</button>
+            <button class="rtab"        data-rt="image" onclick="setReward('image')">Image</button>
+            <button class="rtab"        data-rt="video" onclick="setReward('video')">Video</button>
+            <button class="rtab"        data-rt="game"  onclick="setReward('game')">Game</button>
+            <button class="rtab"        data-rt="text"  onclick="setReward('text')">Text</button>
+        </div>
+
+        <div id="asset-library" class="asset-library">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size: 9px; font-weight: bold; color: var(--primary); text-transform: uppercase;">PRIC Asset Library</span>
+                <button onclick="scanAssetsFolder()" class="btn ghost" style="padding: 2px 6px; font-size: 8px;">Scan Folder</button>
+            </div>
+            <div id="asset-btn-container" style="display:flex; flex-direction:column; gap:4px; margin-top: 6px; max-height: 120px; overflow-y: auto;"></div>
+            <input type="file" id="fallbackFolderInput" webkitdirectory directory multiple style="display:none;" onchange="handleFallbackFolder(event)">
+        </div>
+
+        <div class="reward-panel" id="rp-audio">
+            <div class="field"><label>Audio URL</label><input type="url" id="r-audio-url" placeholder="./poduser/assets/audio/file.mp3" oninput="generate()"></div>
+            <div class="field"><label>Title</label><input type="text" id="r-audio-title" placeholder="Stove's Voicemail" oninput="generate()"></div>
+            <div class="field"><label>Description</label><input type="text" id="r-audio-desc" placeholder="An intercepted message..." oninput="generate()"></div>
+            <div class="field"><label>Model</label><input type="text" id="r-audio-model" placeholder="PRIC Internal Comm" oninput="generate()"></div>
+            <div class="field"><label>Origin</label><input type="text" id="r-audio-origin" placeholder="Stove's Desk" oninput="generate()"></div>
+            <div class="field inline">
+                <div class="field"><label>Locale</label><input type="text" id="r-audio-locale" placeholder="Miami" oninput="generate()"></div>
+                <div class="field"><label>Region</label><input type="text" id="r-audio-region" placeholder="FL" oninput="generate()"></div>
+                <div class="field"><label>Zone</label><input type="text" id="r-audio-zone" placeholder="USA" oninput="generate()"></div>
+                <div class="field"><label>Planet</label><input type="text" id="r-audio-planet" placeholder="Earth" oninput="generate()"></div>
+            </div>
+            <div class="field"><label>Date</label><input type="text" id="r-audio-date" placeholder="2050-11-04" oninput="generate()"></div>
+        </div>
+
+        <div class="reward-panel" id="rp-image">
+            <div class="field"><label>Image URL</label><input type="url" id="r-img-url" placeholder="./poduser/assets/images/schematic.jpg" oninput="generate()"></div>
+            <div class="field"><label>Caption <span class="hint">(optional)</span></label><input type="text" id="r-img-caption" placeholder="Declassified: PodCube Schematic" oninput="generate()"></div>
+        </div>
+
+        <div class="reward-panel" id="rp-video">
+            <div class="field"><label>Video URL</label><input type="url" id="r-vid-url" placeholder="./poduser/assets/video/briefing.mp4" oninput="generate()"></div>
+        </div>
+
+        <div class="reward-panel" id="rp-game">
+            <div class="field"><label>Game ID</label><input type="text" id="r-game-id" placeholder="wexton-terminal-hack" oninput="generate()"></div>
+            <div class="field"><label>Button Text <span class="hint">(optional)</span></label><input type="text" id="r-game-btn" placeholder="LAUNCH WEXTON OVERRIDE" oninput="generate()"></div>
+        </div>
+
+        <div class="reward-panel" id="rp-text">
+            <div class="field"><label>Content</label><textarea id="r-text-content" placeholder="Secret message or code..." oninput="generate()"></textarea></div>
+        </div>
+
+        <div class="section-head">Conditions</div>
+
+        <p style="font-size:11px; color:var(--muted); margin-bottom:12px; line-height:1.6;">
+            <strong>Pro Tip:</strong> Click an episode in the search below to instantly copy its ID to the clipboard!
+        </p>
+
+        <div class="field"
+            style="background: var(--primary-dim); padding: 12px; margin-bottom: 15px; border: 1px dashed var(--primary);">
+            <label style="color: var(--primary-dark);">Search Transmissions (Live API)</label>
+            <input type="text" id="ep-search" placeholder="Search by title, location, or tag..." oninput="searchEpisodes()">
+            <div id="ep-search-results"
+                style="max-height: 150px; overflow-y: auto; margin-top: 8px; display: none; background: #fff; border: 1px solid var(--border);">
+            </div>
+        </div>
+
+        <div class="condition-list" id="conditionList"></div>
+
+        <button class="btn-add-cond" onclick="addCondition()">+ Add Condition</button>
+
+        <div class="combine-box" id="combineBox" style="display:none;">
+            <label>Logic Block (Combining Conditions)</label>
+            <select id="f-logic" onchange="toggleLogicMode()">
+                <option value="AND">Match ALL Conditions (AND)</option>
+                <option value="OR">Match ANY Condition (OR)</option>
+                <option value="CUSTOM">Custom JavaScript Expression</option>
+            </select>
+            
+            <div id="customLogicWrapper" style="display:none; margin-top: 8px;">
+                <input type="text" id="f-combine" placeholder="c1 && c2" oninput="generate()">
+                <p class="hint">
+                    Reference condition variables by name: <code>c1</code>, <code>c2</code>, etc.<br>
+                    Use <code>&&</code> (AND), <code>||</code> (OR), <code>!</code> (NOT), and parentheses freely.<br>
+                    Example: <code>(c1 || c2) && c3</code>
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <aside class="right-pane">
+        
+        <div style="padding: 15px; background: var(--primary-dim); border-bottom: 3px double var(--primary); display: flex; flex-direction: column; gap: 10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="font-size: 14px; margin:0; color: var(--primary-dark); font-family: 'Libertinus Math';">Master Export</h2>
+                <span id="exportFlash" class="copy-flash">Full File Copied!</span>
+            </div>
+            <button class="btn wide" style="padding: 12px; font-size: 11px; background: var(--orange); border-color: var(--orange);" onclick="exportFullLibrary()">⎘ COPY FULL ACHIEVEMENTS.JS</button>
+            <p style="font-size: 10px; color: #666; margin:0; text-align:center;">Copies the entire virtual library wrapped in the initialization function.</p>
+        </div>
+
+        <div class="output-header">
+            <h2>Current Block Code</h2>
+            <div class="output-actions">
+                <span id="saveFlash" class="copy-flash">Saved!</span>
+                <span id="copyFlash" class="copy-flash">Copied!</span>
+                <button class="btn ghost" onclick="copyCode()">Copy Code</button>
+                <button class="btn" style="background: var(--primary-dark);" onclick="saveToLibrary()">Save to Library ↧</button>
+            </div>
+        </div>
+
+        <textarea id="codeOutput" readonly spellcheck="false"></textarea>
+
+        <div class="preview-zone">
+            <div class="preview-zone-title">Card Preview</div>
+            <div id="previewCard" class="preview-card unlocked">
+                <span id="prev-badge" class="preview-badge">✓ Unlocked</span>
+                <div class="preview-card-body">
+                    <div class="preview-icon" id="prev-icon">🏆</div>
+                    <div style="flex: 1;">
+                        <div class="preview-title" id="prev-title">Achievement Title</div>
+                        <div class="preview-desc"  id="prev-desc">Achievement description.</div>
+                    </div>
+                </div>
+                
+                <div id="prev-media-container" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--primary-dim); display:none;">
+                    </div>
+            </div>
+        </div>
+    </aside>
+
+</div>
+
+<script>
+
+// ─────────────────────────────────────────────────────────────────
+// GLOBAL TRACKING & ENHANCEMENTS
+// ─────────────────────────────────────────────────────────────────
+let _virtualLibrary = []; // State for the currently managed list of achievements
+let _editingId = null;    // Tracks the ID of the achievement currently in the form
+
+// Wait for the main app to parse achievements.js and fire the ready event
+window.addEventListener('PodCube:Ready', async () => {
+    try {
+        await PodCube.init();
+        document.getElementById('ep-search').placeholder = `Search ${PodCube.episodes.length} Transmissions...`;
+    } catch(e) {
+        document.getElementById('ep-search').placeholder = "API offline...";
+    }
+
+    renderAssetLibrary();
+    initVirtualLibrary(); // Load from window.PodUser.achievements
+});
+
+// Drag and Drop "Virtual Assets" workflow
+document.addEventListener('dragover', e => {
+    e.preventDefault();
+    document.body.classList.add('drop-active');
+});
+
+document.addEventListener('dragleave', e => {
+    e.preventDefault();
+    document.body.classList.remove('drop-active');
+});
+
+document.addEventListener('drop', e => {
+    e.preventDefault();
+    document.body.classList.remove('drop-active');
+    
+    if (e.dataTransfer.files.length) {
+        let name = e.dataTransfer.files[0].name;
+        
+        // Auto-detect folder based on active tab
+        let subfolder = '';
+        if (_rewardType === 'audio') subfolder = 'audio/';
+        else if (_rewardType === 'image') subfolder = 'images/';
+        else if (_rewardType === 'video') subfolder = 'video/';
+        else if (_rewardType === 'game') subfolder = 'games/';
+        
+        let finalPath = encodeURI('./poduser/assets/' + subfolder + name).replace(/'/g, '%27');
+        
+        // Find the active URL input box
+        let activeUrlInput = document.querySelector('.reward-panel.active input[type="url"]');
+        if (_rewardType === 'game') activeUrlInput = document.getElementById('r-game-id');
+
+        if (activeUrlInput) {
+            if (_rewardType === 'game') {
+                // Strip extension for Game IDs
+                activeUrlInput.value = name.replace(/\.[^/.]+$/, "");
+            } else {
+                activeUrlInput.value = finalPath;
+            }
+            activeUrlInput.dispatchEvent(new Event('input', { bubbles: true }));
+            
+            // Add to library automatically if not there
+            if (!_assetList.includes(finalPath)) {
+                _assetList.push(finalPath);
+                localStorage.setItem('pc_builder_assets', JSON.stringify(_assetList));
+                renderAssetLibrary();
+            }
+        } else {
+            alert("Please select a Reward tab (Audio, Image, Video, Game) before dropping an asset.");
+        }
+    }
+});
+
+// Dynamic Asset Library
+let _assetList = JSON.parse(localStorage.getItem('pc_builder_assets')) || [
+    './poduser/assets/images/ChosenOlderRelative.png',
+    './poduser/assets/images/Large Water Number Graphic.png',
+    './poduser/assets/images/Monochrome\'s Analysis2.png',
+    './poduser/assets/images/Precious B.png',
+    './poduser/assets/audio/secret_voicemail_01.mp3',
+    './poduser/assets/video/prabo_congratulations.mp4'
+].map(p => encodeURI(p).replace(/'/g, '%27')); // Ensure base library is strictly encoded
+
+function renderAssetLibrary() {
+    const container = document.getElementById('asset-btn-container');
+    container.innerHTML = '';
+    
+    if (_assetList.length === 0) {
+        container.innerHTML = '<div style="font-size:10px; color:#888; font-style:italic;">No assets loaded. Click "Scan Folder" to link your local directory, or drag & drop files here.</div>';
+        return;
+    }
+
+    // Filter based on _rewardType
+    let filteredList = _assetList;
+    if (_rewardType === 'audio') {
+        filteredList = _assetList.filter(p => p.toLowerCase().includes('/audio/'));
+    } else if (_rewardType === 'image') {
+        filteredList = _assetList.filter(p => p.toLowerCase().includes('/images/'));
+    } else if (_rewardType === 'video') {
+        filteredList = _assetList.filter(p => p.toLowerCase().includes('/video/'));
+    } else if (_rewardType === 'game') {
+        filteredList = _assetList.filter(p => p.toLowerCase().includes('/games/'));
+    }
+
+    if (filteredList.length === 0) {
+        container.innerHTML = '<div style="font-size:10px; color:#888; font-style:italic;">No assets found for this category.</div>';
+        return;
+    }
+
+    filteredList.forEach(path => {
+        const btn = document.createElement('button');
+        btn.className = 'asset-btn';
+        btn.textContent = decodeURI(path).split('/').pop(); // Display friendly name
+        btn.title = decodeURI(path);
+        btn.onclick = () => {
+            let activeUrlInput = document.querySelector('.reward-panel.active input[type="url"]');
+            
+            if (_rewardType === 'game') {
+                activeUrlInput = document.getElementById('r-game-id');
+                let gameId = decodeURI(path).split('/').pop().replace(/\.[^/.]+$/, "");
+                if (activeUrlInput) {
+                    activeUrlInput.value = gameId;
+                    activeUrlInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            } else if (activeUrlInput) {
+                activeUrlInput.value = path;
+                activeUrlInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        };
+        container.appendChild(btn);
+    });
+}
+
+async function scanAssetsFolder() {
+    try {
+        if (window.showDirectoryPicker) {
+            const dirHandle = await window.showDirectoryPicker();
+            let files = [];
+            
+            async function scanDir(handle, currentPath) {
+                for await (const entry of handle.values()) {
+                    if (entry.kind === 'file') {
+                        if (!entry.name.startsWith('.')) {
+                            files.push(encodeURI('./poduser/assets/' + currentPath + entry.name).replace(/'/g, '%27'));
+                        }
+                    } else if (entry.kind === 'directory') {
+                        await scanDir(entry, currentPath + entry.name + '/');
+                    }
+                }
+            }
+            
+            await scanDir(dirHandle, '');
+            
+            if (files.length > 0) {
+                // Merge and deduplicate
+                _assetList = [...new Set([..._assetList, ...files])];
+                localStorage.setItem('pc_builder_assets', JSON.stringify(_assetList));
+                renderAssetLibrary();
+            }
+        } else {
+            // Fallback for Firefox/Safari without showDirectoryPicker
+            document.getElementById('fallbackFolderInput').click();
+        }
+    } catch (e) {
+        console.log("Folder scan cancelled or failed:", e);
+    }
+}
+
+function handleFallbackFolder(event) {
+    const files = event.target.files;
+    let list = [];
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.name.startsWith('.')) {
+            let path = file.webkitRelativePath || file.name;
+            let parts = path.split('/');
+            
+            // Find the subfolder (audio, video, images, games)
+            let knownFolders = ['audio', 'video', 'images', 'games'];
+            let subFolderIndex = parts.findIndex(p => knownFolders.includes(p.toLowerCase()));
+            
+            let finalRelativePath = file.name;
+            if (subFolderIndex !== -1) {
+                finalRelativePath = parts.slice(subFolderIndex).join('/');
+            } else {
+                finalRelativePath = path;
+                if(finalRelativePath.startsWith('assets/')) finalRelativePath = finalRelativePath.substring(7);
+            }
+
+            list.push(encodeURI('./poduser/assets/' + finalRelativePath).replace(/'/g, '%27'));
+        }
+    }
+    if (list.length > 0) {
+        _assetList = [...new Set([..._assetList, ...list])];
+        localStorage.setItem('pc_builder_assets', JSON.stringify(_assetList));
+        renderAssetLibrary();
+    }
+}
+
+window.searchEpisodes = function() {
+    const query = document.getElementById('ep-search').value.trim();
+    const resultsContainer = document.getElementById('ep-search-results');
+    
+    if (!query) {
+        resultsContainer.style.display = 'none';
+        return;
+    }
+
+    const results = PodCube.search(query).slice(0, 10); 
+    
+    if (results.length === 0) {
+        resultsContainer.innerHTML = '<div style="padding: 8px; font-size: 10px; color: #888;">No results found.</div>';
+    } else {
+        resultsContainer.innerHTML = results.map(ep => `
+            <div style="padding: 6px 10px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 11px;"
+                 onclick="copyEpisodeId('${escapeForAttribute(ep.id)}', this)" title="Click to copy ID">
+                <div style="display:flex; justify-content:space-between;">
+                    <strong style="color: var(--primary);">${escapeHtml(ep.title)}</strong>
+                    <span class="copy-status" style="color: var(--primary-dark); font-weight: bold;">⎘ COPY</span>
+                </div>
+                <span style="color: #666; font-family: monospace;">${escapeHtml(ep.id)}</span>
+            </div>
+        `).join('');
+    }
+    resultsContainer.style.display = 'block';
+};
+
+window.copyEpisodeId = function(id, el) {
+    navigator.clipboard.writeText(id).then(() => {
+        const status = el.querySelector('.copy-status');
+        if (status) {
+            const originalText = status.textContent;
+            status.textContent = "COPIED!";
+            status.style.color = "var(--orange)";
+            setTimeout(() => {
+                status.textContent = originalText;
+                status.style.color = "var(--primary-dark)";
+            }, 1500);
+        }
+    });
+};
+
+function escapeHtml(text) {
+    if (typeof text !== 'string') return text;
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function escapeForAttribute(text) {
+    if (typeof text !== 'string') return text;
+    return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+// Safely resolves URL relative to the builder's path for the live preview
+function resolvePreviewUrl(url) {
+    if (!url) return '';
+    let resolved = url;
+    if (resolved.startsWith('./poduser/')) resolved = resolved.replace('./poduser/', './');
+    if (resolved.startsWith('poduser/')) resolved = resolved.replace('poduser/', './');
+    // Ensure the preview path is cleanly encoded (decode first to avoid %2520 double-encoding)
+    try {
+        resolved = encodeURI(decodeURI(resolved)).replace(/'/g, '%27');
+    } catch (e) {}
+    return resolved;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// VIRTUAL LIBRARY MANAGEMENT & DECOMPILATION
+// ─────────────────────────────────────────────────────────────────
+
+function initVirtualLibrary() {
+    if (!window.PodUser || !window.PodUser.achievements) return;
+
+    // Convert live achievements into our state objects
+    _virtualLibrary = window.PodUser.achievements.map(ach => {
+        return {
+            id: ach.id,
+            title: ach.title,
+            obj: ach, // The decompiled source object
+            jsCode: stringifyAchievement(ach) // The exact code to be exported
+        };
+    });
+
+    renderVirtualLibrary();
+}
+
+function renderVirtualLibrary() {
+    const list = document.getElementById('virtual-library-list');
+    list.innerHTML = '';
+
+    if (_virtualLibrary.length === 0) {
+        list.innerHTML = `<div style="font-size: 10px; color:#888; text-align:center;">Library is empty.</div>`;
+        return;
+    }
+
+    _virtualLibrary.forEach(item => {
+        const div = document.createElement('div');
+        div.className = `library-item ${_editingId === item.id ? 'active' : ''}`;
+        div.onclick = () => loadIntoForm(item);
+        
+        div.innerHTML = `
+            <div>
+                <div class="library-item-title">${escapeHtml(item.title || 'Untitled')}</div>
+                <div class="library-item-id">${escapeHtml(item.id)}</div>
+            </div>
+            <button class="btn-trash" onclick="deleteFromLibrary('${escapeForAttribute(item.id)}', event)" title="Remove from Library">×</button>
+        `;
+        list.appendChild(div);
+    });
+}
+
+// Reverses generated JS condition strings back into UI data blocks
+function reverseEngineerConditions(condFunc) {
+    let str = condFunc ? condFunc.toString() : 'false';
+    // Remove the function signature
+    let body = str.replace(/^(?:\(?data\)?\s*=>|function\s*\([^\)]*\))\s*\{?/, '').replace(/\}?$/, '').trim();
+    
+    let logicMode = 'AND';
+    let parsedConditions = [];
+    
+    // Greedy match: captures everything up to the LAST semicolon on a const cN = ... line.
+    // Non-greedy (+?) would stop at the first inner semicolon inside multiline expressions
+    // like origin_count, breaking decompilation. We use a lookahead instead to match the
+    // semicolon that is immediately followed by whitespace + the next 'const' or end-of-vars.
+    let varRegex = /const\s+c(\d+)\s*=\s*([\s\S]+?);\s*(?=const\s+c\d+\s*=|return\s)/g;
+    let match;
+    let varMap = {};
+    let lastIndex = 0;
+    let hasVars = false;
+    
+    while ((match = varRegex.exec(body)) !== null) {
+        hasVars = true;
+        varMap['c' + match[1]] = match[2].trim();
+        lastIndex = match.index + match[0].length;
+    }
+    
+    let returnStatement = "";
+    if (hasVars) {
+        let returnRegex = /return\s+([^;]+)/;
+        let returnMatch = returnRegex.exec(body.substring(lastIndex));
+        if (returnMatch) {
+            returnStatement = returnMatch[1].trim();
+        }
+        
+        // Determine Logic Mode
+        if (returnStatement.match(/^c\d+(\s*&&\s*c\d+)*$/)) logicMode = 'AND';
+        else if (returnStatement.match(/^c\d+(\s*\|\|\s*c\d+)*$/)) logicMode = 'OR';
+        else logicMode = 'CUSTOM';
+        
+        // Build parsed array
+        Object.keys(varMap).forEach((key) => {
+            parsedConditions.push(parseExpression(varMap[key]));
+        });
+        
+    } else {
+        // Single expression
+        if (body.startsWith('return ')) body = body.substring(7).replace(/;$/, '').trim();
+        if (body && body !== 'false') {
+            parsedConditions.push(parseExpression(body));
+            logicMode = 'AND'; // Default
+        }
+    }
+    
+    return { logicMode, conditions: parsedConditions, customReturn: returnStatement || body };
+}
+
+// Maps JS strings back to COND_TYPES params
+function parseExpression(expr) {
+    let m;
+    if ((m = expr.match(/^data\.history\.length\s*>=\s*(\d+)$/))) {
+        return { type: 'listen_count', params: { n: m[1] } };
+    }
+    if ((m = expr.match(/^data\.history\.includes\('([^']+)'\)$/))) {
+        return { type: 'specific_episode', params: { id: m[1] } };
+    }
+    if ((m = expr.match(/^data\.punchcards\s*>=\s*(\d+)$/))) {
+        return { type: 'punchcard_printed_count', params: { n: m[1] } };
+    }
+    if ((m = expr.match(/^data\.punchcardExport\s*>=\s*(\d+)$/))) {
+        return { type: 'punchcard_export_count', params: { n: m[1] } };
+    }
+    if ((m = expr.match(/^data\.visits\s*>=\s*(\d+)$/))) {
+        return { type: 'visit_count', params: { n: m[1] } };
+    }
+    if ((m = expr.match(/^\(data\.games\['([^']+)'\]\s*\|\|\s*0\)\s*>=\s*(\d+)$/))) {
+        return { type: 'game_score', params: { gameId: m[1], score: m[2] } };
+    }
+    if ((m = expr.match(/^new Date\(\)\.getHours\(\)\s*===\s*(\d+)$/))) {
+        return { type: 'time_of_day', params: { from: m[1], to: parseInt(m[1])+1 } };
+    }
+    if ((m = expr.match(/^new Date\(\)\.getHours\(\)\s*>=\s*(\d+)\s*&&\s*new Date\(\)\.getHours\(\)\s*<\s*(\d+)$/))) {
+        return { type: 'time_of_day', params: { from: m[1], to: m[2] } };
+    }
+    if ((m = expr.match(/^new Date\(\)\.getDay\(\)\s*===\s*(\d+)$/))) {
+        return { type: 'day_of_week', params: { day: m[1] } };
+    }
+    
+    // Multi-line and arrays fallback elegantly to custom
+    return { type: 'custom', params: { expr: expr } };
+}
+
+function loadIntoForm(item) {
+    const ach = item.obj;
+    _editingId = ach.id; // Lock editing to this ID
+    
+    // Clear existing form state without triggering new logic loops yet
+    document.querySelectorAll('.left-pane input[type="text"], .left-pane input[type="url"], .left-pane textarea').forEach(el => el.value = '');
+    document.getElementById('f-hidden').checked = false;
+    _conditions = [];
+    _nextCondId = 1;
+
+    // Populate Core Fields
+    document.getElementById('f-id').value = ach.id;
+    document.getElementById('f-title').value = ach.title || '';
+    document.getElementById('f-desc').value = ach.desc || '';
+    document.getElementById('f-icon').value = ach.icon || '';
+    document.getElementById('f-hidden').checked = !!ach.hiddenGoal;
+
+    // Populate Reward
+    if (ach.reward) {
+        setReward(ach.reward.type);
+        if (ach.reward.type === 'audio') {
+            document.getElementById('r-audio-url').value = ach.reward.meta?.url || '';
+            document.getElementById('r-audio-title').value = ach.reward.meta?.title || '';
+            document.getElementById('r-audio-desc').value = ach.reward.meta?.description || '';
+            document.getElementById('r-audio-model').value = ach.reward.meta?.model || '';
+            document.getElementById('r-audio-origin').value = ach.reward.meta?.origin || '';
+            document.getElementById('r-audio-locale').value = ach.reward.meta?.locale || '';
+            document.getElementById('r-audio-region').value = ach.reward.meta?.region || '';
+            document.getElementById('r-audio-zone').value = ach.reward.meta?.zone || '';
+            document.getElementById('r-audio-planet').value = ach.reward.meta?.planet || '';
+            document.getElementById('r-audio-date').value = ach.reward.meta?.date || '';
+        } else if (ach.reward.type === 'image') {
+            document.getElementById('r-img-url').value = ach.reward.url || '';
+            document.getElementById('r-img-caption').value = ach.reward.caption || '';
+        } else if (ach.reward.type === 'video') {
+            document.getElementById('r-vid-url').value = ach.reward.url || '';
+        } else if (ach.reward.type === 'game') {
+            document.getElementById('r-game-id').value = ach.reward.gameId || '';
+            document.getElementById('r-game-btn').value = ach.reward.buttonText || '';
+        } else if (ach.reward.type === 'text') {
+            document.getElementById('r-text-content').value = ach.reward.content || '';
+        }
+    } else {
+        setReward('none');
+    }
+
+    // Decompile Conditions back into UI Blocks
+    const parsed = reverseEngineerConditions(ach.condition);
+    
+    _conditions = parsed.conditions.map((c, i) => {
+        return { id: i + 1, type: c.type, params: c.params };
+    });
+    _nextCondId = _conditions.length + 1;
+    
+    document.getElementById('f-logic').value = parsed.logicMode;
+    toggleLogicMode();
+    if (parsed.logicMode === 'CUSTOM') {
+        document.getElementById('f-combine').value = parsed.customReturn;
+    }
+
+    renderConditionList();
+    generate();
+    renderVirtualLibrary(); // Update active selection
+}
+
+function saveToLibrary() {
+    generate(); // Ensure the textarea is fully updated
+    
+    const id = document.getElementById('f-id').value.trim();
+    const title = document.getElementById('f-title').value.trim();
+    
+    if (!id) return alert("Achievement ID is required.");
+    
+    // Hard collision check before saving
+    const isCollision = _virtualLibrary.some(v => v.id === id && v.id !== _editingId) || 
+                        (window.PodUser && window.PodUser.achievements.some(a => a.id === id && a.id !== _editingId));
+    
+    if (isCollision) {
+        return alert("Cannot save: This ID is already in use by another achievement.");
+    }
+    
+    const jsCode = document.getElementById('codeOutput').value;
+    
+    // Build a mock object to store so we can load it back into the form later
+    const obj = {
+        id, title,
+        desc: document.getElementById('f-desc').value,
+        icon: document.getElementById('f-icon').value,
+        hiddenGoal: document.getElementById('f-hidden').checked,
+        // We use a fake function to store the generated code for decompiling later
+        condition: () => document.getElementById('f-combine').value,
+        reward: getRewardObj()
+    };
+
+    // Replace the condition string safely
+    const mode = document.getElementById('f-logic').value;
+    let customCombine = document.getElementById('f-combine')?.value?.trim();
+    let finalExpr = customCombine;
+    if (mode === 'AND') finalExpr = _conditions.map(c => `c${c.id}`).join(' && ');
+    if (mode === 'OR') finalExpr = _conditions.map(c => `c${c.id}`).join(' || ');
+    
+    if (_conditions.length > 1 || mode === 'CUSTOM') {
+         let vars = _conditions.map(c => `const c${c.id} = ${COND_TYPES[c.type].generate(c.params)};`).join('\n');
+         obj.condition = new Function('data', `${vars}\nreturn ${finalExpr};`);
+    } else if (_conditions.length === 1) {
+         obj.condition = new Function('data', `return ${COND_TYPES[_conditions[0].type].generate(_conditions[0].params)};`);
+    } else {
+        // No conditions defined — store a safe no-op so stringifyAchievement doesn't
+        // capture the DOM-referencing placeholder from line 1153
+        obj.condition = new Function('data', 'return false; // TODO: add at least one condition');
+    }
+
+    // Find if we are updating an existing one, or creating new
+    const existingIdx = _virtualLibrary.findIndex(v => v.id === (_editingId || id));
+    
+    if (existingIdx >= 0) {
+        _virtualLibrary[existingIdx] = { id, title, obj, jsCode };
+    } else {
+        _virtualLibrary.push({ id, title, obj, jsCode });
+    }
+    
+    _editingId = id; // Lock into edit mode for this item
+    renderVirtualLibrary();
+    
+    const flash = document.getElementById('saveFlash');
+    flash.classList.add('show');
+    setTimeout(() => flash.classList.remove('show'), 1500);
+}
+
+function deleteFromLibrary(id, e) {
+    e.stopPropagation(); // Prevents loadIntoForm from firing
+    if (confirm(`Remove achievement "${id}" from the virtual library?`)) {
+        _virtualLibrary = _virtualLibrary.filter(v => v.id !== id);
+        if (_editingId === id) createNew(); // Reset form if we deleted what we were looking at
+        renderVirtualLibrary();
+    }
+}
+
+function createNew() {
+    _editingId = null; // Clear edit lock first
+    resetForm();
+    renderVirtualLibrary();
+}
+
+function exportFullLibrary() {
+    if (_virtualLibrary.length === 0) return alert("Virtual Library is empty.");
+    
+    let out = `/**\n * achievements.js — PodCube Achievement Definitions\n *\n * Generated via PodCube Achievement Builder IDE\n */\n\n`;
+    out += `window.addEventListener('PodCube:Ready', () => {\n\n`;
+    
+    out += _virtualLibrary.map(v => v.jsCode).join('\n\n');
+    
+    out += `\n\n});\n`;
+    
+    navigator.clipboard.writeText(out).then(() => {
+        const flash = document.getElementById('exportFlash');
+        flash.classList.add('show');
+        setTimeout(() => flash.classList.remove('show'), 2000);
+    });
+}
+
+// Re-creates the achievements.js formatting perfectly
+function stringifyAchievement(ach) {
+    let lines = ['    PodUser.registerAchievement({'];
+    lines.push(`        id: ${jss(ach.id)},`);
+    lines.push(`        title: ${jss(ach.title)},`);
+    lines.push(`        desc: ${jss(ach.desc)},`);
+    if (ach.icon) lines.push(`        icon: ${jss(ach.icon)},`);
+    if (ach.hiddenGoal) lines.push(`        hiddenGoal: true,`);
+    
+    let condStr = ach.condition.toString();
+    // Quick indent fix for function bodies
+    condStr = condStr.split('\n').map((l, i) => i === 0 ? l : '        ' + l.trim()).join('\n');
+    lines.push(`        condition: ${condStr},`);
+    
+    if (ach.reward) {
+        let rLines = [`        reward: {`, `            type: ${jss(ach.reward.type)},`];
+        
+        // Encode URL attributes to prevent string breakages and guarantee valid paths
+        const safeUrl = (url) => jss(encodeURI(decodeURI(url || '')).replace(/'/g, '%27'));
+
+        if (ach.reward.type === 'audio') {
+            rLines.push(`            meta: {`);
+            Object.keys(ach.reward.meta).forEach(k => {
+                if (ach.reward.meta[k]) {
+                    const val = k === 'url' ? safeUrl(ach.reward.meta[k]) : jss(ach.reward.meta[k]);
+                    rLines.push(`                ${k}: ${val},`);
+                }
+            });
+            rLines.push(`            }`);
+        } else if (ach.reward.type === 'image') {
+            rLines.push(`            url: ${safeUrl(ach.reward.url)},`);
+            if (ach.reward.caption) rLines.push(`            caption: ${jss(ach.reward.caption)},`);
+        } else if (ach.reward.type === 'video') {
+            rLines.push(`            url: ${safeUrl(ach.reward.url)},`);
+        } else if (ach.reward.type === 'game') {
+            rLines.push(`            gameId: ${jss(ach.reward.gameId)},`);
+            if (ach.reward.buttonText) rLines.push(`            buttonText: ${jss(ach.reward.buttonText)},`);
+        } else if (ach.reward.type === 'text') {
+            rLines.push(`            content: ${jss(ach.reward.content)},`);
+        }
+        rLines.push(`        }`);
+        lines.push(rLines.join('\n'));
+    }
+    lines.push('    });');
+    return lines.join('\n');
+}
+
+// Reads the raw form values to build the temporary reward object for state
+function getRewardObj() {
+    if (_rewardType === 'none') return null;
+    let r = { type: _rewardType };
+    if (_rewardType === 'audio') {
+        r.meta = {
+            url: v('r-audio-url'), title: v('r-audio-title'), description: v('r-audio-desc'),
+            model: v('r-audio-model'), origin: v('r-audio-origin'), locale: v('r-audio-locale'),
+            region: v('r-audio-region'), zone: v('r-audio-zone'), planet: v('r-audio-planet'), date: v('r-audio-date')
+        };
+    } else if (_rewardType === 'image') {
+        r.url = v('r-img-url'); r.caption = v('r-img-caption');
+    } else if (_rewardType === 'video') {
+        r.url = v('r-vid-url');
+    } else if (_rewardType === 'game') {
+        r.gameId = v('r-game-id'); r.buttonText = v('r-game-btn');
+    } else if (_rewardType === 'text') {
+        r.content = v('r-text-content');
+    }
+    return r;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────
+
+let _rewardType = 'none';
+let _conditions = [];   // Array of { id, type, params }
+let _nextCondId = 1;
+
+// ─────────────────────────────────────────────────────────────────
+// CONDITION TYPE DEFINITIONS
+// ─────────────────────────────────────────────────────────────────
+
+const COND_TYPES = {
+    listen_count: {
+        label: 'Listen count (total)',
+        tip: 'Counts distinct episodes fully listened to (played to end). data.history is an array of episode IDs.',
+        fields: [
+            { key: 'n', label: 'Minimum completions', placeholder: '10', type: 'number' }
+        ],
+        generate: (p) => `data.history.length >= ${parseInt(p.n) || 1}`
+    },
+    specific_episode: {
+        label: 'Specific episode listened',
+        tip: 'Find an episode\'s ID via the search tool above and click to inject.',
+        fields: [
+            { key: 'id', label: 'Episode ID', placeholder: 'podcube-episode-001', type: 'text' }
+        ],
+        generate: (p) => `data.history.includes(${jss(p.id || 'EPISODE-ID')})`
+    },
+    episode_set_all: {
+        label: 'All of these episodes listened',
+        tip: 'Every episode in the list must be fully completed. One ID per line. Click search results to append.',
+        fields: [
+            { key: 'ids', label: 'Episode IDs (one per line)', placeholder: 'episode-id-01\nepisode-id-02', type: 'textarea' }
+        ],
+        generate: (p) => {
+            const ids = parseIdList(p.ids);
+            if (!ids.length) return `/* Add episode IDs above */`;
+            return `[${ids.map(jss).join(', ')}].every(id => data.history.includes(id))`;
+        }
+    },
+    episode_set_any: {
+        label: 'At least N of these episodes',
+        tip: 'The user needs to complete at least N episodes from the list. One ID per line.',
+        fields: [
+            { key: 'n',   label: 'Minimum count', placeholder: '3', type: 'number' },
+            { key: 'ids', label: 'Episode IDs (one per line)', placeholder: 'episode-id-01\nepisode-id-02', type: 'textarea' }
+        ],
+        generate: (p) => {
+            const ids = parseIdList(p.ids);
+            const n   = parseInt(p.n) || 1;
+            if (!ids.length) return `/* Add episode IDs above */`;
+            return `[${ids.map(jss).join(', ')}].filter(id => data.history.includes(id)).length >= ${n}`;
+        }
+    },
+    origin_count: {
+        label: 'Episodes from an origin',
+        tip: 'Counts completed episodes whose origin field contains the given text (case-sensitive).',
+        fields: [
+            { key: 'origin', label: 'Origin text (partial match ok)', placeholder: 'Wexton Hospital', type: 'text' },
+            { key: 'n',      label: 'Minimum count', placeholder: '3', type: 'number' }
+        ],
+        generate: (p) => {
+            const n = parseInt(p.n) || 1;
+            return `data.history.filter(id => {\n                const ep = window.PodCube?.findEpisode?.(id);\n                return ep?.origin?.includes(${jss(p.origin || 'ORIGIN')});\n            }).length >= ${n}`;
+        }
+    },
+    visit_count: {
+        label: 'Login sessions',
+        tip: 'data.visits is incremented once per page load / session.',
+        fields: [
+            { key: 'n', label: 'Minimum visits', placeholder: '5', type: 'number' }
+        ],
+        generate: (p) => `data.visits >= ${parseInt(p.n) || 1}`
+    },
+    punchcard_printed_count: {
+        label: 'Punchcards Printed',
+        tip: 'data.punchcards increments when a punchcard is rendered to the screen.',
+        fields: [
+            { key: 'n', label: 'Minimum printed', placeholder: '1', type: 'number' }
+        ],
+        generate: (p) => `data.punchcards >= ${parseInt(p.n) || 1}`
+    },
+    punchcard_export_count: {
+        label: 'Punchcards Exported',
+        tip: 'data.punchcardExport increments when a punchcard is exported or downloaded to clipboard.',
+        fields: [
+            { key: 'n', label: 'Minimum exported', placeholder: '1', type: 'number' }
+        ],
+        generate: (p) => `data.punchcardExport >= ${parseInt(p.n) || 1}`
+    },
+    game_score: {
+        label: 'Game high score',
+        tip: 'data.games is an object keyed by game ID. Scores are set via PodUser.logGameScore().',
+        fields: [
+            { key: 'gameId', label: 'Game ID', placeholder: 'freaky-frogger', type: 'text' },
+            { key: 'score',  label: 'Minimum score', placeholder: '50', type: 'number' }
+        ],
+        generate: (p) => `(data.games[${jss(p.gameId || 'game-id')}] || 0) >= ${parseInt(p.score) || 1}`
+    },
+    time_of_day: {
+        label: 'Time of day (hour range)',
+        tip: 'Checks when the condition is evaluated. Hour is 0-23.',
+        fields: [
+            { key: 'from', label: 'From hour (0–23)', placeholder: '0',  type: 'number' },
+            { key: 'to',   label: 'To hour exclusive (0–23)', placeholder: '1',  type: 'number' }
+        ],
+        generate: (p) => {
+            const from = parseInt(p.from) || 0;
+            const to   = parseInt(p.to)   || 1;
+            if (from === to - 1) return `new Date().getHours() === ${from}`;
+            return `new Date().getHours() >= ${from} && new Date().getHours() < ${to}`;
+        }
+    },
+    day_of_week: {
+        label: 'Day of week',
+        tip: 'Checks current local day of week.',
+        fields: [
+            {
+                key: 'day', label: 'Day', type: 'select',
+                options: ['0 — Sunday','1 — Monday','2 — Tuesday','3 — Wednesday','4 — Thursday','5 — Friday','6 — Saturday']
+            }
+        ],
+        generate: (p) => `new Date().getDay() === ${parseInt(p.day) || 0}`
+    },
+    custom: {
+        label: 'Custom expression',
+        tip: 'Write any valid JS expression. You have access to the full data object and all globals (window, PodCube, etc.).',
+        fields: [
+            { key: 'expr', label: 'Expression (returns true/false)', placeholder: 'data.history.length >= 5 && data.visits > 1', type: 'textarea' }
+        ],
+        generate: (p) => p.expr?.trim() || 'false'
+    }
+};
+
+// ─────────────────────────────────────────────────────────────────
+// ARCHETYPE PRE-SETS
+// ─────────────────────────────────────────────────────────────────
+
+function loadArchetype() {
+    const val = document.getElementById('f-archetype').value;
+    if(!val) return;
+    
+    // Clear everything — including edit lock and reward state
+    _editingId = null;
+    document.querySelectorAll('.left-pane input[type="text"], .left-pane input[type="url"], .left-pane textarea').forEach(el => el.value = '');
+    document.getElementById('f-hidden').checked = false;
+    _conditions = [];
+    _nextCondId = 1;
+    setReward('none');
+    
+    if(val === 'lore') {
+        document.getElementById('f-title').value = "Lore Hunter";
+        document.getElementById('f-desc').value = "Listened to 3 transmissions from Wexton Hospital.";
+        document.getElementById('f-icon').value = "🕵️";
+        addCondition('origin_count');
+        updateParam(1, 'origin', 'Wexton Hospital');
+        updateParam(1, 'n', 3);
+    } else if(val === 'marathon') {
+        document.getElementById('f-title').value = "Marathon Listener";
+        document.getElementById('f-desc').value = "Listened to 50 transmissions.";
+        document.getElementById('f-icon').value = "🏃";
+        addCondition('listen_count');
+        updateParam(1, 'n', 50);
+    } else if(val === 'completionist') {
+        document.getElementById('f-title').value = "Saga Complete";
+        document.getElementById('f-desc').value = "Listened to all episodes of the saga.";
+        document.getElementById('f-icon').value = "📚";
+        addCondition('episode_set_all');
+    } else if(val === 'loyalty') {
+        document.getElementById('f-title').value = "Dependable Asset";
+        document.getElementById('f-desc').value = "Logged into the PRIC terminal 5 separate times.";
+        document.getElementById('f-icon').value = "🖥️";
+        addCondition('visit_count');
+        updateParam(1, 'n', 5);
+    }
+    
+    document.getElementById('f-archetype').value = ""; // Reset dropdown
+    document.getElementById('f-logic').value = 'AND';
+    toggleLogicMode();
+    generate();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CONDITION MANAGEMENT
+// ─────────────────────────────────────────────────────────────────
+
+function addCondition(type = 'listen_count') {
+    const id = _nextCondId++;
+    _conditions.push({ id, type, params: {} });
+    renderConditionList();
+    generate();
+}
+
+function removeCondition(id) {
+    _conditions = _conditions.filter(c => c.id !== id);
+    _nextCondId = 1;
+    _conditions.forEach((c, i) => { c.id = i + 1; });
+
+    // If in CUSTOM mode, the user's expression now references stale variable names
+    // (e.g. c3 no longer exists). Reset it so they must re-enter it cleanly.
+    if (document.getElementById('f-logic').value === 'CUSTOM') {
+        document.getElementById('f-combine').value = '';
+    }
+
+    renderConditionList();
+    generate();
+}
+
+function changeCondType(id, newType) {
+    const c = _conditions.find(c => c.id === id);
+    if (c) { c.type = newType; c.params = {}; }
+    renderConditionList();
+    generate();
+}
+
+function updateParam(condId, key, value) {
+    const c = _conditions.find(c => c.id === condId);
+    if (c) c.params[key] = value;
+    generate();
+}
+
+function renderConditionList() {
+    const list = document.getElementById('conditionList');
+    list.innerHTML = '';
+
+    _conditions.forEach((cond, idx) => {
+        const def = COND_TYPES[cond.type];
+        const varName = `c${cond.id}`;
+
+        const row = document.createElement('div');
+        row.className = 'cond-row';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'cond-row-header';
+
+        const lbl = document.createElement('div');
+        lbl.className = 'cond-label';
+        lbl.textContent = varName;
+
+        const sel = document.createElement('select');
+        sel.className = 'cond-type-select';
+        Object.entries(COND_TYPES).forEach(([k, v]) => {
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = v.label;
+            opt.selected = k === cond.type;
+            sel.appendChild(opt);
+        });
+        sel.addEventListener('change', () => changeCondType(cond.id, sel.value));
+
+        const rm = document.createElement('button');
+        rm.className = 'cond-remove';
+        rm.title = 'Remove condition';
+        rm.textContent = '×';
+        rm.addEventListener('click', () => removeCondition(cond.id));
+
+        header.appendChild(lbl);
+        header.appendChild(sel);
+        header.appendChild(rm);
+        row.appendChild(header);
+
+        // Body: type-specific fields
+        const body = document.createElement('div');
+        body.className = 'cond-body';
+
+        def.fields.forEach(f => {
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'field';
+
+            const label = document.createElement('label');
+            label.textContent = f.label;
+            fieldDiv.appendChild(label);
+
+            let input;
+            if (f.type === 'textarea') {
+                input = document.createElement('textarea');
+                input.placeholder = f.placeholder || '';
+                input.value = cond.params[f.key] || '';
+            } else if (f.type === 'select') {
+                input = document.createElement('select');
+                f.options.forEach((opt, i) => {
+                    const o = document.createElement('option');
+                    o.value = i;
+                    o.textContent = opt;
+                    o.selected = (cond.params[f.key] ?? 0) == i;
+                    input.appendChild(o);
+                });
+            } else {
+                input = document.createElement('input');
+                input.type = f.type === 'number' ? 'number' : 'text';
+                input.placeholder = f.placeholder || '';
+                input.value = cond.params[f.key] || '';
+            }
+
+            input.addEventListener('input', () => updateParam(cond.id, f.key, input.value));
+            input.addEventListener('change', () => updateParam(cond.id, f.key, input.value));
+            fieldDiv.appendChild(input);
+            body.appendChild(fieldDiv);
+        });
+
+        row.appendChild(body);
+
+        // Tip
+        if (def.tip) {
+            const tip = document.createElement('div');
+            tip.className = 'cond-row-tip';
+            tip.textContent = def.tip;
+            row.appendChild(tip);
+        }
+
+        list.appendChild(row);
+    });
+
+    // Logic Builder (Show/Hide Combine Box)
+    const combineBox = document.getElementById('combineBox');
+    combineBox.style.display = _conditions.length > 1 ? 'block' : 'none';
+}
+
+function toggleLogicMode() {
+    const mode = document.getElementById('f-logic').value;
+    document.getElementById('customLogicWrapper').style.display = (mode === 'CUSTOM') ? 'block' : 'none';
+    generate();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// REWARD
+// ─────────────────────────────────────────────────────────────────
+
+function setReward(type) {
+    _rewardType = type;
+    document.querySelectorAll('.rtab').forEach(b => b.classList.toggle('active', b.dataset.rt === type));
+    document.querySelectorAll('.reward-panel').forEach(p => p.classList.remove('active'));
+    
+    const lib = document.getElementById('asset-library');
+    if (type === 'audio' || type === 'image' || type === 'video' || type === 'game') {
+        lib.classList.add('active');
+        renderAssetLibrary(); // re-render to apply new filters
+    } else {
+        lib.classList.remove('active');
+    }
+
+    if (type !== 'none') document.getElementById(`rp-${type}`)?.classList.add('active');
+    generate();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CODE GENERATION
+// ─────────────────────────────────────────────────────────────────
+
+function generate() {
+    const id     = v('f-id')    || 'your_achievement_id';
+    const title  = v('f-title') || 'Achievement Title';
+    const desc   = v('f-desc')  || 'Describe the criteria here.';
+    const icon   = v('f-icon');
+    const hidden = document.getElementById('f-hidden').checked;
+
+    // --- VIRTUAL LIBRARY COLLISION CHECK ---
+    const warningEl = document.getElementById('id-warning');
+    if (id) {
+        // Find if this ID exists in the library, BUT it isn't the one we are actively editing
+        const collision = _virtualLibrary.some(v => v.id === id && v.id !== _editingId) || 
+                          (window.PodUser && window.PodUser.achievements.some(a => a.id === id && a.id !== _editingId));
+        warningEl.style.display = collision ? 'block' : 'none';
+    } else {
+        warningEl.style.display = 'none';
+    }
+
+    // Build condition function
+    let conditionStr;
+
+    if (_conditions.length === 0 && document.getElementById('f-logic').value !== 'CUSTOM') {
+        conditionStr = `(data) => false, // TODO: add at least one condition`;
+    } else if (_conditions.length === 1 && document.getElementById('f-logic').value !== 'CUSTOM') {
+        const cond = _conditions[0];
+        const def  = COND_TYPES[cond.type];
+        const expr = def.generate(cond.params);
+        conditionStr = `(data) => ${expr},`;
+    } else {
+        // Multi-condition Logic
+        const mode = document.getElementById('f-logic').value;
+        let combineExpr = "";
+        
+        if (mode === 'AND') {
+            combineExpr = _conditions.map(c => `c${c.id}`).join(' && ');
+            if (document.getElementById('f-combine')) document.getElementById('f-combine').value = combineExpr;
+        } else if (mode === 'OR') {
+            combineExpr = _conditions.map(c => `c${c.id}`).join(' || ');
+            if (document.getElementById('f-combine')) document.getElementById('f-combine').value = combineExpr;
+        } else {
+            combineExpr = document.getElementById('f-combine')?.value?.trim() || _conditions.map(c => `c${c.id}`).join(' && ');
+        }
+
+        const varLines = _conditions.map(cond => {
+            const def  = COND_TYPES[cond.type];
+            const expr = def.generate(cond.params);
+            return `        const c${cond.id} = ${expr};`;
+        });
+
+        if (varLines.length > 0) {
+            conditionStr = `(data) => {\n${varLines.join('\n')}\n        return ${combineExpr};\n    },`;
+        } else {
+            // Handle edge case where custom logic is used with no visual conditions
+            conditionStr = `(data) => {\n        return ${combineExpr || 'false'};\n    },`;
+        }
+    }
+
+    // Build reward string
+    const rewardStr = buildRewardCode();
+
+    // Assemble
+    const lines = ['    PodUser.registerAchievement({'];
+    lines.push(`        id: ${jss(id)},`);
+    lines.push(`        title: ${jss(title)},`);
+    lines.push(`        desc: ${jss(desc)},`);
+    if (icon)   lines.push(`        icon: ${jss(icon)},`);
+    if (hidden) lines.push(`        hiddenGoal: true,`);
+    lines.push(`        condition: ${conditionStr}`);
+    if (rewardStr) lines.push(`        reward: ${rewardStr},`);
+    lines.push(`    });`);
+
+    document.getElementById('codeOutput').value = lines.join('\n');
+
+    // Update preview
+    updatePreview(icon, title, desc, hidden);
+}
+
+function buildRewardCode() {
+    switch (_rewardType) {
+        case 'none': return null;
+        case 'audio': {
+            const fields = [
+                ['url',         'r-audio-url',    true ],
+                ['title',       'r-audio-title',  false],
+                ['description', 'r-audio-desc',   false],
+                ['model',       'r-audio-model',  false],
+                ['origin',      'r-audio-origin', false],
+                ['locale',      'r-audio-locale', false],
+                ['region',      'r-audio-region', false],
+                ['zone',        'r-audio-zone',   false],
+                ['planet',      'r-audio-planet', false],
+                ['date',        'r-audio-date',   false],
+            ];
+            const meta = fields
+                .map(([k, id]) => { 
+                    const val = v(id); 
+                    if (!val) return null;
+                    // Properly encode URLs in the final JS code
+                    if (k === 'url') return `                ${k}: ${jss(encodeURI(decodeURI(val)).replace(/'/g, '%27'))},`;
+                    return `                ${k}: ${jss(val)},`; 
+                })
+                .filter(Boolean).join('\n');
+            return `{\n            type: 'audio',\n            meta: {\n${meta}\n            }\n        }`;
+        }
+        case 'image': {
+            const url = v('r-img-url');
+            const cap = v('r-img-caption');
+            let s = `{\n            type: 'image',\n            url: ${jss(encodeURI(decodeURI(url || '')).replace(/'/g, '%27'))},`;
+            if (cap) s += `\n            caption: ${jss(cap)},`;
+            s += `\n        }`;
+            return s;
+        }
+        case 'video': {
+            const url = v('r-vid-url');
+            return `{\n            type: 'video',\n            url: ${jss(encodeURI(decodeURI(url || '')).replace(/'/g, '%27'))},\n        }`;
+        }
+        case 'game': {
+            const gid = v('r-game-id');
+            const btn = v('r-game-btn');
+            let s = `{\n            type: 'game',\n            gameId: ${jss(gid || '')},`;
+            if (btn) s += `\n            buttonText: ${jss(btn)},`;
+            s += `\n        }`;
+            return s;
+        }
+        case 'text':
+            return `{\n            type: 'text',\n            content: ${jss(v('r-text-content') || '')},\n        }`;
+        default:
+            return null;
+    }
+}
+
+function updatePreview(icon, title, desc, hidden) {
+    document.getElementById('prev-icon').textContent  = hidden ? '❓' : (icon || '🏆');
+    document.getElementById('prev-title').textContent = title;
+    
+    // Only mask the description if the dev checks the 'hiddenGoal' box
+    document.getElementById('prev-desc').textContent  = hidden ? 'This record is classified.' : desc;
+
+    const mediaContainer = document.getElementById('prev-media-container');
+    mediaContainer.innerHTML = '';
+    mediaContainer.style.display = 'none';
+
+    // We still show the reward preview in the builder so you can verify it, 
+    // even if it would be hidden from the user in the main app.
+    if (_rewardType !== 'none') {
+        mediaContainer.style.display = 'block';
+        let mediaHtml = '';
+        
+        if (_rewardType === 'image') {
+            const url = v('r-img-url');
+            const cap = v('r-img-caption');
+            if (url) {
+                const safeUrl = escapeForAttribute(resolvePreviewUrl(url));
+                mediaHtml = `
+                    <div style="height: 140px; background: #f0f0f0; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+                        <img src="${safeUrl}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    ${cap ? `<div style="font-family: 'Fustat', sans-serif; font-size: 9px; text-transform: uppercase; color: var(--primary); letter-spacing: 0.04em;">${escapeHtml(cap)}</div>` : ''}
+                `;
+            }
+        } else if (_rewardType === 'video') {
+            const url = v('r-vid-url');
+            if (url) {
+                const safeUrl = escapeForAttribute(resolvePreviewUrl(url));
+                mediaHtml = `
+                    <div style="height: 140px; background: #000; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative;">
+                        <video src="${safeUrl}" style="width: 100%; height: 100%; object-fit: cover;" controls playsinline></video>
+                        <div style="position: absolute; pointer-events: none; display: flex; align-items: center; justify-content: center;">
+                            <svg viewBox="0 0 24 24" width="40" height="40" fill="#fff" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                        </div>
+                    </div>
+                `;
+            }
+        } else if (_rewardType === 'audio') {
+            const title = v('r-audio-title') || 'Classified';
+            mediaHtml = `
+                <button class="pc-btn wide-media" style="display: flex; align-items: center; gap: 10px; padding: 8px; justify-content: flex-start;">
+                    <span style="font-size: 1.2em; color: var(--orange);">▶</span>
+                    <span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1;">
+                        <strong style="font-size: 12px; font-family: 'Libertinus Math';">Play Transmission</strong>
+                        <span style="font-size: 9px; color: #666; text-transform: uppercase; font-family: 'Fustat';">${escapeHtml(title)}</span>
+                    </span>
+                </button>
+            `;
+        } else if (_rewardType === 'game') {
+            const btnText = v('r-game-btn') || 'Launch Module';
+            mediaHtml = `
+                <button class="pc-btn wide-media" style="display: flex; align-items: center; gap: 10px; padding: 8px; justify-content: flex-start;">
+                    <span style="font-size: 1.2em; color: var(--orange);">🎮</span>
+                    <span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1;">
+                        <strong style="font-size: 12px; font-family: 'Libertinus Math';">${escapeHtml(btnText)}</strong>
+                        <span style="font-size: 9px; color: #666; text-transform: uppercase; font-family: 'Fustat';">Productivity Task</span>
+                    </span>
+                </button>
+            `;
+        } else if (_rewardType === 'text') {
+            const content = v('r-text-content');
+            if (content) {
+                mediaHtml = `
+                <div style="position: relative; background: #f9f9f9; border: 1px solid var(--primary-dim); border-radius: 4px; padding: 12px 10px 10px; margin-top: 8px;">
+                    <div style="white-space:pre-wrap; max-height: 120px; overflow-y: auto; font-size: 11px; font-family: monospace; color: #333;">${escapeHtml(content)}</div>
+                    <button style="position: absolute; top: -8px; right: 8px; font-size: 8px; font-weight: bold; font-family: 'Fustat'; padding: 2px 6px; background: var(--primary); color: #fff; border: none; border-radius: 2px; cursor: pointer; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        COPY CODE
+                    </button>
+                </div>`;
+            }
+        }
+        mediaContainer.innerHTML = mediaHtml;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ACTIONS
+// ─────────────────────────────────────────────────────────────────
+
+function copyCode() {
+    const code = document.getElementById('codeOutput').value;
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(code).then(() => {
+        const el = document.getElementById('copyFlash');
+        if (el) {
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 1800);
+        }
+    });
+}
+
+function resetForm() {
+    document.querySelectorAll('.left-pane input[type="text"], .left-pane input[type="url"], .left-pane textarea').forEach(el => el.value = '');
+    document.getElementById('f-hidden').checked = false;
+    document.getElementById('f-combine').value = '';
+    document.getElementById('f-logic').value = 'AND';
+    toggleLogicMode();
+    _conditions = [];
+    _nextCondId = 1;
+    setReward('none');
+    renderConditionList();
+    generate();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────────────────────────
+
+function v(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+}
+
+// JS string literal with single quotes, safely escaped (handles newlines)
+function jss(s) {
+    if (s == null) return "''";
+    return `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r')}'`;
+}
+
+function parseIdList(raw) {
+    if (!raw) return [];
+    return raw.split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────
+
+addCondition('listen_count');
+</script>
+</body>
+</html>
