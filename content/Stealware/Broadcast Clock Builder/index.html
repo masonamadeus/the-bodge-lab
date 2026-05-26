@@ -53,17 +53,17 @@
         }
         
         .print-btn {
-            background: #e4e4e7;
+            background: #40cc7f;
             color: var(--text);
             padding: 14px;
             font-size: 1rem;
             text-align: center;
-            border-top: 1px solid var(--border);
+            border: 3px solid #01bb0a;
             border-radius: 0;
             font-weight: 700;
-            margin-top: auto;
+            margin-top: 15px;
         }
-        .print-btn:hover { background: #d4d4d8; }
+        .print-btn:hover { background: #afe0af; }
 
         .tabs {
             display: flex;
@@ -210,12 +210,43 @@
 
         #printTitleInput { text-align: center; font-size: 2rem; font-weight: 800; border: none; outline: none; width: 100%; margin-bottom: 20px; font-family: inherit;}
 
+        /* Breakdown Styles */
+        .breakdown-container {
+            margin-top: 40px;
+            width: 100%;
+            max-width: 600px;
+            border-top: 2px solid var(--border);
+            padding-top: 20px;
+        }
+
+        .breakdown-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+            font-size: 0.95rem;
+        }
+        
+        .breakdown-item:last-child { border-bottom: none; }
+        
+        .breakdown-time {
+            font-family: monospace;
+            font-weight: 700;
+            color: var(--primary);
+            width: 60px;
+            font-size: 1.1rem;
+        }
+
+        .breakdown-name { flex-grow: 1; font-weight: 600; }
+        .breakdown-dur { color: #52525b; font-family: monospace; font-size: 0.85rem;}
+
         /* Print Styles */
         @media print {
             body { background: white; padding: 0; display: block; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .sidebar { display: none; }
             .container { display: block; }
             .clock-display { box-shadow: none; border: none; padding: 0; margin: 0 auto; max-width: 850px; min-height: auto;}
+            .breakdown-container { margin-top: 20px; page-break-inside: avoid; }
             @page { margin: 0.5cm; size: portrait; }
         }
     </style>
@@ -232,7 +263,7 @@
 
             <div id="panel-build" class="panel active">
                 
-                <button class="danger-outline" onclick="clearAll()" style="margin-top: 0; margin-bottom: 15px;">Delete All Segments</button>
+                
                 <div class="total-time" id="totalTimeDisplay">00:00 / 60:00</div>
                 
                 <div class="form-group">
@@ -256,6 +287,7 @@
                 </div>
 
                 <div class="segment-list" id="segmentList"></div>
+                <button class="danger-outline" onclick="clearAll()" style="margin-top: 0; margin-bottom: 15px;">Delete All Segments</button>
             </div>
 
             <div id="panel-settings" class="panel">
@@ -309,12 +341,13 @@
                 </div>
             </div>
 
-            <button class="print-btn" onclick="window.print()">🖨️ Print Broadcast Clock</button>
+            <button class="print-btn" onclick="window.print()">CLICK TO PRINT CLOCK</button>
         </div>
 
         <div class="clock-display">
             <input type="text" id="printTitleInput" value="The Morning Telephone Show" oninput="handleTitleChange()">
             <div id="svgContainer"></div>
+            <div id="segmentBreakdown" class="breakdown-container"></div>
         </div>
     </div>
 
@@ -489,6 +522,7 @@
         function updateUI(shouldSave = true) {
             renderList();
             renderClock();
+            renderBreakdown();
             
             const totalMinutes = segments.reduce((acc, curr) => acc + curr.duration, 0);
             const timeDisplay = document.getElementById('totalTimeDisplay');
@@ -611,6 +645,28 @@
                     </div>
                 `;
                 list.appendChild(div);
+            });
+        }
+
+        function renderBreakdown() {
+            const container = document.getElementById('segmentBreakdown');
+            container.innerHTML = '<h3 style="border-bottom:none; margin-bottom: 8px;">Run of Show</h3>';
+            
+            let currentMinute = 0;
+            segments.forEach(seg => {
+                if (currentMinute >= 60) return;
+                
+                const minStr = currentMinute.toString().padStart(2, '0');
+                const div = document.createElement('div');
+                div.className = 'breakdown-item';
+                div.innerHTML = `
+                    <div class="breakdown-time">:${minStr}</div>
+                    <div class="breakdown-name">${seg.name}</div>
+                    <div class="breakdown-dur">${seg.duration} min</div>
+                `;
+                container.appendChild(div);
+                
+                currentMinute += Math.min(seg.duration, 60 - currentMinute);
             });
         }
 
@@ -833,13 +889,45 @@
 
                 const midAngle = startAngle + (sliceDegrees / 2);
                 
-                let textRadiusMultiplier = 0.65;
-                if (sliceDegrees <= 15) textRadiusMultiplier = 0.75;
-                if (sliceDegrees <= 8) textRadiusMultiplier = 0.85; 
+                if (sliceDegrees <= 15) { 
+                    // LEADER LINE LOGIC FOR SMALL SEGMENTS
+                    const startPt = polarToCartesian(CENTER, CENTER, RADIUS, midAngle);
+                    const elbowPt = polarToCartesian(CENTER, CENTER, RADIUS + 20, midAngle);
+                    
+                    const isRightSide = midAngle >= 0 && midAngle <= 180;
+                    const extension = isRightSide ? 30 : -30;
+                    const endPtX = elbowPt.x + extension;
+                    
+                    const poly = createSVGElement('polyline');
+                    poly.setAttribute('points', `${startPt.x},${startPt.y} ${elbowPt.x},${elbowPt.y} ${endPtX},${elbowPt.y}`);
+                    poly.setAttribute('fill', 'none');
+                    poly.setAttribute('stroke', 'var(--svg-text)');
+                    poly.setAttribute('stroke-width', '1.5');
+                    svg.appendChild(poly);
+                    
+                    const textNode = createSVGElement('text');
+                    textNode.setAttribute('x', isRightSide ? endPtX + 6 : endPtX - 6);
+                    textNode.setAttribute('y', elbowPt.y + 1); 
+                    textNode.setAttribute('class', 'slice-text');
+                    textNode.setAttribute('text-anchor', isRightSide ? 'start' : 'end');
+                    textNode.setAttribute('font-size', `${settings.fontSize}px`);
+                    textNode.textContent = `${seg.name} (${seg.duration}m)`;
+                    svg.appendChild(textNode);
+                    
+                } else {
+                    // STANDARD INTERNAL TEXT LOGIC FOR LARGE SEGMENTS
+                    let textRadiusMultiplier = 0.65;
+                    
+                    // Push text further out towards the wider edge for 5 to 7 minute segments
+                    if (sliceDegrees <= 35) { 
+                        textRadiusMultiplier = 0.82; 
+                    } else if (sliceDegrees <= 45) {
+                        textRadiusMultiplier = 0.75;
+                    }
 
-                const textPos = polarToCartesian(CENTER, CENTER, RADIUS * textRadiusMultiplier, midAngle);
-                
-                renderWrappedText(svg, textPos.x, textPos.y, seg.name, `${seg.duration}m`, sliceDegrees);
+                    const textPos = polarToCartesian(CENTER, CENTER, RADIUS * textRadiusMultiplier, midAngle);
+                    renderWrappedText(svg, textPos.x, textPos.y, seg.name, `${seg.duration}m`, sliceDegrees);
+                }
 
                 currentMinute += durationToDraw;
             });
