@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROJECT: SENTINEL | Synthetic Media Heuristics</title>
+    <style>
+        :root {
+            --cyan: #00f2ff;
+            --cyan-dim: rgba(0, 242, 255, 0.2);
+            --red: #ff003c;
+            --bg-base: #02040a;
+            --panel-bg: rgba(10, 14, 23, 0.85);
+            --grid-line: rgba(0, 242, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .dashboard {
+            width: 95vw;
+            height: 90vh;
+            min-width: 1200px;
+            min-height: 700px;
+            display: grid;
+            grid-template-columns: 280px 1fr 350px;
+            grid-template-rows: 60px 1fr;
+            gap: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* --- Global Panel Styles --- */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            border-radius: 4px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 242, 255, 0.05);
+            backdrop-filter: blur(10px);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 20px; height: 2px; background: var(--cyan);
+        }
+
+        .panel-header {
+            background: rgba(0, 242, 255, 0.1);
+            padding: 10px 15px;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--cyan);
+            border-bottom: 1px solid var(--cyan-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* --- Header Top Bar --- */
+        .top-bar {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--cyan);
+            padding-bottom: 10px;
+        }
+
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: 4px; display: flex; align-items: center; gap: 10px; }
+        .recording-indicator { color: var(--red); font-weight: bold; animation: blink 1s infinite; display: none; }
+        .time-display { font-family: 'Courier New', monospace; color: #64748b; }
+
+        /* --- Left Panel: Diagnostics & Graphs --- */
+        .side-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; gap: 20px; }
+        
+        .data-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; border-bottom: 1px dashed #333; padding-bottom: 4px; }
+        .data-label { color: #64748b; }
+        .data-value { font-family: monospace; color: white; }
+
+        /* Fake Equalizer/Spectral Graph */
+        .spectral-graph { height: 100px; display: flex; align-items: flex-end; gap: 3px; margin-top: auto; }
+        .bar { width: 100%; background: var(--cyan); opacity: 0.6; }
+        .bar.active { animation: equalize 0.5s ease-in-out infinite alternate; }
+
+        /* --- Center Panel: Main Image Target --- */
+        .main-target { position: relative; flex-grow: 1; background: #010205; display: flex; justify-content: center; align-items: center; }
+        
+        #target-image { width: 100%; height: 100%; object-fit: contain; display: none; filter: contrast(1.1) brightness(0.9) grayscale(10%); }
+
+        .upload-ui { text-align: center; cursor: pointer; color: #64748b; transition: all 0.3s; padding: 40px; border: 1px dashed #333; border-radius: 8px; }
+        .upload-ui:hover { color: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 30px var(--cyan-dim); }
+        #file-input { display: none; }
+
+        /* Center HUD Elements */
+        .hud-overlay { position: absolute; inset: 0; pointer-events: none; display: none; }
+        .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; }
+        .crosshair::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: rgba(0, 242, 255, 0.2); }
+        .crosshair::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgba(0, 242, 255, 0.2); }
+        
+        .facial-box {
+            position: absolute; top: 20%; left: 30%; right: 30%; bottom: 20%;
+            border: 2px solid var(--cyan);
+            box-shadow: 0 0 15px var(--cyan-dim), inset 0 0 15px var(--cyan-dim);
+            opacity: 0; transition: opacity 0.5s;
+        }
+        .facial-box::after { content: 'FACIAL GEOMETRY LOCKED'; position: absolute; top: -20px; left: 0; font-size: 10px; color: var(--cyan); font-family: monospace; }
+
+        .scanner-beam {
+            position: absolute; left: 0; right: 0; height: 15vh;
+            background: linear-gradient(to bottom, transparent, rgba(0, 242, 255, 0.4), transparent);
+            border-bottom: 2px solid var(--cyan);
+            top: -15vh; display: none;
+        }
+
+        /* Center Result Text */
+        .result-container { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(2, 4, 10, 0.85); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .result-container.glitch-active { opacity: 1; pointer-events: auto; animation: glitchOverlay 0.3s forwards; }
+        
+        .huge-faik { font-size: 140px; font-weight: 900; color: var(--red); margin: 0; line-height: 1; letter-spacing: 15px; text-shadow: 6px 0 var(--cyan), -6px 0 #00ff22; animation: textGlitch 0.2s infinite; }
+        .final-confidence { font-size: 30px; font-family: monospace; color: white; margin-top: 10px; background: var(--red); padding: 5px 20px; letter-spacing: 4px; }
+
+        /* --- Right Panel: Terminal & Progress --- */
+        .terminal { background: #010205; flex-grow: 1; padding: 15px; font-family: 'Courier New', monospace; font-size: 12px; color: #64748b; overflow-y: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+        .log-line { margin: 3px 0; opacity: 0; animation: fadeIn 0.1s forwards; word-wrap: break-word; }
+        
+        .progress-section { padding: 15px; border-top: 1px solid var(--cyan-dim); }
+        .meter { margin-bottom: 15px; }
+        .meter-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; color: #cbd5e1; }
+        .meter-bar-bg { height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+        .meter-bar-fill { height: 100%; background: var(--cyan); width: 0%; transition: width 0.2s ease-out; }
+        .meter.danger .meter-bar-fill { background: var(--red); }
+
+        .scan-btn { width: 100%; background: transparent; border: 1px solid var(--cyan); color: var(--cyan); padding: 15px; font-size: 14px; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-top: 10px; }
+        .scan-btn:hover:not(:disabled) { background: var(--cyan); color: black; box-shadow: 0 0 20px var(--cyan-dim); }
+        .scan-btn:disabled { border-color: #333; color: #555; cursor: not-allowed; }
+
+        /* --- Animations --- */
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes scanAnim { 0% { top: -15vh; } 100% { top: 100%; } }
+        
+        /* Dynamic Equalizer Heights */
+        @keyframes equalize {
+            0% { height: 10%; }
+            50% { height: 90%; }
+            100% { height: 30%; }
+        }
+
+        /* Glitch Effects */
+        @keyframes glitchOverlay {
+            0% { clip-path: inset(10% 0 80% 0); }
+            20% { clip-path: inset(80% 0 5% 0); }
+            40% { clip-path: inset(30% 0 40% 0); transform: translateX(-10px); }
+            60% { clip-path: inset(60% 0 10% 0); transform: translateX(10px); }
+            80% { clip-path: inset(20% 0 50% 0); transform: translateX(-5px); }
+            100% { clip-path: inset(0 0 0 0); transform: translateX(0); }
+        }
+
+        @keyframes textGlitch {
+            0% { text-shadow: 6px 0 var(--cyan), -6px 0 #00ff22; }
+            50% { text-shadow: -6px 0 var(--cyan), 6px 0 #00ff22; }
+            100% { text-shadow: 6px 0 var(--cyan), -6px 0 #00ff22; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="top-bar">
+            <div class="logo">
+                <div style="width:16px; height:16px; background:var(--cyan); box-shadow:0 0 10px var(--cyan);"></div>
+                SENTINEL<span style="color:#64748b; font-weight:300;">OS</span>
+            </div>
+            <div id="recording-light" class="recording-indicator">● ACTIVE SCAN IN PROGRESS</div>
+            <div class="time-display" id="clock">00:00:00:00 ZULU</div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header"><span>Sys Diagnostics</span> <span>[NODE-04]</span></div>
+            <div class="side-content">
+                <div>
+                    <div class="data-row"><span class="data-label">PRNU Noise Analysis</span><span class="data-value">STANDBY</span></div>
+                    <div class="data-row"><span class="data-label">DCT Coefficients</span><span class="data-value">STANDBY</span></div>
+                    <div class="data-row"><span class="data-label">GAN Artifact Level</span><span class="data-value" id="gan-val">0.00%</span></div>
+                    <div class="data-row"><span class="data-label">Metadata Spoofing</span><span class="data-value" style="color:var(--red);">DETECTED</span></div>
+                </div>
+                
+                <div style="flex-grow: 1; display:flex; flex-direction:column; justify-content:flex-end;">
+                    <div style="font-size: 10px; color: var(--cyan); margin-bottom: 5px; letter-spacing: 1px;">SPECTRAL VARIANCE [LIVE]</div>
+                    <div class="spectral-graph" id="eq-graph">
+                        </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header"><span>Visual Input Matrix</span> <span>[SUBJECT_ALPHA]</span></div>
+            <div class="main-target" id="target-container">
+                
+                <label for="file-input" class="upload-ui" id="upload-ui">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 10px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg><br>
+                    INITIALIZE MEDIA UPLOAD
+                </label>
+                <input type="file" id="file-input" accept="image/*">
+                
+                <img id="target-image" src="" alt="Target Image">
+                
+                <div class="hud-overlay" id="hud-overlay">
+                    <div class="crosshair"></div>
+                    <div class="facial-box" id="facial-box"></div>
+                    <div class="scanner-beam" id="scanner-beam"></div>
+                </div>
+
+                <div class="result-container" id="result-container">
+                    <h1 class="huge-faik">FAIK</h1>
+                    <div class="final-confidence">CONFIDENCE SCORE: 98.4%</div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header"><span>Heuristics Engine</span> <span>[PROCESS_LOG]</span></div>
+            <div class="terminal" id="terminal">
+                <div class="log-line">System initialized. Awaiting user input.</div>
+            </div>
+            
+            <div class="progress-section">
+                <div class="meter">
+                    <div class="meter-label"><span>Deep Learning Heuristics</span> <span id="meter-val-1">0%</span></div>
+                    <div class="meter-bar-bg"><div class="meter-bar-fill" id="meter-fill-1"></div></div>
+                </div>
+                <div class="meter danger" style="opacity: 0.5;" id="threat-meter-container">
+                    <div class="meter-label"><span>Synthetic Probability</span> <span id="meter-val-2">0%</span></div>
+                    <div class="meter-bar-bg"><div class="meter-bar-fill" id="meter-fill-2"></div></div>
+                </div>
+                <button class="scan-btn" id="scan-btn" onclick="executeScan()" disabled>Execute Deep Scan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Setup clock
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toISOString().split('T')[1].replace('Z', ' ZULU');
+        }, 100);
+
+        // Setup EQ graph bars
+        const eqGraph = document.getElementById('eq-graph');
+        for(let i = 0; i < 24; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.height = `${Math.random() * 80 + 10}%`;
+            // Randomize animation duration for chaotic look
+            bar.style.animationDuration = `${Math.random() * 0.5 + 0.3}s`;
+            eqGraph.appendChild(bar);
+        }
+
+        // DOM Elements
+        const fileInput = document.getElementById('file-input');
+        const uploadUi = document.getElementById('upload-ui');
+        const targetImage = document.getElementById('target-image');
+        const scanBtn = document.getElementById('scan-btn');
+        const terminal = document.getElementById('terminal');
+        const hudOverlay = document.getElementById('hud-overlay');
+        const scannerBeam = document.getElementById('scanner-beam');
+        const facialBox = document.getElementById('facial-box');
+        const resultContainer = document.getElementById('result-container');
+        const recordingLight = document.getElementById('recording-light');
+        const meterFill1 = document.getElementById('meter-fill-1');
+        const meterVal1 = document.getElementById('meter-val-1');
+        const meterFill2 = document.getElementById('meter-fill-2');
+        const meterVal2 = document.getElementById('meter-val-2');
+        const threatMeterContainer = document.getElementById('threat-meter-container');
+        const ganVal = document.getElementById('gan-val');
+
+        // Terminal Log Sequence
+        const logSequence = [
+            "Initiating neural network cross-referencing...",
+            "Bypassing standard Exif headers. Extracting raw bitstream...",
+            "<span style='color:var(--cyan)'>[OK] Matrix loaded.</span>",
+            "Analyzing pixel adjacency for diffusion artifacts...",
+            "Running facial geometry mapping...",
+            "<span style='color:#fbbf24'>[WARN] Non-Euclidean eye reflections detected.</span>",
+            "Calculating Photo Response Non-Uniformity (PRNU)...",
+            "<span style='color:var(--red)'>[ALERT] Camera sensor fingerprint missing.</span>",
+            "Running multi-band frequency analysis...",
+            "Comparing artifacts against Midjourney v6 / Stable Diffusion XL parameters...",
+            "<span style='color:var(--red)'>[CRITICAL] High frequency noise match found.</span>",
+            "Compiling aggregate synthetic threat score..."
+        ];
+
+        // Image Upload Handling
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    targetImage.src = event.target.result;
+                    targetImage.style.display = 'block';
+                    uploadUi.style.display = 'none';
+                    scanBtn.disabled = false;
+                    addLog("Target media securely loaded. Ready for execution.");
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function addLog(text) {
+            const div = document.createElement('div');
+            div.className = 'log-line';
+            div.innerHTML = `> ${text}`;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function executeScan() {
+            // Reset state
+            scanBtn.disabled = true;
+            resultContainer.classList.remove('glitch-active');
+            terminal.innerHTML = '';
+            meterFill1.style.width = '0%';
+            meterFill2.style.width = '0%';
+            threatMeterContainer.style.opacity = '1';
+
+            // Start UI visual feedback
+            recordingLight.style.display = 'block';
+            hudOverlay.style.display = 'block';
+            scannerBeam.style.display = 'block';
+            scannerBeam.style.animation = 'scanAnim 1.2s ease-in-out infinite alternate';
+            
+            // Activate EQ bars
+            document.querySelectorAll('.bar').forEach(b => b.classList.add('active'));
+
+            let progress = 0;
+            let logIndex = 0;
+            let logInterval = setInterval(() => {
+                // Update terminal
+                if (logIndex < logSequence.length) {
+                    addLog(logSequence[logIndex]);
+                    logIndex++;
+                }
+
+                // Update meters
+                progress += Math.random() * 8;
+                if (progress > 100) progress = 100;
+                
+                meterFill1.style.width = `${progress}%`;
+                meterVal1.innerText = `${Math.floor(progress)}%`;
+
+                // The threat meter spikes dramatically
+                let threatProgress = progress > 50 ? (progress - 50) * 2 : 0;
+                // Hardcode final threat to 98.4%
+                if (progress >= 100) threatProgress = 98.4; 
+                
+                meterFill2.style.width = `${threatProgress}%`;
+                meterVal2.innerText = `${threatProgress.toFixed(1)}%`;
+                ganVal.innerText = `${threatProgress.toFixed(2)}%`;
+                ganVal.style.color = threatProgress > 80 ? 'var(--red)' : 'white';
+
+                // Trigger facial box mid-scan
+                if (progress > 30 && facialBox.style.opacity == 0) {
+                    facialBox.style.opacity = 1;
+                }
+
+                // End scan
+                if (progress >= 100) {
+                    clearInterval(logInterval);
+                    finalizeScan();
+                }
+            }, 300); // Speed of the scan
+        }
+
+        function finalizeScan() {
+            setTimeout(() => {
+                // Stop visual scanning effects
+                recordingLight.style.display = 'none';
+                scannerBeam.style.display = 'none';
+                document.querySelectorAll('.bar').forEach(b => b.classList.remove('active'));
+
+                // Final Terminal log
+                addLog("<br><span style='color:var(--red); font-weight:bold; font-size:14px;'>=> FINAL VERDICT: SYNTHETIC MEDIA DEEPFAKE</span>");
+
+                // Trigger massive FAIK glitch text
+                resultContainer.classList.add('glitch-active');
+
+                // Reset button
+                scanBtn.disabled = false;
+                scanBtn.innerText = "Re-Execute Sequence";
+            }, 500); // Brief pause for dramatic effect
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Really Simple Custom Countdown (with PodCube™)</title>
+
+    <meta name="title" content="Really Simple Custom Countdown (with PodCube™)">
+    <meta name="description"
+        content="A customizable, browser-based stream countdown timer for OBS featuring hilarious, high-quality audio fill powered by PodCube™.">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link id="dynamic-font" rel="stylesheet" href="">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=SN+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
+
+    <meta name="bodge-og-injected" content="true">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bodgelab.com/Stealware/Customizable%20Stream%20Countdown/">
+    <meta property="og:title" content="Really Simple Countdown (with PodCube™)">
+    <meta property="og:description" content="A simple, customizable, browser-based stream countdown timer for OBS featuring hilarious, high-quality audio fill powered by PodCube™.">
+    <meta property="og:image" content="https://bodgelab.com/Stealware/Customizable%20Stream%20Countdown/countdownogimg.jpg">
+    <meta name="twitter:image" content="https://bodgelab.com/Stealware/Customizable%20Stream%20Countdown/countdownogimg.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body>
+    <svg id="svg-filter-container" class="svg-filter-hidden" aria-hidden="true" focusable="false">
+        <defs>
+            <filter id="global-drop-shadow" filterUnits="objectBoundingBox" x="-50%" y="-50%" width="200%"
+                height="200%">
+                <feDropShadow id="dynamic-drop-shadow" dx="0.02" dy="0.02" stdDeviation="0.04" flood-color="#000000"
+                    flood-opacity="1" />
+            </filter>
+        </defs>
+    </svg>
+
+    <main id="app-container">
+        <h1 id="stream-title" contenteditable="true" spellcheck="false">Click to Edit</h1>
+
+        <div id="timer-container">
+            <span id="timer-min" contenteditable="true" inputmode="numeric" spellcheck="false"
+                title="Click to edit minutes">15</span>
+            <span class="colon">:</span>
+            <span id="timer-sec" contenteditable="true" inputmode="numeric" spellcheck="false"
+                title="Click to edit seconds">00</span>
+        </div>
+
+        <div id="now-playing">
+            <div class="brand-row">
+                <div class="podcube-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M4 11a9 9 0 0 1 9 9"></path>
+                        <path d="M4 4a16 16 0 0 1 16 16"></path>
+                        <circle cx="5" cy="19" r="1"></circle>
+                    </svg>
+                </div>
+                <div class="meta-container">
+                    <label>While you wait...</label>
+                    <div id="brand-label" class="brand-label">You're Listening to PodCube™</div>
+                    <div id="track-name"></div>
+                    <div id="progress-container">
+                        <div id="progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <button id="main-start-btn" class="start-btn">Start Timer</button>
+
+    <div id="confirm-modal" class="hidden modal-overlay">
+        <div class="confirm-dialog">
+            <h3 id="confirm-title">Confirm Action</h3>
+            <p id="confirm-message"></p>
+            <div class="confirm-buttons">
+                <button id="confirm-cancel" class="btn-secondary">Cancel</button>
+                <button id="confirm-ok" class="btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="prompt-modal" class="hidden modal-overlay">
+        <div class="confirm-dialog">
+            <h3 id="prompt-title">Prompt</h3>
+            <p id="prompt-message" class="prompt-message"></p>
+            <input type="text" id="prompt-input" class="prompt-input">
+            <div class="confirm-buttons">
+                <button id="prompt-cancel" class="btn-secondary">Cancel</button>
+                <button id="prompt-ok" class="primary-btn prompt-save-btn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-trigger" title="Open Settings">
+        <svg viewBox="0 0 24 24" width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+            <path fill="currentColor"
+                d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7zm7.43-2.52c.04-.32.07-.65.07-.98 0-.33-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65A.488.488 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.31.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.22.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z" />
+        </svg>
+    </div>
+
+    <div id="settings-modal" class="hidden">
+        <div class="settings-content">
+
+            <div class="settings-header">
+                <h2>CUSTOMIZATION</h2>
+                <button id="close-settings" class="icon-btn" title="Close">✕</button>
+            </div>
+
+            <div class="settings-scroll-area">
+
+                <section class="config-card hero-card">
+                    <div class="card-header-row">
+                        <div class="podcube-logo settings-logo">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 11a9 9 0 0 1 9 9"></path>
+                                <path d="M4 4a16 16 0 0 1 16 16"></path>
+                                <circle cx="5" cy="19" r="1"></circle>
+                            </svg>
+                        </div>
+                        <div class="toggle-wrapper">
+                            <label for="input-audio-enabled" class="toggle-label">PodCube™ Enhanced Experience</label>
+                            <input type="checkbox" id="input-audio-enabled" data-param="audioEnabled"
+                                class="toggle-switch">
+                        </div>
+                    </div>
+                    <p class="helper-text">Auto-plays hilarious, high quality <a href="https://bodgelab.com/s/podcube/" target="_blank">PodCube™</a> episodes to fill time until the countdown ends.<br>(PG-13)</p>
+
+                    <div class="card-header-row card-divider">
+                        <div class="toggle-wrapper">
+                            <input type="checkbox" id="input-widk-enabled" data-param="nsfw" class="toggle-switch">
+                            <label for="input-widk-enabled" class="toggle-label widk-label">Include <a href="https://bodgelab.com/s/widk-ads" target="_blank">WIDK Commercials</a></label>
+
+                            <p class="helper-text"><b class="danger-text">Commercials may contain NSFW
+                                    language/themes.</b></p>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Volume</label>
+                        <input type="range" id="input-volume" data-param="volume" min="0" max="1" step="0.1">
+                    </div>
+
+                </section>
+
+                <section class="config-section">
+                    <h3>FONT && COLOR</h3>
+
+                    <div class="input-grid">
+                        <div class="grid-item full-width">
+                            <label> Name any font on your PC or <a href="https://fonts.google.com" target="_blank">Google
+                                    Fonts</a>.</label>
+                            <input type="text" id="input-font" data-param="font" placeholder="e.g. Roboto, Bangers">
+                        </div>
+
+                        <div class="grid-item">
+                            <label>Text Color</label>
+                            <div class="color-swatch-wrapper">
+                                <input type="color" id="input-color-text" data-param="colorText">
+                            </div>
+                        </div>
+
+                        <div class="grid-item">
+                            <label>Background</label>
+                            <div class="color-swatch-wrapper">
+                                <input type="color" id="input-color-bg" data-param="colorBg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row-option">
+                        <input type="checkbox" id="input-bg-transparent" data-param="bgTransparent">
+                        <label for="input-bg-transparent">Transparent Background (OBS)</label>
+                    </div>
+                </section>
+
+                <section class="config-section">
+                    <div class="section-header-toggle">
+                        <h3>Drop Shadow</h3>
+                        <input type="checkbox" id="input-shadow-enabled" data-param="shadowEnabled"
+                            class="toggle-switch-small">
+                    </div>
+
+                    <div id="shadow-controls-container">
+                        <div class="control-row">
+                            <label>Color</label>
+                            <input type="color" id="input-color-shadow" data-param="shadowColor" class="mini-color">
+                        </div>
+                        <div class="control-row">
+                            <label>Angle && Distance</label>
+                            <div class="knob-container">
+                                <div id="input-shadow-knob" class="knob">
+                                    <div class="knob-pointer"></div>
+                                </div>
+                            </div>
+                            <input type="range" id="input-shadow-dist" data-param="shadowDistance" min="0" max="2"
+                                step="0.05">
+                        </div>
+                        <div class="control-row">
+                            <label>Blur</label>
+                            <input type="range" id="input-shadow-blur" data-param="shadowBlur" min="0" max="2"
+                                step="0.05">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="config-section">
+                    <div class="section-header-toggle">
+                        <div>
+                            <h3>Rearrange Layout</h3>
+                            <p class="helper-text">Unlock to drag elements.<br>Click Done to save & lock.</p>
+                            <button id="btn-reset-layout" class="text-btn btn-small">Reset Positions</button>
+                        </div>
+                        <button id="btn-toggle-layout" class="secondary-btn">Unlock</button>
+                    </div>
+                </section>
+
+                <section class="config-section" id="preset-section">
+                    <h3>PRESETS && RESET</h3>
+                    
+                    <div class="preset-select-row">
+                        <div class="select-wrapper-with-status">
+                            <select id="preset-select" class="preset-select">
+                                <option value="">-- Select Preset --</option>
+                            </select>
+                            <span id="preset-modified-status" class="hidden">● Modified</span>
+                        </div>
+                        <button id="btn-preset-load" class="secondary-btn">Load</button>
+                    </div>
+                    
+                    <div class="preset-action-row">
+                        <button id="btn-preset-update" class="primary-btn preset-action-btn hidden">Save Changes</button>
+                    
+                        <button id="btn-preset-save" class="secondary-btn preset-action-btn">Save As...</button>
+                        <button id="btn-preset-rename" class="secondary-btn preset-action-btn">Rename</button>
+                        <button id="btn-preset-delete" class="danger-btn preset-action-btn preset-delete-btn">Delete</button>
+                    </div>
+
+                    <div class="helper-text preset-help-text">Save your current layout and settings to a preset <b>in this browser</b>. 
+                        Use "Copy Link" to transfer between browsers/OBS.</div>
+                    
+                    
+                    <div class="preset-reset-row">
+                        <button id="btn-reset-all" class="reset-btn">Reset Current Layout</button>
+                    </div>
+                </section>
+
+                <section class="config-section helper-text">
+                    <h3>Info:</h3>
+                    <ul>
+                        <li>
+                            <b>The settings cog will not appear when this site is used as a browser source in OBS!</b>
+                            You can still access settings menu by clicking "Interact"
+                            on the browser source and hovering over the bottom right corner (where the cog normally is).
+                        </li>
+                        <li><b>The transparent background setting will only apply inside of OBS.</b></li>
+                        <li><b>Please consider leaving the PodCube™ integration enabled!</b> It will fill your countdown
+                            with hilarious, high-quality audio sketch comedy.
+                            The show is <b>PG-13</b> at most (but still hilarious) so it should be acceptable for even
+                            family-friendly streams.
+                        </li>
+                        <li><b>Enabling the WIDK Commercials can help with shorter timers.</b> It will add in 50+ short, high quality, fake radio commercials. However, they contain very vulgar content.</li>
+                        <li><b>You can move this settings window around</b> by dragging its title bar, and resize it by
+                            dragging the bottom right corner.</li>
+                        <li>Created with love by <b>Mason Amadeus</b>, keeper of <a href="https://bodgelab.com"
+                                target="_blank">The Bodge Lab</a>, and co-creator of <a
+                                href="https://bodgelab.com/s/podcube/" target="_blank">PodCube™</a></li>
+                    </ul>
+                </section>
+
+            </div>
+
+            <div class="settings-actions">
+                <div class="autoplay-row">
+                    <button id="copy-url-btn" class="primary-btn block-btn">Copy OBS Link</button>
+
+                    <div class="autoplay-select-wrapper">
+                        <label for="select-autoplay" class="autoplay-label">Autoplay Mode:</label>
+                        <select id="select-autoplay" data-param="autoplay" class="autoplay-select">
+                            <option value="off">Off (Manual Start)</option>
+                            <option value="onload">On Load</option>
+                            <option value="onstream">On Stream Start (OBS)</option>
+                        </select>
+                    </div>
+
+                </div>
+                <button id="stop-timer-btn" class="danger-btn block-btn">Stop Timer</button>
+            </div>
+
+            <div class="hidden">
+                    <input type="text" id="input-title" data-param="title">
+                    <input type="number" id="input-minutes" data-param="minutes">
+                    <input type="number" id="input-seconds" data-param="seconds">
+                    <input type="range" id="slider-minutes">
+                    <input type="range" id="slider-seconds">
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+
+</html>
